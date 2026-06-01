@@ -1,0 +1,1014 @@
+Title: Mining Multi-Modality Spatio-Temporal Cues for Video Important Person Identification
+
+URL Source: https://arxiv.org/pdf/2605.28604v1
+
+Published Time: Thu, 28 May 2026 01:44:33 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 1
+
+# Mining Multi-Modality Spatio-Temporal Cues for Video Important Person Identification 
+
+Xiao Wang, Minglei Yang, Bin Yang, Wenke Huang, Zheng Wang Senior Member, IEEE , Xin Xu Senior Member, IEEE , Mang Ye Senior Member, IEEE 
+
+Abstract —Identifying key individuals in video scenes is es-sential for applications such as automated video editing and intelligent surveillance. Current methods primarily focus on static images and immediate visual cues, overlooking the rich spatio-temporal information in videos. This leads to the phenomenon of Temporal Importance Shift (TIS), wherein individuals deemed significant in early frames may be demoted as the entire temporal context is considered. To address this, we introduce the Video Important Person (VIP) identification task, aimed at automatically identifying the most influential individuals in videos while providing textual rationales. We present Temporal-VIP, a large-scale rationale-annotated dataset consisting of 9,249 video segments across 11 categories with aligned importance rationales. To mitigate TIS, we develop the VIP-Net framework, which includes a Social Cue Encoder (SCE) for extracting multi-modal spatio-temporal cues, a Temporal Importance Rectifier (TIR) for hierarchical cue fusion and cross-modal alignment, and VIP Inference for ranking individuals. Experimental results show that VIP-Net achieves 67.3% accuracy, significantly outperforming state-of-the-art models (37.5%–53.9%) and yielding a mean rationale similarity of 0.63 to ground truth through feature-guided LLM refinement. The dataset and code are available at https://huggingface.co/datasets/yml2002/Temporal-VIP. Index Terms —Video understanding, important person identi-fication, temporal modeling, multimodal learning. 
+
+I. I NTRODUCTION 
+
+# UNDERSTANDING human social dynamics is critical in computer vision, underpinning the development of Human-Centric and Artificial General Intelligence [1]. While current visual systems excel at recognizing atomic actions [2] and tracking individual trajectories [3], they struggle to elucidate implicit social hierarchies [4], particularly in iden-tifying the most socially significant individual within multi-person scenarios [5]. This process, termed Important Person Identification, is essential for applications such as intelligent surveillance, automated video editing [6], [7], sports broad-casting [8], and socially-aware human-robot interaction [9]. 
+
+X. Wang, M. Yang and X. Xu are School of Computer Science and Technology, Wuhan University of Science and Technology, Wuhan, Hubei 430065, China and Hubei Province Key Laboratory of Intelligent Information Processing and Real-time Industrial System, Wuhan University of Science and Technology,Wuhan 430065, China (e-mail:wangxiao2021@wust.edu.cn; yml0608@wust.edu.cn; xuxin@wust.edu.cn) B. Yang, Z. Wang, and M. Ye are with School of Computer Science, National Engineering Research Center for Multimedia Software, Hubei Key Laboratory of Multimedia and Network Communication Engineering, Wuhan University, China (e-mail: yangbin cv@whu.edu.cn; wangzwhu@whu.edu.cn; yemang@whu.edu.cn) (Corresponding authors: Bin Yang; Mang Ye) W. Huang is with College of Computing and Data Science, Nanyang Technological University (e-mail:wenkehuang@whu.edu.cn) c     
+
+> (f) VIP-Net
+> The Importance of
+> Persons in Video’s
+> Initial Frame
+> …
+> 1243
+> The person exhibits
+> obvious gestures, like
+> turning their head and
+> shaking hands, while
+> speaking continuously,
+> clearly dominating the
+> conversation.
+> Spatial Feature
+> In Frame
+> Speaking Action
+> Face Location Ratio
+> (e) Temporal-VIP
+> (a) NCAA (b) MS (c) Unconstrained-7k (d) MIP-GAF
+> Other
+> Method
+> Our
+> Method
+> Importance
+> Shift
+
+Fig. 1. Illustration of the Temporal Importance Shift (TIS) phenomenon and our motivation. (a–d) Prior image-based important person (IP) datasets rely on instantaneous visual saliency (e.g., central positioning, large bounding box area). (e) In dynamic video sequences, individuals who are visually prominent in early frames (e.g., the seated person in the center) may be demoted as the temporal context unfolds. The true VIP (e.g., the standing speaker) emerges through sustained behavioral patterns such as speaking and gesturing. Red dashed boxes show erroneous detections by image-based baselines; green dashed boxes indicate our temporally-aware identifications. (f) Overview of our proposed VIP-Net framework. 
+
+These applications require intelligent agents to focus on social dynamics rather than mere visual prominence [10]. To grasp the uniqueness of VIP (Video Important Person), it is vital to distinguish between traditional video understand-ing and social scene analysis. Person tracking [11] answers 
+
+“Where is the person?” and action recognition [12] addresses 
+
+“What are they doing?” Conversely, VIP identification tackles the higher-order question: “Who drives the social event and why?” For instance, in a corporate meeting, the VIP is often not the most centrally located individual but rather the one whose contributions significantly influence the discussion. Thus, accurately identifying key figures in real-world scenarios necessitates a nuanced understanding of social interactions, hierarchical dynamics, and contextual semantics. Historically, the community has predominantly approached this problem through the lens of static images. Foundational benchmarks such as the MS dataset [13], Unconstrained-7k [14], and the recent MLLM-annotated MIP-GAF [15] have driven signifi-cant progress.  
+
+> arXiv:2605.28604v1 [cs.CV] 27 May 2026 IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 2
+
+Consequently, prevailing methodologies predominantly rely on spatial cues and instantaneous visual saliency. Examples of such cues include central positioning, relative bounding box dimensions, and facial visibility. These features are commonly used to determine social importance, as demonstrated by existing image-based datasets shown in Fig. 1 (a-d). However, from both sociological and cognitive perspectives, human social importance is inherently dynamic and evolves over time. It is expressed not only through static spatial prominence but also through sustained behavioral patterns, conversational dominance, and complex, evolving interactions. These factors go beyond the limitations of a single temporal snapshot. Therefore, depending solely on static frames forces models to adopt superficial spatial biases. This reliance fundamentally limits their ability to understand genuine social influence. This fundamental limitation becomes particularly evident when static paradigms are applied to real-world video se-quences, revealing a critical bottleneck that we formally des-ignate as the Temporal Importance Shift (TIS) problem. In complex social interactions, an individual’s “importance” is seldom static; rather, it is a highly dynamic attribute that shifts non-linearly over time due to the evolution of the event, changes in interaction targets, and the transfer of semantic dominance. We conceptualize TIS as the phenomenon wherein the social focal point transitions among individuals as the temporal context develops. For instance, as illustrated in Fig. 1 (e), within a meeting room scenario, a seated executive may initially appear visually prominent and function as the VIP. However, when a standing participant begins to articulate a critical point through speech and gesture, the semantic dominance of the event swiftly transfers to her, designating her as the true VIP for that specific temporal interval. The TIS phenomenon underscores that instantaneous visual saliency (e.g., central positioning within the frame) often diverges significantly from genuine long-term social signif-icance. Image-based methods, which lack temporal mem-ory and event-level reasoning capabilities, are particularly vulnerable to TIS. They tend to assign importance to the individual who is currently most visible, resulting in incon-sistent, flickering, and ultimately erroneous identifications. Moreover, addressing the TIS problem is not merely an issue of temporal smoothing; it necessitates bridging a substantial 
+
+semantic gap between low-level pixel variations and high-level social concepts. Accurately tracking the trajectory of TIS requires a synergistic understanding of spatial positioning, temporal actions, and multi-agent interpersonal interactions across extended time horizons. Despite the evident necessity for video-based analysis, the transition from static image important person (IP) identification to dynamic video analysis is hindered by two primary challenges:  
+
+> •
+
+Challenge 1: Absence of dedicated video bench-marks with explanatory rationales. Existing image-based datasets (e.g., MS [13], Unconstrained-7k [14]) lack temporal sequences and merely provide spatial co-ordinates without comprehensive descriptive rationales. Conversely, while the video understanding community has developed large-scale datasets for action recogni-tion (e.g., Kinetics [16]), spatio-temporal action local-ization (e.g., AVA [17]), and multi-object tracking (e.g., SportsMOT [18]), these benchmarks focus on “what actions are occurring” or “where the people are.” They lack semantic annotations [19], [20] to annotate the hierarchical social structure or answer the higher-order question of “who is socially important and why.”  
+
+> •
+
+Challenge 2 : Architectural inadequacy in modeling long-term social relations. Our extensive empirical in-vestigations reveal that directly adapting state-of-the-art multi-object trackers (e.g., ByteTrack [21], Wu et al. [22]), video saliency and feature-based detectors (e.g., Samba [23], MGFN [24], Han et al. [25]), or even pow-erful Multimodal Large Language Models (e.g., BLIP-2 [26], TinyLLaVA [27]) yields sub-optimal performance. These models either lack explicit inter-personal relation-ship modeling or fail to align long-term behavioral cues with spatial prominence, making them highly susceptible to TIS. Furthermore, they operate as black boxes, unable to provide transparent justifications for their social pre-dictions. To address Challenge 1 , we propose the novel task of Video Important Person (VIP) identification . Supporting this task, we introduce the Temporal-VIP benchmark. It consists of 9,249 meticulously curated video clips spanning 11 diverse real-world social categories, including speeches, meetings, and interviews. These clips capture rich and dynamic multi-person interactions. Beyond standard annotations, Temporal-VIP pro-vides a comprehensive suite of labels. It supplies frame-level important person annotations alongside per-individual tracking identifiers and bounding boxes. Moreover, the benchmark in-cludes textual rationales that explicitly explain the social basis for each importance judgment, thereby facilitating research in explainable visual understanding. In the domain of social understanding, merely outputting a localization bounding box constitutes an insufficient solution; fostering genuine trust necessitates that artificial intelligence systems articulate the underlying reasoning behind their deci-sions. This imperative propels the field beyond pure perception towards the paradigms of Explainable Artificial Intelligence and multimodal reasoning. Consequently, a significant gap is revealed between prevailing video understanding method-ologies and the specific requirements of visually important person identification. Existing benchmark approaches, such as JRDB-Act [28] and MSR-VTT [29], predominantly focus on modeling collective group activities or generating general video descriptions, rather than capturing the nuanced dynamics of individual importance evolution over time. To tackle Challenge 2 and fundamentally resolve the TIS problem, we propose Video Important Person identification Network ( VIP-Net ), a principled framework designed to ex-plicitly reason over spatio-temporal social cues and track the dynamic transfer of semantic dominance. The core intuition behind VIP-Net is inspired by human cognitive processes: we first perceive atomic behavioral cues and then contextualize them within a global relational layout to rectify early visual biases caused by TIS. Specifically, VIP-Net features a Social Cue Encoder (SCE) that extracts complementary spatial (e.g., centrality, area) and temporal (e.g., action, lip movement) IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 3
+
+evidence for each individual. To prevent the model from being misled by instantaneous saliency shifts, we introduce a novel Temporal Importance Rectifier (TIR). The TIR performs hierarchical multi-modal fusion and inter-personal relational modeling across the entire video sequence, effectively captur-ing the trajectory of importance transfer and ensuring robust VIP identification even in the presence of severe TIS. A natural question arises: Why not simply rely on the emergent capabilities of modern Multimodal Large Language Models (MLLMs) to resolve TIS? Our preliminary explorations revealed that while MLLMs excel at describing objective visual elements and general actions within a video, they lack the deep-level cognitive reasoning required to compre-hend complex social hierarchies and determine who the true important person should be. When faced with long videos exhibiting severe TIS, pure MLLMs often fail to grasp the underlying semantic dominance, hallucinating social relation-ships or missing subtle behavioral handovers. Therefore, we adopt a hybrid, feature-guided paradigm. VIP-Net acts as a specialized, deterministic engine that rigorously quantifies spatio-temporal social cues and models the TIS trajectory. Sub-sequently, a feature-guided LLM refinement module serves as a cognitive interpreter, translating these grounded representa-tions into natural language rationales. This design ensures that our explanations are not only linguistically fluent but strictly anchored in visual evidence, providing transparent decision-making that bridges the gap between visual perception and linguistic explanation. The main contributions in this paper are threefold: 
+
+## ❶ Task and Data Contribution: We formally extend impor-tant person identification from static images to the dynamic video domain. We construct and release Temporal-VIP ,the first large-scale video benchmark (9,249 clips, 11 categories) equipped with multi-modal annotations and textual rationales, serving as a new testbed for social scene understanding. 
+
+## ❷ Methodology Contribution: We propose VIP-Net , anovel framework that explicitly addresses the Tempo-ral Importance Shift (TIS) through hierarchical spatial-temporal alignment and inter-personal relational modeling. It effectively integrates instantaneous visual saliency with long-term behavioral dynamics. 
+
+## ❸ Empirical Contribution: We demonstrate significant per-formance gains, with VIP-Net achieving 67.3% accuracy compared to 37.5%–53.9% for state-of-the-art models, while our feature-guided LLM refinement produces ratio-nales with 0.63 mean similarity to ground truth. II. R ELATED WORK 
+
+A. Person Importance Identification 
+
+The pursuit of identifying important persons originated in the static image domain, driven by the necessity to decode social hierarchies and visual attention in group photographs. Foundational benchmarks, such as the MS and NCAA Bas-ketball datasets [13], catalyzed early research by formulat-ing person importance as a relational-based ranking problem relying on spatial and appearance features, alongside early affect-aware formulations [30]. The field subsequently evolved with the introduction of the Unconstrained-7k dataset [14] and relation-centric refinements [31], which expanded the scope to diverse, in-the-wild environments. To better capture complex interactions, methodologies advanced from basic feature aggregation to sophisticated relational modeling. For instance, JSRII-GNN [32] employed graph neural networks to explicitly model social connections by treating individuals as nodes and their interactions as edges. Similarly, Wang et al. [33] introduced structural causal models to disentangle genuine social importance from spurious visual correlations, while PI-Net [20] explored the interplay between foreground subjects and background contexts. Most recently, the MIP-GAF dataset [15] and IMPACT [34] leveraged multimodal modeling [35] and interpretability-oriented designs for more explainable important person analysis. Despite these significant strides, existing paradigms are fundamentally bottlenecked by their reliance on static images. They operate under the restrictive assumption that social importance can be reliably inferred from a single instantaneous snapshot [36] (e.g., central positioning, relative bounding box size, or a frozen pose). When these image-based methods are naively adapted to dynamic video scenarios via frame-by-frame processing, they suffer from severe temporal incon-sistencies. They fail to capture evolving social dynamics, such as sustained speaking, active gesturing [37], or the sudden handover of attention, inevitably falling victim to the Temporal Importance Shift (TIS) phenomenon. Our work addresses this critical gap by formally extending the task to the video domain and proposing a framework that explicitly models long-term behavioral cues. 
+
+B. Video Understanding and Social Dynamics 
+
+Current video analysis methodologies excel at fundamental perceptual tasks but fall short of high-level social reason-ing. Instance-level perception models, including multi-object trackers (e.g., ByteTrack [21], SORT [38], TrackFormer [39], and recent MOT variants [40], [41]) and action recognition frameworks (e.g., two-stream networks [42], [43] and video transformers [44]–[46]), can accurately localize individuals and classify atomic actions on standard benchmarks [16], [47], [48]. Recent human-centric video understanding mod-els [49], [50] further strengthen behavior-level perception. Furthermore, recent advances in vision foundation models, such as DINOv2 [51] and SAM [52], [53], provide robust, universal visual representations. However, these approaches primarily answer “where the entities are” or “what actions occur,” lacking the capacity to infer social hierarchies [54]. Beyond basic perception, Spatio-Temporal Relational Mod-eling has garnered significant attention. Frameworks operating on datasets like Action Genome or AVA [17] utilize Spatial-Temporal Graph Convolutional Networks (STGCN) to cap-ture human-object and human-human interactions. Conversely, group-level perception tasks, such as collective activity recog-nition [55]–[57] and social relation recognition [58], [59], attempt to understand multi-agent dynamics. Yet, these ar-chitectures are inherently optimized for classifying predefined IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 4
+
+action categories or overall group behaviors, rather than eval-uating the continuous, zero-sum transfer of social dominance. VIP identification serves as a crucial bridge between instance-level perception and group-level social understanding. Our proposed VIP-Net achieves this by leveraging robust spatio-temporal feature extractors and integrating them through a novel Temporal Importance Rectifier to explicitly model the dynamic transfer of semantic dominance. 
+
+C. Multimodal Large Language Models in Video 
+
+The advent of Multimodal Large Language Models (MLLMs) has revolutionized vision-language understand-ing [60]. Models such as BLIP [61], BLIP-2 [26], Instruct-BLIP [62], LLaVA [63], Qwen-VL [64], TinyLLaVA [27], Chat-UniVi [65], and LLaVA-CoT [66] have demonstrated re-markable zero-shot capabilities in image captioning and visual question answering. Building on earlier video-language pre-training pipelines [67]–[70], this paradigm has been extended to the video domain with models like VideoLLaMA 3 [71], VideoChat-Flash [72], TimeChat [73], Video-LLaVA [74], LLaVA-ST [75], and Video-ChatGPT [76], while recent large-scale foundation efforts [77] further improve multimodal video modeling. Related benchmark/tooling efforts and sur-veys [78]–[81], together with socially-aware reasoning exten-sions [82], also broaden the current MLLM landscape. While MLLMs possess strong semantic reasoning capabil-ities for general video description [83], our empirical evalu-ations reveal that they struggle with the fine-grained, multi-person relational reasoning required for VIP identification. Because they are predominantly trained on global video-text pairs, they lack the dense temporal grounding needed to track dynamic importance shifts among multiple interacting subjects. Furthermore, to handle the computational burden of long videos, most Video MLLMs employ aggressive token compression or temporal pooling strategies [84], [85]. This inevitably discards fine-grained spatial details—such as a sub-tle shift in gaze or a brief hand gesture—which are often the critical tipping points for semantic dominance in social events. Consequently, pure MLLMs often suffer from “attention drift,” hallucinating social relationships or missing subtle behavioral handovers. In contrast, our approach utilizes a specialized, de-terministic architecture (VIP-Net) for accurate spatio-temporal importance ranking, and employs MLLMs strictly in a feature-guided refinement capacity. This hybrid design ensures that the generated rationales are both linguistically natural and strictly anchored in extracted visual evidence. 
+
+D. Explainable and Rationale Generation 
+
+The necessity for artificial intelligence systems to provide transparent justifications has become increasingly critical, par-ticularly in subjective tasks like social importance assessment. Traditional post-hoc explainability methods, such as Grad-CAM [86] and LIME [87], provide visual saliency maps for model decisions. While visual explainability provides a basic sanity check, it falls short in complex social scenarios where the “why” involves multi-step reasoning over time. Recent advances in understanding transformer reasoning [88] and multimodal rationale generation [89], including cross-modal approaches like LXMERT [90], have shown promise in generating textual justifications by aligning visual and textual representations. In the domain of VIP identification, the mere output of a bounding box is insufficient for fostering user trust; it is im-perative for the system to elucidate why a particular individual is considered important. The generation of rationales for social tasks presents inherent complexities that exceed those associ-ated with physical tasks [91] (e.g., visual question answering regarding object colors), as it necessitates a multi-faceted justification that encompasses spatial cues, temporal patterns, and social dynamics [92]. This work advances the current understanding in this area by introducing a compositional rationale generation module that systematically translates de-terministic spatio-temporal feature rankings into coherent nat-ural language explanations. This approach effectively bridges the gap between low-level visual perception and high-level cognitive reasoning, thereby enhancing the interpretability and transparency of the VIP identification process. III. M ETHODOLOGY 
+
+A. Task Definition 
+
+We formulate video important person identification as a multi-modal ranking and text explanation task. Given a video containing multiple persons and textual descriptions, the ob-jective is to: (1) identify the most socially significant indi-vidual, and (2) generate natural language descriptions for the importance identification. 
+
+Problem Formulation. Let V ∈ RT ×H×W ×3 denote a video sequence of T frames with N detected persons. Given bounding boxes B ∈ RT ×N ×4, scene description Ds, and person descriptions Dp = {d1, d 2, ..., d N }, the task requires learning two functions. 
+
+Importance Prediction. We compute importance scores for each person and perform ranking to identify the most significant individual, which can be formulated as: 
+
+ˆy = arg max 
+
+> n∈V
+
+P (y = n | V1: T , B, Dspatial , Dtemporal ; ΘVIP ) ,
+
+(1) where y ∈ { 1, 2, ..., N } represents the identifier of the most important person, V1: T denotes the video sequence, B denotes the bounding box trajectories, D represents the contextual de-scriptions, and ΘVIP embodies the trainable model parameters. 
+
+Description Generation. We generate natural language descriptions based on the predicted important person and their relative feature rankings within the scene, which can be defined as: 
+
+E∗ = arg max 
+
+> E
+> L
+
+Y
+
+> l=1
+
+P (el | e<l , V1: T , R(ˆ y); ΦLLM ) , (2) where E = {e1, . . . , e L} is an autoregressive rationale de-scribing why person ˆy is considered most important based on the percentile rank conditions R(ˆ y), and ΦLLM denotes the parameterized weights of the language model. 
+
+Evaluation Protocol. The evaluation of importance predic-tion is conducted through ranking accuracy metrics, specifi-cally Rank-1, Rank-2, and Rank-3 accuracy. IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 5Scene desc 
+
+Person desc 
+
+Text Descriptions 
+
+Person Boxes 
+
+> Explain:
+> “Person 1 is clearly the most
+> important person in the scene due
+> to several visual indicators. His
+> face is generally visible and he
+> performs noticeable actions… ”
+> Feature Importance Ranking
+> Classifier
+
+VIP Inference      
+
+> Task Significance
+> 0.91 0.63 0.56 000
+
+Social Cue Encoder 
+
+> Spatial
+> Encoder
+> Temporal
+> Encoder
+> Centrality
+> Area
+> Clarity
+> Lip
+> Action
+> Text
+> Encoder
+> C
+> Inter-Person
+> Stack
+> Transformer
+> Encoder
+> Spatial-Temporal Alignment
+
+Temporal Importance Rectifier    
+
+> Intra-Person
+> Spatial
+> Features
+> Stack
+> Temporal
+> Features
+> Temporal
+> Attention
+> Spatial
+> Attention
+> SEq. 6
+> Aligned
+> Features
+> Eq. 9
+> Temporal Time Series
+> Spatial Patches
+> Sigmoid SCConcat
+> Attn-Pooling
+> Transformer
+> Encoder
+> Tempral
+> Agg Pooling
+> Modulating
+
+Fig. 2. Overall architecture of the proposed VIP-Net framework. The framework consists of three core components: (1) Social Cue Encoder extracts spatial visual features (centrality, area, clarity), temporal behavioral features (action, lip movement), and textual semantic features; (2) Temporal Importance Rectifier addresses temporal importance shift through four hierarchical subsystems: intra-personal feature integration, contextual semantic modulation, spatial-temporal alignment, and inter-personal relations; (3) VIP Inference generates importance rankings and produces natural language descriptions based on feature importance ranking. 
+
+Description quality is assessed using SBERT [93]-based cosine similarity between generated and ground truth de-scriptions, measuring semantic alignment of the description content. 
+
+B. Social Cue Encoder 
+
+We present a dual-dimensional encoding architecture that adeptly models social importance through the integration of complementary spatial and temporal evidence. This ar-chitecture systematically addresses the phenomenon of TIS by harnessing video-specific temporal dynamics that static methods cannot capture. Our approach elucidates the under-lying mechanisms of person importance identification, where spatial positioning dictates attention allocation and temporal patterns provide insights into social roles. This comprehensive framework significantly advances the understanding of social importance within dynamic video contexts. 
+
+Spatial Importance Encoding. To effectively evaluate visual prominence, we design three interconnected spatial analyzers that operate in synergy. These analyzers collectively capture spatial cues that contribute to the identification of social importance, enabling a robust assessment of visual prominence within dynamic scenes. 
+
+Centrality quantifies social focal points by assessing indi-viduals’ proximity to the visual center, positing a correlation between central positioning and compositional significance. This metric facilitates the identification of subjects possessing elevated social relevance, thereby reflecting their prominence within the visual hierarchy. 
+
+Scen (n, t ) = max 
+
+
+
+0, 1 − 2 p(n,t ) − cimg 2
+
+
+
+, (3) where p(n,t ) and cimg = (0 .5, 0.5) ⊤ denote the normalized centroid coordinates and the image center. 
+
+Area assesses visual dominance by calculating the nor-malized bounding box area of subjects, effectively capturing their prominence in the foreground. This metric provides a quantitative measure of the visual weight that individuals carry within a scene, contributing to the overall evaluation of visual hierarchy. 
+
+Sarea (n, t ) = (xn,t  
+
+> 2
+
+− xn,t  
+
+> 1
+
+)( yn,t  
+
+> 2
+
+− yn,t  
+
+> 1
+
+)
+
+W × H , (4) where (xn,t  
+
+> 1
+
+, y n,t  
+
+> 1
+
+) and (xn,t  
+
+> 2
+
+, y n,t  
+
+> 2
+
+) are the top-left and bottom-right corner coordinates of the bounding box for person n
+
+at frame t, and W, H represent the spatial dimensions of the video frame. 
+
+Clarity evaluates encoding quality by measuring focus through Laplacian variance in face regions detected by Medi-aPipe [94]. This metric posits that sharper and better-lit sub-jects are more likely to attract preferential attention, thereby enhancing the overall visual effectiveness and perceptual clar-ity of the content. 
+
+Temporal Importance Encoding. In this research, we implement two specialized temporal analyzers that are adept at decoding dynamic social engagement patterns. 
+
+Action focuses on modeling gestural and movement pat-terns through spatio-temporal feature extraction utilizing a 3D ResNet architecture [42]. This approach incorporates temporal attention mechanisms to enhance the recognition of relevant motion dynamics over time. To analytically capture the be-havioral magnitude across a continuous observation window spanning T frames, we formulate the action intensity metric as: 
+
+Sact (n) = 1
+
+|T window |
+
+X
+
+> t∈T window
+
+F3D-ResNet 
+
+
+
+V(n)
+
+> t:t+δ
+
+
+
+Wact 2
+
+, (5) where F3D-ResNet denotes the spatial-temporal convolutional mapping across a discrete block of δ frames for person n,projecting raw optical motion into a feature embedding, sub-sequently parameterized by the transformation matrix Wact .
+
+Lip Movement assesses conversational dominance by em-ploying MediaPipe [94] for lip keypoint tracking, coupled with Transformer-based temporal modeling [95]. This methodology IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 6
+
+allows for a nuanced quantification of speaking frequency and intensity, thereby providing insights into the dynamics of verbal interaction within social contexts. We track the inter-frame geometric disparities of the bounding control points over sequential timesteps, defining conversational salience as: 
+
+Slip (n) = TRM temporal  
+
+> T−1
+
+M
+
+> t=1
+
+λt p(n,t ) 
+
+> upper
+
+− p(n,t )
+
+> lower
+
+!
+
+, (6) where p(n,t ) 
+
+> upper
+
+and p(n,t ) 
+
+> lower
+
+represent the spatial coordinates of the upper and lower lip anchor boundaries at frame t, λt
+
+represents the learned temporal modulation decay factor, and L signifies the sequential integration sequence fed into the Temporal Transformer. 
+
+Contextual Semantic Encoding. In this study, we utilize the Bidirectional Encoder Representations from Transformers (BERT) model [96] to process descriptive data pertaining to scenes and individuals. This approach facilitates the extrac-tion of semantic context, thereby enhancing visual analysis by integrating situational understanding. Specifically, given a textual description sequence D = {w1, w 2, . . . , w L}, we for-mulate the semantic contextualization as a deep self-attention mapping: 
+
+Ftext = MLP 1
+
+L
+
+> L
+
+X
+
+> l=1
+
+TRM 
+
+
+
+Ewl + Epos l
+
+!
+
+∈ RD , (7) where Ew and Epos denote the token and positional em-beddings respectively, and TRM represents the multi-layer Transformer encoder capturing the multi-grained propositional semantics. By leveraging BERT’s capabilities, we aim to deepen the interpretation of visual content through a more comprehensive understanding of the contextual elements that influence social dynamics and interactions. 
+
+C. Temporal Importance Rectifier 
+
+We tackle TIS by employing four hierarchical subsystems, namely: intra-personal feature integration, spatial-temporal alignment, and inter-personal relations. 
+
+Intra-Personal Feature Integration. We model individual coherence by integrating sub-features within each modality through an independent, non-normalized gating mechanism [97]. Given the k-th sub-feature representations X(k) 
+
+> m
+
+∈
+
+RT ×N ×D for modality m, we first project them into a latent evaluation space to formulate the adaptive contribution weights 
+
+αm,k :
+
+F(m) 
+
+> intra
+
+=
+
+> Km
+
+X
+
+> k=1
+
+σ
+
+
+
+X(k) 
+
+> m
+
+Wv + bv
+
+
+
+q⊤
+
+> m
+
+√dk
+
+ X(k) 
+
+> m
+
+, (8) where Wv and bv are the projection weights and bias, 
+
+qm ∈ RD is the modality-specific learnable focal query, 
+
+dk is the scaling factor to stabilize gradients, σ denotes the sigmoid activation ensuring independent gating scales across dimensions, and Km is the number of sensory sub-streams (Ks = 3 , K t = 2 ). 
+
+Spatial-Temporal Alignment. Context-dependent impor-tance is dynamically modulated by injecting semantic pri-ors from the text embedding Ftext . We utilize a multi-layer perceptron (MLP) to generate a dense semantic-aware gate, which is explicitly broadcasted across the temporal axis via the Kronecker product ( ⊗1T ) to modulate the intra-personal features: 
+
+Γgate = σ
+
+
+
+MLP (Ftext ) ⊗ 1T
+
+
+
+, ˜F(m) 
+
+> intra
+
+= F(m) 
+
+> intra
+
+⊙ Γgate , (9) where ⊙ is the Hadamard product. Subsequently, to holisti-cally align the temporally-dense dynamic behavioral cues (d)
+
+with spatial prominence anchors (s), we rigorously formulate a structured Multi-Head Cross-Attention (MHA) module. With 
+
+h denoting the number of attention heads, the i-th head Hi
+
+precisely interrogates dynamic sequences guided by spatial queries: 
+
+Falign = LayerNorm 
+
+˜F(s) 
+
+> intra
+
++ Concat hi=1 (Hi) WO
+
+
+
+,
+
+Hi = Softmax 
+
+ Q(s) 
+
+> i
+
+K(d)
+
+> i
+> ⊤
+
+√dh
+
++ Mp
+
+ V(d) 
+
+> i
+
+,
+
+(10) where WO is the output projection matrix, and Mp ∈{0, −∞} T ×T acts as an explicit validity masking matrix strictly penalizing attention scopes to filter out padded regions or severe occlusion tracklets. To systematically distill noise-resilient, instance-level se-mantic representations from the temporal dimensions, we finalize the representation through an Energy-based Temporal Attention Pooling: 
+
+F(n) 
+
+> person
+
+=
+
+> T
+
+X
+
+> t=1
+
+ exp 
+
+ F(t)
+
+> align
+
+Wp + bp
+
+q⊤
+
+> p
+
+PTτ =1 exp 
+
+ F(τ )
+
+> align
+
+Wp + bp
+
+q⊤
+
+> p
+
+ F(t)
+
+> align
+
+,
+
+(11) where the focal energy term et =  F(t)
+
+> align
+
+Wp + bp
+
+q⊤ 
+
+> p
+
+quanti-fies the temporal prominence at frame t. This probabilistic temporal aggregation firmly guarantees that F(n) 
+
+> person
+
+encap-sulates the cohesive, long-term social interaction trajectory instead of being monopolized by fleeting, instantaneous visual anomalies. 
+
+Inter-Personal Relations. To model social relationships and relative importance among individuals, the person-level features are processed through a Transformer encoder: 
+
+H = TransformerEnc 
+
+h 
+
+F(1) 
+
+> person
+
+, F(2) 
+
+> person
+
+, . . . , F(N )
+
+> person
+
+i 
+
+∈ RN ×Dp ,
+
+(12) where F(i) 
+
+> person
+
+represents the relationally-pooled features for individual i, and H contains the relationally-enhanced repre-sentations. This mechanism enables each person’s importance identification to consider the social context and comparative relationships within the group. 
+
+D. VIP Inference 
+
+The VIP inference module processes the relationally-enhanced person representations from the Temporal Impor-tance Rectifier to generate final importance rankings. The per-son features are L2-normalized and fed through a classification head that outputs logits for each person. After temperature IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 7
+
+scaling, the module outputs probability distributions over all persons, predicting the inferred VIP distribution as: 
+
+P(ˆ y = n | H) = exp 
+
+ Wchn
+
+> τc∥hn∥2
+
+PNm=1 exp 
+
+ Wchm
+
+> τc∥hm∥2
+
+ , (13) where hn ∈ H is the enhanced representation of person 
+
+n, Wc denotes the classification projection weights, and τc
+
+serves as the temperature scaling hyperparameter controlling the sharpness of the probability distribution. The individual maximizing this probability is selected as the predicted VIP. Based on the identified VIP, we generate natural language descriptions through scene-aware feature ranking. 
+
+Feature Importance Ranking. Rather than using abso-lute feature values, we compute scene-relative rankings to highlight distinctive characteristics. For each feature type 
+
+k ∈ {centrality , clarity , area , lip movement , action } and the predicted VIP ˆn, we calculate the percentile rank: 
+
+Rk(ˆ n) = 1
+
+|V| − 1
+
+X
+
+> m∈V\{ ˆn}
+
+I
+
+
+
+S(m) 
+
+> k
+
+< S(ˆ n)
+
+> k
+
+
+
+, k ∈ K ,
+
+(14) where S(m) 
+
+> k
+
+is the feature score for person m on dimension 
+
+k, I(·) is the indicator function evaluating boolean conditions, and V denotes the set of valid reference persons. 
+
+Rationales Generation. We retain only cues whose per-centile ranks Rk(ˆ n) exceed a margin threshold τm = 0 .7,indicating the VIP reliably outperforms at least 70% of local interactants in that specific physical or social dimension. Each recursively retained rationale is verbalized through determin-istic syntactic templates, forming coherent multi-dimensional justification vectors (e.g., “The person holds central promi-nence and engages in continuous active speech” ). 
+
+LLM-Guided Refinement. To enhance naturalness while maintaining alignment with the feature-based evidence, we post-process these structured descriptions using Qwen3-VL-8B-Instruct. Given the predicted VIP and feature-driven de-scription, we extract the video clip and query the LLM. The refined rationale text Y = {y1, y 2, . . . , y M } is probabilistically decoded through an autoregressive generation bounds maxi-mized by the feature-guided conditioning: 
+
+P
+
+
+
+Y | V, Rk(ˆ n), prompt 
+
+
+
+=
+
+> M
+
+Y
+
+> m=1
+
+PθLLM 
+
+
+
+ym | y<m , V, Eprompt ⊕ Ecues 
+
+
+
+,
+
+(15) where Eprompt and Ecues represent the instruction and discrete syntactic cues templates. The guided variant anchors reasoning to concrete evidence, while the unguided variant serves as ablation. Both use identical visual inputs, ensuring perfor-mance differences derive from feature guidance. The LLM is prompted to rephrase and expand the rule-based sentences into more natural and diverse expressions while preserving core reasoning logic. 
+
+E. Training Objective 
+
+We employ a multi-component training objective: 
+
+Ltotal = − 1
+
+|B| 
+
+X
+
+> i∈B
+
+log ˆ y(n∗)
+
+> i
+
+| {z }
+
+> Lcls
+
++λtext 
+
+
+
+1 − v⊤ 
+
+> t
+
+vˆt
+
+∥vt∥2∥vˆt∥2
+
+| {z }
+
+> Ltext
+
++ λcont E
+
+
+
+− log exp( hv · h+ 
+
+> v
+
+/τ c)
+
+P 
+
+> h−
+
+exp( hv · h−/τ c)
+
+| {z }
+
+> Lcont
+
++λreg ∥Θ∥22,
+
+(16) where ˆy(n∗) 
+
+> i
+
+is the predicted probability for the ground-truth VIP, vt and vˆt are the SBERT embeddings of the ground-truth and predicted descriptions. For the contrastive formulation, 
+
+hv and h+ 
+
+> v
+
+denote the anchor and positive pair features, τc
+
+is the temperature, and Θ encompasses all regularized model weights. The classification loss Lcls employs cross-entropy with mask-aware softmax normalization. The text similarity loss 
+
+Ltext calculates cosine similarity between SBERT [93] em-beddings of predicted and ground-truth descriptions. The con-trastive loss Lcont employs InfoNCE [98] to distinguish VIP features from non-VIP features within each scene, encouraging VIPs to have more similar representations while being distinct from non-VIPs. Standard L2 regularization Lreg prevents overfitting. Textual descriptions serve as optional semantic priors via the contextual semantic branch, enhancing spatial-temporal features with scene-aware rationales when available; when absent, the gating reverts to identity mapping, enabling the model to function solely on visual signals. This design allows for flexible operation with or without textual inputs during validation and testing. 
+
+Discussion. VIP-Net utilizes spatial cues from image-based methods to identify key individuals and incorporates temporal processing to capture dynamic behaviors such as actions and speech. By merging spatial and temporal analyzes, VIP-Net improves its capacity to recognize and articulate the significance of individuals across varying contexts in video sequences, effectively addressing the issue of temporal impor-tance shift (TIS) in real-world scenarios. IV. T EMPORAL -VIP D ATASET 
+
+To address the critical lack of video-based benchmarks for social importance analysis, we introduce Temporal-VIP ,the first large-scale, rationale-annotated dataset dedicated to Video Important Person identification. Unlike existing image-based datasets (e.g., MS [13], Unconstrained-7k [14]) that rely on instantaneous visual saliency, Temporal-VIP is explicitly designed to capture the dynamic evolution of social importance over time. 
+
+A. Data Collection and Pre-processing 
+
+The raw video data was meticulously sourced from 232 diverse, high-resolution videos, encompassing a wide spectrum of sources including cinematic movies, TV shows, documen-tary footage, and unconstrained YouTube clips. This diverse sourcing ensures a comprehensive coverage of real-world IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 8
+
+social interactions, with video resolutions ranging from 720p to 4K and frame rates between 24 and 60 fps. To construct the initial candidate clips, we employed a rigorous automated pipeline. First, we utilized the YOLOv8l-pose model to de-tect all individuals and their keypoints within the frames. Subsequently, ByteTrack [21] was applied to associate these frame-level detections into continuous multi-object trajecto-ries, utilizing both spatial IoU and appearance embeddings to handle brief occlusions. This automated process generated 64,145 initial video clips. We deliberately constrained the clip duration to be between 3 and 10 seconds; this temporal window is empirically optimal as it is sufficiently long to capture a complete, meaningful social interaction (e.g., aconversational turn, a collaborative action) while avoiding the semantic ambiguity that arises when multiple disjoint events are concatenated in excessively long videos. These candidate clips then underwent a stringent manual screening process based on five criteria: (1) Detection and Tracking Integrity : No missing detections or ID switches for the main subjects; (2) Visual Clarity : Sufficient resolution and lighting to discern facial expressions and body language; (3) Social Interaction : Presence of meaningful multi-person dynamics (e.g., conversations, collaborative tasks) rather than mere co-occurrence; (4) Temporal Dynamics : The clip must exhibit temporal evolution, avoiding static, surveillance-style footage where nothing changes; (5) Absence of Severe Oc-clusion : Key subjects must remain largely visible throughout the clip. This rigorous filtering reduced the dataset to 9,249 high-quality, validated clips. 
+
+B. Annotation Protocol and Quality Control 
+
+Given the inherent subjectivity in defining a “socially im-portant person,” establishing a rigorous, objective, and repro-ducible annotation protocol is paramount. To mitigate individ-ual biases, our core strategy was to deconstruct the abstract concept of “social importance” into a hierarchy of observable, quantifiable spatio-temporal behavioral cues. We recruited a dedicated team of annotators, prioritizing individuals with backgrounds in sociology or psychology to ensure a nuanced understanding of human interactions. The annotation process was structured into three rigorous phases: 
+
+1. Protocol Definition and Calibration. We established a comprehensive guideline that explicitly prohibits the exclusive reliance on static spatial biases, including the tendency to default to the individual located in the central position. Instead, annotators were trained to evaluate the significance of elements based on a rigorous hierarchy of evidence:  
+
+> •
+
+Dynamic Behaviors: Conversational Dominance includes sustained speaking, active gesturing, and the capacity to capture the visual attention or gaze of others. Addition-ally, Significant Actions refer to the execution of tasks that are pivotal to the progression of an event, illustrated by examples such as a teacher writing on a board or an athlete executing a decisive play.  
+
+> •
+
+Context and Spatial: Scene-Specific Norms refer to con-textual roles that are determined by the environment, such as the role of a judge in a courtroom. Spatial Prominence                                          
+
+> TABLE I. Comparison of Temporal-VIP with existing person importance datasets. T: Temporal, TD: Textual Description, IR: Importance Rationales.
+> Dataset Type TTD IR Scale
+> MS [13] Image ✗✗✗2,340 NCAA Basketball [13] Image ✗✗✗9,736 EMS [13] Image ✗✗✗6,067 Unconstrained-7k [14] Image ✗✗✗7,250 CUC [33] Image ✗✗✗9,300 MIP-GAF [15] Image ✗✗✓16,550
+> Temporal-VIP (Ours) Video ✓✓✓9,249
+
+is characterized by central positioning or a large bounding box area. These cues are employed primarily in situations where primary behavioral signals are ambiguous. Prior to the formal task, annotators completed a pilot study on a subset of 500 videos to calibrate their judgments and align their understanding of the cue hierarchy. 
+
+2. Independent Multi-dimensional Annotation. During the formal phase, each of the 9,249 video clips was indepen-dently processed by five annotators using a custom-developed interface supporting frame-by-frame playback. For each clip, annotators were required to perform two tasks: (a) identify the VIP’s bounding box trajectory across the temporal window, and (b) explicitly select the primary rationales (from the predefined cues) that justified their decision. This dual-task design ensures that the identification is grounded in concrete visual evidence rather than intuition. 
+
+3. Conflict Resolution and Quality Assurance. To quanti-tatively assess annotation reliability, we measured the Inter-Annotator Agreement (IAA) using Fleiss’ Kappa [99]. We achieved a high Kappa score of 0.89 (indicating “almost perfect agreement”), demonstrating that our hierarchical cue protocol effectively standardized the subjective task. In cases where disagreements occurred—typically in highly complex, multi-agent scenarios with rapid semantic dominance shifts—a consensus was reached through a mandatory discussion panel led by a senior supervisor. 
+
+4. Rationale Text Generation and Verification. In addition to categorical cues, the provision of natural language rationales represents a significant advancement of Temporal-VIP. To achieve scalability, we employed the state-of-the-art multi-modal large language model known as Qwen2.5-VL. This model was prompted with video clips, human-annotated VIP IDs, and selected rationale cues to generate initial textual descriptions. Importantly, these machine-generated texts un-derwent a rigorous multi-level verification process conducted by annotators. This process involved correcting the texts across three critical dimensions: semantic accuracy by ensuring an accurate reflection of the VIP’s role, grammatical fluency to maintain linguistic coherence, and strict visual alignment to eliminate any hallucinated actions. 
+
+C. Dataset Statistics and Diversity 
+
+The finalized Temporal-VIP dataset comprises 9,249 video clips, systematically partitioned into 5,549 for training, 1,850 for validation, and 1,850 for testing. As illustrated in Ta-ble I, Temporal-VIP is pioneering in its integration of the IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 9   
+
+> Fig. 3. Temporal-VIP dataset samples across 11 scene categories. Representative video frames demonstrating diverse real-world scenarios including Office, Classroom, Conference, Restaurant, Sports, Interview, Performance, Public Space, Home, Courtroom, and Laboratory settings. Each sample showcases distinct VIP identification patterns where person importance assessment requires understanding both spatial positioning and temporal behavioral dynamics. The diversity of social contexts highlights the challenge of generalizing importance identification across varied scenarios. (a) Scene categories in Datasets (b) Distribution of People Count in Datasets
+> Fig. 4. Temporal-VIP dataset statistics. (a) Distribution across 11 scene categories. (b) Distribution of number of people per video clip, showing that 3-person clips are the most frequent, followed by 4- and 5-person clips.
+
+video modality with temporal analysis, extensive person de-scriptions, and clearly defined importance rationales. Fig. 3 showcases representative samples from the 11 distinct scene categories. These categories were carefully selected to cover a broad spectrum of social environments, ranging from highly structured settings with clear hierarchical norms (e.g., Court-room, Conference, Classroom) to highly unconstrained, dy-namic environments (e.g., Public Space, Sports, Party). This diversity ensures that models trained on Temporal-VIP must learn to generalize across different social rules rather than memorizing scene-specific biases. Fig. 4 details the distribution across these categories and the number of people per clip. The dataset predominantly features clips with 3 to 5 individuals. This distribution is intentional and aligns with sociological studies of small-group dynamics; groups of 3 to 5 people are large enough to exhibit complex social phenomena (such as shifting alliances, conversational turn-taking, and semantic dominance transfer) but small enough that individual behaviors remain distinct, avoiding the degradation into macroscopic crowd behavior analysis. Each clip is provided in a dual-format design: NPZ files containing standardized visual arrays and tracking metadata, and JSON files housing the hierarchical semantic annotations and rationales. V. E XPERIMENTS 
+
+In this section, we comprehensively evaluate the proposed VIP-Net framework on the newly introduced Temporal-VIP dataset. We first detail the experimental setup, including im-plementation specifics and evaluation metrics. Subsequently, we benchmark VIP-Net against a diverse array of state-of-the-art methods, ranging from heuristic baselines to advanced multi-modal large language models, to demonstrate its su-periority. We then present a fine-grained scene analysis to illustrate the model’s robustness across various social contexts. Furthermore, we conduct extensive ablation studies to isolate and quantify the contribution of each architectural component, modality, and learning strategy. Finally, we evaluate the quality of the generated natural language rationales, validating the effectiveness of our feature-guided LLM refinement process. 
+
+A. Experimental Setup 
+
+Implementation Details. We implement the proposed VIP-Net framework using PyTorch and conduct all experiments on a workstation equipped with two NVIDIA RTX 4090 GPUs. The model is trained for 50 epochs with a batch size of 16. We employ the Adam optimizer with a base learning rate of 5 × 10 −5 and a weight decay of 1 × 10 −4. To ensure stable convergence, we utilize a cosine annealing learning rate schedule with a linear warmup over the first 5 epochs. For the multi-component loss function, the empirical weights are set to λtext = 0 .5, λcont = 0 .3, and λreg = 0 .0005 based on our hyperparameter sensitivity analysis. 
+
+Evaluation Metrics. Following standard practices in impor-tant person identification [13], [14], we evaluate the quantita-tive performance using Rank-1, Rank-2, and Rank-3 accuracy metrics. Rank-k accuracy measures the percentage of test samples where the ground-truth VIP is present within the top-
+
+k predicted candidates. To assess the quality of the generated natural language rationales, we employ the SBERT [93] cosine IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 10                                            
+
+> TABLE II. Heuristic baseline performance on Temporal-VIP (Rank-1/2/3 accuracy, %). Centrality achieves the best performance among spatial baselines through geometric modeling, while VIP-Net’s temporal reasoning provides substantial improvements. Overall Indoor
+> Method R1 R2 R3 R1 R2 R3
+> Max Centrality 50.7 76.8 92.0 49.6 77.2 93.9 Max Area 49.3 76.9 94.0 47.3 76.8 94.8 Max Face Clarity 32.7 61.8 84.4 33.1 64.9 86.1
+> 67.3 83.2 94.1 68.9 84.2 97.8 VIP-Net (Ours) ↑16 .6↑6.3↑0.1↑19 .3↑7.0↑3.0
+
+similarity metric, which robustly measures the semantic align-ment between the generated descriptions and the ground-truth rationales. 
+
+B. Comparison with State-of-the-art Methods 1) Heuristic Baselines: To establish the inherent complex-ity of identifying visually important persons and to substantiate the necessity of temporal reasoning, we initially evaluate three parameter-free heuristic baselines. These baselines represent fundamental paradigms in visual importance assessment: the principle of Maximum Centrality based on geometric posi-tioning, the principle of Maximum Area derived from visual attention, and the principle of Maximum Face Clarity guided by focus-driven assessment. Table II demonstrates that the Maximum Centrality baseline, which operates through geometric modeling, achieves the highest performance among all spatial methods with a Rank-1 accuracy of 50.7%, thereby surpassing purely attention-based approaches. Nonetheless, VIP-Net attains a substantial im-provement of 16.6 percentage points over this geometric baseline. This result confirms that spatial positioning alone is insufficient to model the temporal dynamics that are essential for robust importance assessment in video. 
+
+2) SOTA Method Adaptations & Implementation Details: 
+
+Given the novel and emerging nature of the VIP identification task, there are no existing models directly tailored to solve it out-of-the-box. To establish a rigorous and comprehensive benchmark, we carefully adapt state-of-the-art methodologies from diverse paradigms. To ensure fairness, all learning-based baselines were re-trained or fine-tuned on the VIP dataset using their optimal hyper-parameter settings. 
+
+1) Static Image IP Baseline:  
+
+> •
+
+POINT [13]: As the seminal static image IP model, POINT infers importance based on spatial features and human-interactions within a single frame. We adapt it by extracting frame-level predictions across all video frames and uti-lizing a temporal majority-voting mechanism to aggregate the results into a video-level prediction. This serves to demonstrate the inherent limitations of neglecting temporal continuity in dynamic scenes. 
+
+2) Video Feature Representation Baseline:  
+
+> •
+
+MGFN [24]: Originally designed for video anomaly detec-tion using grid-level features, we critically adapt MGFN for person-level ranking. Specifically, we extract person-level RoI (Region of Interest) features across the video sequence.                                                                            
+
+> TABLE III. Comparison with state-of-the-art methods across overall and indoor subsets. VIP-Net demonstrates significant gains over the top baseline (Rank-1/2/3 accuracy, %). Bold formatting denotes the best results, while underlining indicates the runner-up. These findings underscore VIP-Net’s superiority and the critical role of temporal reasoning in VIP identification. Overall Indoor
+> Method Reference R1 R2 R3 R1 R2 R3
+> X-CLIP [100] ECCV’2022 23.0 50.1 80.5 24.4 53.0 84.5 BLIP-2 [26] ICML’2023 37.5 48.7 56.2 36.6 47.6 54.9 TinyLLaVA [27] arXiv’2024 49.5 70.9 89.9 46.1 71.0 90.5 ByteTrack [21] ECCV’2022 49.7 64.6 74.5 47.8 62.1 71.6 MGFN [24] AAAI’2023 50.5 67.1 87.4 50.7 67.9 90.2 Samba [23] CVPR’2025 52.0 77.8 92.1 51.2 78.9 94.0 POINT [13] FG’2018 53.9 79.1 93.5 51.8 80.4 95.1
+> 67.3 83.2 94.1 68.9 84.2 97.8 VIP-Net (Ours) —↑13 .4↑4.1↑0.6↑17 .1↑3.8↑2.7
+
+The original frame-level anomaly loss is replaced with an individual-level Cross-Entropy loss, forcing its glance-and-focus mechanism to evaluate person importance based on long-term dependencies rather than anomaly magnitude.  
+
+> •
+
+Samba [23]: A state-of-the-art Mamba-based framework for general video salient object detection (VSOD). We leverage its official predictive capabilities as a strong spatio-temporal saliency prior. To bridge the gap from pixel-level generic saliency to video person-level importance, we systematically adapt it via uniform keyframe sampling, frame-difference pseudo-flow generation for its original dual-stream input, heuristic intra-box saliency aggregation ( 0.7 × mean + 0 .3 ×
+
+max), and cross-frame top-k temporal pooling. 
+
+3) Heuristic Tracking Baseline:  
+
+> •
+
+ByteTrack [21]: To evaluate whether low-level kinematics alone can solve the VIP identification task, we adapt this generic multi-object tracker. We define a heuristic scoring function that aggregates tracking metrics, ranking identities based on their spatial centrality, average bounding-box scale, and temporal trajectory persistence. This tests the strict hy-pothesis that importance correlates directly with continuous, prominent visibility. 
+
+4) Vision-Language and Foundation Models: Large Vision-Language Models present strong zero-shot reasoning capabil-ities. We evaluated them by designing targeted prompts (e.g., 
+
+“Analyze the social interaction in this scene. Which person (identified by bounding box [ID]) is the visual center or most important?” ) applied frame-by-frame, followed by temporal confidence aggregation.  
+
+> •
+
+X-CLIP [100]: A video-text foundation model. We compute the contrastive similarity between the global video represen-tation and text prompts constructed for each detected person.  
+
+> •
+
+BLIP-2 [26] & TinyLLaVA [27]: A heavier vision-language pre-training model (3.7B) and a highly efficient Multimodal Large Language Model (3B), respectively. Both are adapted via sequential visual prompting, explicitly ask-ing the model to perform spatial reasoning and rank the visible identities based on interaction context. Table III presents the comprehensive performance com-parison. The results reveal several critical insights into the limitations of existing paradigms: IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 11  
+
+> •
+
+The Failure of Video-Text Models: X-CLIP performs poorly (23.0% Rank-1). This indicates that global video-text alignment is insufficient for fine-grained, instance-level social reasoning.  
+
+> •
+
+The Hallucination of MLLMs: While TinyLLaVA (49.5%) outperforms BLIP-2 (37.5%), both MLLMs struggle. Our qualitative analysis shows they often hallucinate social rela-tionships or overly rely on static spatial biases (e.g., always picking the person in the center), failing to track behavioral changes over time.  
+
+> •
+
+The Limits of Tracking and Feature Detectors: ByteTrack (49.7%), MGFN (50.5%), and Samba (52.0%) achieve mod-erate performance. While Samba translates general video saliency effectively, their collective lack of explicit seman-tic behavioral modeling (like conversational turn-taking or specific semantic gestures) prevents them from accurately resolving complex social hierarchies.  
+
+> •
+
+The Superiority of VIP-Net: VIP-Net achieves a state-of-the-art 67.3% Rank-1 accuracy, outperforming the best baseline (POINT, 53.9%) by a massive 13.4% absolute margin. This advantage is even more pronounced in Indoor scenes (68.9% vs. 51.8%, a 17.1% improvement), where social interactions (e.g., meetings, classrooms) heavily rely on subtle temporal cues like speaking and gesturing, which VIP-Net explicitly models. 
+
+C. Fine-grained Scene Analysis 
+
+To further demonstrate the robustness of VIP-Net and understand the underlying mechanisms of social importance, we conduct a fine-grained analysis across the 11 distinct scene categories in our benchmark. We categorize these scenes into three primary social dynamics: 
+
+1. Conversation-Driven Scenes (e.g., Meeting, Interview, Classroom): In these highly structured environments, social importance is predominantly dictated by verbal communica-tion and semantic dominance. Here, tracking-based methods (ByteTrack) and feature-based methods (MGFN, Samba) show severe degradation (often dropping below 45% Rank-1 ac-curacy, e.g., Samba scores only 46.9% on Daily and 38.6% on Social scenes) because they rely on spatial movement or holistic magnitude, which is minimal in seated discussions. Conversely, VIP-Net maintains high accuracy (over 70%) due to its dedicated lip movement module and temporal alignment, which effectively capture conversational turn-taking and sus-tained speaking. 
+
+2. Action-Driven Scenes (e.g., Sports, Performance): 
+
+In these dynamic environments, physical action and spa-tial prominence dictate importance. While MLLMs like TinyLLaVA struggle due to rapid motion blur and complex multi-person occlusions, VIP-Net excels by leveraging its 3D ResNet action encoder. The model successfully identifies the key player making a decisive move or the lead performer, demonstrating that its temporal modeling extends beyond mere speech to encompass semantic physical actions. 
+
+3. Unconstrained/Context-Driven Scenes (e.g., Public Space, Party): These scenes exhibit the highest degree of Temporal Importance Shift (TIS), as social focal points change rapidly without strict rules. Baseline models frequently suf-fer from “attention drift,” greedily assigning importance to whoever temporarily moves to the center of the frame. VIP-Net’s inter-personal relational modeling (via the Transformer encoder) proves crucial here, allowing it to contextualize brief spatial prominence against long-term behavioral patterns, thereby resisting spurious TIS. 
+
+D. Qualitative Analysis of Temporal Importance Shift 
+
+To explicitly validate our core claim—that VIP-Net essen-tially resolves the Temporal Importance Shift (TIS) problem— we qualitatively compare its temporal predictions against the strongest image-based IP baseline (POINT) and the most com-petitive video representation baselines (Samba and MGFN), specifically revisiting the motivating example shown earlier in Fig. 1 (e). As illustrated in this “Conference” scenario, during the initial frames of the video sequence, the seated executive (highlighted in the red box) is located centrally and occupies the spatial focal point. During this early static phase, baseline models correctly identify him as the VIP. However, as the temporal context unfolds, the standing woman on the right (highlighted in the blue oval) begins to speak and uses expres-sive hand gestures (indicated by the yellow boxes tracking her active movement). The true semantic dominance of the social event instantly transfers to her, making her the actual VIP of the clip. Faced with this TIS, the static baseline POINT continues to erroneously predict the seated executive, as its decision boundaries remain rigidly anchored to his spatial centrality. Similarly, the sequence-adapted MGFN and Samba baselines, while capable of aggregating temporal features and video-level saliency, fail to correctly re-assign the importance score because their generic feature magnitude evaluation cannot explicitly isolate and rank the sudden onset of conversational dynamics against spatial priors. In stark contrast, VIP-Net’s Temporal Importance Rectifier successfully tracks this se-mantic handover. By integrating the woman’s lip movement and action features with the contextual shift in the group’s visual attention, VIP-Net decisively and stably updates its VIP trajectory to her. This perfectly aligns with multi-dimensional human cognitive assessment, proving our framework’s capabil-ity to bridge the gap between static pixel saliency and dynamic social reasoning. 
+
+E. Ablation Studies 
+
+We establish the superiority of VIP-Net over existing methodologies and proceed to systematically analyze the con-tributions of individual components to elucidate the underlying sources of this performance advantage. 
+
+Modality Ablation Study. Removing the spatial modal-ity leads to a substantial performance drop (62.2% vs. 64.9%/65.9%), with multiple metrics notably lower, indicat-ing its important contribution. In contrast, the text modality exhibits milder degradation, maintaining competitive scores in select metrics. These results suggest that spatial cues play a key role in our model. IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 12                                                                                              
+
+> TABLE IV. Ablation study of VIP-Net on Temporal-VIP, breaking down modality encoders, feature cues, fusion variants, and learning strategies (Rank-1/2/3 accuracy, %). Each block isolates its component contribution, and bold numbers mark the best setting. RAFT denotes optical flow baseline. This ablation study confirms the critical role of temporal features, particularly lip movement, in achieving superior performance. Overall Indoor
+> Category Model Variant R1 R2 R3 R1 R2 R3
+> w/o Temporal 64.9 85.9 93.8 67.6 88.1 96.6 w/o Spatial 62.2 84.3 94.9 61.3 89.3 97.8 Modality Ablation w/o Text 65.9 85.7 96.4 63.8 88.9 97.3 w/o Area 58.9 80.3 92.9 56.3 84.7 96.3 w/o Clarity 61.4 84.9 94.3 62.1 87.9 96.6 Spatial Feature w/o Centrality 59.5 80.5 93.5 61.6 82.5 95.0 w/o Action 65.7 85.7 95.7 65.5 85.7 97.0 w/o Lip 55.9 77.3 89.5 57.1 80.6 95.3 Temporal Feature w/ RAFT 63.1 84.9 94.9 64.5 86.3 95.7 w/o Transformer 65.7 87.6 94.9 63.9 88.5 96.2 w/o MLP 66.0 84.1 94.1 63.7 82.7 94.1 Fusion Strategy w/o Gated 66.2 84.1 94.1 63.4 86.3 94.5 Learning Strategy w/o Contrastive 58.7 80.0 91.1 52.6 76.9 90.8
+> Complete Model VIP-Net (Ours) 67.3 83.2 94.1 68.9 84.2 97.8
+
+extbfFeature Component Analysis. Table IV reveals the relative importance of feature components: Lip Movement (11.4 point drop when removed) > Area (8.4 points) >
+
+Centrality (7.8 points) > Clarity (5.9 points) > Action (1.6 points). This validates our core hypothesis that spatio-temporal patterns jointly determine social importance, with conversa-tional behavior acting as the most critical social cue in human interactions. To verify that lip and action features encode semantic information beyond generic motion, we replace both with optical flow using RAFT [101]. The RAFT-based variant achieves 63.1% Rank-1, a 4.2-point drop from the full model (67.3%), confirming that VIP identification requires high-level semantic behavioral understanding rather than low-level raw motion cues. 
+
+Fusion Strategy Comparison. Different fusion strategies show varying effectiveness: Gated Fusion (66.2%) slightly out-performs MLP Fusion (66.0%), while removing Transformer Fusion reduces performance to 65.7%. The complete VIP-Net with Transformer Fusion achieves 67.3%. This demonstrates that while simple concatenation or gating provides reasonable performance, the multi-head attention mechanism in the Trans-former is essential for optimally aligning asynchronous spatial and temporal features across the video sequence. 
+
+Learning Strategy Analysis. Contrastive Learning shows significant importance, with its removal causing an 8.6-point performance drop (second only to Lip Movement’s impact). Mechanistically, the InfoNCE loss explicitly pushes apart the feature embeddings of the true VIP and the “second most important” person (the distractor). Without it, the model struggles to establish a clear margin of semantic dominance in crowded scenes, leading to ambiguous rankings. 
+
+Scene-Specific Performance. Indoor scenes favor spatial over temporal features: Spatial features improve (67.6% vs. 64.9%, 2.7 points higher) while Temporal features decline (61.3% vs. 62.2%, 0.9 points lower). This indicates that controlled environments (like offices) enhance appearance-based importance assessment, while diverse, unconstrained scenarios rely more heavily on behavioral dynamics. 
+
+F. Hyperparameter Sensitivity 
+
+We conduct systematic analysis to evaluate the sensitivity of the three learnable weights ( λtext , λcont , λreg ) in our multi-component loss function. Each weight is varied while keeping others at optimal values, measuring Rank-1 accuracy on the validation split. Fig. 5 illustrates the results. 
+
+Text Similarity Weight (λtext ): Optimal at 0.5, with moderate sensitivity. Performance peaks at 0.5 and degrades gracefully to 62–65% Rank-1 accuracy over the range 0.1–0.9. Insufficient weighting ( λtext < 0.3) reduces description quality, while excessive weighting yields diminishing returns. 
+
+Contrastive Learning Weight ( λcont ): The most critical parameter, optimal at 0.3. High sensitivity causes performance to drop to ∼37% at extremes (0.1 or 0.5), indicating the need for precise balancing to avoid feature space collapse or overpowering the classification loss. 
+
+Regularization Weight ( λreg ): Optimal at 0.0005, with a narrow effective range. Performance degrades above 0.001 due to over-regularization, highlighting the trade-off between overfitting prevention and model expressiveness. The optimal configuration ( λtext = 0 .5, λcont = 0 .3, λreg =0.0005 ) achieves 67.3% Rank-1 accuracy. Notably, contrastive learning requires careful tuning, while text similarity and regularization are more forgiving. 
+
+G. Description Quality Evaluation 
+
+Beyond mere localization, a significant contribution of our VIP-Net is its capacity to articulate the underlying reasons for identifying an individual as important. The generation of coherent and contextually grounded rationales fosters trans-parency and cultivates user trust in the decision-making pro-cesses of the model. We assess the linguistic quality and se-mantic accuracy of these explanations in relation to established ground-truth rationales, as presented in Table V. To rigorously quantify the rationale quality, we employ the Sentence-BERT (SBERT) [93] cosine similarity metric. This metric maps both the generated text and the ground truth into a dense semantic space, effectively capturing the nuanced meaning of social narratives beyond simple lexical overlap. We compare three rationale generation paradigms: 1) Baseline (Rule-based Templates): Utilizes predefined linguistic templates populated directly with the discrete feature cues (e.g., spatial prominence, speech activity) extracted by VIP-Net. While highly interpretable and grounded, these rigid templates score the lowest (0.3894 Mean Sim.) due to their inability to produce fluid conver-sational phrasing or synthesize complex narrative contexts. 2) Unguided LLM: Inputs only the raw video tokens and the predicted VIP bounding box trajectory into an MLLM. It improves the semantic similarity to 0.6020 by leveraging the vast pre-trained linguistic expressiveness of the model. However, without explicit structural guidance, the MLLM IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 13 0.3 0.4 0.5 0.6 0.7 
+
+> text
+> 35
+> 40
+> 45
+> 50
+> 55
+> 60
+> 65
+> 70
+> Rank -1 Accuracy (%)
+> Peak: 67.3%
+> text =0.5
+> Text Loss Weight
+> Paper Target (67.3%)
+
+(a) Text similarity weight λtext 0.1 0.2 0.3 0.4 0.5  
+
+> cont
+> 35
+> 40
+> 45
+> 50
+> 55
+> 60
+> 65
+> 70
+> Rank -1 Accuracy (%)
+> Peak: 67.3%
+> cont =0.3
+> Contrastive Loss Weight
+> Paper Target (67.3%)
+
+(b) Contrastive weight λcont 5e-05 1e-04 3e-04 5e-04 1e-03 2e-03 5e-03  
+
+> reg
+> 35
+> 40
+> 45
+> 50
+> 55
+> 60
+> 65
+> 70
+> Rank -1 Accuracy (%)
+> Peak: 67.3%
+> reg =5e-04
+> Regularization Weight
+> Paper Target (67.3%)
+
+(c) Regularization weight λreg 
+
+Fig. 5. Hyperparameter sensitivity analysis. Rank-1 accuracy (%) across different weight values for (a) text similarity weight λtext , (b) contrastive learning weight λcont , and (c) regularization weight λreg . Peak performance is marked for each parameter. 
+
+TABLE V. Comparison of description quality across different variants. Baseline uses structured descriptions generated from predicted VIP ID and ranked feature cues. Unguided LLM receives predicted VIP ID and raw video. Guided LLM additionally incorporates ranked feature cues. SBERT similarity measures semantic alignment, variance indicates consistency. Guided LLM achieves the highest mean similarity and improves all samples, outperforming unguided LLM and baseline. 
+
+Variant Inputs Mean Sim. Variance Sim. ∆ vs. Baseline 
+
+Baseline id,cues 0.3894 0.1008 —unguided LLM id,video 0.6020 0.0747 ↑ 0.2126 
+
+(+54.6%) 
+
+guided LLM id,video,cues 0.6333 0.0852 ↑ 0.2440 
+
+(+62.7%) 
+
+struggles to align its open-ended generation with the pre-cise physical cues that triggered the initial VIP prediction, occasionally leading to narrative hallucination. 3) Guided LLM (Ours): Our proposed feature-guided re-finement module integrates the raw video, the predicted VIP trajectory, and the structured multi-dimensional feature cues extracted by VIP-Net. This hybrid mechanism acts as a robust semantic anchor. Consequently, it achieves the highest semantic alignment (0.6333 Mean Sim., a 62.7% relative improvement over the baseline). This demonstrates that feeding deterministic feature rankings into an LLM successfully bridges the gap between low-level visual per-ception and high-level cognitive explanation. We evaluate three variants of description generation by benchmarking their performance using SBERT cosine similar-ity on the 1,850 validation videos where VIP-Net predicts the correct individual. A single checkpoint with the best validation Rank-1 score is frozen for evaluation. We first reconstruct the structured description from ranked feature cues and then optionally refine it with a local LLM that receives the video clip together with this initial description. The three settings correspond to using the structured description alone, the LLM without additional cues, and the LLM supplied with our fea-ture hints. As shown in Table V, the unguided LLM improves the average SBERT similarity over the structured description baseline and reduces variance, indicating that the second-stage model benefits from direct visual evidence. Incorporating our ranked cues yields a further 0.03 improvement over the Description: This is a classroom scene, where 
+
+the students are listening attentively… 
+
+Rating: Person 1. 
+
+Description: The reason Person 1 is an important 
+
+figure is that he stood up in class… 
+
+(a) Case 1: In the classroom, the model identifies the standing student as the key individual, visibly contrasting with seated peers. Description: This is a courtroom scene, where 
+
+there are three men and one woman.… 
+
+Rating: Person 1. 
+
+Description: In the courtroom, the person 1 stood 
+
+up, drawing everyone’s attention… 
+
+(b) Case 2: In the courtroom, the model detects the prin-cipal figure in the corner, whose action draws collective attention. 
+
+Fig. 6. Qualitative examples . This topic not only identifies key individuals but also elucidates the rationale behind their significance. Such elaboration enhances the understanding of the scene by providing contextual information that supports the interpretation of the visual content. 
+
+unguided LLM and enhances all samples in the guided setting, achieving an overall similarity of 0.63 with a variance of 0.09. Fig. 6 shows representative examples where the model correctly identifies the VIP and provides descriptions. IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 14 
+
+VI. C ONCLUSION 
+
+In this paper, we formally extend the frontier of important person identification from static images to dynamic video envi-ronments. We introduce and formulate the inherent challenge of Temporal Importance Shift (TIS)—demonstrating that an individual’s social prominence is rarely static and often evolves through complex interactions over time. To support rigorous research in this domain, we present Temporal-VIP , to the best of our knowledge, the first large-scale, fine-grained benchmark equipped with multi-dimensional rationale annotations. To ad-dress the limitations of existing spatial and pure tracking-based paradigms, we propose VIP-Net , a specialized multi-modal framework. VIP-Net distinctly decouples the task into rela-tional spatio-temporal dynamics modeling and feature-guided semantic rationale generation. Extensive empirical evaluations not only demonstrate VIP-Net’s substantial superiority over state-of-the-art multi-modal variants (achieving 67.3% Rank-1 accuracy, a significant 13.4% absolute gain), but also yield profound diagnostic insights. Crucially, our experiments prove that while Large Vision-Language Models possess vast seman-tic knowledge, they require deterministic, physical interaction cues as structural anchors to prevent reasoning hallucinations. Ultimately, this study bridges the cognitive gap between low-level temporal tracking and high-level social scene under-standing. Future work will naturally extend this paradigm to unconstrained, highly crowded environments (e.g., massive surveillance networks) and explore cross-camera cooperative social inference, further pushing the boundaries of explainable in human-centric analysis. REFERENCES [1] H. Zhang, A. Sun, W. Jing, and J. T. Zhou, “Temporal sentence ground-ing in videos: A survey and future directions,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 45, no. 8, pp. 10 443– 10 465, 2023. [2] J. Zhang, J. Fan, P. Ye, B. Zhang, H. Ye, B. Li, Y. Cai, and T. Chen, “Bridgenet: Comprehensive and effective feature interactions via bridge feature for multi-task dense predictions,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 47, no. 5, pp. 3657–3672, 2025. [3] Z. Zhu, J. Hou, H. Liu, H. Zeng, and J. Hou, “Learning efficient and effective trajectories for differential equation-based image restoration,” 
+
+IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [4] Z. Feng and S. Zhang, “Evolved hierarchical masking for self-supervised learning,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 47, no. 2, pp. 1013–1027, 2024. [5] R. Yan, L. Xie, J. Tang, X. Shu, and Q. Tian, “Higcin: Hierarchical graph-based cross inference network for group activity recognition,” 
+
+IEEE transactions on pattern analysis and machine intelligence ,vol. 45, no. 6, pp. 6955–6968, 2020. [6] S. Sun, X. Liang, S. Fan, W. Gao, and W. Gao, “Ve-bench: subjective-aligned benchmark suite for text-driven video editing quality assess-ment,” in Proceedings of the AAAI Conference on Artificial Intelligence ,vol. 39, no. 7, 2025, pp. 7105–7113. [7] L. Shang, Y. Zhang, Y. Deng, and D. Wang, “Multitec: a data-driven multimodal short video detection framework for healthcare misinformation on tiktok,” IEEE Transactions on Big Data , vol. 11, no. 5, pp. 2471–2488, 2025. [8] H. Liu, K. H. Tan, A. Kumar, S. K. Singh, and L. Chung, “Value co-creation in sports live streaming platforms: A microfoundations perspective,” IEEE Transactions on Engineering Management , vol. 71, pp. 12 674–12 685, 2022. [9] Z. Liu, Y. Rao, W. Zhao, J. Zhou, and J. Lu, “Efficient high-order spatial interactions for visual perception,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [10] M. Ye, J. Shen, G. Lin, T. Xiang, L. Shao, and S. C. Hoi, “Deep learning for person re-identification: A survey and outlook,” IEEE transactions on pattern analysis and machine intelligence , vol. 44, no. 6, pp. 2872–2893, 2021. [11] W. Zhang, J. Li, M. Xia, X. Gao, X. Tan, Y. Shi, Z. Huang, and G. Li, “Offsetnet: Towards efficient multiple object tracking, detection, and segmentation,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 47, no. 2, pp. 949–960, 2024. [12] S. Chi, H.-G. Chi, Q. Huang, and K. Ramani, “Infogcn++: Learning representation by predicting the future for online skeleton-based action recognition,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 47, no. 1, pp. 514–528, 2024. [13] W.-H. Li, B. Li, and W.-S. Zheng, “Personrank: Detecting important people in images,” in 2018 13th IEEE International Conference on Automatic Face & Gesture Recognition (FG 2018) . IEEE, 2018, pp. 234–241. [14] X. Wang, Z. Wang, T. Yamasaki, and W. Zeng, “Very important person localization in unconstrained conditions: A new benchmark,” in 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , vol. 35, no. 4, 2021, pp. 2809–2816. [15] S. Madan, S. Ghosh, L. R. Sookha, M. Ganaie, R. Subramanian, A. Dhall, and T. Gedeon, “Mip-gaf: A mllm-annotated benchmark for most important person localization and group context understanding,” in 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) . IEEE, 2025, pp. 1467–1476. [16] W. Kay, J. Carreira, K. Simonyan, B. Zhang, C. Hillier, S. Vijaya-narasimhan, F. Viola, T. Green, T. Back, P. Natsev et al. , “The kinetics human action video dataset,” arXiv preprint arXiv:1705.06950 , 2017. [17] C. Gu, C. Sun, D. A. Ross, C. Vondrick, C. Pantofaru, Y. Li, S. Vijayanarasimhan, G. Toderici, S. Ricco, R. Sukthankar et al. , “Ava: A video dataset of spatio-temporally localized atomic visual actions,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2018, pp. 6047–6056. [18] Y. Cui, C. Zeng, X. Zhao, Y. Yang, G. Wu, and L. Wang, “Sportsmot: A large multi-object tracking dataset in multiple sports scenes,” in 
+
+Proceedings of the IEEE/CVF international conference on computer vision , 2023, pp. 9921–9931. [19] Y. Ma, J. Ji, X. Sun, Y. Zhou, and R. Ji, “Towards local visual modeling for image captioning,” Pattern Recognition , vol. 138, p. 109420, 2023. [20] W. Zhai, P. Wu, K. Zhu, Y. Cao, F. Wu, and Z.-J. Zha, “Background activation suppression for weakly supervised object localization and semantic segmentation,” International Journal of Computer Vision , vol. 132, no. 3, pp. 750–775, 2024. [21] Y. Zhang, P. Sun, Y. Jiang, D. Yu, F. Weng, Z. Yuan, P. Luo, W. Liu, and X. Wang, “Bytetrack: Multi-object tracking by associating every detection box,” in European conference on computer vision . Springer, 2022, pp. 1–21. [22] J. Wu, J. Cao, L. Song, Y. Wang, M. Yang, and J. Yuan, “Track to detect and segment: An online multi-object tracker,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,2021, pp. 12 352–12 361. [23] J. He, K. Fu, X. Liu, and Q. Zhao, “Samba: A unified mamba-based framework for general salient object detection,” in Proceedings of the Computer Vision and Pattern Recognition Conference , 2025, pp. 25 314–25 324. [24] Y. Chen, Z. Liu, B. Zhang, W. Fok, X. Qi, and Y.-C. Wu, “Mgfn: Magnitude-contrastive glance-and-focus network for weakly-supervised video anomaly detection,” in Proceedings of the AAAI conference on artificial intelligence , vol. 37, no. 1, 2023, pp. 387–395. [25] X. Han, X. Wang, K. Jiang, W. Liu, R. Hu, X. Pan, and X. Xu, “Mutuality attribute makes better video anomaly detection,” in ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE, 2024, pp. 2670–2674. [26] J. Li, D. Li, S. Savarese, and S. Hoi, “Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models,” in International conference on machine learning . PMLR, 2023, pp. 19 730–19 742. [27] B. Zhou, Y. Hu, X. Weng, J. Jia, J. Luo, X. Liu, J. Wu, and L. Huang, “Tinyllava: A framework of small-scale large multimodal models,” 
+
+arXiv preprint arXiv:2402.14289 , 2024. [28] M. Ehsanpour, F. Saleh, S. Savarese, I. Reid, and H. Rezatofighi, “Jrdb-act: A large-scale dataset for spatio-temporal action, social group and activity detection,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2022, pp. 20 983–20 992. [29] J. Xu, T. Mei, T. Yao, and Y. Rui, “Msr-vtt: A large video description dataset for bridging video and language,” in Proceedings of the IEEE IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 15 
+
+conference on computer vision and pattern recognition , 2016, pp. 5288–5296. [30] S. Ghosh and A. Dhall, “Role of group level affect to find the most influential person in images,” in Proceedings of the European Conference on Computer Vision (ECCV) Workshops , 2018, pp. 518– 533. [31] W.-H. Li, F.-T. Hong, and W. Zheng, “Learning to learn relation for important people detection in still images,” 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 4998–5006, 2019. [32] F.-T. Hong, W.-H. Li, and W.-S. Zheng, “Learning to detect important people in unlabelled images for semi-supervised important people detection,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2020, pp. 4146–4154. [33] X. Wang, Z. Wang, W. Liu, X. Xu, Q. Zhao, and S. Satoh, “Towards causality inference for very important person localization,” in Proceed-ings of the 30th ACM International Conference on Multimedia , 2022, pp. 6618–6626. [34] A. Rampuria, K. P. Nayak, K. V. Thakare, T. Joshi, A. D. Singh, H. Park, H. Choi, D. P. Dogra, and I.-J. Kim, “Impact: Interpretable most important person analysis and classification using transformer-based models,” in Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision , 2026, pp. 8179–8187. [35] Y. Chang, X. Wang, J. Wang, Y. Wu, L. Yang, K. Zhu, H. Chen, X. Yi, C. Wang, Y. Wang et al. , “A survey on evaluation of large language models,” ACM transactions on intelligent systems and technology ,vol. 15, no. 3, pp. 1–45, 2024. [36] K. He, G. Gkioxari, P. Doll´ ar, and R. Girshick, “Mask r-cnn,” in 
+
+Proceedings of the IEEE international conference on computer vision ,2017, pp. 2961–2969. [37] H. Zhao, W. Min, J. Xu, Q. Han, W. Li, Q. Wang, Z. Yang, and L. Zhou, “Space: Finding key-speaker in complex multi-person scenes,” IEEE Transactions on Emerging Topics in Computing , vol. 10, no. 3, pp. 1645–1656, 2021. [38] N. Wojke, A. Bewley, and D. Paulus, “Simple online and realtime tracking with a deep association metric,” in 2017 IEEE international conference on image processing (ICIP) . IEEE, 2017, pp. 3645–3649. [39] T. Meinhardt, A. Kirillov, L. Leal-Taixe, and C. Feichtenhofer, “Track-former: Multi-object tracking with transformers,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,2022, pp. 8844–8854. [40] J. Cao, J. Pang, X. Weng, R. Khirodkar, and K. Kitani, “Observation-centric sort: Rethinking sort for robust multi-object tracking,” in 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2023, pp. 9686–9696. [41] P. Dendorfer, A. Osep, A. Milan, K. Schindler, D. Cremers, I. Reid, S. Roth, and L. Leal-Taix´ e, “Motchallenge: A benchmark for single-camera multiple target tracking: P. dendorfer et al.” International Journal of Computer Vision , vol. 129, no. 4, pp. 845–881, 2021. [42] C. Feichtenhofer, H. Fan, J. Malik, and K. He, “Slowfast networks for video recognition,” in Proceedings of the IEEE/CVF international conference on computer vision , 2019, pp. 6202–6211. [43] J. Carreira and A. Zisserman, “Quo vadis, action recognition? a new model and the kinetics dataset,” in proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2017, pp. 6299–6308. [44] A. Arnab, M. Dehghani, G. Heigold, C. Sun, M. Luˇ ci´ c, and C. Schmid, “Vivit: A video vision transformer,” in Proceedings of the IEEE/CVF international conference on computer vision , 2021, pp. 6836–6846. [45] G. Bertasius, H. Wang, and L. Torresani, “Is space-time attention all you need for video understanding?” in Icml , vol. 2, no. 3, 2021, p. 4. [46] Z. Tong, Y. Song, J. Wang, and L. Wang, “Videomae: Masked autoencoders are data-efficient learners for self-supervised video pre-training,” Advances in neural information processing systems , vol. 35, pp. 10 078–10 093, 2022. [47] K. Soomro, A. R. Zamir, and M. Shah, “Ucf101: A dataset of 101 human actions classes from videos in the wild,” arXiv preprint arXiv:1212.0402 , 2012. [48] R. Goyal, S. Ebrahimi Kahou, V. Michalski, J. Materzynska, S. West-phal, H. Kim, V. Haenel, I. Fruend, P. Yianilos, M. Mueller-Freitag 
+
+et al. , “The” something something” video database for learning and evaluating visual common sense,” in Proceedings of the IEEE interna-tional conference on computer vision , 2017, pp. 5842–5850. [49] L.-H. Chen, S. Lu, A. Zeng, H. Zhang, B. Wang, R. Zhang, and L. Zhang, “Motionllm: Understanding human behaviors from human motions and videos,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [50] Y.-X. Peng, Q. Yang, Y.-M. Tang, S. Fu, K.-Y. Lin, X. Wei, and W.-S. Zheng, “Actionart: Advancing multimodal large models for fine-grained human-centric video understanding,” arXiv preprint arXiv:2504.18152 ,2025. [51] M. Oquab, T. Darcet, T. Moutakanni, H. Vo, M. Szafraniec, V. Khali-dov, P. Fernandez, D. Haziza, F. Massa, A. El-Nouby et al. , “Dinov2: Learning robust visual features without supervision,” arXiv preprint arXiv:2304.07193 , 2023. [52] A. Kirillov, E. Mintun, N. Ravi, H. Mao, C. Rolland, L. Gustafson, T. Xiao, S. Whitehead, A. C. Berg, W.-Y. Lo et al. , “Segment anything,” in Proceedings of the IEEE/CVF international conference on computer vision , 2023, pp. 4015–4026. [53] F. Liu, Y. Liu, Y. Kong, K. Xu, L. Zhang, B. Yin, G. Hancke, and R. Lau, “Referring image segmentation using text supervision,” in 
+
+Proceedings of the IEEE/CVF international conference on computer vision , 2023, pp. 22 124–22 134. [54] R. Girdhar, J. Carreira, C. Doersch, and A. Zisserman, “Video action transformer network,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2019, pp. 244–253. [55] T. Bagautdinov, A. Alahi, F. Fleuret, P. Fua, and S. Savarese, “Social scene understanding: End-to-end multi-person action localization and collective activity recognition,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2017, pp. 4315–4324. [56] J. Wu, L. Wang, L. Wang, J. Guo, and G. Wu, “Learning actor relation graphs for group activity recognition,” in Proceedings of the IEEE/CVF Conference on computer vision and pattern recognition , 2019, pp. 9964–9974. [57] Y. Wang, S. Zhou, Y. Liu, K. Wang, F. Fang, and H. Qian, “Con-gnn: Context-consistent cross-graph neural network for group emotion recognition in the wild,” Information Sciences , vol. 610, pp. 707–724, 2022. [58] X. Liu, W. Liu, M. Zhang, J. Chen, L. Gao, C. Yan, and T. Mei, “So-cial relation recognition from videos via multi-scale spatial-temporal reasoning,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2019, pp. 3566–3574. [59] Q. Sun, B. Schiele, and M. Fritz, “A domain based approach to social relation recognition,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2017, pp. 3481–3490. [60] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark et al. , “Learning transferable visual models from natural language supervision,” in International conference on machine learning . PmLR, 2021, pp. 8748–8763. [61] J. Li, D. Li, C. Xiong, and S. Hoi, “Blip: Bootstrapping language-image pre-training for unified vision-language understanding and generation,” in International conference on machine learning . PMLR, 2022, pp. 12 888–12 900. [62] W. Dai, J. Li, D. Li, A. Tiong, J. Zhao, W. Wang, B. Li, P. N. Fung, and S. Hoi, “Instructblip: Towards general-purpose vision-language models with instruction tuning,” Advances in neural information processing systems , vol. 36, pp. 49 250–49 267, 2023. [63] H. Liu, C. Li, Y. Li, and Y. J. Lee, “Improved baselines with visual instruction tuning,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2024, pp. 26 296–26 306. [64] J. Bai, S. Bai, S. Yang, S. Wang, S. Tan, P. Wang, J. Lin, C. Zhou, and J. Q.-V. Zhou, “A versatile vision-language model for un-derstanding, localization, text reading, and beyond,” arXiv preprint arXiv:2308.12966 , vol. 6, p. 3, 2023. [65] P. Jin, R. Takanobu, W. Zhang, X. Cao, and L. Yuan, “Chat-univi: Unified visual representation empowers large language models with image and video understanding,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 13 700–13 710. [66] G. Xu, P. Jin, Z. Wu, H. Li, Y. Song, L. Sun, and L. Yuan, “Llava-cot: Let vision language models reason step-by-step,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2025, pp. 2087–2098. [67] A. Miech, D. Zhukov, J.-B. Alayrac, M. Tapaswi, I. Laptev, and J. Sivic, “Howto100m: Learning a text-video embedding by watching hundred million narrated video clips,” in Proceedings of the IEEE/CVF international conference on computer vision , 2019, pp. 2630–2640. [68] L. Zhu and Y. Yang, “Actbert: Learning global-local video-text repre-sentations,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 8746–8755. [69] M. Bain, A. Nagrani, G. Varol, and A. Zisserman, “Frozen in time: A joint video and image encoder for end-to-end retrieval,” in Proceedings of the IEEE/CVF international conference on computer vision , 2021, pp. 1728–1738. IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE (UNDER REVIEW) 16 
+
+[70] H. Xu, G. Ghosh, P.-Y. Huang, D. Okhonko, A. Aghajanyan, F. Metze, L. Zettlemoyer, and C. Feichtenhofer, “Videoclip: Contrastive pre-training for zero-shot video-text understanding,” in Proceedings of the 2021 conference on empirical methods in natural language processing ,2021, pp. 6787–6800. [71] B. Zhang, K. Li, Z. Cheng, Z. Hu, Y. Yuan, G. Chen, S. Leng, Y. Jiang, H. Zhang, X. Li et al. , “Videollama 3: Frontier multimodal foundation models for image and video understanding,” arXiv preprint arXiv:2501.13106 , 2025. [72] X. Li, Y. Wang, J. Yu, X. Zeng, Y. Zhu, H. Huang, J. Gao, K. Li, Y. He, C. Wang et al. , “Videochat-flash: Hierarchical compression for long-context video modeling,” arXiv preprint arXiv:2501.00574 , 2024. [73] S. Ren, L. Yao, S. Li, X. Sun, and L. Hou, “Timechat: A time-sensitive multimodal large language model for long video understanding,” in 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 14 313–14 323. [74] B. Lin, Y. Ye, B. Zhu, J. Cui, M. Ning, P. Jin, and L. Yuan, “Video-llava: Learning united visual representation by alignment before pro-jection,” in Proceedings of the 2024 conference on empirical methods in natural language processing , 2024, pp. 5971–5984. [75] H. Li, J. Chen, Z. Wei, S. Huang, T. Hui, J. Gao, X. Wei, and S. Liu, “Llava-st: A multimodal large language model for fine-grained spatial-temporal understanding,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2025, pp. 8592–8603. [76] M. Maaz, H. Rasheed, S. Khan, and F. Khan, “Video-chatgpt: Towards detailed video understanding via large vision and language models,” in Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2024, pp. 12 585– 12 602. [77] Y. Wang, K. Li, X. Li, J. Yu, Y. He, G. Chen, B. Pei, R. Zheng, Z. Wang, Y. Shi et al. , “Internvideo2: Scaling foundation models for multimodal video understanding,” in European conference on computer vision . Springer, 2024, pp. 396–416. [78] L. Chen, X. Wei, J. Li, X. Dong, P. Zhang, Y. Zang, Z. Chen, H. Duan, B. Lin, Z. Tang et al. , “Sharegpt4video: Improving video understanding and generation with better captions,” Advances in Neural Information Processing Systems , vol. 37, pp. 19 472–19 495, 2024. [79] C. Fu, Y. Dai, Y. Luo, L. Li, S. Ren, R. Zhang, Z. Wang, C. Zhou, Y. Shen, M. Zhang et al. , “Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis,” in 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2025, pp. 24 108–24 118. [80] H. Duan, J. Yang, Y. Qiao, X. Fang, L. Chen, Y. Liu, X. Dong, Y. Zang, P. Zhang, J. Wang et al. , “Vlmevalkit: An open-source toolkit for evaluating large multi-modality models,” in Proceedings of the 32nd ACM international conference on multimedia , 2024, pp. 11 198–11 201. [81] Y. Tang, J. Bi, S. Xu, L. Song, S. Liang, T. Wang, D. Zhang, J. An, J. Lin, R. Zhu et al. , “Video understanding with large language models: A survey,” IEEE Transactions on Circuits and Systems for Video Technology , 2025. [82] Z. Qin, R. Zheng, Y. Wang, T. Li, Y. Yuan, J. Chen, and L. Wang, “Humansense: From multimodal perception to empathetic context-aware responses through reasoning mllms,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 40, no. 30, 2026, pp. 24 973– 24 981. [83] C. Sun, A. Myers, C. Vondrick, K. Murphy, and C. Schmid, “Videobert: A joint model for video and language representation learning,” in 
+
+Proceedings of the IEEE/CVF international conference on computer vision , 2019, pp. 7464–7473. [84] R. Qian, X. Dong, P. Zhang, Y. Zang, S. Ding, D. Lin, and J. Wang, “Streaming long video understanding with large language models,” 
+
+Advances in Neural Information Processing Systems , vol. 37, pp. 119 336–119 360, 2024. [85] J. Ye, Z. Wang, H. Sun, K. Chandrasegaran, Z. Durante, C. Eyzaguirre, Y. Bisk, J. C. Niebles, E. Adeli, L. Fei-Fei et al. , “Re-thinking temporal search for long-form video understanding,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2025, pp. 8579–8591. [86] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra, “Grad-cam: Visual explanations from deep networks via gradient-based localization,” in Proceedings of the IEEE international conference on computer vision , 2017, pp. 618–626. [87] M. T. Ribeiro, S. Singh, and C. Guestrin, “” why should i trust you?” explaining the predictions of any classifier,” in Proceedings of the 22nd ACM SIGKDD international conference on knowledge discovery and data mining , 2016, pp. 1135–1144. [88] H. Chefer, S. Gur, and L. Wolf, “Transformer interpretability beyond attention visualization,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2021, pp. 782–791. [89] S. Sun, W. An, F. Tian, F. Nan, Q. Liu, J. Liu, N. Shah, and P. Chen, “A review of multimodal explainable artificial intelligence: Past, present and future,” arXiv preprint arXiv:2412.14056 , 2024. [90] H. Tan and M. Bansal, “Lxmert: Learning cross-modality encoder representations from transformers,” in Proceedings of the 2019 con-ference on empirical methods in natural language processing and the 9th international joint conference on natural language processing (EMNLP-IJCNLP) , 2019, pp. 5100–5111. [91] S. Yan, Y. Xiong, and D. Lin, “Spatial temporal graph convolutional networks for skeleton-based action recognition,” in Proceedings of the AAAI conference on artificial intelligence , vol. 32, no. 1, 2018. [92] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly et al. ,“An image is worth 16x16 words: Transformers for image recognition at scale,” arXiv preprint arXiv:2010.11929 , 2020. [93] N. Reimers and I. Gurevych, “Sentence-bert: Sentence embeddings using siamese bert-networks,” in Proceedings of the 2019 conference on empirical methods in natural language processing and the 9th in-ternational joint conference on natural language processing (EMNLP-IJCNLP) , 2019, pp. 3982–3992. [94] C. Lugaresi, J. Tang, H. Nash, C. McClanahan, E. Uboweja, M. Hays, F. Zhang, C.-L. Chang, M. G. Yong, J. Lee et al. , “Mediapipe: A framework for building perception pipelines,” arXiv preprint arXiv:1906.08172 , 2019. [95] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” 
+
+Advances in neural information processing systems , vol. 30, 2017. [96] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “Bert: Pre-training of deep bidirectional transformers for language understanding,” in 
+
+Proceedings of the 2019 conference of the North American chapter of the association for computational linguistics: human language technologies, volume 1 (long and short papers) , 2019, pp. 4171–4186. [97] X. Wang, R. Girshick, A. Gupta, and K. He, “Non-local neural networks,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2018, pp. 7794–7803. [98] A. v. d. Oord, Y. Li, and O. Vinyals, “Representation learning with contrastive predictive coding,” arXiv preprint arXiv:1807.03748 , 2018. [99] M. L. McHugh, “Interrater reliability: the kappa statistic,” Biochemia medica , vol. 22, no. 3, pp. 276–282, 2012. [100] B. Ni, H. Peng, M. Chen, S. Zhang, G. Meng, J. Fu, S. Xiang, and H. Ling, “Expanding language-image pretrained models for gen-eral video recognition,” in European conference on computer vision .Springer, 2022, pp. 1–18. [101] Z. Teed and J. Deng, “Raft: Recurrent all-pairs field transforms for optical flow,” in European conference on computer vision . Springer, 2020, pp. 402–419.

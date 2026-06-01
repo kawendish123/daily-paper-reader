@@ -1,0 +1,1316 @@
+Title: TracktorLive: an integrated real-time object tracking and response system
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.03.12.711471v2.full.pdf
+
+Number of Pages: 22
+
+Markdown Content:
+TracktorLive : an integrated real -time object tracking and response system 1
+
+Pranav Minasandra 1,* , Vivek H . Sridhar 1,2 ,3 ,* , Dominique G. Roche 4, Isaac Planas -Sitj à5,6 2
+
+> 1
+
+Department for the Ecology of Animal Societies, Max Planck Institute of Animal Behavior, Konstanz 3
+
+(78467), Germany 4
+
+> 2
+
+Department of Biology, University of Washington, Seattle, WA, USA 5
+
+> 3
+
+Department of Biology, University of Konstanz , Konstanz (78464) , Germany 6
+
+> 4
+
+Institut de biologie, Université de Neuchâtel, Neuchâtel, Switzerland (CH 2000) 7
+
+> 5
+
+RIKEN Center for Interdisciplinary Theoretical and Mathematical Sciences (iTHEMS) Wako, Saitama 351 -8
+
+0198, Japan 9
+
+> 6
+
+Department of Biological Sciences, Tokyo Metropolitan University, 1 -1 Minami -Osawa, Hachioji, Tokyo 10 
+
+192 -0397, Japan 11 
+
+(*equal contribution) 12 
+
+Correspondence to: pminasandra@ab.mpg.de and isaac.planassitja@riken.jp 13 
+
+Abstract 14 
+
+Real -time tracking and automated response systems are essential for standardising 15 
+
+experiments, reducing observer bias, and improving reproducibility in studies of 16 
+
+movement and behaviour. However, existing solutions face significant challenges: AI -17 
+
+based tracking systems require expensive hardware and impose computational delays, 18 
+
+creating challenges for closed -loop experiments; existing real -time tracking tools lack 19 
+
+standardised implementations for response delivery; and steep learning curves limit 20 
+
+accessibility for users without programming or computer vision expertise. Here, we 21 
+
+introduce TracktorLive, an open -source Python package designed to overcome these 22 
+
+challenges through concurrency and a modular, ‘cassette’ -based architecture. 23 
+
+TracktorLive leverages traditional computer vision techniques to perform image -based 24 
+
+object detection without the need for expensive hardware or deep learning. By 25 
+
+parallelizing object tracking and response delivery into separate , concurrent server and 26 
+
+client processes, the software minimizes frame processing time, enabling rapid, real -time 27 
+
+analysis and response delivery. User -friendly 'cassettes' —portable code snippets that 28 
+
+can be copy -pasted into scripts —enable users with minimal programming experience to 29 
+
+implement complex workflows for use in experiments and practical applications. We 30 
+
+demonstrate TracktorLive's utility through several applications, including microcontroller -31 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+based stimulus delivery for location -dependent manipulations; conditional video recording 32 
+
+that activates only during events of interest; kinematic -based response triggering using 33 
+
+real -time velocity computations; and multi -cassette experimental designs combining 34 
+
+multiple functionalities. Detailed tutorials are provided to familiarize users with 35 
+
+TracktorLive's operation and functionality, and a growing library of cassettes supports 36 
+
+diverse applications for processing both real -time and pre -recorded video . We validated 37 
+
+the software by comparing its response timing to human experimenters in a stimulus 38 
+
+delivery task involving two fish species, where TracktorLive demonstrated consistently 39 
+
+higher accuracy and lower variability, particularly for fast -moving subjects. Beyond 40 
+
+experimental biology, TracktorLive's unique architecture and versatility could support 41 
+
+many different applications in fields ranging from neuroscience to wildlife management. 42 
+
+As an open -source software combining accessibility, modularity, and computational 43 
+
+efficiency, TracktorLive can help democratize real -time tracking and automated response 44 
+
+systems across disciplines. 45  
+
+> Key words: animal, automation, behaviour, cell, computer vision, kinematics, movement, reproducibility,
+
+46 
+
+> experimental design
+
+47 
+
+1. Introduction 48 
+
+Data collection during studies involving movement and behaviour often relies on human 49 
+
+intervention and direct observation, which introduces bias (Box 1), can lead to 50 
+
+experimenter -driven disturbances  [1 –3] , and requires a significant investment of time and 51 
+
+effort on the part of the experimenter. A common approach to increasing measurement 52 
+
+accuracy and reducing bias is to record subjects on video and implement post hoc 53 
+
+tracking using manual or automated solutions  [4 –6] . However, many experiments also 54 
+
+necessitate dynamic interactivity between the experimenter, the arena, and the subjects. 55 
+
+For instance, a shrew may need to be released into a maze at a specific time, and a 56 
+
+reward dispensed if it attempts to solve the maze [7] . Similarly, a stimulus might need to 57 
+
+be delivered when a school of fish enters a specific area of the experimental arena [8,9] .58 
+
+In more complex setups, a continuous display might need to be updated dynamically so 59 
+
+an insect perceives simulated movement in a virtual landscape [10,11] . Such experiments 60 
+
+will benefit from real -time tracking and automated responses [12,13] , which offer a 61 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+promising approach to standardizing experiments, reducing observer bias, and improving 62 
+
+experimental efficiency and reproducibility. 63 
+
+64 
+
+In the last fifteen years, major advances have been made in tracking the positions of cells 65 
+
+[14,15] and animals  [16 –22]  from video data. These tracking tools have helped overcome 66 
+
+the constraints of traditional observational methods and resulted in a bloom of proprietary 67 
+
+and open -source solutions in fields ranging from experimental biology to pest 68 
+
+management  [16,23 –26] .69 
+
+70 
+
+Recent advances in automated, image -based tracking have resulted in the development 71 
+
+of a host of tracking techniques, both with and without Artificial Intelligence ( AI ). However, 72 
+
+tools are lacking that allow experimenters to design a response system that can decide 73 
+
+on and execute real -time responses based on the tracked locations of objects in video. 74 
+
+When researchers have had to adopt automated response delivery systems, they have 75 
+
+typically developed a specific solution —such as the use of infrared beams or RFID tags —76 
+
+that may not be applicable to other experimental setups [12,27,28] . Most recently, 77 
+
+methods focussing specifically on real -time animal tracking have become available, which 78 
+
+rely on deep learning -based approaches [21,29,30] . While highly accurate and robust, 79 
+
+these solutions are computationally intensive and may impose a recurrent lag for 80 
+
+processing each frame. As a result, AI -based tracking has improved post hoc analyses. 81 
+
+However, numerous challenges need to be overcome for their widespread applicability in 82 
+
+closed -loop experiments, where stimuli must be delivered immediately in response to 83 
+
+location or behavioural changes, particularly when conducted on lower -end hardware. 84 
+
+Some real -time tracking software can interface with external hardware, such as 85 
+
+Raspberry Pi or Arduino boards, to facilitate stimulus delivery [9,26,29] , but these systems 86 
+
+are often designed for specific experimental setups and lack standardised 87 
+
+implementations for closed -loop experiments, limiting their generalisability, accessibility, 88 
+
+and broader adoption. 89 
+
+90 
+
+Key challenges standing in the way of a generalisable, real -time tracking and response 91 
+
+software are (i) the computational overhead incurred by AI -based programs for 92 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+consecutive tracking and response operations at each frame, both of which can be time -93 
+
+consuming steps requiring expensive hardware; and (ii) the steep learning curve that 94 
+
+must be mastered by researchers, often with no experience in computer vision, who must 95 
+
+learn to use existing libraries and program actions in a way that harmonises with 96 
+
+computer -vision -based tracking algorithm s.97 
+
+98 
+
+Here, we introduce TracktorLive, an open -source python package that uses concurrency 99 
+
+(the ability to execute more than one program or task simultaneously) and a modular, 100 
+
+‘cassette’ -based approach, to overcome these challenges. We elaborate on 101 
+
+TracktorLive’s architecture and use (Section 2) ; detail several examples of applications 102 
+
+(Section 3) ; discuss its strengths, limitations, and future prospects (Sections 4 and 5); 103 
+
+and compare its performance with that of human experimenters (Supplementary 104 
+
+Information) .105 
+
+106 
+
+Box 1. Reducing observer bias in experimental studies involving animal 
+
+movement and behaviour 
+
+Minimizing observer bias has been a long -standing challenge for studies involving 
+
+animal movement and behaviour —in ecology, medicine, neuroscience, and 
+
+experimental biology, among other fields  [31 –33] . In particular, data collection during 
+
+behavioural experiments often relies on direct observation, which is prone to bias and 
+
+experimenter -driven disturbances  [1 –3] . A common approach for reducing these effects 
+
+is video recording experiments to avoid the presence of an observer, and using ‘blind’ 
+
+protocols, in which the experimenter is unaware of a subject’s identity and treatment 
+
+group  [2,34 –36] .
+
+Despite the benefits of blind protocols  [32,33,37 –39] , blinding is often impractical —for 
+
+example, when a single researcher runs an experiment, or in field conditions where time 
+
+and resources to conduct experiments are limited. Similarly, the presence of an 
+
+experimenter near test animals is sometimes unavoida ble, particularly when a stimulus 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+must be presented or triggered —for instance, when deploying a decoy predator to elicit 
+
+an escape response [8,40] , or for delivering food as positive reinforcement [41] . Even 
+
+when a stimulus is operated remotely , experimenters may still introduce bias due to 
+
+individual variability in training and experience, their subjective perceptions and 
+
+interpretations of animal behaviours, and variability in reaction times when triggering 
+
+stimuli. Additionally, subtle gender biases have been documented among 
+
+experi menters, leading to different behavioural outcomes in test subjects [42,43] . Given 
+
+these challenges, real -time tracking and automated stimulus delivery offer a promising 
+
+approach to standardizing experiments and reducing observer bias . See 
+
+Supplementary Information for an experimental comparison of human -mediated and 
+
+automated response delivery using an early version of TracktorLive. The results show 
+
+a clear benefit of using automated response delivery, which reduced the experimental 
+
+error within and among trials (Fig. S3) .
+
+2. Software 107 
+
+2.1. How TracktorLive works (software architecture) 108 
+
+TracktorLive is available for installation as a one -command pip -installable python 109 
+
+package ( pip install tracktorlive ). As a fully -fledged python package, the 110 
+
+capabilities of TracktorLive are vast. To fully leverage this growing range of capabilities, 111 
+
+TracktorLive is designed with a command -line focus, avoiding users and developers 112 
+
+being restricted by operating -system specific norms in graphics. TracktorLive is primarily 113 
+
+designed for GNU/Linux operating systems like Ubuntu or Pop! OS, but the software, the 114 
+
+examples, and the ‘cassettes’ (see below) have all been installed and tested on Windows 115 
+
+11 (using the Windows Subsystem for Linux, WSL). Detailed installation instructions and 116 
+
+relevant notes for all operating systems are available on the GitHub repository. 117 
+
+118 
+
+The utility of TracktorLive is derived from three important design choices to overcome key 119 
+
+challenges of implementing real -time tracking and response software. 120 
+
+121 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+First, at its core, TracktorLive runs Tracktor [16] , an image -based object detection and 122 
+
+tracking freeware that does not rely on deep -learning. Instead, Tracktor adopts traditional 123 
+
+computer vision techniques including adaptive thresholding (to segment the object of 124 
+
+interest from the background) and the Hungarian algorithm (to link individual identities 125 
+
+between frames), making it relatively lightweight and eliminating the need for expensive 126 
+
+hardware or specialised user training. Thanks to Tracktor’s minimalistic design, 127 
+
+TracktorLive can easily be expanded with additional pre -processing steps such as 128 
+
+masking and background subtraction to improve tracking performance. 129 
+
+130 
+
+Second, TracktorLive parallelises object tracking and actions through a semaphore -131 
+
+protected shared memory architecture, which substantially reduces the time taken for 132 
+
+processing each incoming video frame (Fig. 1). ‘Semaphore’ locks prevent multiple 133 
+
+parallel processes from simultaneously trying to write or read data from the shared 134 
+
+memory (in what are called ‘race’ conditions), ensuring that only one process has access 135 
+
+to tracking data at any time. The primary parallel process, a ‘Tracktor Server’, handles all 136 
+
+tasks related to object tracking in incoming video frames, while separate parallel 137 
+
+processes (‘Tracktor Clients’) are initiated to adjudicate response delivery. As a result of 138 
+
+this parallelisation, real -time tracking and response is possible without incurring 139 
+
+significant computational delay between consecutive frames. 140 
+
+141 
+
+Third, TracktorLive is readily accessible to those unfamiliar with computer vision or 142 
+
+advanced programming. The software has been designed to work with ‘cassettes’. 143 
+
+Cassettes are small, portable snippets of code designed to be ‘dropped in’ scripts to 144 
+
+achieve particular tasks (Fig. 2), such as video processing and response delivery. 145 
+
+TracktorLive includes a command -line utility that automates simple tasks and circumvents 146 
+
+the need for writing code for basic applications of the software (Fig. 2). The software also 147 
+
+comes with a graphical user interface (GUI) that facilitate s tuning the object detection and 148 
+
+segmentation parameters prior to tracking. These features make implementing real -time 149 
+
+tracking and responses accessible to users with minimal experience with the python 150 
+
+programming language. A detailed description of TracktorLive’s architecture and design 151 
+
+is provided as Supplementary Information and in Fig. S1 .152 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+153 
+
+2.2. Running TracktorLive 154 
+
+The standard way of running TracktorLive is to write python scripts (Fig s. 2 and S2 ) that 155 
+
+declare a Tracktor Server (which does all the object tracking in parallel, behind the 156 
+
+scenes) and, optionally, a number of Tracktor Clients, which handle response delivery. 157 
+
+‘Cassettes’ are modular code snippets that can be copy -pasted into scripts and stacked 158 
+
+in any user -defined order to change the behaviour of the program to achieve specific 159 
+
+goals. We currently provide over 30 cassettes for a broad range of applications (Table 1). 160 
+
+161 
+
+The behaviours of both the Tracktor Server and Tracktor Clients are fully programmable 162 
+
+by inserting cassettes into the script. Experienced users and developers can easily 163 
+
+expand existing cassettes and create new ones to accomplish additional tasks. In the 164 
+
+spirit of open -source software, we explicitly welcome cassette contributions from users to 165 
+
+be added to the Library of Cassettes. Cassette creators are specified and credited at the 166 
+
+start of the code for each cassette. We expect TracktorLive’s capabilities to increase 167 
+
+further as the community begins to adopt it and more cassettes are contributed. 168 
+
+3. Applications 169 
+
+Applications of TracktorLive’s real -time capabilities are vast, ranging from stimulus 170 
+
+delivery when objects are in a given location or perform certain behaviours; recording and 171 
+
+tracking movements only under specific conditions; live plotting data as an experiment 172 
+
+unfolds; and activating mechanisms to open doors or deliver food; to implementing 173 
+
+conditional workflows to alert experimenters by email or phone (Table 1). 174 
+
+175 
+
+Below, we briefly detail four examples of common applications in experimental scenarios 176 
+
+(Fig. 3). Python scripts for these examples are available on the  TracktorLive GitHub 177 
+
+repository .178 
+
+179 
+
+Example 3. 1. Real -time experimental manipulations with microcontrollers 180 
+
+Microcontroller boards, such as Arduino boards (www.arduino.cc), are frequently used to 181 
+
+design response systems that manipulate setups during experiments. TracktorLive can 182 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+readily be programmed with a single cassette to communicate with a connected Arduino 183 
+
+board. By programming the Arduino board to respond to incoming information from 184 
+
+TracktorLive, real -time, automated experimental manipulations become feasible. Fig. 3A 185 
+
+and Video S1 illustrate an example of an “agonistic stimulus” triggered in response to the 186 
+
+location of an animal in an arena. 187 
+
+188 
+
+Example 3. 2. Conditional video recording based on event triggers 189 
+
+When experimenters are interested in specific, infrequent events, video recordings can 190 
+
+become arbitrarily long. This can lead to large video files and a high storage capacity 191 
+
+demand, as well as a heavy time investment on the experimenter’s part to visualise the 192 
+
+entire recording and analyse specific events. In such scenarios, the Tracktor Server can 193 
+
+be set up with a cassette to only record videos when events of interest occur. Fig. 3B 194 
+
+shows an example where video storage is only triggered when two animals are in close 195 
+
+proximity, and therefore likely interacting. In this specific example, the leafbugs only 196 
+
+interacted for 2 min 12 sec within a 50 min period (see Video S2). 197 
+
+198 
+
+Example 3. 3. Stimulus delivery based on r eal -time computation of kinematics 199 
+
+Since TracktorLive computes real -time position, it is possible to perform quick 200 
+
+computations on tracks using a cassette. In Fig. 3C, we compute the velocity of a fish and 201 
+
+trigger the presentation of a looming stimulus when the fish exceeds a certain velocity 202 
+
+threshold (Video S3). Note that the cassette used (‘Run Command on Condition’) could 203 
+
+easily be programmed to respond to any kinematic condition (position, acceleration, 204 
+
+orientation, and so on) and to trigger any other action ; for example, sending the 205 
+
+experimenter an email if the focal animal has been stationary for an unexpectedly long 206 
+
+period of time. 207 
+
+208 
+
+Example 3. 4. Stacking cassettes for complex experiments 209 
+
+Finally, to illustrate the modular nature and stackability of TracktorLive cassettes, we 210 
+
+combine examples 1 and 2 in a simple experiment where a door in the experimental arena 211 
+
+is opened only when two pillbugs are in proximity to it (Fig 3D, Video S4). This example 212 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+uses the compute proximity cassette highlighted in example 2 with an Arduino board 213 
+
+operating the door via a servo motor, as in example 1. 214 
+
+215 
+
+Beyond the examples above, additional tutorials are available on the TracktorLive GitHub 216 
+
+repository, demonstrating several other applications of the software (Table 2). A first set 217 
+
+of tutorials explains the use of the command -line tool to perform quick tasks such as 218 
+
+recording a video and tracking individuals under simple conditions. Subsequent tutorials 219 
+
+demonstrate how to optimize tracking by adding cassettes for the adjustment of contrast 220 
+
+and brightness and the application of masks. Finally, the last set of tutorials show how 221 
+
+users, including those with minimal coding experience, can customize existing cassettes 222 
+
+and create new ones on their own or with the help of large language models (LLMs). One 223 
+
+example provided illustrates how LLMs can help users create cassettes to accomplish a 224 
+
+difficult task: converting a recording of multiple individuals in an arena into bird’s -eye 225 
+
+chase videos centred around each individual. This example demonstrates how a226 
+
+hypothetical user could readily solve a new, custom task like creating viewpoints that 227 
+
+facilitate subsequent analyses such as pose estimation and behavioural classification 228 
+
+[44] . This straightforward applicability of LLMs in the use of TracktorLive is facilitated by 229 
+
+the modular and compact nature of cassettes. We also provide a ‘customGPT’ in the 230 
+
+OpenAI framework on the TracktorLive GitHub repository, which we have tested with 231 
+
+some cassettes in our Library of Cassettes. We specifically label cassettes that were 232 
+
+created using this tool so users can compare them with cassettes we wrote ourselves. 233 
+
+We emphasise that our inclusion of this tool is not an endorsement of th e company or its 234 
+
+LLMs, and code generated by this tool should be thoroughly tested (as with any LLM use). 235 
+
+Finally, while TracktorLive’s novelty lies in its ability to perform real -time object tracking 236 
+
+and response delivery, the software and all its cassettes are equally applicable to pre -237 
+
+recorded video. 238 
+
+239 
+
+We encourage users to submit new applications of TracktorLive for inclusion as ‘Further 240 
+
+Examples’ in the tutorials and to contribute to the “living” Library of Cassettes. 241 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+4. Limitations 242 
+
+TracktorLive uses Tracktor [16] under the hood, and therefore shares both its strengths 243 
+
+and limitations. Tracktor can reliably track single individuals under varying experimental 244 
+
+conditions, including in situations with uneven lighting and/or where the background is not 245 
+
+static. It can also simultaneously track multiple individuals in the same or in distinct 246 
+
+arenas. However, Tracktor —and by extension, TracktorLive —is not designed to solve 247 
+
+crosses, occlusions and/or a change in the number of individuals in the arena: situations 248 
+
+where multiple animals walk, fly or swim above or below each other, enter and leave the 249 
+
+arena, or are occluded from the camera (for example, when entering a shelter or exiting 250 
+
+the camera’s field of view). This is because Tracktor maintains the individual identities of 251 
+
+unmarked objects using the Hungarian algorithm, a highly reliable technique provided 252 
+
+there are no crosses or occlusions. In scenarios where crosses or occlusions can occur 253 
+
+or the number of individuals is dynamic, TracktorLive can be used reliably only when 254 
+
+tracking and response delivery does not depend on the identities of the individuals 255 
+
+tracked. 256 
+
+257 
+
+In scenarios where maintaining individual identities is essential, the use of a traditional 258 
+
+(non -AI) tracking algorithm becomes infeasible. However, the implementation of Tracktor 259 
+
+within TracktorLive occurs within a single method ( Server._eachframe ) in the Tracktor 260 
+
+Server object class, and an experienced developer could easily replace this core tracking 261 
+
+method with a different, AI -based method (for instance, based on the “You Only Look 262 
+
+Once ” (YOLO) framework [45] ). Given the modularity of TracktorLive, this modification 263 
+
+would maintain the integrity and benefits of TracktorLive’s architecture as well as the use 264 
+
+of the library of cassettes and command -line utility. Similarly, developers could modify 265 
+
+TracktorLive’s tracking method to detect ArUco markers —open -source simplified QR 266 
+
+codes that can be mounted on animals [25] —allowing to maintain individual identities 267 
+
+without the use of AI when crosses or occlusions occur, or when the number of individuals 268 
+
+in the arena changes. 269 
+
+270 
+
+Finally, while the stackability of cassettes is a strength of TracktorLive, stacking too many 271 
+
+cassettes risks affecting the processing speed of the software. If users create and stack 272 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+custom cassettes that are computationally demanding, they should actively monitor the 273 
+
+software to ensure it behaves as expected, the main risk being that frames are skipped 274 
+
+during processing. 275 
+
+5. Future prospects 276 
+
+Numerous potential applications of TracktorLive exist that we have not yet explored. 277 
+
+Specifically, the integration of TracktorLive with low -cost embedded systems (e.g., 278 
+
+Arduino), could enable a variety of closed -loop systems (setups where a biological 279 
+
+process is monitored in real -time, and information is used to immediately adjust a 280 
+
+treatment or stimulus). In organismal biology, these enhanced setups could enable better 281 
+
+experimental design in the study of escape responses, animal cognition, or decision -282 
+
+making. Applications also extend across a wide range of domains beyond the study of 283 
+
+animal movement and behaviour, from cell biology to ecological monitoring. For instance, 284 
+
+closed -loop systems leveraging TracktorLive could facilitate experiments in which neural 285 
+
+or cellular activity of labelled cells is linked to state changes (e.g. fluorescence) or 286 
+
+movement, allowing real -time modification of environmental conditions based on detected 287 
+
+signals [46] . Integrating TracktorLive with deep learning tools could also help support 288 
+
+wildlife surveys and monitoring through automated recording and analysis of occurrences 289 
+
+and activity. 290 
+
+291 
+
+TracktorLive can also be helpful to automate and optimize lab protocols. Using cassettes, 292 
+
+a researcher can be notified when an experiment ends and schedule automatically 293 
+
+triggered analyses scripts or the secure transfer of data and results to a remote location, 294 
+
+digital repository or website. TracktorLive could also help improve animal welfare ; for 295 
+
+example, by automatically detecting sick/dead animals based on kinematics, or 296 
+
+automatically regulating oxygen levels and water replacement, or providing 297 
+
+environmental enrichment. Finally, enthusiasts could develop offline, privacy -friendly 298 
+
+home applications for day -to -day use, or for educational purposes to promote scientific 299 
+
+interest. The possibilities are vast (see Table S 2). 300 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+6. Conclusion 301 
+
+TracktorLive addresses a critical gap in experimental biology by providing a low -cost, 302 
+
+readily accessible solution for real -time tracking and responses to movement and 303 
+
+behaviour. The modular architecture and efficient parallelised processing can support a 304 
+
+diversity of experimental designs without expensive hardware or advanced programming 305 
+
+skills. As the research community adopts TracktorLive, we anticipate the Library of 306 
+
+Cassettes will continue to expand through user contributions that extend the software's 307 
+
+capabilities, including into new domains. The integration of TracktorLive with emerging 308 
+
+technologies including, advanced imaging techniques, embedded systems and machine 309 
+
+learning holds particular promise for developing innovative applications. Ultimately, by 310 
+
+lowering the financial and technical barriers to real -time tracking and response systems, 311 
+
+TracktorLive provides a scalable, accessible, and reproducible solution for studying 312 
+
+movement and behaviour across diverse systems. 313 
+
+314 
+
+Data availability statement. The data and the analysis script to reproduce our results 315 
+
+are available on  https://github.com/pminasandra/tracktorlive  and the Open Science 316 
+
+Framework reposit or y [47] , and were shared with the editors and reviewers upon 317 
+
+submission. 318 
+
+319 
+
+Ethics statement. The experiment adhered to ethical regulations of Tokyo Metropolitan 320 
+
+University (Japan), which do not require ethical approval for observational studies using 321 
+
+fish. Throughout the study, no animals were harmed or subjected to stressors other than 322 
+
+being transferred from one aquarium to another. The principal investigator (I .P.S.)323 
+
+completed the animal training course at Tokyo Metropolitan University and ensured that 324 
+
+the study was conducted following ethical guidelines aimed at minimizing any potential 325 
+
+impact on the fish .326 
+
+327 
+
+Acknowledgements . P.M. and V.H.S. acknowledge support from the Max Planck 328 
+
+Society (Max -Planck -Gesellschaft). V.H.S. additionally thanks the Department of Biology, 329 
+
+University of Washington for their support. This study was also funded by the Japan 330 
+
+Society for the Promotion of Science (JSPS KAKENHI 18F18806) awarded to I. P. -S. 331 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+332 
+
+References 333 
+
+1. Marsh DM, Hanlon TJ. Seeing What We Want to See: Confirmation Bias in Animal 334 
+
+Behavior Research. Ethology. 2007;113: 1089 –1098. doi:10.1111/j.1439 -335 
+
+0310.2007.01406.x 336 
+
+2. Tuyttens FAM, de Graaf S, Heerkens JLT, Jacobs L, Nalon E, Ott S, et al. Observer bias in 337 
+
+animal behaviour research: can we believe what we score, if we score what we believe? 338 
+
+Anim Behav. 2014;90: 273 –280. doi:10.1016/j.anbehav.2014.02.007 339 
+
+3. Keaney TA, Jones TM, Mulder RA. An undergraduate classroom experiment illustrates an 340 
+
+effect of observer bias on data collection in animal behaviour. Anim Behav. 2024;212: 341 
+
+175 –182. doi:10.1016/j.anbehav.2024.03.013 342 
+
+4. Davidson JD, Sosna MMG, Twomey CR, Sridhar VH, Leblanc SP, Couzin ID. Collective 343 
+
+detection based on visual information in animal groups. J R Soc Interface. 2021;18: 344 
+
+20210142. doi:10.1098/rsif.2021.0142 345 
+
+5. Gelblum A, Pinkoviezky I, Fonio E, Ghosh A, Gov N, Feinerman O. Ant groups optimally 346 
+
+amplify the effect of transiently informed individuals. Nat Commun. 2015;6. 347 
+
+doi:10.1038/ncomms8729 348 
+
+6. Sampaio E, Sridhar VH, Francisco FA, Nagy M, Sacchi A, Strandburg -Peshkin A, et al. 349 
+
+Multidimensional social influence drives leadership and composition -dependent success in 350 
+
+octopus –fish hunting groups. Nat Ecol Evol. 2024;8: 2072 –2084. doi:10.1038/s41559 -024 -351 
+
+02525 -2352 
+
+7. Baldoni C. From summer growth to winter decline : , captive effect, and cognitive size brain 353 
+
+. 2024 [cited 6 Mar 2026]. in the common shrew during Dehnel’s phenomenon outcomes 354 
+
+konstanz.de/handle/123456789/72832 -Available: https://kops.uni 355 
+
+8. Herbert -Read JE, Ward AJW, Sumpter DJT, Mann RP. Escape path complexity and its 356 
+
+context dependency in Pacific blue -eyes ( Pseudomugil signifer ). J Exp Biol. 2017;220: 357 
+
+2076 –2081. doi:10.1242/jeb.154534 358 
+
+9. Planas -Sitjà I, Ioannou CC. State -behaviour feedbacks between boldness and food intake 359 
+
+shape escape responses in fish ( Gasterosteus aculeatus ). Commun Biol. 2025;8: 227. 360 
+
+doi:10.1038/s42003 -025 -07669 -w361 
+
+10. Sayin S, Couzin -Fuchs E, Petelski I, Günzel Y, Salahshour M, Lee C -Y, et al. The 362 
+
+behavioral mechanisms governing collective motion in swarming locusts. Science. 363 
+
+2025;387: 995 –1000. doi:10.1126/science.adq7832 364 
+
+11. Sridhar VH, Li L, Gorbonos D, Nagy M, Schell BR, Sorochkin T, et al. The geometry of 365 
+
+decision -making in individuals and collectives. Proc Natl Acad Sci. 2021;118. 366 
+
+doi:10.1073/pnas.2102157118 367 
+
+12. Humby T, Laird FM, Davies W, Wilkinson LS. Visuospatial attentional functioning in mice: 368 
+
+interactions between cholinergic manipulations and genotype. Eur J Neurosci. 1999;11: 369 
+
+2813 –2823. doi:10.1046/j.1460 -9568.1999.00701.x 370 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+13. Bathellier B, Tee SP, Hrovat C, Rumpel S. A multiplicative reinforcement learning model 371 
+
+capturing learning dynamics and interindividual variability in mice. Proc Natl Acad Sci. 372 
+
+2013;110: 19950 –19955. doi:10.1073/pnas.1312125110 373 
+
+14. Piccinini F, Kiss A, Horvath P. CellTracker (not only) for dummies. Bioinformatics. 2016;32: 374 
+
+955 –957. doi:10.1093/bioinformatics/btv686 375 
+
+15. Aragaki H, Ogoh K, Kondo Y, Aoki K. LIM Tracker: a software package for cell tracking and 376 
+
+analysis with advanced interactivity. Sci Rep. 2022;12: 2702. doi:10.1038/s41598 -022 -377 
+
+06269 -6378 
+
+16. Sridhar VH, Roche DG, Gingins S. Tracktor: Image -based automated tracking of animal 379 
+
+movement and behaviour. Methods Ecol Evol. 2019;10: 815 –820. doi:10.1111/2041 -380 
+
+210X.13166 381 
+
+17. Pérez -Escudero A, Vicente -Page J, Hinz RC, Arganda S, de Polavieja GG. idTracker: 382 
+
+tracking individuals in a group by automatic identification of unmarked animals. Nat 383 
+
+Methods. 2014;11: 743 –748. doi:10.1038/nmeth.2994 384 
+
+18. Yamanaka O, Takeuchi R. UMATracker: an intuitive image -based tracking platform. J Exp 385 
+
+Biol. 2018;221: jeb182469. doi:10.1242/jeb.182469 386 
+
+19. Torney CJ, Dobson AP, Borner F, Lloyd -Jones DJ, Moyer D, Maliti HT, et al. Assessing 387 
+
+Rotation -Invariant Feature Classification for Automated Wildebeest Population Counts. 388 
+
+PLOS ONE. 2016;11: e0156342. doi:10.1371/journal.pone.0156342 389 
+
+20. Chiara V, Kim S -Y. AnimalTA: A highly flexible and easy -to -use program for tracking and 390 
+
+analysing animal movement in different environments. Methods Ecol Evol. 2023;14: 1699 –391 
+
+1707. doi:10.1111/2041 -210X.14115 392 
+
+21. Diwan T, Anirudh G, Tembhurne JV. Object detection using YOLO: challenges, 393 
+
+architectural successors, datasets and applications. Multimed Tools Appl. 2023;82: 9243 –394 
+
+9275. doi:10.1007/s11042 -022 -13644 -y395 
+
+22. Bartashevich P, Herbert -Read JE, Hansen MJ, Dhellemmes F, Domenici P, Krause J, et 396 
+
+al. Collective anti -predator escape manoeuvres through optimal attack and avoidance 397 
+
+strategies. Commun Biol. 2024;7: 1586. doi:10.1038/s42003 -024 -07267 -2398 
+
+23. Mathis A, Mamidanna P, Cury KM, Abe T, Murthy VN, Mathis MW, et al. DeepLabCut: 399 
+
+markerless pose estimation of user -defined body parts with deep learning. Nat Neurosci. 400 
+
+2018;21: 1281 –1289. doi:10.1038/s41593 -018 -0209 -y401 
+
+24. Herrera C, Williams M, Encarnação J, Roura -Pascual N, Faulhaber B, Jurado -Rivera JA, 402 
+
+et al. Automated detection of the yellow -legged hornet ( Vespa velutina ) using an optical 403 
+
+sensor with machine learning.  Pest Manag Sci. 2023;79: 1225 –1233. doi:10.1002/ps.7296 404 
+
+25.  Wolf SW, Ruttenberg DM, Knapp DY, Webb AE, Traniello IM, McKenzie -Smith GC, et al. 405 
+
+NAPS: Integrating pose estimation and tag -based tracking. Methods Ecol Evol. 2023;14: 406 
+
+2541 –2548. doi:10.1111/2041 -210X.14201 407 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+26. Sunami N, Kimura H, Ito H, Hashimoto K, Sato Y, Tachibana S, et al. Automated escape 408 
+
+system: identifying prey’s kinematic and behavioral features critical for predator evasion.  J409 
+
+Exp Biol. 2024;227: jeb246772. doi:10.1242/jeb.246772 410 
+
+27.  Pitera AM, Heinen VK, Sonnenberg BR, Benedict LM, Bridge ES, Pravosudov VV.  Social 411 
+
+group membership does not facilitate spatial learning of fine -scale resource locations. 412 
+
+Behav Ecol Sociobiol. 2025;79: 104. doi:10.1007/s00265 -025 -03655 -8413 
+
+28. Lendvai ÁZ, Akçay Ç, Weiss T, Haussmann MF, Moore IT, Bonier F. Low cost audiovisual 414 
+
+playback and recording triggered by radio frequency identification using Raspberry Pi. 415 
+
+PeerJ. 2015;3: e877. doi:10.7717/peerj.877 416 
+
+29. Walter T, Couzin ID. TRex, a fast multi -animal tracking system with markerless 417 
+
+identification, and 2D estimation of posture and visual fields. Lentink D, Rutz C, Pujades S, 418 
+
+editors. eLife. 2021;10: e64000. doi:10.7554/eLife.64000 419 
+
+30. Tian Y, Ye Q, Doermann D. YOLOv12: Attention -Centric Real -Time Object Detectors. 420 
+
+arXiv; 2025. doi:10.48550/arXiv.2502.12524 421 
+
+31. Rosenthal R. Biasing Effects of Experimenters. ETC Rev Gen Semant. 1977;34: 253 –264. 422 
+
+32. Burghardt GM, Bartmess -LeVasseur JN, Browning SA, Morrison KE, Stec CL, Zachau CE, 423 
+
+et al. Perspectives – Minimizing Observer Bias in Behavioral Studies: A Review and 424 
+
+Recommendations. Ethology. 2012;118: 511 –517. doi:10.1111/j.1439 -0310.2012.02040.x 425 
+
+33. Hróbjartsson A, Thomsen ASS, Emanuelsson F, Tendal B, Hilden J, Boutron I, et al. 426 
+
+Observer bias in randomized clinical trials with measurement scale outcomes: a systematic 427 
+
+review of trials with both blinded and nonblinded assessors. CMAJ. 2013;185: E201 –E211. 428 
+
+doi:10.1503/cmaj.120744 429 
+
+34. Rosenthal R. Experimenter effects in behavioral research, Enlarged ed. Oxford, England: 430 
+
+Irvington; 1976. pp. xiii, 500. 431 
+
+35. Schulz KF, Chalmers I, Hayes RJ, Altman DG. Empirical evidence of bias: dimensions of 432 
+
+methodological quality associated with estimates of treatment effects in controlled trials. 433 
+
+JAMA. 1995;273: 408 –412. doi:10.1001/jama.1995.03520290060030 434 
+
+36. Holman L, Head ML, Lanfear R, Jennions MD. Evidence of experimental bias in the life 435 
+
+sciences: why we need blind data recording.  PLOS Biol. 2015;13: e1002190. 436 
+
+doi:10.1371/journal.pbio.1002190 437 
+
+37.  Schulz KF, Grimes DA.  Blinding in randomised trials: hiding who got what. The Lancet. 438 
+
+2002;359: 696 –700. doi:10.1016/S0140 -6736(02)07816 -9439 
+
+38. Kilkenny C, Parsons N, Kadyszewski E, Festing MFW, Cuthill IC, Fry D, et al. Survey of 440 
+
+the quality of experimental design, statistical analysis and reporting of research using 441 
+
+animals. PLOS ONE. 2009;4: e7824. doi:10.1371/journal.pone.0007824 442 
+
+39. Hróbjartsson A, Thomsen ASS, Emanuelsson F, Tendal B, Rasmussen JV, Hilden J, et al. 443 
+
+Observer bias in randomized clinical trials with time -to -event outcomes: systematic review 444 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+of trials with both blinded and non -blinded outcome assessors. Int J Epidemiol. 2014;43: 445 
+
+937 –948. doi:10.1093/ije/dyt270 446 
+
+40. Roche DG. Effects of wave -driven water flow on the fast -start escape response of juvenile 447 
+
+coral reef damselfishes. J Exp Biol. 2021;224: jeb234351. doi:10.1242/jeb.234351 448 
+
+41. Wascher CAF, Bugnyar T. Behavioral Responses to Inequity in Reward Distribution and 449 
+
+Working Effort in Crows and Ravens. PLOS ONE. 2013;8: e56885. 450 
+
+doi:10.1371/journal.pone.0056885 451 
+
+42. Marsh DM, Hanlon TJ. Observer gender and observation bias in animal behaviour 452 
+
+research: experimental tests with red -backed salamanders. Anim Behav. 2004;68: 1425 –453 
+
+1433. doi:10.1016/j.anbehav.2004.02.017 454 
+
+43. Oreg S, Bayazit M. Prone to bias: development of a bias taxonomy from an individual 455 
+
+differences perspective.  Rev Gen Psychol. 2009;13: 175 –193. doi:10.1037/a0015656 456 
+
+44.  Berman GJ, Choi DM, Bialek W, Shaevitz JW.  Mapping the stereotyped behaviour of freely 457 
+
+moving fruit flies. J R Soc Interface. 2014;11: 20140672 –20140672. 458 
+
+doi:10.1098/rsif.2014.0672 459 
+
+45. Khanam R, Hussain M. YOLOv11: An overview of the key architectural enhancements. 460 
+
+arXiv; 2024. doi:10.48550/arXiv.2410.17725 461 
+
+46. Fujiwara T, Brotas M, Chiappe ME. Walking strides direct rapid and flexible recruitment of 462 
+
+visual circuits for course control in Drosophila. Neuron. 2022;110: 2124 -2138.e8. 463 
+
+doi:10.1016/j.neuron.2022.04.008 464 
+
+47. Minasandra P, Sridhar V, Roche D, Planas -Sitjà I. TracktorLive: an integrated real -time 465 
+
+object tracking and response system. 2026 [cited 12 Mar 2026]. Available: 466 
+
+https://osf.io/6sxrk 467 
+
+468 
+
+469 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+Table 1 : TracktorLive Cassettes . These cassettes are available on the TracktorLive GitHub 470 
+
+repository’s  Library of Cassettes , and can be copy -pasted into existing scripts to achieve the 471 
+
+desired behaviours (explained in the ‘Description’ column). User -specifiable parameters are 472 
+
+displayed at the beginning of the code for each cassette to enable customization. 473 
+
+Cassette  Description 
+
+Display Feed  Display current tracking from the server in real -time. Press q or Esc to 
+
+close running display at any time 
+
+Add Circular Mask  Mask everything except a circle of specified position and radius 
+
+Add Custom Mask  Add a custom mask to every frame based on user -provided image file 
+
+Add Rectangular 
+
+Mask 
+
+Mask everything except a rectangle of specified vertices 
+
+Also Preserve Audio  Extract audio from input video and muxes it into the output video at the 
+
+end 
+
+Also Record Audio  Record audio with ffmpeg in a separate process and muxes it into the 
+
+recorded video at the end 
+
+Background 
+
+Subtract 
+
+Replace background pixels with white using an averaged background 
+
+image 
+
+Boost Contrast  Brightness and contrast control 
+
+Channel Select  Preserve only one of the BGR channels 
+
+Color Select  Keep only pixels close to a user -defined BGR colour ; mask out 
+
+everything else 
+
+Delayed Start  Delay the start of tracking by a fixed amount of time 
+
+Display Final Vel 
+
+Plot 
+
+Display and save a plot of velocities when we reach the end of the 
+
+video file we are analysing 
+
+Display With Circ Hl  Display current tracking from the server in real -time. Highlight a 
+
+chosen circular region. Press q or Esc to close running display at any 
+
+time 
+
+Display With Rect Hl  Display current tracking from the server in real -time. Highlight a 
+
+chosen rectangular region. Press q or Esc to close running display at 
+
+any time 
+
+Dynamic Masking  Only look for individuals in vicinity of previous loc ation s
+
+Extract Background  Compute per -pixel variability to estimate a background image 
+
+Extract Specified 
+
+Frames 
+
+Save as jpg all frames at specified indices 
+
+First Person Views  For each tracked individual, crop a fixed -size square that is rotated so 
+
+the animal’s heading points “up”. Uses EMA + rate limiting to smooth 
+
+orientation. Writes one MP4 per individual 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+Gaussian Blur  Apply a Gaussian blur to each frame before tracking 
+
+Message Arduino  When a user -defined function returns a character, transmit that 
+
+character to a connected Arduino 
+
+Overlay Text From 
+
+DataFrame 
+
+Overlay user -provided frame -wise text on video 
+
+Preserve Frame  Put non -edited frames in framesbuffer (useful for dumpvideo 
+
+methods) 
+
+Print Directions  Calculate and print the direction based on position changes 
+
+Print Position  Print current position of the target individual 
+
+Record When 
+
+Together 
+
+Record video only wh en two animals are within a specified distance of 
+
+each other 
+
+Run Command On 
+
+Condition 
+
+Run a shell command when a function returns True, respecting a time 
+
+based cooldown rule 
+
+Time Lapse  Build a time -lapse by subsampling frames into a custom buffer and 
+
+writing once at the end 
+
+Timesync  Create a parquet file of time.time() clock, useful for ms level sync 
+
+Update Plot  Display (and save) a plot every few seconds. Useful to monitor data in 
+
+real time 
+
+474 
+
+475 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+Table 2 : TracktorLive Tutorials.  Tutorials  are available on the TracktorLive GitHub repository to 476 
+
+help users familiarize themselves with the software. 477 
+
+Title  Description 
+
+Recording a video  Use TracktorLive to record a simple 10 minute video from the 
+
+command line 
+
+Tracking objects  Track the positions of eight termites in a video and save these 
+
+positions as CSV files 
+
+Tuning computer vision 
+
+parameters 
+
+Tune parameters for TracktorLive to detect animals in your specific 
+
+setup 
+
+Applying cassettes to 
+
+improve tracking 
+
+Use TracktorLive cassettes to optimise the tracking process 
+
+Automated response 
+
+delivery 
+
+Write a script to play a looming stimulus video each time a fish 
+
+moves above a certain velocity 
+
+Trigger an Arduino  Communicate with a connected Arduino board to automatically turn 
+
+on lights or open doors in response to animal positions 
+
+Video chunking  Record and save video only when two animals are interacting 
+
+Video centering  Extract cropped videos that provide a top -down chas e view 
+
+following each individual 
+
+Further demonstrations  (Additional tutorials and user -submitted examples) 
+
+478 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+479 
+
+Figure 1 : An overview of the TracktorLive pipeline . Frames from a live feed (A) recording 480 
+
+subjects (here, a fish in a tank) are passed to a Tracktor Server, for which tracking parameters 481 
+
+can be specified through a custom GUI (B) . The Tracktor Server’s behaviour is specified by the 482 
+
+addition of ‘cassette functions’ to its on -board cassette deck (C) . The tracked location of each 483 
+
+animal is shared with multiple Tracktor Clients (D1, D2) , which can drive response delivery. For 484 
+
+example, client D1 can send messages to an Arduino board (E) , which triggers a mechanical 485 
+
+stimulus (F) to elicit an escape response from the fish when it is in a certain location. Meanwhile, 486 
+
+Client D2 can play a video (G) to trigger a looming stimulus when, for instance, the fish moves 487 
+
+below a certain velocity for a specified duration. Sometimes, users may want to toggle a switch 488 
+
+to save video dynamically in response to the animals’ positions. The Video Chunker cassette (H) 489 
+
+can toggle whether video is saved to disk in response to the fish’s location, preserving disk space 490 
+
+by saving video only when it is of interest. The figure illustrates only a small subset of the types 491 
+
+of experiments TracktorLive can facilitate. 492 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+493 
+
+Figure 2 : The standard s tructure of a TracktorLive script . Every TracktorLive python script 494 
+
+starts with importing tracktorlive as trl (by convention) (L2). Then, after reading tracking -495 
+
+related parameters (L5), the Tracktor Server is declared (L7 -8). Along with the server, a 496 
+
+semaphore manager ( semm ) is automatically spawned. The user then customises the behaviour 497 
+
+of the server by inserting server cassettes. These could, for instance, control when video storage 498 
+
+is turned on, or edit the incoming video stream on -the -fly to improve the tracking performance (for 499 
+
+example, adjust the brightness and contrast). Then, optionally, one or more clients are declared 500 
+
+(L53). As with the server, the behaviour of the client is customised by adding client cassettes, 501 
+
+which can handle visualisation, interfacing with other devices, or running commands in response 502 
+
+to the movements of tracked animals. Finally, the server, semaphore manager, and client are all 503 
+
+initialised together at the end of the script (L93 -94). See Fig S2 for a visualisation of an actual 504 
+
+script with complete code. 505 
+
+506 
+
+> .CC-BY-NC 4.0 International license available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint this version posted May 26, 2026. ;https://doi.org/10.64898/2026.03.12.711471 doi: bioRxiv preprint
+
+507 
+
+508 
+
+Figure 3: Examples of four applications of TracktorLive . (A) a threatening stimulus 509 
+
+(represented here by the flashing of an LED) is triggered through an Arduino board when 510 
+
+TracktorLive detects a mouse entering a specified area of interest; (B) recording to disk is turned 511 
+
+on only when two leafbugs are within a threshold distance of each other; (C) a video that contains 512 
+
+a looming stimulus is played when a fish exceeds a certain velocity; and; (D) a door (thick black 513 
+
+arrow) is opened by driving a servo motor when two pillbugs simultaneously enter a specified 514 
+
+area of interest. 515
