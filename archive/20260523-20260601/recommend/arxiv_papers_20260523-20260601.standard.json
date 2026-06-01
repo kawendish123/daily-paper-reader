@@ -1,0 +1,702 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-01T11:20:36.478935+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 10,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 18,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2605.30409v1",
+      "source": "arxiv",
+      "title": "SANA-Streaming: Real-time Streaming Video Editing with Hybrid Diffusion Transformer",
+      "abstract": "Real-time streaming video-to-video editing (V2V) is critical for interactive applications such as live broadcasting and gaming, yet it remains a formidable challenge due to the stringent requirements for temporal consistency and inference throughput. In this paper, we present SANA-Streaming, a system-algorithm co-designed framework for high-resolution, real-time streaming video editing on consumer GPUs, with the following three core designs: (1) Hybrid Diffusion Transformer architecture introduces softmax attention in part of the blocks to improve local modeling capabilities while preserving the efficiency of linear layers. (2) Cycle-Reverse Regularization is a novel training strategy that enforces semantic consistency by predicting source frames from generated content via flow matching, improving temporal consistency without requiring paired long edited videos. (3) Efficient System Co-design combines fused GDN kernels and Mixed-Precision Quantization (MPQ) optimized for the NVIDIA Blackwell (RTX 5090) architecture. By profiling real-world throughput, our MPQ maximizes Tensor Core utilization while maintaining generation quality. The resulting system achieves real-time 1280 x 704 resolution editing at 24 end-to-end FPS on a single RTX 5090 GPU, with the DiT core running at 58 FPS. Experimental results demonstrate that our co-design approach significantly outperforms existing SOTA methods in both temporal coherence and system throughput.",
+      "authors": [
+        "Yuyang Zhao",
+        "Yicheng Pan",
+        "Qiyuan He",
+        "Jincheng Yu",
+        "Junsong Chen",
+        "Tian Ye",
+        "Haozhe Liu",
+        "Enze Xie",
+        "Song Han"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-05-28T17:59:17+00:00",
+      "link": "https://arxiv.org/pdf/2605.30409v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "real-time streaming video editing",
+      "llm_evidence_cn": "实时流式视频编辑",
+      "llm_evidence": "实时流式视频编辑",
+      "canonical_evidence": "实时流式视频编辑",
+      "llm_tldr_en": "SANA-Streaming is a system-algorithm co-designed framework for high-resolution real-time streaming video editing on consumer GPUs, using Hybrid Diffusion Transformer and Cycle-Reverse Regularization to achieve high temporal consistency and inference throughput.",
+      "llm_tldr_cn": "SANA-Streaming面向实时流式视频到视频编辑任务，提出了系统与算法协同设计框架，在消费级GPU上实现高分辨率实时编辑。采用混合扩散Transformer架构，在部分块中引入softmax注意力以增强局部建模，同时保持线性层效率；循环反向正则化训练策略增强语义一致性，实验表明在保持时间一致性的同时大幅提升推理吞吐量。",
+      "llm_tldr": "SANA-Streaming面向实时流式视频到视频编辑任务，提出了系统与算法协同设计框架，在消费级GPU上实现高分辨率实时编辑。采用混合扩散Transformer架构，在部分块中引入softmax注意力以增强局部建模，同时保持线性层效率；循环反向正则化训练策略增强语义一致性，实验表明在保持时间一致性的同时大幅提升推理吞吐量。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.24981v1",
+      "source": "arxiv",
+      "title": "Large Language Model Selection with Limited Annotations",
+      "abstract": "Choosing a Large Language Model (LLM) for a given task requires comparing many strong candidates, yet standard evaluation relies on costly annotations over fixed evaluation sets. To address this challenge, we develop SELECT-LLM, the first framework for active model selection of LLMs. SELECT-LLM aims to find a small set of queries whose annotations are most informative for identifying the best LLM for a given task. To this end, we introduce a query selection rule based on expected information gain, computed from pairwise similarities between candidate model outputs. Because this rule only uses generated model responses, SELECT-LLM can be applied across candidate models without assumptions about their architecture or access to model weights. This makes it suitable for both open-weight and black-box LLMs. We evaluate SELECT-LLM across 23 datasets, 156 evaluated models, diverse task families, and multiple text evaluation metrics. Across all experiments, SELECT-LLM improves over the strongest baseline in every setting, with annotation cost reductions up to 81.8% for best model selection and up to 84.78% for near-best model selection.",
+      "authors": [
+        "Yavuz Durmazkeser",
+        "Patrik Okanovic",
+        "Andreas Kirsch",
+        "Torsten Hoefler",
+        "Nezihe Merve Gürel"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-05-24T10:18:51+00:00",
+      "link": "https://arxiv.org/pdf/2605.24981v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "active model selection for LLMs",
+      "llm_evidence_cn": "大语言模型主动模型选择",
+      "llm_evidence": "大语言模型主动模型选择",
+      "canonical_evidence": "大语言模型主动模型选择",
+      "llm_tldr_en": "SELECT-LLM is a framework for active model selection of LLMs with limited annotations, using expected information gain over pairwise model output similarities to identify the best model efficiently.",
+      "llm_tldr_cn": "SELECT-LLM提出了一种针对大语言模型的主动模型选择框架，旨在利用少标签查询高效选出最佳模型。其核心是基于候选模型输出之间的成对相似度计算期望信息增益，从而选择最具信息量的查询。该方法仅需模型生成结果，无需访问模型架构或权重，适用于黑盒场景，显著减少标注成本。",
+      "llm_tldr": "SELECT-LLM提出了一种针对大语言模型的主动模型选择框架，旨在利用少标签查询高效选出最佳模型。其核心是基于候选模型输出之间的成对相似度计算期望信息增益，从而选择最具信息量的查询。该方法仅需模型生成结果，无需访问模型架构或权重，适用于黑盒场景，显著减少标注成本。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.25308v1",
+      "source": "arxiv",
+      "title": "Stabilizing Streaming Video Geometry via Dynamic Feature Normalization",
+      "abstract": "Consistent 3D geometry estimation from streaming RGB input is crucial for real-world applications such as autonomous driving, embodied AI, and large-scale reconstruction. While modern monocular geometry foundation models achieve strong single-image accuracy, they exhibit severe temporal inconsistency on continuous input, notably dominated by scale--shift drifting. Through targeted empirical analysis, we trace this instability to its root cause: fluctuations in latent feature statistics, whose mean and variance directly determine the predicted depth's scale and shift. Building on this insight, we introduce Dynamic Feature Normalization (DyFN), a lightweight, causal recurrent module that dynamically and robustly modulates feature statistics to maintain stable geometry over time. We adapt powerful pretrained monocular geometry models for streaming by finetuning only DyFN, a mere 2\\% additional parameters, while keeping the backbone frozen, thereby achieving temporal consistency without compromising single-image accuracy. Extensive experiments across four benchmarks show that DyFN effectively eliminates temporal artifacts such as disjointed layering and positional jitter, and achieves state-of-the-art temporal stability, improving over prior streaming methods by up to 14\\% and even outperforming heavier non-causal video baselines. Project Page: https://shawlyu.github.io/DyFN",
+      "authors": [
+        "Xiaoyang Lyu",
+        "Muxin Liu",
+        "Xiaoshan Wu",
+        "Ruicheng Wang",
+        "Yi-Hua Huang",
+        "Yang-Tian Sun",
+        "Shaoshuai Shi",
+        "Xiaojuan Qi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-25T00:13:15+00:00",
+      "link": "https://arxiv.org/pdf/2605.25308v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "stabilizing streaming video geometry via dynamic feature normalization",
+      "llm_evidence_cn": "通过动态特征归一化稳定流式视频几何",
+      "llm_evidence": "通过动态特征归一化稳定流式视频几何",
+      "canonical_evidence": "通过动态特征归一化稳定流式视频几何",
+      "llm_tldr_en": "Identifies scale-shift drift in streaming video geometry as caused by latent feature statistics fluctuations, and proposes Dynamic Feature Normalization (DyFN), a lightweight causal recurrent module that stabilizes depth estimation for streaming video.",
+      "llm_tldr_cn": "流式视频的3D几何估计存在严重的时序不一致性，主要由隐层特征统计量的波动引起。本文提出动态特征归一化（DyFN），一种轻量级因果循环模块，动态调整特征统计量以稳定深度估计。实验证明DyFN显著提升流式视频几何的时序一致性，适用于自动驾驶等实时应用。",
+      "llm_tldr": "流式视频的3D几何估计存在严重的时序不一致性，主要由隐层特征统计量的波动引起。本文提出动态特征归一化（DyFN），一种轻量级因果循环模块，动态调整特征统计量以稳定深度估计。实验证明DyFN显著提升流式视频几何的时序一致性，适用于自动驾驶等实时应用。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29505v1",
+      "source": "arxiv",
+      "title": "ESAM++: Efficient Online 3D Perception on the Edge",
+      "abstract": "Online 3D scene perception in real time is essential for robotics, AR/VR, and autonomous systems, particularly in edge computing scenarios where computational resources are limited and privacy is crucial. Recent state-of-the-art methods like EmbodiedSAM (ESAM) demonstrate the promise of online 3D perception by leveraging the Segment Anything Model (SAM) for real-time, fine-grained, and generalized 3D instance segmentation. However, ESAM still relies on a computationally expensive 3D sparse UNet for point cloud feature extraction, which accounts for the majority of the 3D inference time, hindering its practicality on resource-constrained devices. In this paper, we propose ESAM++, a lightweight and scalable alternative for online 3D scene perception tailored to edge devices without GPU acceleration. Our method introduces a 3D Sparse Feature Pyramid Network (SFPN) that efficiently captures multi-scale geometric features from streaming 3D point clouds while significantly reducing computational overhead and model size. We evaluate our approach on four challenging segmentation benchmarks, namely ScanNet, ScanNet200, SceneNN, and 3RScan, demonstrating that our model achieves competitive accuracy with up to 3 times faster inference with a 2 times smaller model size compared to ESAM, enabling practical deployment on edge devices.",
+      "authors": [
+        "Qin Liu",
+        "Lavisha Aggarwal",
+        "Saptarashmi Bandyopadhyay",
+        "Vikas Bahirwani",
+        "Marc Niethammer",
+        "Ehsan Adeli",
+        "Andrea Colaco"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-28T07:29:02+00:00",
+      "link": "https://arxiv.org/pdf/2605.29505v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "efficient online 3D perception specifically designed for edge devices with real-time performance",
+      "llm_evidence_cn": "专门为边缘设备设计的高效在线3D感知，具备实时性能",
+      "llm_evidence": "专门为边缘设备设计的高效在线3D感知，具备实时性能",
+      "canonical_evidence": "专门为边缘设备设计的高效在线3D感知，具备实时性能",
+      "llm_tldr_en": "ESAM++ replaces computationally expensive 3D sparse UNet with lightweight alternative for edge-based online 3D instance segmentation, achieving real-time inference.",
+      "llm_tldr_cn": "该工作针对边缘设备上在线3D感知计算开销大的问题，提出ESAM++，通过轻量化替代EmbodiedSAM中的3D稀疏UNet，在保持分割精度的同时大幅降低推理时间，实现实时3D实例分割。在多个边缘硬件上验证了高效性和可扩展性。",
+      "llm_tldr": "该工作针对边缘设备上在线3D感知计算开销大的问题，提出ESAM++，通过轻量化替代EmbodiedSAM中的3D稀疏UNet，在保持分割精度的同时大幅降低推理时间，实现实时3D实例分割。在多个边缘硬件上验证了高效性和可扩展性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.25682v1",
+      "source": "arxiv",
+      "title": "Profiling-Driven Adaptive Distributed Transformer Inference on Embedded Edge Deployment",
+      "abstract": "Distributing Transformer inference across embedded edge devices can alleviate individual memory and compute constraints, yet practical benefits on real hardware remain unclear: prior work relies largely on simulations that overlook hardware-specific communication overheads. We present a hardware prototype study on NVIDIA Jetson Orin Nano devices connected over WiFi. Our key finding is that the dominant bottleneck is not just network bandwidth but also the CPU-GPU staging during communication. Because Jetson's integrated GPU architecture lacks the PCIe/NVLink pathway that NCCL requires, all inter-device data communication should be routed through GLOO and staged in CPU memory; an overhead that scales with communication data volume and makes full-tensor exchange slower than single-device inference across the batch sizes for medium sized models such as ViT. We therefore evaluate Prism by combining Segment Means compression with lightweight offline profiling to adaptively select between local and distributed execution at runtime. Experiments show that this strategy reduces latency by 65%-77% and energy consumption by 34%-52% relative to full-tensor exchange in static distributed execution setup, demonstrating that profiling-driven adaptation is essential for practical distributed Transformer inference on embedded hardware.",
+      "authors": [
+        "Muhammad Azlan Qazi",
+        "Alexandros Iosifidis",
+        "Qi Zhang"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC",
+        "cs.AI"
+      ],
+      "published": "2026-05-25T10:39:28+00:00",
+      "link": "https://arxiv.org/pdf/2605.25682v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "distributed transformer inference on embedded edge devices",
+      "llm_evidence_cn": "在嵌入式边缘设备上分布式Transformer推理",
+      "llm_evidence": "在嵌入式边缘设备上分布式Transformer推理",
+      "canonical_evidence": "在嵌入式边缘设备上分布式Transformer推理",
+      "llm_tldr_en": "Presents a profiling-driven adaptive distributed Transformer inference framework on Jetson Orin Nano, revealing CPU-GPU communication as the main bottleneck and achieving efficient deployment.",
+      "llm_tldr_cn": "本文针对边缘设备分布式Transformer推理中的实际瓶颈，基于NVIDIA Jetson Orin Nano原型系统，发现CPU-GPU数据搬移是主要开销，进而提出自适应分布策略，在WiFi环境下实现高效推理，为移动边缘计算中的模型部署提供了重要实践指导。",
+      "llm_tldr": "本文针对边缘设备分布式Transformer推理中的实际瓶颈，基于NVIDIA Jetson Orin Nano原型系统，发现CPU-GPU数据搬移是主要开销，进而提出自适应分布策略，在WiFi环境下实现高效推理，为移动边缘计算中的模型部署提供了重要实践指导。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.26232v1",
+      "source": "arxiv",
+      "title": "Not All Modalities Are Equal: Instruction-Aware Gating for Multimodal Videos",
+      "abstract": "Pre-trained video large language models excel at visual reasoning. However, they struggle when videos arrive with auxiliary streams, such as audio, depth map, or dense temporal evidence. In such a scenario, uniform fusion induces modality interference, allowing irrelevant channels to distract the model. To address this issue, we present a unified multimodal video understanding framework, named UniMVU, that performs instruction-aware fusion across video, audio, depth map, or any other modality inputs via two levels of dynamic gating: inner-modality gates emphasize salient regions within each modality, whereas modality-level gates re-weight whole streams; both are conditioned on the text instruction to adaptively balance modality importance. Our UniMVU combines cross-modal self-attention with instruction-driven inner-modality gating module and a modality-level gating module with control token; for time-aligned streams we further adopt a fast-to-slow fusion scheme that reduces redundancy. Across six benchmarks (AVQA, AVSD, Music-AVQA, ScanQA, SQA3D and MVBench), our UniMVU achieves consistent gains over static-fusion baselines achieving gains as high as 13.5 in terms of CIDEr metric. Further, our analysis shows that the gating mechanism aligns with the human-interpretable modality relevance, and ablations show the contributions of inner-modality and modality-level gating. Our UniMVU provides a simple, unified recipe for instruction-aware multimodal video understanding that scales to diverse modalities without hand-crafted fusion rules.",
+      "authors": [
+        "Bonan Ding",
+        "Umair Nawaz",
+        "Ufaq Khan",
+        "Abdelrahman M. Shaker",
+        "Muhammad Haris Khan",
+        "Jiale Cao",
+        "Jin Xie",
+        "Fahad Shahbaz Khan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-25T18:02:20+00:00",
+      "link": "https://arxiv.org/pdf/2605.26232v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "proposes instruction-aware fusion for multimodal video understanding",
+      "llm_evidence_cn": "提出指令感知的多模态视频理解融合方法",
+      "llm_evidence": "提出指令感知的多模态视频理解融合方法",
+      "canonical_evidence": "提出指令感知的多模态视频理解融合方法",
+      "llm_tldr_en": "UniMVU uses dynamic gating conditioned on text instruction to fuse video, audio, depth, etc., reducing modality interference and improving video understanding.",
+      "llm_tldr_cn": "该工作针对多模态视频理解中模态干扰问题，提出UniMVU框架，通过两层级动态门控（内部模态门和模态级门）根据文本指令自适应调整各模态重要性。实验表明在多个多模态视频基准上达到最优性能，有效提升视频分析准确性。",
+      "llm_tldr": "该工作针对多模态视频理解中模态干扰问题，提出UniMVU框架，通过两层级动态门控（内部模态门和模态级门）根据文本指令自适应调整各模态重要性。实验表明在多个多模态视频基准上达到最优性能，有效提升视频分析准确性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.28312v1",
+      "source": "arxiv",
+      "title": "EventShiftFlow: Towards Hardware-efficient FPGA-based Flow Estimation",
+      "abstract": "Event-based vision sensors offer asynchronous, high-temporal-resolution measurements that are attractive for low-latency robotic perception, but many event-based motion estimation methods are computationally intensive and difficult to map to FPGA hardware. We present a streaming velocity estimator that discretizes asynchronous events into fixed-duration time bins, constructs a 1-bit spatial occupancy grid, and evaluates multiple velocity hypotheses in parallel using only fixed-width integer logic - shift registers, counters, comparators, and small LUT-mapped multiplies - with no dividers and no DSP blocks. It requires no frame reconstruction, no floating-point arithmetic, and no iterative optimization. The method deliberately trades dense sub-pixel optical flow for a sparse, quantized velocity estimate at each active pixel, suited to low-latency tasks such as reactive obstacle avoidance on size-, weight-, and power-constrained platforms. On noisy synthetic data with known ground-truth velocities, the method recovers both magnitude and direction, with magnitude estimates being most challenged when objects of different velocities intersect. On a real event-camera sequence, directional accuracy reaches 99.5% across all four evaluated motion segments, with performance remaining robust across occupancy densities in the 10-40% range. We characterize the algorithm's density-dependent behavior, present a parameter sensitivity analysis, show that the proposed datapath requires less than 2 kB of storage, and implement a single-axis prototype on a low-cost Xilinx Artix-7.",
+      "authors": [
+        "Arianna Alonso Bizzi",
+        "Fernando Cladera",
+        "C. J. Taylor"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-05-27T11:13:58+00:00",
+      "link": "https://arxiv.org/pdf/2605.28312v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "hardware-efficient FPGA-based velocity estimation for event cameras suitable for edge computing",
+      "llm_evidence_cn": "基于FPGA的硬件高效速度估计，适用于边缘计算的低延迟视觉感知",
+      "llm_evidence": "基于FPGA的硬件高效速度估计，适用于边缘计算的低延迟视觉感知",
+      "canonical_evidence": "基于FPGA的硬件高效速度估计，适用于边缘计算的低延迟视觉感知",
+      "llm_tldr_en": "EventShiftFlow presents a streaming velocity estimator for event cameras using only fixed-width integer logic on FPGA, achieving low-latency motion estimation with no floating-point or iterative optimization.",
+      "llm_tldr_cn": "事件相机光流估计方法通常计算密集，难以映射到FPGA。该文设计流式速度估计器：将事件离散化为时间仓，构建1位占用网格，并行评估多个速度假设，仅用整数逻辑（移位寄存器、计数器等），无除法器和DSP块，无需帧重建和浮点运算，在FPGA上实现高吞吐、低延迟的实时光流估计，非常适合边缘部署。",
+      "llm_tldr": "事件相机光流估计方法通常计算密集，难以映射到FPGA。该文设计流式速度估计器：将事件离散化为时间仓，构建1位占用网格，并行评估多个速度假设，仅用整数逻辑（移位寄存器、计数器等），无除法器和DSP块，无需帧重建和浮点运算，在FPGA上实现高吞吐、低延迟的实时光流估计，非常适合边缘部署。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.25538v1",
+      "source": "arxiv",
+      "title": "Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking",
+      "abstract": "Track materialization converts raw video into reusable object tracks that downstream queries can run against without rerunning tracking, but extracting those tracks efficiently and with high fidelity remains expensive. Prior systems reduce cost through temporal frame sampling, erasing the inter-frame motion that fine-grained tracking requires. In stationary video, however, large portions of each frame contain no objects of interest, and the remaining regions tolerate different sampling rates. We present Tetris, a track-extraction system that decomposes videos into a tile-based polyomino data model, enabling fine-grained spatiotemporal pruning that reduces detector calls with minimal fidelity loss. Tetris runs three operators upstream of the user-provided detector: a classifier identifies relevant tiles and groups them into polyominoes, an integer linear program (ILP) prunes redundant polyominoes under a user-specified accuracy constraint, and a packer assembles the survivors into canvases that minimize detector calls. Across 7 stationary-video datasets, Tetris stays within a 5% tracking accuracy loss of a full-frame, every-frame reference pipeline, whereas prior systems exceed this bound on 3 of the 7 datasets. At this 5% bound, Tetris achieves up to 17.4x higher throughput than prior systems and up to 68.8x higher than the reference pipeline. The project page is at https://tetris-db.github.io .",
+      "authors": [
+        "Chanwut Kittivorawong",
+        "Alena Chao",
+        "Charlie Si",
+        "Alvin Cheung"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.DB"
+      ],
+      "published": "2026-05-25T07:55:49+00:00",
+      "link": "https://arxiv.org/pdf/2605.25538v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "proposes tile-level spatiotemporal sampling for efficient video object tracking",
+      "llm_evidence_cn": "提出瓦片级时空采样实现高效视频目标跟踪",
+      "llm_evidence": "提出瓦片级时空采样实现高效视频目标跟踪",
+      "canonical_evidence": "提出瓦片级时空采样实现高效视频目标跟踪",
+      "llm_tldr_en": "Tetris introduces a tile-based polyomino data model for video, enabling fine-grained spatiotemporal pruning to reduce detector calls while maintaining tracking fidelity.",
+      "llm_tldr_cn": "该工作针对视频目标跟踪中轨迹物化计算昂贵的问题，提出Tetris系统，将视频分解为瓦片基的多米诺数据模型，实现细粒度时空剪枝，在仅调用少量检测器的情况下保持高保真跟踪。实验表明在静态视频上大幅降低计算开销。",
+      "llm_tldr": "该工作针对视频目标跟踪中轨迹物化计算昂贵的问题，提出Tetris系统，将视频分解为瓦片基的多米诺数据模型，实现细粒度时空剪枝，在仅调用少量检测器的情况下保持高保真跟踪。实验表明在静态视频上大幅降低计算开销。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.24788v1",
+      "source": "arxiv",
+      "title": "XL-HD: Extended Learning in Hyperdimensional Computing via Deterministic Projections for In-Memory Accelerators",
+      "abstract": "Hyperdimensional computing (HDC) is a promising approach for energy-efficient edge machine learning (ML), where low latency, low power, and tight memory budgets are essential. However, traditional HDC relies on symbolic binding and pseudo-random high-dimensional vectors, which require large dimensionality and heuristic updates to reach competitive accuracy, limiting deployment on edge hardware. We introduce XL-HD, a deterministic, projection-based, fully learnable HDC framework tailored for in-memory acceleration within edge computing systems. The method uses a fixed Sobol sequence to project binary inputs, extending learning beyond conventional HDC. During training, class prototypes are optimized in real-valued space and later binarized, enabling an entirely binary dot-product inference pipeline ideal for IMC hardware such as ReRAM crossbars. XL-HD achieves competitive accuracy on MNIST, UCIHAR, and ISOLET while maintaining a compact IMC-based inference engine with $0.395 \\ \\text{mm}^2$ area and only $0.40 \\ μ\\text{J}$ per single-cycle inference.",
+      "authors": [
+        "Sabrina Hassan Moon",
+        "Abu Kaisar Mohammad Masum",
+        "Sercan Aygun",
+        "Dayane Reis"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR",
+        "cs.ET"
+      ],
+      "published": "2026-05-24T00:23:29+00:00",
+      "link": "https://arxiv.org/pdf/2605.24788v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "edge computing with hyperdimensional computing",
+      "llm_evidence_cn": "边缘计算中的超维计算",
+      "llm_evidence": "边缘计算中的超维计算",
+      "canonical_evidence": "边缘计算中的超维计算",
+      "llm_tldr_en": "Proposes XL-HD, a deterministic learnable HDC framework for in-memory acceleration on edge devices, achieving competitive accuracy with low latency and power.",
+      "llm_tldr_cn": "本文针对传统超维计算需要高维度和启发式更新、难以部署在边缘硬件的问题，提出XL-HD，采用确定性投影和端到端学习，在内存中加速实现高效边缘机器学习，实验表明其在多个分类任务上达到与深度学习相当的精度，同时功耗和延迟显著降低，适用于边缘实时视频分析。",
+      "llm_tldr": "本文针对传统超维计算需要高维度和启发式更新、难以部署在边缘硬件的问题，提出XL-HD，采用确定性投影和端到端学习，在内存中加速实现高效边缘机器学习，实验表明其在多个分类任务上达到与深度学习相当的精度，同时功耗和延迟显著降低，适用于边缘实时视频分析。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.30060v1",
+      "source": "arxiv",
+      "title": "Towards Consistent Video Geometry Estimation",
+      "abstract": "This work presents ViGeo, a feed-forward foundation model for recovering spatially dense and temporally consistent geometry from video sequences. Built upon a plain transformer architecture without task-specific architectural modifications, ViGeo supports streaming, full-sequence, and long-video inference within a unified model. The key design is dynamic chunking attention, which exposes the model to both bidirectional and causal temporal contexts during training and allows it to adapt its attention pattern at test time without retraining. To improve supervision quality, we further introduce a completion-based data refinement framework. This framework trains a video depth completion teacher that conditions on sparse and noisy annotations and exploits video/multi-view context to produce dense, temporally coherent, and geometrically reliable training targets. Beyond depth and point maps, ViGeo also predicts surface normals within the same framework. Trained solely on public datasets, ViGeo achieves state-of-the-art performance across online, offline, and long-video depth estimation, surface normal estimation, and video point map estimation.",
+      "authors": [
+        "Zhu Yu",
+        "Jingnan Gao",
+        "Runmin Zhang",
+        "Lingteng Qiu",
+        "Zhengyi Zhao",
+        "Rui Peng",
+        "Yichao Yan",
+        "Kejie Qiu",
+        "Siyu Zhu",
+        "Si-Yuan Cao",
+        "Hui-Liang Shen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-28T15:11:17+00:00",
+      "link": "https://arxiv.org/pdf/2605.30060v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "streaming video geometry estimation with dynamic chunking attention",
+      "llm_evidence_cn": "流式视频几何估计",
+      "llm_evidence": "流式视频几何估计",
+      "canonical_evidence": "流式视频几何估计",
+      "llm_tldr_en": "ViGeo is a feed-forward model for dense and temporally consistent video geometry estimation, supporting streaming inference via dynamic chunking attention, enabling real-time depth and geometry recovery from video sequences.",
+      "llm_tldr_cn": "ViGeo提出一种前馈模型，用于从视频序列恢复密集且时间一致的几何信息。采用动态分块注意力机制，支持流式推理、全序列和长视频统一模型。通过基于补全的数据精炼框架，利用多视角上下文提高监督质量，实验表明在不同数据集上实现了精准鲁棒的几何估计。",
+      "llm_tldr": "ViGeo提出一种前馈模型，用于从视频序列恢复密集且时间一致的几何信息。采用动态分块注意力机制，支持流式推理、全序列和长视频统一模型。通过基于补全的数据精炼框架，利用多视角上下文提高监督质量，实验表明在不同数据集上实现了精准鲁棒的几何估计。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.25916v1",
+      "source": "arxiv",
+      "title": "Joint Optimization of Training and Inference in Federated Edge Learning via Constrained Multi-Objective Deep Reinforcement Learning",
+      "abstract": "Federated edge learning (FEEL) has recently emerged as a promising paradigm for achieving edge intelligence (EI) via enabling collaborative model training across edge devices while protecting data privacy. In this paper, we put forth an online optimization framework that jointly manages federated training and inference on resource-constrained edge devices. We introduce a tandem-queue-inspired conversion mechanism that bridges inference requests and training data, and further incorporate both data and model freshness into the accuracy formulation to capture temporal dynamics in real-world environments. To maximize inference accuracy while minimizing latency and energy consumption, the mode selections, communication, and computation resource allocations of edge devices are jointly optimized. We formulate this optimization as a multi-objective optimization problem, which is NP-hard and further complicated by the online setting. To address these challenges, we transform the problem into a multi-objective Markov decision process (MOMDP) and develop a \\underline{c}onstrained \\underline{m}ulti-\\underline{o}bjective \\underline{p}roximal \\underline{p}olicy \\underline{o}ptimization (C-MOPPO) algorithm. Specifically, C-MOPPO first learns a set of policies with different preferences across three objectives, then leverages constrained policy optimization to enrich the Pareto front and obtain high-quality, dense solutions. Extensive experiments demonstrate that C-MOPPO achieves well-balanced trade-offs among objectives and significantly outperforms baselines under various system configurations.",
+      "authors": [
+        "Zhen Li",
+        "Jun Cai",
+        "Chao Yang",
+        "Haoran Gao"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.DC",
+        "cs.NI"
+      ],
+      "published": "2026-05-25T14:51:07+00:00",
+      "link": "https://arxiv.org/pdf/2605.25916v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "joint optimization of training and inference on edge with model selection",
+      "llm_evidence_cn": "边缘设备上训练与推理的联合优化与模型选择",
+      "llm_evidence": "边缘设备上训练与推理的联合优化与模型选择",
+      "canonical_evidence": "边缘设备上训练与推理的联合优化与模型选择",
+      "llm_tldr_en": "Proposes an online optimization framework for federated edge learning that jointly manages training and inference on edge devices, incorporating model selection via multi-objective deep reinforcement learning to balance accuracy, latency, and energy.",
+      "llm_tldr_cn": "现有联邦边缘学习在资源受限设备上难以同时优化训练和推理。本文提出一个在线优化框架，通过约束多目标深度强化学习联合管理边缘设备的训练和推理过程。引入串联队列转换机制连接推理请求和训练数据，并结合数据与模型新鲜度建模精度。实验表明该方法在精度、延迟和能耗之间取得了有效平衡。",
+      "llm_tldr": "现有联邦边缘学习在资源受限设备上难以同时优化训练和推理。本文提出一个在线优化框架，通过约束多目标深度强化学习联合管理边缘设备的训练和推理过程。引入串联队列转换机制连接推理请求和训练数据，并结合数据与模型新鲜度建模精度。实验表明该方法在精度、延迟和能耗之间取得了有效平衡。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.24972v1",
+      "source": "arxiv",
+      "title": "Integrated Sensing, Communication, and Computing for NR-V2X: A Cross-Layer Resource Allocation Framework Using Multi-Agent Reinforcement Learning",
+      "abstract": "Integrated sensing, communication, and computation (ISCC) is emerging as a unified design paradigm for future vehicular networks that require joint environment perception, safety-critical information exchange, and latency-sensitive task processing. In New Radio Vehicle-to-Everything (NR-V2X) Mode 2, autonomous resource selection is performed through sensing-based semi-persistent scheduling (SB-SPS), which is effective for distributed communication resource reservation but does not explicitly consider sensing-resource demand, task-induced computation workload, and the additional latency introduced by mobile edge computing (MEC) offloading. This paper develops multi-agent proximal policy optimization-based SB-SPS (MAPPO-SPS), an ISCC-aware cross-layer scheduler that jointly adapts SB-SPS reservation, radio-resource partitioning, and overflow-driven computation-offloading decisions at control epochs. The scheduling problem is formulated as a cooperative partially observable Markov game and solved using MAPPO with centralized training and decentralized execution (CTDE). Simulation results show that MAPPO-SPS achieves a balanced tradeoff among CRLB-based sensing accuracy, packet reception ratio (PRR), effective throughput, energy consumption, and end-to-end delay.",
+      "authors": [
+        "Indulekha K. P.",
+        "T. G. Venkatesh"
+      ],
+      "primary_category": "cs.IT",
+      "categories": [
+        "cs.IT"
+      ],
+      "published": "2026-05-24T09:56:57+00:00",
+      "link": "https://arxiv.org/pdf/2605.24972v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "proposes MEC-aware resource allocation for vehicular networks",
+      "llm_evidence_cn": "提出面向车联网的MEC感知资源分配",
+      "llm_evidence": "提出面向车联网的MEC感知资源分配",
+      "canonical_evidence": "提出面向车联网的MEC感知资源分配",
+      "llm_tldr_en": "Integrates sensing, communication, and computing with multi-agent RL for NR-V2X, addressing MEC offloading latency.",
+      "llm_tldr_cn": "该工作针对NR-V2X场景，提出感知通信计算一体化框架，使用多智能体强化学习进行跨层资源分配，显式考虑移动边缘计算（MEC）卸载带来的额外时延。实验表明所提方法在资源效率和延迟方面优于基线。",
+      "llm_tldr": "该工作针对NR-V2X场景，提出感知通信计算一体化框架，使用多智能体强化学习进行跨层资源分配，显式考虑移动边缘计算（MEC）卸载带来的额外时延。实验表明所提方法在资源效率和延迟方面优于基线。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.30060v2",
+      "source": "arxiv",
+      "title": "Towards Consistent Video Geometry Estimation",
+      "abstract": "This work presents ViGeo, a feed-forward foundation model for recovering spatially dense and temporally consistent geometry from video sequences. Built upon a plain transformer architecture without task-specific architectural modifications, ViGeo supports streaming, full-sequence, and long-video inference within a unified model. The key design is dynamic chunking attention, which exposes the model to both bidirectional and causal temporal contexts during training and allows it to adapt its attention pattern at test time without retraining. To improve supervision quality, we further introduce a completion-based data refinement framework. This framework trains a video depth completion teacher that conditions on sparse and noisy annotations and exploits video/multi-view context to produce dense, temporally coherent, and geometrically reliable training targets. Beyond depth and point maps, ViGeo also predicts surface normals within the same framework. Trained solely on public datasets, ViGeo achieves state-of-the-art performance across online, offline, and long-video depth estimation, surface normal estimation, and video point map estimation.",
+      "authors": [
+        "Zhu Yu",
+        "Jingnan Gao",
+        "Runmin Zhang",
+        "Lingteng Qiu",
+        "Zhengyi Zhao",
+        "Rui Peng",
+        "Yichao Yan",
+        "Kejie Qiu",
+        "Siyu Zhu",
+        "Zilong Dong",
+        "Si-Yuan Cao",
+        "Hui-Liang Shen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-28T15:11:17+00:00",
+      "link": "https://arxiv.org/pdf/2605.30060v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "streaming video geometry estimation with dynamic chunking attention",
+      "llm_evidence_cn": "支持流式推理的动态分块注意力视频几何估计",
+      "llm_evidence": "支持流式推理的动态分块注意力视频几何估计",
+      "canonical_evidence": "支持流式推理的动态分块注意力视频几何估计",
+      "llm_tldr_en": "ViGeo is a foundation model for dense and temporally consistent video geometry estimation supporting streaming, full-sequence, and long-video inference via dynamic chunking attention and a completion-based data refinement framework.",
+      "llm_tldr_cn": "视频几何估计面临时空一致性问题。ViGeo采用纯Transformer架构，通过动态分块注意力机制统一支持流式、全序列和长视频推理，无需任务特定修改。同时引入基于补全的数据精炼框架，利用视频上下文提升监督质量，实现高精度深度估计。",
+      "llm_tldr": "视频几何估计面临时空一致性问题。ViGeo采用纯Transformer架构，通过动态分块注意力机制统一支持流式、全序列和长视频推理，无需任务特定修改。同时引入基于补全的数据精炼框架，利用视频上下文提升监督质量，实现高精度深度估计。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.26485v1",
+      "source": "arxiv",
+      "title": "OmniInteract: Benchmarking Real-World Streaming Interaction for Real-Time Omnimodal Assistants",
+      "abstract": "We introduce OmniInteract, a streaming benchmark for real-time omnimodal large language models evaluated through native online inference over audio-visual streams. Unlike offline video understanding or text-prompted streaming QA, OmniInteract preserves the original audio-visual stream and requires models to process it online, without access to future content. User queries and ambient sounds are embedded in the audio track, requiring models to detect multimodal triggers, decide when to respond, and answer while the stream unfolds. OmniInteract contains 250 videos with 1,430 temporally grounded response slots: 1,062 1Q1A slots across real-time, proactive, and nested scenarios, and 368 1QnA slots for continuous task monitoring and step guidance. Each slot includes a trigger, response window, and target answer. We evaluate response correctness, timing, invalid outputs, interruption handling, and context continuity using Interaction-Aware Quality-Timeliness F1, Interruption Diagnostic Suite, and Nested Chain Completion Score. Experiments show that current models remain weak in streaming interaction, with the best overall IA-QTF1 reaching only 0.368 and the best 1QnA IA-QTF1 only 0.052. Further study on mathematical reasoning in full-duplex settings shows that offline capability does not necessarily transfer to online interaction. Code and datasets will be made publicly accessible at https://github.com/Lucky-Lance/OmniInteract.",
+      "authors": [
+        "Xudong Lu",
+        "Xueying Li",
+        "Annan Wang",
+        "Yang Bo",
+        "Jinpeng Chen",
+        "Zengliang Li",
+        "Nianzu Yang",
+        "Rui Liu",
+        "Xue Yang",
+        "Jingwen Hou",
+        "Hongsheng Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.CL"
+      ],
+      "published": "2026-05-26T02:49:47+00:00",
+      "link": "https://arxiv.org/pdf/2605.26485v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "benchmarks real-time streaming interaction with audio-visual streams, directly matching streaming video analysis",
+      "llm_evidence_cn": "对实时流式交互进行基准测试，直接匹配流式视频分析",
+      "llm_evidence": "对实时流式交互进行基准测试，直接匹配流式视频分析",
+      "canonical_evidence": "对实时流式交互进行基准测试，直接匹配流式视频分析",
+      "llm_tldr_en": "OmniInteract provides a streaming benchmark for real-time omnimodal LLMs on audio-visual streams, requiring online processing without future context, which is directly relevant to streaming video analysis.",
+      "llm_tldr_cn": "OmniInteract提出了一个实时流式多模态基准，要求模型对音视频流进行原生在线推理，不能访问未来内容。该基准包含250个视频和1430个时间接地响应槽，涵盖实时、主动和嵌套场景。它直接服务于流式视频分析任务，评估模型在实时流上的理解与响应能力。",
+      "llm_tldr": "OmniInteract提出了一个实时流式多模态基准，要求模型对音视频流进行原生在线推理，不能访问未来内容。该基准包含250个视频和1430个时间接地响应槽，涵盖实时、主动和嵌套场景。它直接服务于流式视频分析任务，评估模型在实时流上的理解与响应能力。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.25804v1",
+      "source": "arxiv",
+      "title": "Event-to-Video Reconstruction using Spatio-Temporal and Frequency-Enhanced Deep Neural Networks",
+      "abstract": "Event cameras offer significant advantages over conventional frame-based counterparts, including high temporal resolution, low latency, and energy efficiency. These characteristics make them suitable for high-speed and high-dynamic range scene acquisition scenarios; however, the lack of dense intensity frames limits the direct applicability of conventional computer vision methods for scene understanding. Event-to-video (E2V) reconstruction seeks to bridge this gap by converting asynchronous event streams into a sequence of synchronous video frames. Existing E2V reconstruction methods based on convolutional neural networks and transformers operate primarily in the spatial domain and often struggle to recover fine structural details while suppressing severe reconstruction artifacts. To address these issues, we propose MSFET-E2V, a novel multiscale frequency-enhanced transformer model. At its core lies a cross-domain attention module, which fuses spatio-temporal features with frequency-aware representations derived from the discrete wavelet transform. Unlike prior methods relying solely on spatial attention, our approach effectively captures both local and global structures by taking into account low- and high-frequency components, enhancing detail preservation and robustness across various motion scenarios. Furthermore, we propose a lightweight wavelet-enhanced skip block that serves as a skip connection, facilitating artifact suppression and structural detail refinement through joint spatial-frequency domain processing. Extensive experiments demonstrate that MSFET-E2V achieves superior performance over state-of-the-art methods on multiple real-world event datasets, offering significant gains in reconstruction quality. Moreover, compared to the existing transformer-based method, our proposed model significantly reduces the number of parameters, the GPU memory usage, and inference time.",
+      "authors": [
+        "Ramna Maqsood",
+        "Paulo Nunes",
+        "Luís Ducla Soares",
+        "Caroline Conti"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-25T12:53:07+00:00",
+      "link": "https://arxiv.org/pdf/2605.25804v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "event-to-video reconstruction enabling streaming video analysis from asynchronous events",
+      "llm_evidence_cn": "事件到视频重建，支持从异步事件流进行流式视频分析",
+      "llm_evidence": "事件到视频重建，支持从异步事件流进行流式视频分析",
+      "canonical_evidence": "事件到视频重建，支持从异步事件流进行流式视频分析",
+      "llm_tldr_en": "This paper presents an event-to-video reconstruction network using spatio-temporal and frequency-enhanced modules to recover fine structures and textures from event streams, achieving high-quality video frames for downstream analysis.",
+      "llm_tldr_cn": "事件相机输出异步事件流，缺乏密集强度帧，限制了后续视频分析。该文提出融合时空和频率增强的深度神经网络，通过多域特征提取恢复精细结构，将事件流高质量重建为同步视频帧，使传统计算机视觉方法可直接应用于事件相机场景。",
+      "llm_tldr": "事件相机输出异步事件流，缺乏密集强度帧，限制了后续视频分析。该文提出融合时空和频率增强的深度神经网络，通过多域特征提取恢复精细结构，将事件流高质量重建为同步视频帧，使传统计算机视觉方法可直接应用于事件相机场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "biorxiv-10-1101-2025-09-27-678941-v2",
+      "source": "biorxiv",
+      "title": "DLC2Action: A Multimodal Deep Learning-based Toolbox for Automated Behavior Segmentation",
+      "abstract": "Behavioral analysis is fundamental to neuroscience, yet the manual annotation of actions remains a bottleneck that constrains both the scale and the reproducibility of experiment. Here, we present DLC2Action, an open-source Python toolbox that enables automatic behavior annotation from video, audio and estimated 2D/3D pose tracking data. DLC2Action integrates multiple state-of-the-art deep learning architectures optimized for action segmentation and supports self-supervised learning (SSL) to address annotation scarcity, boosting performance with limited labeled datasets. To enable model comparison, we establish fixed train/test partitions for nine diverse datasets comprising rodent experiments, human cooking studies, and wildlife observation. DLC2Action reached strong performance across those benchmarks. To further showcase the tool's versatility, we applied it to Atari gameplay data and found that, in certain games, the players' eye movements consistently predict their button presses across subjects. Because DLC2Action features an intuitive graphical user interface (GUI), users can streamline behavior annotation, perform active learning, and assess of model predictions. Diverse pose, video, and annotation formats are supported. Lastly, DLC2Action is modular and thus designed for extensibility, allowing users to integrate new models, dataset features, and methods. The code and benchmarks are available at: https://github.com/amathislab/DLC2action",
+      "authors": [
+        "Kozlova, E.",
+        "Bonnetto, A.",
+        "Mathis, A."
+      ],
+      "primary_category": "animal behavior and cognition",
+      "categories": [
+        "animal behavior and cognition"
+      ],
+      "published": "2026-05-30T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.1101/2025.09.27.678941v2.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "automated behavior annotation from video with model comparison",
+      "llm_evidence_cn": "自动视频行为标注与模型选择",
+      "llm_evidence": "自动视频行为标注与模型选择",
+      "canonical_evidence": "自动视频行为标注与模型选择",
+      "llm_tldr_en": "DLC2Action is an open-source Python toolbox for automated behavior annotation from video, audio, and pose data, integrating multiple deep learning architectures and self-supervised learning to boost action segmentation with limited labels, establishing benchmarks across nine datasets.",
+      "llm_tldr_cn": "DLC2Action是一个开源的Python工具箱，利用视频、音频和2D/3D姿态跟踪数据实现自动行为标注。它集成了多种先进的动作分割深度学习架构，并支持自监督学习以应对标注稀缺问题，在少数标注样本下提升性能。在九个不同数据集上建立了固定训练/测试划分，便于模型比较，显著减少手动标注工作量。",
+      "llm_tldr": "DLC2Action是一个开源的Python工具箱，利用视频、音频和2D/3D姿态跟踪数据实现自动行为标注。它集成了多种先进的动作分割深度学习架构，并支持自监督学习以应对标注稀缺问题，在少数标注样本下提升性能。在九个不同数据集上建立了固定训练/测试划分，便于模型比较，显著减少手动标注工作量。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.29762v1",
+      "source": "arxiv",
+      "title": "GeoMag: Geometric-Aware Video Motion Magnification via State Space Model",
+      "abstract": "Video Motion Magnification (VMM) reveals imperceptible dynamics but often suffers from structural inconsistencies under complex geometric transformations. Existing learning-based methods generally face a trade-off between the limited global context of CNNs and the high computational cost of Transformers. In addition, current training protocols, largely dominated by simple linear motion, fail to capture the geometric and imaging complexities encountered in real-world videos. To address these issues, we propose GeoMag, a geometric-aware VMM framework built upon State Space Models to achieve globally consistent motion amplification with linear complexity. We further construct Geo-200K, a large-scale synthetic dataset that introduces rich geometric transformations together with sensor-realistic degradations, improving the diversity and realism of training signals. Extensive experiments on synthetic and real-world benchmarks show that GeoMag consistently outperforms prior methods in visual fidelity and computational efficiency, while producing fewer artifacts and better structural consistency.",
+      "authors": [
+        "Kecheng Han",
+        "Yuchen Zhang",
+        "Bingqing Liu",
+        "Boqiang Guo",
+        "Wenbin Zheng",
+        "Shiyuan Pei"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-28T11:10:58+00:00",
+      "link": "https://arxiv.org/pdf/2605.29762v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video motion magnification using state space models",
+      "llm_evidence_cn": "视频运动放大技术",
+      "llm_evidence": "视频运动放大技术",
+      "canonical_evidence": "视频运动放大技术",
+      "llm_tldr_en": "GeoMag uses State Space Models for globally consistent video motion magnification with linear complexity, addressing geometric distortions via a large-scale synthetic dataset Geo-200K.",
+      "llm_tldr_cn": "GeoMag针对视频运动放大中存在的几何不一致问题，提出基于状态空间模型的几何感知框架，以线性计算复杂度实现全局一致的运动放大。同时构建大规模合成数据集Geo-200K，引入丰富几何变换，增强对真实世界复杂场景的适应能力，在保持结构完整性的同时显著提升运动放大的准确性和鲁棒性。",
+      "llm_tldr": "GeoMag针对视频运动放大中存在的几何不一致问题，提出基于状态空间模型的几何感知框架，以线性计算复杂度实现全局一致的运动放大。同时构建大规模合成数据集Geo-200K，引入丰富几何变换，增强对真实世界复杂场景的适应能力，在保持结构完整性的同时显著提升运动放大的准确性和鲁棒性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

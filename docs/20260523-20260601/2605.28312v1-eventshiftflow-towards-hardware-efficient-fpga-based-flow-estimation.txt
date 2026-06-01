@@ -1,0 +1,373 @@
+Title: EventShiftFlow: Towards Hardware-efficient FPGA-based Flow Estimation
+
+URL Source: https://arxiv.org/pdf/2605.28312v1
+
+Published Time: Thu, 28 May 2026 01:06:39 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# EventShiftFlow: Towards Hardware-efficient FPGA-based Flow Estimation 
+
+Arianna Alonso Bizzi, Fernando Cladera, and C. J. Taylor 
+
+Abstract —Event-based vision sensors offer asynchronous, high-temporal-resolution measurements that are attractive for low-latency robotic perception, but many event-based motion estima-tion methods are computationally intensive and difficult to map to FPGA hardware. We present a streaming velocity estimator that discretizes asynchronous events into fixed-duration time bins, constructs a 1-bit spatial occupancy grid, and evaluates multiple velocity hypotheses in parallel using only fixed-width integer logic—shift registers, counters, comparators, and small LUT-mapped multiplies—with no dividers and no DSP blocks. It requires no frame reconstruction, no floating-point arithmetic, and no iterative optimization. The method deliberately trades dense sub-pixel optical flow for a sparse, quantized velocity estimate at each active pixel, suited to low-latency tasks such as reactive obstacle avoidance on size-, weight-, and power-constrained platforms. On noisy synthetic data with known ground-truth velocities, the method recovers both magnitude and direction, with magnitude estimates being most challenged when objects of different velocities intersect. On a real event-camera sequence, directional accuracy reaches 99.5% across all four evaluated motion segments, with performance remaining robust across occupancy densities in the 10–40% range. We characterize the algorithm’s density-dependent behavior, present a parameter sensitivity analysis, show that the proposed datapath requires less than 2 kB of storage, and implement a single-axis prototype on a low-cost Xilinx Artix-7. Project page: https://alonsobizzi.github.io/eventshiftflow-site/. 
+
+I. I NTRODUCTION 
+
+Event cameras are bio-inspired sensors that asynchronously report per-pixel brightness changes with microsecond temporal resolution, high dynamic range, and low power consumption [1]. These properties make them attractive for low-latency motion estimation in robotic systems, particularly of size, weight, and power (SWaP) constrained platforms such as micro aerial vehicles. However, most existing methods for estimating motion from events, whether based on local plane fitting [2], contrast maximization [3], or deep learning [4], [5], require operations that are expensive in hardware: floating-point arithmetic, iterative optimization, or large memory buffers for frame reconstruction. Field-programmable gate arrays (FPGAs) and application-specific integrated circuits (ASICs) are natural targets for event-driven processing because they can handle each incom-ing event with fixed, sub-microsecond latency in a dedicated datapath, matching the asynchronous, low-latency nature of the sensor itself. Unlike CPUs or GPUs, which batch events for processing, reconfigurable hardware can feature parallel processing lanes that operate continuously on the event stream 
+
+All authors are with the University of Pennsylvania, Philadelphia, PA. Corresponding author: alari@seas.upenn.edu .x=8 gradients     
+
+> x=4 gradients
+> . . .
+> FIFO
+> Time bin
+> x pixel accumulator
+> Binary occupancy row Binary occupancy row Shift into occupancy grid
+> (t, x, y, p)
+> x=2 gradients
+> Top gradients per pixel LUT
+> `633x=2 x=4 x=8 sv1v2v3v4v5titi-1 ti-L+2 ti-L+1
+
+Fig. 1. Bitvector-based motion estimation pipeline. Event data for each axis is accumulated and thresholded to be discretized into binary occupancy representations. A spatiotemporal occupancy grid is constructed by keeping a buffer of past occupancy representations. Motion is inferred via parallel evaluation of delay hypotheses using lightweight bitvector scoring, enabling efficient, parallelizable hardware implementation. The figure represents the x motion pipeline, but the same approach is applied in parallel to the y axis. 
+
+with deterministic timing and lower power consumption. This makes FPGA-based processing particularly attractive for resource-constrained robotic platforms where latency, power, and weight budgets preclude general-purpose processors. FP-GAs are preferred over ASICs for rapid design iteration. They allow in-field reconfiguration as the algorithm matures, without the high non-recurring engineering costs of custom silicon. For deployment on FPGA or ASIC, the algorithm must map to a fixed datapath with predictable latency, bounded memory and thus no unbounded, iterative loops. Existing methods do not fit this constraint: plane-fitting methods re-quire least-squares solves per event; contrast maximization requires a search over a continuous parameter space; and learned methods require networks with tens of millions of parameters and corresponding multiply-accumulate operations per inference [4], [5]. FPGA implementations exist, but many remain resource-intensive. We propose a different approach that pushes the limit of how much we can shrink and simplify the hardware whilst still recovering meaningful flow information in real-time. In its current form, the algorithm requires no frame reconstruction, no floating-point arithmetic, and no iterative optimization. The entire state fits in under 2kB of on-chip storage for a DAVIS240C sensor. We validate the method on noisy, 
+
+Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026 
+
+> arXiv:2605.28312v1 [cs.RO] 27 May 2026
+
+synthetic data with known ground-truth velocities and on real event camera recordings from the RPG dataset [6], where we characterize a density-dependent directional bias and analyze parameter sensitivity. We discuss the direct mapping to an FPGA datapath and provide resource and latency estimates. In summary, the contributions of this paper are:  
+
+> •
+
+An FPGA-aware bitvector-based motion estimation algorithm , with low-resource utilization yet acceptable performance for normal-flow estimation operations.  
+
+> •
+
+Evaluation of this algorithm in synthetic and real-world data.  
+
+> •
+
+A resource and latency characterization of the pro-posed method, targeting low-resource FPGAs. An overview of our algorithm is seen in Fig. 1. II. R ELATED WORK 
+
+A. Event-Based Optical Flow 
+
+The problem of estimating visual motion from event streams has been approached from several directions. Benosman et al. [2] introduced local plane fitting on the surface of active events, estimating optical flow from the slope of a fitted plane in (x, y, t ) space. While elegant and per-event, the method requires a least-squares solve per event and is sensitive to noise, requiring outlier rejection schemes [7]. Gallego et al. [3] proposed contrast maximization, a framework that searches for the motion parameters that best align events when warped along candidate trajectories. This produces accurate flow but requires iterative optimization over a continuous parameter space, making real-time hardware implementation challenging. Learning-based methods have achieved the lowest errors on standard benchmarks. EV-FlowNet [4] and E-RAFT [5] use convolutional architectures to predict dense optical flow from event representations, with E-RAFT achieving state-of-the-art accuracy on the DSEC benchmark. Schnider et al. [8] demonstrated a spiking neural network variant with reduced complexity for real-time deployment. However, even reduced models require millions of parameters and dedicated neural network accelerators. 
+
+B. Hardware Implementations 
+
+Liu and Delbruck developed a series of FPGA optical flow implementations for event cameras [9], [10], culminating in EDFLOW [11], which combines adaptive block matching for optical flow extraction (ABMOF) with keypoint detec-tion (SFAST) on a custom DVS+FPGA platform. EDFLOW achieves accuracy comparable to EV-FlowNet while consum-ing roughly 100 × less power, processing block matches at 123 GOp/s. However, the design requires a 25 ×25 pixel block match per keypoint and a powerful Xilinx Zynq XC7Z100 SoC. ABMOF requires four full-density image buffers with 4 bits per pixel, so the buffer scales as 4 bits × 4 slices × x × y,and implementing this with SFAST requires an additional 12 slices at lower resolution, giving a size of 247kB for the combined memory slices. Plane-fitting algorithms have also been attempted on FPGA. Aung et al. [12] implemented Benosman’s plane-fitting al-gorithm, achieving sub-microsecond latency with a fully pipelined design capable of 100 million plane fits per second, but requiring division and square-root pipelines for the least-squares computation. Haessig et al. [13] implemented a spik-ing optical flow estimator on IBM’s TrueNorth neuromorphic chip, achieving low power consumption but limited to sparse flow estimates. A recent survey by Kowalczyk et al. [14] reviews 60 FPGA implementations for event data processing, noting that optical flow remains one of the more computation-ally demanding tasks. 
+
+C. Positioning 
+
+Our approach trades per-pixel flow accuracy for extreme hardware simplicity and low memory requirements. Rather than computing dense optical flow, we detect the dominant velocity at each active pixel using a discrete hypothesis search, scored by counting 1-bit coincidences along diagonal traces in a shift-register occupancy grid. The entire computation uses only fixed-width integer arithmetic implemented with registers, counters, comparators and small LUT-based logic. This places our method at the minimal-complexity end of the design space, suitable as a lightweight front-end for miniaturized neuromorphic robotic systems where approxi-mate motion cues that allow data sparsification at low latency are more valuable than precise flow at higher cost. III. E XPERIMENTAL SETUP 
+
+A. Prototyping 
+
+The algorithm was prototyped and validated in Python before considering hardware mapping. This allowed rapid iter-ation on the scoring function, parameter tuning, and diagnostic instrumentation that would be impractical in RTL. The Python prototype simulates data ingestion in the same streaming order they would arrive in hardware: one event time bin at a time, with no lookahead or batch preprocessing. 
+
+B. Synthetic Data 
+
+To validate the algorithm in a controlled setting, we gen-erated noisy, synthetic event streams with known ground-truth velocities. The simulator places multiple objects of configurable width, orientation, and velocity on a 240 ×180 pixel sensor. At each asynchronous microsecond timestamp, each object advances by its velocity vector, and events are generated at pixels where the object’s leading or trailing pixels cross. Timestamp jitter and Gaussian noise events are added uniformly across the sensor at a configurable rate to test robustness. The base synthetic dataset used for evaluation consists of multiple bars moving in arbitrary directions, with velocities spanning the range of ±0.03 px/μs with a discretization of 0.005 px/μs and 5% event-rate noise. Our synthetic data generator was extended to support arbitrary, bitmap-defined shapes with arbitrary velocities as well as angular and translational accelerations. This allows 
+
+> Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026
+
+for grounded testing of more realistic motion and provides a transition route to the RPG Event Camera Dataset [6]. Examples of the synthetic data can be observed in the first five rows of Fig. 3. 
+
+C. Real Data 
+
+For real-world evaluation, we use the shapes rotation se-quence from the RPG Event Camera Dataset [6], recorded with a DAVIS240C sensor (240 ×180 pixels). The sequence contains several geometric shapes (triangles, squares, circles) undergoing 6-DoF handheld camera motion over approxi-mately 7 seconds. Events are provided as (t, x, y, p ) tuples with timestamps in seconds, which we convert to microseconds for processing. 
+
+D. Ground Truth Extraction 
+
+Obtaining dense ground-truth optical flow for event camera data is an open challenge. Our synthetic data allowed precise ground truth tracking. For the real camera data, we employ two complementary approaches: 
+
+1) Manual tracking: Initially, we manually tracked identi-fiable features (corners and edges of geometric shapes) across reconstructed event video frames, recording pixel positions at regular time intervals. From these trajectories, we extracted piecewise-constant velocity segments with direction and ap-proximate magnitude. While coarse, this provides reliable directional ground truth for evaluating whether the algorithm correctly identifies the sign of motion. 
+
+2) Frame-based optical flow: To obtain denser ground-truth velocity estimates, we reconstruct intensity frames from the event stream using E2VID [15], a recurrent neural net-work for event-to-video conversion. We use the lightweight pretrained model with fixed-duration windows of 20 ms, pro-ducing frames at 50 Hz. Contrast-limited adaptive histogram equalization (CLAHE) and light Gaussian smoothing are applied to improve the low-contrast E2VID output. Dense optical flow is then computed between consecutive frames using OpenCV’s Dense Inverse Search (DIS) algorithm, with the previous frame’s flow used as initialization for temporal consistency. The spatially-averaged flow direction over moving pixels (magnitude > 0.3 px) at each timestamp provides a per-frame ground-truth velocity sign, which we use to compute directional accuracy automatically across the full sequence rather than only within manually selected segments. We note that this pipeline (events → E2VID → DIS optical flow) introduces its own errors: E2VID reconstructions are approximate, and DIS flow inherits any artifacts. We treat this as an approximate reference rather than exact ground truth, and cross-validate against the manual tracking to ensure consistency. IV. A LGORITHM DESCRIPTION 
+
+The proposed algorithm operates as a streaming pipeline: events are discretized into time bins, projected onto 1-bit occupancy vectors, stored in a shift register pipeline, and Input event stream Accumulate events in x/y buffers Time bin complete? Threshold to create x/y binary occupancy vectors Density in range or in adaptation period? Adjust time bin Clear buffers, resume streaming Shift occupancy vector into occupancy grid Extract jump hypothesis bitvectors Score bitvectors Extract dominant velocities Output flagged pixels and velocities Yes Yes No No  
+
+> Fig. 2. Processing pipeline block diagram for the proposed event-based optical flow estimation. Incoming events are accumulated into x/y buffers over adaptive time bins, thresholded into binary occupancy vectors, and passed through a bitvector scoring stage to extract dominant velocities.
+
+scored against discrete velocity hypotheses. The x and y
+
+axes are processed independently by identical pipelines, then combined. Fig. 2 shows the full datapath. 
+
+A. Event Discretization 
+
+An event camera produces an asynchronous stream of events 
+
+(tk, x k, y k, p k), where tk is the timestamp, (xk, y k) is the pixel location, and pk ∈ {− 1, +1 } is the polarity. We discretize this stream into fixed-duration time bins of length ∆t. For each bin 
+
+i spanning [i∆t, (i + 1)∆ t), we count the number of events at each pixel location along the axis of interest. For the x-pipeline, we collapse the y coordinate and po-larity, counting only how many events occur at each x-pixel regardless of y or sign. A binary occupancy signal is then 
+
+> Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026
+
+computed by thresholding: 
+
+Ex(x, i ) = 
+
+(
+
+1, if P     
+
+> k:xk=x, t k∈bin i
+
+1 ≥ θe
+
+0, otherwise (1) where θe is the event count threshold. The y-pipeline is identical, collapsing x instead. This 1-bit quantization discards magnitude and polarity information but enables the entire downstream pipeline to operate on single-bit data. The choice of ∆t and θe are coupled: a larger time bin accumulates more events per pixel, requiring a proportionally higher threshold to maintain sparse occupancy. We find that occupancy densities (fraction of active pixels per bin) in the 10–40% range yield reliable results, with performance degrad-ing below 10% due to insufficient detections (see Section VI). 
+
+B. Occupancy Grid 
+
+The occupancy vectors from the L most recent time bins are stored in a grid G of size Nx × L, where Nx is the number of pixels along the axis and L is the temporal depth (number of bins retained). Each entry G[x, ℓ ] is a single bit: 1 if pixel 
+
+x was occupied at time bin ℓ, 0 otherwise. At each new time bin, the grid is updated by shifting all columns one position and inserting the new occupancy vector: 
+
+G[x, ℓ ] ← G[x, ℓ + 1] for ℓ = 0 , . . . , L − 2 (2) 
+
+G[x, L − 1] ← Ex(x, i ) (3) In hardware, this is a bank of Nx shift registers, each L bits wide, updated in a single clock cycle via a parallel shift. 
+
+C. Hypothesis Bitvector Extraction 
+
+For each currently active pixel x0 (where Ex(x0, i ) =1), we evaluate a discrete set of velocity hypotheses j ∈{− J, . . . , +J}. Each hypothesis j proposes that the feature at x0 arrived there by moving j pixels per time bin. To test this, we trace a diagonal path backward through the occupancy grid: 
+
+bj (h) = G[x0 − j · h, L − h], h = 1 , . . . , L (4) where h indexes how many time bins into the past we look. At each step, we check pixel x0 − j ·h at time offset L − h. If this pixel was occupied, it is consistent with a feature moving at velocity j that now appears at x0. The trace terminates early if x0 − j · h falls outside [0 , N x).Two different hardware implementations of this search are considered. The most intuitive involves tracing these paths through the grid at each timestep, re-accessing the history at each new timestep. The second, lower-latency approach involves continuously collecting and comparing paths via spatial shift registers and clock enables, such that only the last two timesteps need to be considered to match the bitvector with the latest pixel associated with it. 
+
+D. Hypothesis Scoring 
+
+We consider alternative scoring functions with different hardware cost profiles. 
+
+1) Raw popcount: The simplest scorer counts the number of occupied cells along the trace: 
+
+Rj =
+
+> L
+
+X
+
+> h=1
+
+bj (h) (5) Since bj (h) ∈ { 0, 1}, the sum is a population count (popcount) of a binary vector — implemented as a single up-counter that increments on each occupied cell. The counter width is ⌈log 2(L + 1) ⌉ = 5 bits for L = 16 . Hypotheses with fewer than β in-bounds steps are discarded ( Rj = 0 if 
+
+Hj < β ), preventing high scores from short traces. To mitigate ties, when two hypotheses have the same raw score, the one with smaller |j| is preferred, biasing toward slower motion hypotheses when evidence is ambiguous. This scorer uses no DSP blocks, dividers, or floating-point units. The popcount operation is implemented with lookup-table (LUT)-based integer logic, and the winner is selected with fixed-width comparisons over bs = ⌈log 2(L + 1) ⌉-bit score values. However, large-|j| hypotheses trace fewer in-bounds steps, so they are structurally disadvantaged. Setting 
+
+β ≥ L/ 2 ensures all surviving hypotheses have comparable trace lengths, making raw scores approximately comparable without normalization. 
+
+2) Division-free normalized comparison: When hypotheses with widely varying in-bounds lengths must be compared, we avoid explicit division by cross-multiplying. To compare hypothesis j against hypothesis k:
+
+j beats k ⇐⇒ Rj · Hk > R k · Hj (6) Each product involves two values bounded by L = 16 , fitting in 8-bit arithmetic with no divider. Similarly, the threshold test 
+
+Rj /H j > θ s/L becomes: 
+
+Rj · L > θ s · Hj (7) where multiplication by L = 16 is a left shift by 4 bits, and 
+
+θs · Hj is a small constant-by-variable multiply (or a 16-entry lookup table indexed by Hj ). In the results reported in this paper, we use the raw popcount scorer with β = L/ 2 for synthetic data and the cross-multiplication comparison for real data, where trace lengths vary more due to objects near sensor edges. 
+
+E. Winner Selection 
+
+The dominant velocity at pixel x0 is: 
+
+j∗ = arg max  
+
+> j
+
+Sj , subject to Sj∗ > θ s (8) where θs is a score threshold above which a hypothesis is deemed worthy of notice. The physical velocity in pixels per second is: 
+
+vx = j∗
+
+∆t (9) In hardware, the arg max is a comparator tree of depth 
+
+⌈log 2(2 J + 1) ⌉ and the velocity is extracted from a lookup table to avoid divides. 
+
+> Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026
+
+F. 2D Extension 
+
+The x and y axes are processed by independent, identical pipelines with separate occupancy grids Gx (Nx × L) and Gy
+
+(Ny × L). Each pipeline produces per-pixel velocity estimates along its axis: vx at each active x-pixel and vy at each active 
+
+y-pixel. To combine the two into a 2D velocity vector, we use the y-coordinates of events associated with each x-detection. When the x-pipeline produces a detection at pixel x0, we record which y-pixels had events at x0 during that bin. We then look up the y-pipeline’s velocity estimate at those y-pixels and take the median as the associated vy :
+
+vy (x0) = median {vy (y) : y ∈ Y (x0)} (10) where Y(x0) is the set of y-pixels with events at x0 in the current bin. The output is a 2D velocity vector (vx, v y ) at each active x-pixel, along with the median y-coordinate for spatial localization. This design doubles the hardware resources (two grids, two scoring pipelines) but introduces no new computational primitives. The two pipelines share no state during scoring and can execute fully in parallel, combining only at the final association step. 
+
+G. Parameters 
+
+The algorithm has six parameters, summarized in Table I. The most important design choice is ∆t, which determines the displacement per bin and thus which velocities are resolvable. If ∆t is too small, the true displacement is sub-pixel and indistinguishable from noise; if too large, the occupancy grid saturates and all hypotheses score similarly.               
+
+> TABLE I ALGORITHM PARAMETERS AND THEIR ROLES .Symbol Description Typical value
+> ∆tTime bin duration 5–50 ms
+> θeEvent count threshold 30–100
+> LTemporal depth (grid columns) 16
+> JMax hypothesis magnitude 15
+> βMin in-bounds steps 4
+> θsScore threshold 0.3L
+
+The hypothesis range J is bounded by ⌊Nx/L ⌋: hypotheses with |j| > N x/L cannot stay in bounds for more than L steps from any starting pixel. In practice, we set J slightly below this bound. The event threshold θe scales approximately linearly with ∆t, since longer bins accumulate proportionally more events. V. H ARDWARE ARCHITECTURE 
+
+This section presents an evaluation of the proposed algo-rithm in an FPGA platform, with the respective resource and latency estimations. 
+
+A. Event Binning 
+
+A free-running counter increments on each clock cycle and resets when it reaches ∆t/T clk cycles, issuing a bin-complete pulse. A small input FIFO decouples the asynchronous event stream from the synchronous scoring pipeline. During each bin, a bank of Nx event counters (one per pixel, 8 bits each) accumulates incoming events, that are collapsed in the orthogonal direction. This allows us to use a buffer size that scales as X + Y instead of XY , where X and Y define the camera dimensions. On the bin-complete pulse, each counter is compared against θe; the result (1 bit per pixel) forms the new occupancy vector. All counters are then cleared for the next bin. No modulo logic is required — the bin timer is a simple compare-and-reset counter. Adaptive bin duration using occupancy density feedback eliminates manual ∆t tuning, requiring only a popcount and two comparators. To allow for stabilization and easier velocity extraction, we propose an adjustment period during which the new timebin cannot be modified following each change. 
+
+B. Occupancy Grid 
+
+The occupancy grid is a bank of Nx shift registers, each 
+
+L bits wide. On each bin-complete pulse, all registers shift left by one position in parallel, and the new occupancy bit is written into the rightmost position. This update takes a single clock cycle. No addressing logic or RAM controllers are needed — each shift register is a chain of flip-flops with a common clock enable. 
+
+C. Hypothesis Scoring 
+
+For each active pixel x0, the scoring module evaluates 2J +1 
+
+hypotheses j ∈ {− J, . . . , +J} in parallel. Each hypothesis lane j contains:  
+
+> •
+
+An index register initialized to x0, decremented by j each step  
+
+> •
+
+A bounds comparator checking 0 ≤ xcheck < N x 
+
+> •
+
+A 5-bit up-counter accumulating occupied cells  
+
+> •
+
+A 4-bit step counter tracking Hj
+
+All lanes trace simultaneously through the grid over L
+
+clock cycles. Since all lanes read different x-addresses of the same grid in the same cycle, the grid must support 2J + 1 
+
+simultaneous reads. At Nx = 240 pixels × L = 16 bits 
+
+= 3 ,840 bits, register-based storage is feasible and provides unlimited read ports. For larger sensors, banked SRAM with time-multiplexed access would be required. After L cycles, each lane holds a raw score Rj and step count Hj . The winner is found by a pipelined comparator tree of depth ⌈log 2(2 J + 1) ⌉ stages. 
+
+D. Parallelism and Latency 
+
+The architecture processes one active pixel at a time, with all hypothesis lanes executing in parallel. The latency per pixel is L+⌈log 2(2 J +1) ⌉ clock cycles: L = 16 cycles for the trace plus 5 cycles for the comparator tree, totaling 21 clock cycles per active pixel. At a 100 MHz clock, this is 210 ns per pixel. 
+
+> Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026
+
+If na pixels are active in a given bin (typically 10–20% of 
+
+Nx), the total scoring time per bin is 21 × na cycles. For the worst case of na = Nx active pixels, the scoring completes in 5040 cycles or 50.4 μs at 100 MHz, which is well within a typical ∆t of 5–50 ms. The remaining bin time is idle, leaving substantial margin for lower clock frequencies or additional processing. 
+
+E. Incremental Scoring Variant 
+
+For the sensor and parameters considered in this work, the trace-based scorer completes well within a single time bin (under 1% utilization at 100 MHz). We describe an incremental variant for scenarios requiring shorter bins, larger sensors or smaller FPGAs with slower clock speeds. The trace-based scorer described above re-reads L cells per hypothesis per active pixel, requiring L clock cycles per pixel. We observe that between consecutive time bins, the diagonal trace for hypothesis j at pixel x0 is identical to the trace at pixel x0 + j in the previous bin, shifted by one timestep. The oldest occupancy value falls off one end and one new value enters at the other. This permits an incremental update. We maintain a running score array ˆR[x][ j] of size Nx × (2 J + 1) . On each bin-complete, the update for each pixel and hypothesis is: 
+
+ˆR[x0][ j] ← ˆR[x0 +j][ j]−G[x0 −j ·L, 0]+ G[x0, L −1] (11) where G[x0 − j · L, 0] is the oldest bit that falls off the trace and G[x0, L − 1] is the new occupancy bit. This replaces the 
+
+L-cycle trace with a single read–subtract–add–write per (pixel, hypothesis) pair, reducing the per-pixel scoring latency from 
+
+L to 1 clock cycle. The cost is additional storage: Nx ×(2 J +1) ×⌈ log 2(L+1) ⌉
+
+bits for the score array. For Nx = 240 , J = 15 , L = 16 , this is 240 × 31 × 5 = 37 ,200 bits ( ∼4.5 kB) per axis. Table II compares the two approaches.                          
+
+> TABLE II TRACE -BASED VS .INCREMENTAL SCORING COMPARISON (SINGLE AXIS ,
+> Nx= 240 ,L= 16 ,J= 15 ). Trace-based Incremental Cycles per pixel L+ log 2(2 J+ 1) 1 + log 2(2 J+ 1)
+> Total storage ∼6 kbit ∼43 kbit Grid reads per bin L×na×(2 J+ 1) na×(1 + 2 J+ 1)
+
+Both variants produce identical scores. The trace-based approach is simpler and uses less storage, making it attractive for initial implementation. The incremental variant trades storage for a ∼3.5 × latency reduction (from 21 to 6 cycles per pixel), and would be preferred in applications requiring higher throughput or supporting larger sensors where the per-pixel trace cost becomes a bottleneck. The results in this paper were validated using the trace-based approach. Verification of the incremental variant’s equiv-alence and its FPGA synthesis are left to future work. 
+
+F. Resource Estimates 
+
+Table III summarizes the expected resource usage for the core datapath of our single-axis pipeline targeting aDAVIS240C sensor ( Nx = 240 , L = 16 , J = 15 ). The values exclude board-facing I/O, buffering, debug, and implementa-tion overhead.                                       
+
+> TABLE III ESTIMATED CORE DATAPATH STORAGE FOR ONE AXIS OF THE
+> EVENT SHIFT FLOW PIPELINE WITH Nx= 240 ,L= 16 ,AND J= 15 .Component Bits / Units Notes Occupancy grid 3,840 bits 240 ×16 ×1-bit FFs Event counters 1,920 bits 240 ×8-bit counters Score accumulators 155 bits 31 ×5-bit (per lane) Step counters 124 bits 31 ×4-bit (per lane) Comparator tree 5 stages ⌈log 2(31) ⌉depth
+> Total (one axis) ∼6,100 bits <1kB
+> Total (both axes) ∼13,000 bits <2kB
+
+For comparison, EDFLOW [11] uses 390 Block RAMs (855 kB) and 669 DSP48E units on a Xilinx Zynq XC7Z100, and Aung et al. [12] use 138 Block RAMs and 16 DSPs. Our design requires zero Block RAMs (all storage fits in distributed flip-flops), and zero DSP units. The entire two-axis pipeline would occupy a small fraction of even low-cost FPGA devices. 
+
+G. Division Avoidance 
+
+The algorithm as described in Section IV-D avoids all division. The raw popcount scorer requires only a counter and comparators. The normalized variant uses cross-multiplication of 4-bit values (Eq. 6), which can be implemented as a small combinational circuit or a 256-entry lookup table. The velocity output v = j∗/∆t is computed off-chip by the host processor, since ∆t is a fixed configuration parameter. No arithmetic beyond counting and comparing occurs in the real-time datapath. VI. R ESULTS 
+
+A. Synthetic Data 
+
+We first validate the algorithm on synthetic data with exact ground truth. The algorithm was validated in progressive stages: initially on a single slider moving horizontally, then on multiple sliders at different heights, on multiple bars with arbitrarily angled velocity vectors and finally on combinations of shapes moving at different angles. We also add 5% additive gaussian noise events. For uniaxial motion, near perfect accuracy in both magni-tude and direction is observed aside from when bars travelling at different speeds overlap. The same phenomenon appears when multiple bars are travelling across the image at different angles as there are more overlap pixels. Figure 3 compares the algorithm’s predicted velocities against the expected motion and illustrates several key behaviors of the proposed approach. Row 1 shows the algorithm’s ability to detect diagonal motion not restricted to a single axis and row 2 presents the case of    
+
+> Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026 Events Predictions True motion Fig. 3. Event frames, predicted optical flow, and ground truth motion for six test scenarios. Each row shows a different scene: two synthetic single-object cases (rows 1–2), two synthetic multi-object cases (rows 3–4), a synthetic mixed-direction case (row 5), and a real-data scene (row 6). Arrow direction and colour encode the estimated velocity via the HSV colour wheel; arrow length is proportional to speed. The algorithm successfully estimates velocity direction and magnitude for the majority of detections across both synthetic and real data, with missed detections occurring primarily for objects with low event density or where objects overlap in the projected axis.
+
+different shapes, where the circle and rectangle move horizon-tally whilst the triangle moves diagonally. We observe small perturbations in the predictions of the shapes whose paths are about to interfere, though the directionality is preserved. The same kind of behavior can be observed in rows 4 and 5. In section VIII, we propose temporal regularization strategies to mitigate these effects. 
+
+B. Real Data 
+
+We evaluate on the shapes rotation sequence from the RPG Event Camera Dataset [6], using parameters ∆t = 40 ,000 μs, 
+
+θe = 80 , L = 16 , J = 15 , β = 4 , θs = 0 .5L.
+
+1) Directional accuracy: Table IV reports per-segment di-rectional accuracy, computed against manually tracked ground- 
+
+> Fig. 4. Predicted direction in red and green overlaid on E2Vid + CLAHE flow estimates.
+
+truth velocity segments. The algorithm correctly identifies the dominant motion direction in all four segments, with high confidence in the leftward segments (negative j∗) and moderate confidence in the rightward segments.                         
+
+> TABLE IV PER -SEGMENT DIRECTIONAL ACCURACY ON shapes rotation .Time (s) GT avg. jMedian jpred Dir. acc. (%) n
+> 0.78–1.10 2.50 294.7 19 1.43–2.11 −2.50 −3100.0 106 2.32–3.11 3.00 399.4 174 3.32–3.73 −3.46 −4100.0 142 Overall 99.5%
+
+2) Ground truth comparison: Fig. 4 compares the al-gorithm’s mean estimated direction and velocity against a frame-based ground-truth reference derived from E2VID [15] reconstruction followed by DIS optical flow (Section III-D). The sign of the estimated velocity tracks the ground-truth sign across most of the sequence, with transitions between leftward and rightward motion occurring at approximately the correct timestamps. The last row of Figure 3 compares the algorithm’s pre-dictions to the shapes’ true motion, showcasing its ability to correctly predict the direction and magnitude ( ±1px/ ∆t) of 5 out of 7 objects, especially the ones with flatter edges with respect to the direction of motion. These produce stronger projections onto the detection axis. 
+
+3) Parameter sensitivity: Figure 5 investigates how di-rectional accuracy varies with fixed ∆t and θe on the 
+
+shapes rotation sequence. The two parameters are coupled: longer bins accumulate more events per pixel, requiring higher thresholds to maintain sparse occupancy. The best performance occurs when the resulting occupancy density falls in the 10– 40% range. Setting J too low truncates the detectable velocity range, causing the algorithm to miss fast-moving features. Setting J
+
+too high wastes hypothesis lanes on velocities that exit the sensor bounds within a few steps. For the 240-pixel sensor with L = 16 , J = 15 covers the full range of hypotheses that can stay in bounds for at least β = 4 steps.              
+
+> Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026 Fig. 5. Directional accuracy across a grid of time-bin duration ∆tand event threshold θ. Cell colour indicates accuracy where sufficient detections exist ( n≥50 ): green ( ≥90%) and yellow (75–90%). Red cells have high occupancy density ( ρ≥10 %) but insufficient detections, while grey cells have low density ( ρ < 10 %) and insufficient detections. Density ρand detection count nare shown in each cell.
+
+VII. P RELIMINARY FPGA I MPLEMENTATION 
+
+To substantiate the hardware feasibility of EventShiftFlow, we implemented a preliminary SystemVerilog prototype on a Xilinx Artix-7 FPGA. The prototype accepts UART-encoded event words, parses them into 64-bit events, buffers the stream through an AXI-stream-style FIFO, bins events into fixed-duration temporal windows, thresholds each bin into a packed one-dimensional x-axis occupancy vector, stores recent occupancy rows in a circular grid buffer, and evaluates a discrete set of motion hypotheses over this grid. This prototype implements the one-axis scoring path used to validate the streaming hardware structure. To simplify timing closure and reduce implementation complexity, the current design evalu-ates motion hypotheses sequentially rather than using the fully parallel architecture described in Section V. Extending the same pipeline to the orthogonal axis and increasing hypothesis parallelism are left for future integration. The scoring unit was implemented as a sequential pipeline rather than a fully combinational search. For each completed occupancy bin, the scorer evaluates one (x, ∆x) candidate at a time. The first stage computes the trajectory score across the temporal grid and registers the candidate score. The second stage compares the registered candidate against the score threshold and updates the best motion estimate if the candidate improves on the current best. This avoids placing the full 
+
+Nx × Nh × Nt search in a single clock cycle while preserving deterministic execution time. For the evaluated configuration, the design uses Nx = 240 
+
+spatial bins, Nt = 16 temporal grid rows, and five dis-placement hypotheses {− 4, −2, 0, 2, 4}. The scorer therefore requires at most 2NxNh = 2400 cycles per completed occu-pancy bin. At 100 MHz, this corresponds to approximately 
+
+24 μs of scoring latency. Table V summarizes the post-implementation results. The reported utilization includes the complete board-facing pro-totype, including UART receive/transmit framing and LED                                  
+
+> TABLE V PRELIMINARY FPGA IMPLEMENTATION RESULTS FOR THE
+> EVENT SHIFT FLOW UART-TO -MOTION PROTOTYPE . R ESULTS ARE FROM
+> VIVADO POST -IMPLEMENTATION REPORTS FOR A XILINX ARTIX -7
+> X C 7A100 T F T G 256-2 .
+> Item Result
+> FPGA device Xilinx Artix-7 xc7a100tftg256-2
+> Tool Vivado 2025.2 Implementation strategy Performance_Explore
+> Implemented axis xaxis Clock constraint 100 MHz Worst setup slack +0 .030 ns Total negative slack 0.000 ns Failing endpoints 0On-chip power estimate 0.142 W Spatial bins 240 Temporal grid rows 16 Motion hypotheses {− 4,−2,0,2,4}
+> Scoring latency 2400 cycles, 24 μs at 100 MHz Slice LUTs 13,326 Slice registers 5,517 Block RAM tiles 0DSP blocks 0
+
+debug output, rather than only the motion-scoring core. The design was synthesized and implemented in Vivado 2025.2 for a Xilinx Artix-7 xc7a100tftg256-2 device using the Performance_Explore implementation strategy. The completed bitstream meets the 100 MHz clock constraint with positive setup slack. The implementation uses no DSP blocks and no block RAM tiles. These results support the central hardware claim of the method: the tested configuration avoids dividers, floating-point units, DSP blocks, and dense memory structures. Oc-cupancy rows are stored as packed bit vectors, and motion hypotheses are evaluated using fixed-width integer arithmetic, comparisons, counters, and registers. The complete prototype occupies approximately 21% of the available LUTs and 4% of the available flip-flops on the target Artix-7 device. These figures correspond to the complete UART-to-motion prototype, including UART communication, buffering, control logic and LED debug circuitry. The motion-scoring datapath itself oc-cupies only a subset of the reported resources. The prototype has been verified using cocotb and Verilator testbenches covering UART event parsing, FIFO backpressure, temporal binning, occupancy thresholding, multi-bin opera-tion, occupancy-grid updates, and scorer behavior on positive, stationary, and no-match trajectories. The current prototype assumes that the occupancy grid is not overwritten during the scorer’s short execution window; future versions can remove this assumption using explicit backpressure or a ping-pong grid buffer. Broader algorithmic evaluation on dynamic backgrounds and standard optical-flow error metrics remains separate from this preliminary FPGA validation. 
+
+> Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026
+
+VIII. D ISCUSSION 
+
+A. Limitations 
+
+The independent 1D pipeline architecture inherits the aper-ture problem: the x-pipeline cannot distinguish a bar mov-ing purely rightward from one moving diagonally. The y-association step (Eq. 10) partially mitigates this but fails when multiple objects at the same x-pixel move in different y-directions. The discrete hypothesis set imposes a velocity resolution of 
+
+1/∆t px/s. Objects moving at velocities between hypotheses are assigned to the nearest integer jump, producing quanti-zation error that grows with ∆t. Sub-pixel interpolation (e.g., parabolic peak fitting across adjacent hypotheses) could reduce this error but would require multipliers. Parameter selection currently requires manual tuning. The coupling between ∆t and θe means that a single parameter set does not generalize across scenes with different event rates or velocity distributions. 
+
+B. Comparison to Existing Methods 
+
+The presented method uses little resources. The entire two-axis pipeline fits in under 13 kbit of storage with no dividers and no floating-point units, compared to EDFLOW’s 855 kB of Block RAM and 669 DSP units. While our method does not produce optical flow as accurately as EDFLOW [11] or E-RAFT [5], for applications such as reactive obstacle avoidance on micro aerial vehicles, knowing the dominant motion direction at low latency may be more valuable than precise flow vectors at higher cost and latency. The algorithm’s streaming nature and fixed per-bin latency make it suitable as a first-stage motion detector that could trigger more expensive processing only when motion is detected. 
+
+C. Future Work 
+
+Validation against a live event camera and extension of the current prototype to the full two-axis architecture are im-mediate next steps. The present implementation demonstrates event ingestion, occupancy generation and one-axis motion scoring on FPGA; future work will continue optimizing the implementation for different hypotheses and sensor resolutions to then characterize scalability across devices and quantify performance under live sensing conditions. The current method assumes that the dominant motion within a local region produces the strongest spatiotemporal correlation. In scenes containing multiple independently mov-ing objects or highly dynamic backgrounds, competing event trajectories may generate similar correlation scores, reducing the ability to identify a unique dominant motion hypothesis. Additional experiments on more diverse datasets are therefore needed to better characterize robustness and identify the op-erating regimes in which the method performs reliably. Com-parison against established event-based optical flow methods such as EV-FlowNet [4] would additionally enable evaluation using standard optical-flow metrics, including endpoint error. Several algorithmic extensions are also of interest. Temporal regularization, such as majority voting across recent bins, exponential smoothing of the dominant hypothesis, or a score bonus for the previous winner, may improve robustness to single-bin fluctuations at minimal hardware cost. Multi-bit occupancy representations (e.g., 4-bit event counts rather than binary occupancy) could provide additional scoring discrim-ination at the expense of increased memory requirements, while polarity-aware scoring could exploit the sign consistency of moving edges. Finally, the incremental scoring variant presented in Section V-E may enable shorter time bins or operation on higher-resolution sensors. IX. C ONCLUSION 
+
+We presented EventShiftFlow, a streaming velocity esti-mator for event cameras that, in its minimal configuration, operates using only shift registers, counters, and comparators. The algorithm discretizes events into time bins, stores 1-bit occupancy in a shift-register grid, and evaluates discrete velocity hypotheses by counting coincidences along diagonal traces. On synthetic data the method achieves near-perfect directional accuracy; on real event camera data it correctly identifies motion direction in all four evaluated segments with an overall directional accuracy of 99.5%, with performance remaining robust across occupancy densities in the 10–40% range. The entire two-axis pipeline requires under 13 kbit of on-chip storage and no dividers, no floating-point units, and no DSP blocks, representing several orders of magnitude lower memory usage than EDFLOW. REFERENCES [1] G. Gallego, T. Delbr¨ uck, G. Orchard, C. Bartolozzi, B. Taba, A. Censi, S. Leutenegger, A. J. Davison, J. Conradt, K. Daniilidis, and D. Scara-muzza, “Event-based vision: A survey,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 44, no. 1, pp. 154–180, 2022. [2] R. Benosman, C. Clercq, X. Lagorce, S.-H. Ieng, and C. Bartolozzi, “Event-based visual flow,” IEEE Transactions on Neural Networks and Learning Systems , vol. 25, no. 2, pp. 407–417, 2014. [3] G. Gallego, H. Rebecq, and D. Scaramuzza, “A unifying contrast maximization framework for event cameras, with applications to motion, depth, and optical flow estimation,” in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2018, pp. 3867–3876. [4] A. Z. Zhu, L. Yuan, K. Chaney, and K. Daniilidis, “EV-FlowNet: Self-supervised optical flow estimation for event-based cameras,” in Robotics: Science and Systems (RSS) , 2018. [5] M. Gehrig, M. Millh¨ ausler, D. Gehrig, and D. Scaramuzza, “E-RAFT: Dense optical flow from event cameras,” in International Conference on 3D Vision (3DV) , 2021, pp. 197–206. [6] E. Mueggler, H. Rebecq, G. Gallego, T. Delbr¨ uck, and D. Scaramuzza, “The event-camera dataset and simulator: Event-based data for pose estimation, visual odometry, and SLAM,” International Journal of Robotics Research , vol. 36, no. 2, pp. 142–149, 2017. [7] B. Rueckauer and T. Delbr¨ uck, “Evaluation of event-based algorithms for optical flow with ground-truth from inertial measurement sensor,”                 
+
+> Frontiers in Neuroscience , vol. 10, p. 176, 2016. [8] Y. Schnider, S. Wo´ zniak, M. Gehrig, J. Lecomte, A. von Arnim, L. Benini, D. Scaramuzza, and A. Pantazi, “Neuromorphic optical flow and real-time implementation with event cameras,” in IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW) , 2023. [9] M. Liu and T. Delbruck, “Block-matching optical flow for dynamic vision sensors: Algorithm and FPGA implementation,” in IEEE Inter-national Symposium on Circuits and Systems (ISCAS) , 2017, pp. 1–4. [10] ——, “Adaptive time-slice block-matching optical flow algorithm for dynamic vision sensors,” in British Machine Vision Conference (BMVC) ,2019. Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026
+
+[11] ——, “EDFLOW: Event driven optical flow camera with keypoint detection and adaptive block matching,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 32, no. 9, pp. 5776–5789, 2022. [12] M. T. Aung, R. Teo, and G. Orchard, “Event-based plane-fitting optical flow for dynamic vision sensors in FPGA,” in IEEE International Symposium on Circuits and Systems (ISCAS) , 2018, pp. 1–5. [13] G. Haessig, A. Cassidy, R. Alvarez, R. Benosman, and G. Orchard, “Spiking optical flow for event-based sensors using IBM’s TrueNorth neurosynaptic system,” IEEE Transactions on Biomedical Circuits and Systems , vol. 12, no. 4, pp. 860–870, 2018. [14] T. Kowalczyk, D. Bhatt, M. Wlazło, T. Grac ¸a, and T. Kryjak, “Event-based vision on FPGAs – a survey,” arXiv preprint arXiv:2407.08356 ,2024. [15] H. Rebecq, R. Ranftl, V. Koltun, and D. Scaramuzza, “Events-to-video: Bringing modern computer vision to event cameras,” in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2019, pp. 3857–3866. Accepted to the Challenges and Opportunities of Neuromorphic Field Robotics and Automation IEEE ICRA Workshop - 2026

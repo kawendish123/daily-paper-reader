@@ -1,0 +1,383 @@
+Title: Event-to-Video Reconstruction using Spatio-Temporal and Frequency-Enhanced Deep Neural Networks
+
+URL Source: https://arxiv.org/pdf/2605.25804v1
+
+Published Time: Tue, 26 May 2026 02:37:52 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+> 1
+
+# Event-to-Video Reconstruction using Spatio-Temporal and Frequency-Enhanced Deep Neural Networks 
+
+Ramna Maqsood, Paulo Nunes, Lu´ ıs Ducla Soares, and Caroline Conti 
+
+Instituto de Telecomunicac ¸ ˜ oes, Instituto Universit´ ario de Lisboa (ISCTE-IUL) Lisbon, Portugal 
+
+Abstract —Event cameras offer significant advantages over conventional frame-based counterparts, including high temporal resolution, low latency, and energy efficiency. These charac-teristics make them suitable for high-speed and high-dynamic range scene acquisition scenarios; however, the lack of dense intensity frames limits the direct applicability of conventional computer vision methods for scene understanding. Event-to-video (E2V) reconstruction seeks to bridge this gap by converting asynchronous event streams into a sequence of synchronous video frames. Existing E2V reconstruction methods based on convolutional neural networks (CNNs) and transformer models operate primarily in the spatial domain and often struggle to recover fine structural details while suppressing severe recon-struction artifacts. To address these issues, we propose MSFET-E2V, a novel multiscale frequency-enhanced transformer model. At its core lies a cross-domain attention module (CDAM), which fuses spatio-temporal features with frequency-aware represen-tations derived from the discrete wavelet transform (DWT). Unlike prior methods relying solely on spatial attention, our approach effectively captures both local and global structures by taking into account low- and high-frequency components, enhancing detail preservation and robustness across various motion scenarios. Furthermore, we propose a lightweight wavelet-enhanced skip block (WSB) that serves as a skip connection, facilitating artifact suppression and structural detail refinement through joint spatial–frequency domain processing. Extensive experiments demonstrate that MSFET-E2V achieves superior performance over state-of-the-art methods on multiple real-world event datasets, offering significant gains in reconstruction quality. Moreover, compared to the existing transformer-based method, our proposed model significantly reduces the number of parameters, the GPU memory usage, and inference time for the E2V reconstruction task. 
+
+Index Terms —Event-to-video reconstruction, event camera, spatio-temporal and frequency domain analysis, deep learning. 
+
+I. I NTRODUCTION 
+
+Event cameras are bio-inspired vision sensors that operate asynchronously, recording intensity changes at the pixel level rather than capturing full-frame images at fixed time intervals. This unique property enables event cameras to achieve high temporal resolution and low scene acquisition latency, making them well-suited for scenarios involving fast motion and chal-lenging lighting conditions. In recent years, event-based vision has gained significant attention in the research community due to its potential applications in robotics [1], autonomous driving [2] and surveillance [3]. One of the key challenges in event-based processing is the absence of conventional image frames, which has led researchers to explore event-to-video (E2V) reconstruction, a critical task aimed at converting sparse event streams into dense, frame-based representations. High-quality video reconstruction from events enables better visualization, facilitates compatibility with traditional vision algorithms, and enhances downstream tasks like object recognition and tracking [4]. A significant line of research in E2V reconstruction has focused on convolutional neural network (CNN) architectures [5]–[7], which have demonstrated strong feature extraction capabilities. Unlike conventional video frames, event streams encode only localized intensity changes over time, making it difficult for CNNs, designed with local receptive fields, to effectively model long-range dependencies and global corre-lations in the data. This limitation is particularly pronounced in regions with low event density, where CNNs struggle to re-construct structural details. One commonly explored approach to mitigate this issue has been to increase the convolutional kernel size to expand the receptive field. However, empirical evidence suggests that beyond a certain point, increasing the kernel size does not yield further improvements in re-constructing structural scene details and may even degrade performance due to excessive parameterization and the loss of these structural details [8], [9]. To address these limitations, recent efforts have turned to-ward transformer neural networks, which have been shown to achieve state-of-the-art (SOTA) results for E2V reconstruction [10], [11]. The main success behind transformers is their abil-ity to model long-range contextual dependencies by applying a grid-based self-attention mechanism on image patches (i.e., tokens). However, the existing transformer-based models [10], [11] suffer from two limitations: (i) the quadratic scaling of the existing models with input size imposes a significant com-putational burden, which contradicts the low-latency nature of event cameras; (ii) another key challenge associated with the transformer-based methods is that self-attention mechanisms, while effective at capturing global dependencies, can struggle to preserve fine-grained details; this is because they tend to focus on larger, more prominent features while potentially overlooking subtle variations or textures [12]. Consequently, the self-attention mechanism alone may not fully exploit the fine-grained structures present in event streams, resulting in the loss of details in reconstructed scenes and the appearance of blurry or ghosting artifacts. In summary, existing E2V reconstruction models suffer from three primary limitations: (i) inadequate modeling of long-range dependencies by CNN-based models due to lim-ited receptive fields; (ii) high computational overhead and memory usage in transformer-based models, particularly for high-resolution inputs; and (iii) insufficient recovery of fine-grained structures and suppression of artifacts due to the 
+
+> arXiv:2605.25804v1 [cs.CV] 25 May 2026 2
+
+lack of frequency domain awareness in conventional attention mechanisms. Recently, frequency-based methods have gained attention in E2V reconstruction for their ability to effectively cap-ture multiscale structures and mitigate the limitations of pure spatial domain approaches by employing the inherent sparsity and high temporal resolution of event data [13], [14]. In [15], the authors deploy a fourier transform (FT)-based transformer model to operate entirely in the frequency domain for event-driven tasks. FT decomposes signals into their constituent sinusoidal components, providing a global frequency representation that can complement the spatial-domain limitations of the self-attention mechanism. One key limitation of FT in the context of event-based vision is its global nature. FT analyzes the input globally, transforming it into a frequency spectrum without preserving localized spatial structures. We argue that time-frequency decomposition can serve as a more effective and efficient representation space for event-based vision, considering their sparse and robust properties [16]. Unlike FT, time-frequency methods such as the discrete wavelet transform (DWT) provide alocalized frequency analysis, allowing the model to capture low-frequency (LF) and high-frequency (HF) components at multiple scales and in specific regions of the signal. In the context of DWT, for 1D signals, like audio, ‘time’ refers to the temporal location in the sampling dimension, while for 2D signals, such as images, it corresponds to the spatial location, enabling analysis of where specific spatial frequency components occur. In fact, a study [17] on human visual perception suggests that the human visual system discerns elementary features through time-frequency components rather than purely global frequency representations. This biological inspiration further supports the idea that event-based vision, which mimics certain aspects of human perception, can benefit from time-frequency representation. In this work, we investigate the use of event data coupled with deep neural networks for the E2V reconstruction task, operating in three domains: (i) spatial, (ii) temporal and (iii) frequency domains. Our primary objective is to address the limitations of existing CNN and transformer-based models for the considered task. To achieve this, we propose a multi-scale frequency-enhanced transformer model (MSFET-E2V) for E2V reconstruction. The event stream encodes sparse intensity changes over time, which implicitly contain both HF details and LF structural cues. To effectively exploit these characteristics of event data, we propose a cross-domain attention module (CDAM). This module integrates spatio-temporal features, extracted via a convolutional recurrent neural network (CRNN), with frequency domain representa-tions obtained through DWT. We use DWT to decompose input features into multi-resolution subbands, allowing the model to separately process LF structures and HF details, where most event-based cues reside — thus enabling more effective cross-domain fusion and a larger receptive field [8] with minimal computational cost. Additionally, motivated by [18], the observation that HF components in event data can resemble noise-like patterns, we introduce a wavelet-enhanced skip block (WSB) designed to refine intermediate features and suppress artifacts. Inspired by these recent findings in image restoration, our module helps disambiguate signal from event-induced noise, enhancing the clarity and realism of the reconstructed images. Finally, we propose a residual-guided decoder (RGD) module responsible for improving the fidelity of the reconstructed intensity images. Our contributions are as follows:  
+
+> •
+
+In this work, we propose MSFET-E2V, a novel multi-scale frequency-enhanced transformer model designed for high-quality E2V reconstruction. Our model introduces three key innovations: (i) a CDAM that effectively fuses spatio-temporal features with frequency-aware represen-tations, enabling improved structural detail preservation of the scene, (ii) WSB that serves as a skip connection, refining fine details and suppressing reconstruction arti-facts through joint spatial-frequency domain processing and (iii) RGD module that employs residual layers to preserve the features and for stable gradient propagation during reconstruction.  
+
+> •
+
+Validation via extensive experiments on various event-based datasets shows that this model can generate higher-quality video reconstruction than the previous SOTA methods in various scenarios. The MSFET-E2V improves efficiency, achieving over 70% faster inference speed and reducing GPU memory usage by more than 50% compared to the existing transformer-based video recon-struction methods. II. R ELATED WORK 
+
+A. Event-based Video Reconstruction 
+
+In the realm of E2V reconstruction, deep architectures have demonstrated remarkable efficacy. Rebecq et al [5] were the pioneers in introducing a novel CNN-based model called E2VID based on the encoder-decoder architecture. In their work, the authors managed to demonstrate the superiority of a learning-based approach over handcrafted methods [19]. Scheerlinck et al [20] put forth a lightweight model named “FireNet”, which is a simplified version of E2VID. FireNet offers lower memory consumption and faster inference with a compromise in reconstruction quality. Stoffregen et al [6] introduced the E2VID+ and FireNet+ models, further enhanc-ing results by using a novel approach based on statistics from synthetic datasets to match real-world test data. Cadena et al 
+
+[7] proposed SPADE-E2VID model by incorporating a new decoding layer in the E2VID model known as the “spatially adaptive denormalization layer” and improved the reconstruc-tion quality in early frames. Recently, the HyperE2VID [21] model was proposed, showcasing a dynamic neural network that incorporates a context fusion module with hypernetworks [22], which effectively reduces both computational require-ments and improves reconstruction results. More recently, the work in [23] introduced a diffusion-based model that utilizes three conditioning signals: temporal features, LF textures de-rived from intensity images that represent the coarse structural information of the scene, and HF events, which correspond to fine details such as edges and rapid motion. To the best of our knowledge, the works that incorporated transformers in E2V 3
+
+reconstruction were proposed by Weng et al [10] and Gu et al [11], aiming to better exploit the global context of input data. However, their complex architectures resulted in a loss of details in the intensity image during reconstruction due to their low-pass self-attention mechanism and, additionally, it incurred higher inference times. Despite the promising poten-tial of transformers in event-based systems, their utilization in E2V reconstruction, especially in conjunction with frequency domain analysis, has not yet been explored. Consequently, our approach of combining transformers with wavelet-based frequency domain analysis is novel and aims to address this gap, aiming to preserve scene details in the reconstructed intensity images. 
+
+B. Deep Discrete Wavelet Transform Models 
+
+Recently, studies on deep frequency-based analysis have attracted considerable attention in the field of event-based vi-sion. In [13], the authors proposed to utilize spatial-frequency domain knowledge for E2V reconstruction to overcome the limitations of existing methods [5], [10], [21] that only rely on spatial domain by incorporating a fourier-based regulariza-tion term. Another work [14] proposed a temporal-frequency calibration module based on the FT to improve the contrast of the E2V reconstructions. However, both methods rely on FT for analyzing frequency components, which, while effec-tive for stationary signals, struggles with localized and non-stationary event-based data due to its lack of time-frequency localization. The DWT, on the other hand, can better handle transient non-stationary signals through its multi-resolution capability [24], [25]. Building on these strengths, Yao et al [26] proposed Wave-ViT, a novel vision transformer that uses wavelet-based downsampling to address the limitations of traditional CNN-based pooling and stride methods. Unlike traditional approaches that cause irreversible information loss, the Wave-ViT integrates invertible wavelet transforms to pre-serve fine and structural details while maintaining computa-tional efficiency for various vision tasks. Recently, Fang et al 
+
+[25] proposed a spike wavelet transform (SWformer) model, which integrates DWT into spiking neural networks (SNNs). Their work demonstrates that SWformer can efficiently and effectively extract both spatial and frequency features from event data, outperforming conventional SNNs in various vision tasks. Ieng et al [27] explores the computational complexity and efficiency of iterative basis transformations, such as DWT, when applied to event-based signals. The authors analyze how iterative transformations can effectively capture the sparse and dynamic nature of event data while maintaining computational efficiency. Their work demonstrates that such transformations not only reduce the computational burden but also enhance the quality of feature extraction, making them well-suited for real-time event-based vision applications. Despite the growing interest in frequency-based analysis and its integration with deep learning, no prior work has fully explored the potential of DWT with a deep learning model within the domain of E2V reconstruction. 
+
+Fig. 1: Workflow of DWT, applying low-pass filter (LPF) and high-pass filter (HPF) along rows and columns separately to each channel of the feature map. III. P ROPOSED METHODOLOGY 
+
+This paper considers the problem of reconstructing a se-quence of intensity images, { ˆIk}, from an event stream. Starting from the common approach in the literature [21], [28], the event stream is converted into voxel grids. Each voxel grid is then passed to our proposed model which reconstructs a 2D grayscale image from it, having dimensions H ×W ×1, where 
+
+H and W represent the image height and width, respectively. 
+
+A. DWT Definition 
+
+Before presenting our proposed methodology, we first briefly describe the working of DWT for frequency domain analysis. DWT decomposes signals into multiscale frequency components, allowing localized analysis of both LF and HF information, which is particularly effective for image de-composition. In contrast to CNNs, which rely on localized convolutional filters and require stacking of multiple lay-ers or enlargement of kernel sizes to increase the receptive field, DWT inherently enables hierarchical feature extraction through spatial downsampling and frequency decomposition. This leads to a more efficient expansion of the receptive field without incurring additional computational overhead or param-eter count [16], [29]. In the context of 2D input feature maps, the DWT decomposes each input feature map, X ∈ RH×W ,into four subbands, each representing different frequency com-ponents: low-low (LL), low-high (LH), high-low (HL), and high-high (HH). For example, using the Haar wavelet [30], one of the simplest and most efficient wavelets, the transformation applies a low-pass filter (LPF) and a high-pass filter (HPF) to the rows and columns of the image sequentially (as shown in Fig. 1). Formally, the four convolutional filters for Haar are defined in equation (1): 
+
+fLL = 12
+
+1 11 1
+
+
+
+, fLH = 12
+
+−1 −11 1
+
+
+
+,fHL = 12
+
+−1 1
+
+−1 1
+
+
+
+, fHH = 12
+
+ 1 −1
+
+−1 1
+
+
+
+(1) The LL filter, fLL , captures LF information, while fLH ,
+
+fHL , and fHH are designed to extract HF information in three distinct directions: horizontal, vertical, and diagonal, respectively. More specifically, a one-dimensional DWT is applied by convolving LPF and HPF along the row and column directions of the input separately. This results in four subband images — XLL , XLH , XHL , and XHH , which together retain 4
+
+Fig. 2: Overall architecture of the proposed MSFET-E2V model. DownConv blocks transforms the input event features into multiscale representations. CDAM performs a dual-domain fusion strategy based on spatio-temporal and frequency pathways to extracts deep local and global features from each scale. WSBs bridge the encoder and decoder by refining intermediate features in both spatial and frequency domains. Finally, the reconstruction of grayscale image is performed through a series of RGD blocks. all essential image information. According to this formulation, the decomposition and convolution process is performed using equation (2): 
+
+XLL = ( fLL ∗ X) ↓ 2, XLH = ( fLH ∗ X) ↓ 2,XHL = ( fHL ∗ X) ↓ 2, XHH = ( fHH ∗ X) ↓ 2, (2) where ∗ denotes the 2D convolution operation and ↓ 2
+
+represents downsampling by a factor of 2. The key advantage of DWT over CNNs lies in its capacity to capture both fine-grained and long-range spatial correlations in a single trans-formation [26]. In CNNs, the receptive field grows gradually by stacking layers, which may still be insufficient to capture large-scale dependencies unless deeper architectures or larger kernels are used, both of which come at the cost of increased computational burden and risk of over-smoothing [8]. DWT, on the other hand, effectively expands the effective receptive field through its hierarchical decomposition. 
+
+B. Event Representation 
+
+In this section, we describe our methodology for represent-ing event data as a voxel grid. Given an event stream {ei} con-taining NE events, each event ei = ( xi, y i, t i, p i) corresponds to the i-th event characterized by spatial coordinates (xi, y i),timestamp ti ∈ [0 , T ], and polarity pi ∈ { +1 , −1}, indicating an increase (+1) or decrease (−1) in brightness, respectively, for all i ∈ { 0, . . . , N E − 1}. Assuming that the ground truth (GT) intensity frames are available with the incoming event stream, one can group events such that every event between consecutive frames ends up in the same group. Specifically, given the frame timestamps, the set of events in the k-th group is defined as Ek = {ei | Tk−1 < t i ≤ Tk}, where Tk is the ending timestamp of the k-th group and ∆T = Tk − Tk−1
+
+is its duration. We divide the events in each group into B
+
+temporal bins to discretize the continuous-time event data; in the current work we adopted B = 5 . The timestamps of the events in the group are first normalized to the range [0 , B −1] .Each event then contributes its polarity to the two closest bins using bilinear interpolation. The voxel grid Vk ∈ RH×W ×B
+
+for the k-th group is formed using equation (3): 
+
+Vk(x, y, t ) = X
+
+> i
+
+pi max(0 , 1 − | t − t∗ 
+
+> i
+
+|)δ(x − xi, y − yi) (3) where δ is the Kronecker delta that is used to select the event location and t∗ 
+
+> i
+
+is the normalized timestamp calculated using equation (4): 
+
+t∗ 
+
+> i
+
+= ( B − 1) ti − Tk
+
+∆T (4) 
+
+C. Proposed MSFET-E2V Architecture 
+
+After representing each event group as a voxel grid, our task is to generate a corresponding image stream from the sequence of voxel grids. Fig. 2 illustrates the overall architecture of the proposed MSFET-E2V model. We adopt a U-Net-based [31] encoder-decoder framework, where the input event voxel grid Vk is processed through a series of specialized blocks to reconstruct the output grayscale image ˆIk ∈ RH×W ×1. Our model performs multiscale feature aggregation in the encoder, where the DownConv blocks progressively reduce the spatial resolution and extract hierarchical features at multiple scales. These features are then refined using our proposed CDAMs, which are designed to enhance both fine and structural details. The decoder comprises RGD blocks that receive enriched features from the CDAMs and reconstruct the final image. In addition, WSBs act as skip connections between corresponding encoder and decoder blocks. Unlike standard skip connections, WSBs process shallow encoder features in both spatial and frequency domains, enabling effective artifact suppression and detail preservation. We describe each component of our model in more detail below: 
+
+Head Layer: This layer is composed of a single convolu-tional (Conv) layer with a 3 × 3 kernel size and stride 1, to preserve the spatial dimensions. The input event voxel grid is transformed into a higher-dimensional feature representation 
+
+H × W × C, where C is the base number of channels (set to 32 in our implementation). 
+
+DownConv: Our model consists of three DownConv blocks that act as encoder. Each DownConv block reduces the spatial 5
+
+Fig. 3: Detailed structure of the proposed cross-domain attention module (CDAM). The module employs a cross-domain multi-head self-attention mechanism, where Q, K, and V are derived from different domains, specifically, the spatio-temporal and frequency domains, to enable complementary feature fusion.  
+
+> (a) (b)
+
+Fig. 4: Detailed internal structure of the RGD and WSB: (a) The diagram illustrates the working of the first RGD block, where the input is taken from both the WSB, F wsb  
+
+> j
+
+, and the fused CDAM features, Zcdam . The remaining two RGD blocks share the same internal structure but differ in that their inputs. (b) The proposed WSB is responsible for fusing shallow features from DownConv blocks with deep features from RGD blocks to reduce artifacts and enhance feature consistency. resolution of the feature maps while simultaneously increasing their channel dimensionality. Specifically, each DownConv block consists of a Conv layer with a 3 × 3 kernel size and stride of 2, followed by a leaky rectified linear unit (LeakyReLU) activation function. Through the DownConv blocks,we finally obtain multiscale features {Fj | j ∈{2, 4, 8}} , which are passed to CDAM and WSB blocks subsequently. 
+
+Cross-Domain Attention Module (CDAM): One of the persistent challenges in E2V reconstruction lies in accu-rately recovering fine-grained spatial details while suppress-ing structural artifacts introduced during the encoding pro-cess. Transformer-based architectures like ET-Net [10] have demonstrated notable capabilities in modeling long-range de-pendencies through self-attention mechanism. However, their attention mechanism typically operates solely in the spatial domain, where queries ( Q), keys ( K), and values ( V ) are derived from the same spatial features. This design neglects frequency domain cues that are crucial for capturing sharp edges, texture discontinuities, and HF variations inherent to event data. Consequently, existing methods [5], [21], [32] often exhibit a loss of detail in the reconstructed scenes [23]. To address this, we propose CDAM that introduces ahybrid attention formulation. Specifically, CDAM incorporates frequency-aware K and V extracted via a DWT while retain-ing spatially grounded Q, enabling the model to aggregate complementary features across both domains. As shown in Fig. 2, our model employs three CDAMs, each processing one of the multiscale feature maps Fj ∈ R Hj × Wj ×jC . As illustrated in Fig. 3, CDAM consists of two parallel branches: (i) a spatio-temporal domain branch, and (ii) a frequency domain branch. In the spatio-temporal domain, the input feature map Fj is first processes with a residual block (RB) comprising two 3×3
+
+convolutions with swish activation function, preserving spatial structure while enriching local representation. The output is then processed by a convolutional long short-term memory module (ConvLSTM) [33], which captures long short-term temporal dependencies and maintains hidden states across time. In parallel, motivated by [26], we utilize DWT to process input features Fj to account for frequency analysis to focus on fine-grained and structural counterparts. We utilize the Haar wavelet function [30] due to its computational efficiency to decompose each input feature map into four frequency subbands using equation (2): one LF subband named XLL , and three HF subbands named XLH , XHL , and XHH . Here XLL ,contains the coarse approximation and {XLH , X HL , X HH }
+
+contain the fine-grained details of the feature maps (i.e., the edges). In our CDAM, we process the subbands independently through the RBs to capture the intricate fine and structural details from the input feature maps. More specifically, the LF subband XLL is processed by a RB and all three HF subbands {XLH , X HL , X HH } are concatenated along channel dimensions and processed with another RB. Both processed streams are then concatenated along the channel dimension for further processing in the frequency pathway. Since the DWT operation increases the number of channels by a factor of four (e.g., an input of size 64 × 64 × 64 becomes 32 × 32 × 256 
+
+after DWT due to the decomposition of each feature map into four subbands), the final output of the frequency path must 6
+
+be adapted to align with the spatio-temporal path. Therefore, a 3 × 3 Conv layer is employed not only to refine the merged features but also to reduce the channel dimensionality, restoring compatibility with the spatio-temporal domain in feature dimensionality. To prepare both spatio-temporal and frequency features for cross-domain self-attention, we apply an overlapping patch embedding strategy to convert 2D feature maps into fixed-length token sequences. At each scale, a Conv layer with carefully chosen kernel size, stride, and padding is used to project the input into a common embedding dimension 
+
+D = 256 . This results in a feature map of shape (D, H ′, W ′),which is linearly transformed into Fj ∈ Rn×D , where 
+
+n = H′ × W ′. Specifically, all three scales — F2, F4, and 
+
+F8 — are transformed into sequences of shape 256 × 256 
+
+(i.e., H′ = W ′ = 16 , so n = 256 ). Afterwards, the representations Q ∈ Rn×D is derived from spatio-temporal domain and K, V ∈ Rn×D are derived from frequency domain to perform cross-domain multi-head self-attention mechanism using equation (5): 
+
+attn = Softmax 
+
+ QK T
+
+√D
+
+
+
+V (5) Additionally, we also introduce the residual connection to maintain the internal dependency, where frequency-enhanced features from the wavelet domain are element-wise added to the spatio-temporal domain features before being fused with the attention output. To add non-linearity and further refine the representations learned by the self-attention mechanism, the attended features are passed through a feed-forward network (FFN), followed by another residual connection and Layer-Norm, producing the output F cdam  
+
+> j
+
+at each scale. The FFN consists of two linear transformations with a GeLU activation between them. 
+
+Residual-Guided Decoder (RGD) : The reconstruction phase of our model consists of three sequential RGD blocks, followed by a prediction layer. Each RGD block is designed to progressively refine the reconstruction output through spa-tial upsampling, feature enhancement, and residual learning. The internal structure of an RGD block includes a bilinear interpolation layer with an upsampling factor of 2, which pro-gressively increases the spatial resolution. After upsampling, the features are refined by a RB that enhances representational capacity and helps to minimize the artifacts. More specifically, the input to the first RGD block comprises deep features extracted from the CDAMs. These features capture both structural and fine-grained details across multiple scales. The outputs of the three CDAMs , each with shape 
+
+n × D, are first aggregated by element-wise addition and then reshaped back to three-dimensional feature Hj × Wj × D,aligning with the expected input format of the decoder. The re-sulting features, denoted as Zcdam , are subsequently passed to the first RGD block. The remaining two RGD blocks then take as input the intermediate features produced by their preceding RGD block, thereby enabling hierarchical refinement of the reconstruction. For clarity, Fig. 4 (a) provides a detailed view of the internal structure of a single RGD block, specifically illustrating the first RGD. While the subsequent RGD blocks follow the same architectural design, the only difference lies in the source of their inputs: the first RGD takes features from 
+
+Zcdam and WSB (explained later), whereas the remaining two RGD receive features solely from the previous RGD block and WSB. Each RB inside the RGD is composed of two Conv layers with kernel size 3 × 3, separated by a non-linear activation function. Notably, no activation is applied after the final Conv layer to preserve the linearity of the residual connection. A residual skip connection is applied between first and second Conv layer to maintain the flow of information. Additionally, to ensure compatibility between each DownConv and its corresponding RGD block, the final Conv layer in each RGD block adjusts the channel dimensionality of the decoded feature maps to match that of the encoder features. It is important to note that the same RB structure is consistently used throughout our model. However, the final Conv layer in the RB is only configured to alter the number of output channels within the RGD blocks, where dimensional alignment with the encoder features is required. In all other instances, the RB preserves the input channel dimensionality. 
+
+Wavelet-Enhanced Skip Block (WSB): We observe that directly injecting the shallow features from DownConv blocks into the RGD pipeline introduces artifacts commonly referred to as ”ghosting and blur effects” in the reconstructed images (also demonstrated in section V). To address this issue, we propose WSB, which serves as a refined skip connection between the DownConv outputs and the RGD blocks. This component is designed to process the shallow features before fusion, in both the spatial and frequency domains, as illustrated in Fig. 4 (b). The spatial branch processes features using a RB, while the frequency branch decomposes the input feature maps using the DWT into four subbands {XLL , X LH , X HL , X HH }.Given the inherent noise in event-based data, which often manifests in shallow features, we aim to suppress such noise during this phase. As noted in prior works [18], [34], event noise tends to dominate the HF components, particularly the 
+
+XHH subband. Inspired by this observation, we apply a RB selectively to the XHH subband to enhance noise aware-ness, while preserving the low- and mid-frequency content 
+
+{XLL , X HL , X LH } through a residual connection to maintain structural integrity. After processing, the modified XHH sub-band and the original subbands {XLL , X HL , X LH } are passed to the inverse wavelet transform (IWT), which reconstructs the features back into the spatial domain, restoring their original resolution and structural context. Finally, the output from the frequency branch is fused via element-wise addition with the spatial branch to form the complete refined feature map 
+
+F wsb  
+
+> j
+
+, which is then passed to the RGD blocks for image reconstruction. 
+
+Prediction Layer: The prediction layer consists of a 1 × 1
+
+Conv layer that maps the features to the final intensity image. This yields the reconstructed image ˆIk ∈ RH×W ×1. We do not use an activation function after this layer. 
+
+D. Loss Functions 
+
+To train our model, we employ a combination of two loss functions to ensure good visual quality and temporally 7
+
+coherent results. Firstly, we use image reconstruction loss, i.e., learned perceptual image patch similarity (LPIPS) loss as employed in [5] to maintain natural statistics and visual quality in the reconstructed images. The loss function LPIPS measures the difference between the reconstructed image ˆIk and the corresponding GT image Ik by comparing deep feature rep-resentations extracted using a VGG network [35] pre-trained in ImageNet [36]. Formally, the perceptual reconstruction loss is defined as LRk = ℓ( ˆIk, I k), where ℓ denotes the LPIPS dis-tance. Secondly, we incorporate a temporal consistency loss, 
+
+LT C k , proposed in [5], to enforce smooth transitions between consecutive images in the reconstructed image sequence. This loss function utilizes GT optical flow maps, F kk−1, to warp the previous reconstructed image, ˆIk−1, to the current image, ˆIk,measuring the warping error. The temporal consistency loss is given by equation (6): 
+
+LT C k = M kk−1 ˆIk − W kk−1( ˆIk−1) 1
+
+(6) where Wkk−1( ˆIk−1) is the result of warping the reconstructed image at time step k−1 to time step k, using the optical flow, F kk−1, and M kk−1 = exp 
+
+
+
+−α Ik − W kk−1(Ik−1) 22
+
+
+
+is a weighting term that accounts for occlusions. In our experiments, we set α = 50 as done in [5], [6], [20]. The final loss function, L, is computed using equation (7) as a weighted sum of the reconstruction loss and the temporal consistency loss across all time steps. 
+
+L =
+
+> L
+
+X
+
+> k=1
+
+LRk + λT C LX
+
+> k=L0
+
+LT C k (7) In our experiments, we set L = 40 , which denotes the sequence length of consecutive images considered by our model during training. This length controls how many time steps the model unrolls to capture temporal dependencies. The temporal consistency loss weight, λT C , is empirically set to 5 to balance its influence on the reconstruction loss. Additionally, we set L0 = 2 , following the strategy used in [5]. IV. E XPERIMENTS AND RESULTS 
+
+Training Dataset: We follow a common approach to gener-ate a synthetic training dataset [6], using the ”Multiple-Object-2D” rendering engine of ESIM [37]. This engine simulates multiple foreground objects moving across a background im-age, employing various 2D motion properties. Background images were selected from the MSCOCO dataset [38], while foreground objects were sourced from [6]. The dataset consists of 280 sequences, each 10 seconds in length. The contrast threshold values for event generation ranged from 0.1 to 1.5. Each sequence in our training dataset comprises an event stream together with the corresponding GT images and optical flow maps produced at an average rate of 51Hz. The resolutions of event and image cameras are both 240 × 180 
+
+pixels to match the DAVIS240C sensor [39]. 
+
+Training Settings: We implement the proposed model in PyTorch for training. The network is trained on 200 epochs with a batch size of 2 on an RTX 3080 GPU with 16GB of RAM. We utilize the Adam optimizer with an initial learning rate of 10 −4, which decays by 10% every 50 epochs. We also perform data augmentation with random crop and flip operations. The size of the crop was set to 128 × 128 , and the probability of both vertical and horizontal flips was set to 0.5. To further enhance performance and mitigate overfitting, we incorporate noise augmentation, pause augmentation, and hot-pixel augmentation following the methods in [6]. 
+
+Testing Datasets: To thoroughly assess our proposed model, we utilize sequences from five real-world datasets, each chosen for its distinct characteristics and significance in capturing various aspects of event-based video reconstruction: 1) The event camera dataset (ECD) [40] is recorded with a DAVIS240C sensor at a resolution of 240 × 180 pixels. It comprises seven indoor sequences that are pivotal for evaluating reconstructions in environments with 6-DOF camera motion and varying speeds. 2) The high-quality frames (HQF) [6] dataset is also recorded using two DAVIS240C sensors at the resolution of 240 × 180 pixels. It provides a variety of indoor and outdoor sequences with well-exposed and minimally blurred frames, crucial for benchmarking reconstruction quality in more controlled environments. 3) The multi vehicle stereo event camera (MVSEC) [41] dataset is captured using a DAVIS346B sensor at a reso-lution of 346 ×260 pixels. It includes sequences recorded in real-world driving scenarios, featuring diverse lighting conditions and dynamic motion, making it valuable for evaluating reconstruction performance in complex and fast-changing outdoor scenes. 4) To demonstrate the generalizability of our model on a higher-resolution sensor, we also utilize a high-speed and HDR dataset (recorded with Samsung DVS Gen3 with a resolution of 640 × 480 pixels) [5]. It includes challenging scenarios with strong light contrasts. 5) The color event camera dataset (CED) [42], captured with a ColorDAVIS346 sensor, provides color frames and events, allowing us to demonstrate our method’s ability to reconstruct color in scenes with vibrant tex-tures and challenging lighting conditions. 
+
+Evaluation Metrics: To quantitatively assess the proposed model, the following commonly used full reference metrics were used: peak signal-to-noise ratio (PSNR) [↑], structural similarity index measure (SSIM) [↑], and LPIPS [↓]. Addi-tionally, we utilized a no-reference image quality assessment metric, blind/referenceless image spatial quality evaluator (BRISQUE) [↓]. This metric is used in the literature [21] when the GT images are of low quality or are unavailable. 
+
+Comparison with SOTA Methods: We compare our model with several SOTA methods for which publicly available code exists: the CNN-based models, E2VID [5], FireNet [20], SPADE-E2VID [7], FireNet+ [6], E2VID+ [6], HyperE2VID [21], CISTA-LSTC [32], and the transformer-based method ET-Net [10]. For fair evaluation, we re-trained all models on our synthetic dataset using the same settings as MSFET-E2V, except for E2VID and FireNet, which use pre-trained weights due to their original training on a different dataset. As the GT images of ECD are darker, we follow a common 8
+
+TABLE I: Quantitative comparison on ECD, HQF, and MVSEC datasets. Best results are in bold , second-best are underlined.                                                                                                        
+
+> Architecture Type Methods ECD HQF MVSEC
+> PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓
+> CNN-based E2VID [5] 12.64 0.450 0.322 10.54 0.468 0.371 6.98 0.241 0.644 FireNet [20] 12.33 0.479 0.320 10.31 0.423 0.441 5.42 0.177 0.700 SPADE-E2VID [7] 11.93 0.442 0.397 11.21 0.400 0.502 8.79 0.246 0.599 FireNet+ [6] 13.41 0.491 0.416 13.98 0.471 0.314 6.93 0.224 0.598 E2VID+ [6] 13.44 0.482 0.317 12.83 0.414 0.421 9.17 0.228 0.618 HyperE2VID [21] 14.10 0.494 0.326 12.61 0.460 0.379 9.61 0.278 0.558 CISTA-LSTC [32] 13.04 0.526 0.362 12.40 0.511 0.343 6.32 0.209 0.618 Transformer-based ET-Net [10] 13.52 0.521 0.275 14.28 0.502 0.331 10.15 0.311 0.568 MSFET-E2V 13.98 0.584 0.252 14.82 0.548 0.291 11.42 0.362 0.501
+> Event Frame SPADE-E2VID FireNet FireNet+ E2VID+ HyperE2VID CISTA-LSTC ET-Net MSFET-E2V GT Bike Bay Desk Slow Indoor Outdoor Dynamic Poster Shapes
+
+Fig. 5: Visual results on HQF (rows 1,2), MVSEC (rows 3,4) and ECD (last three rows) datasets. Overall, our model provides high-quality reconstruction with minimal ghosting, bleeding and blur artifacts. TABLE II: BRISQUE (lower is better) score comparison on MVSEC night and high-speed HDR datasets. Best results are in bold , second-best are underlined.                     
+
+> Methods MVSEC night high-speed and HDR
+> E2VID [5] 19.16 22.83 FireNet [20] 20.45 21.32 SPADE-E2VID [7] 24.01 27.83 FireNet+ [6] 16.98 18.17 E2VID+ [6] 18.30 13.42 HyperE2VID [21] 16.59 11.89 CISTA-LSTC [32] 32.53 38.74 ET-Net [10] 16.17 18.47 MSFET-E2V 9.32 7.40
+
+approach [5], [32] of normalizing the images into the range of 
+
+[0 , 1] to enable comparison with reconstructed images without applying post-processing to the reconstructed images. In our work, we utilized the EVREAL framework [43] to assess the reconstruction quality. Table I and Fig. 5 present the quantitative and visual evalua-tion of our proposed model compared to SOTA methods across three benchmark datasets: HQF, MVSEC, and ECD. For the HQF and MVSEC datasets, our model achieves a significant improvement across all evaluation metrics when compared to both CNN and the transformer-based approaches. This performance gains highlight the effectiveness of the proposed model that operates in both spatio-temporal and frequency domains. As shown in Fig. 5 (rows 1–2, HQF dataset), most baseline methods fail to recover fine object details and exhibit prominent bleeding and ghosting artifacts. In contrast, our model produces more structurally consistent reconstructions with reduced artifacts, leading to higher SSIM and lower LPIPS values. Notably, in challenging indoor environments (e.g., row 3), where methods like CISTA-LSTC, E2VID+ and HyperE2VID exhibit severe distortions (e.g., unrealistic contrast and artifacts on the floor and drum surface), our 9     
+
+> Slow Very Slow Static Static Very Slow Very Slow
+> CISTA-LSTC
+
+0.24/0.66 0.29/0.64 0.30/0.63 0.30/0.63 0.45/0.57 0.45/0.56 ET-Net 
+
+0.31/0.49 0.31/0.49 0.31/0.49 0.31/0.48 0.38/0.46 0.38/0.45 MSFET-E2V 
+
+0.17/0.67 0.19/0.67 0.18/0.66 0.18/0.65 0.24/0.64 0.22/0.65 
+
+Fig. 6: Qualitative comparison in slow-motion conditions across different temporal speeds. Values below each image represent LPIPS/SSIM scores where bold values indicate the best-performing model. HyperE2VID 
+
+21.78 21.64 20.54 20.65 19.87 ET-Net 
+
+22.87 22.42 23.71 24.63 24.63 MSFET-E2V 
+
+19.35 19.64 19.82 19.84 18.34 
+
+Fig. 7: Qualitative comparison in low-light scenario. Values below each show BRISQUE scores to support quantitative differences in reconstruction quality. Best values are shown in bold .method reconstructs intensity images with minimal blur and intensity closer to the GT. In the case of the ECD dataset, our model (16 Mparam) surpasses the existing transformer-based architecture (22 Mparam) in both LPIPS and SSIM and outperforms all CNN-based baselines across most metrics. While PSNR is slightly better for HyperE2VID, our model still offers comparable perceptual similarity. As evidenced in Fig. 5 (rows 5, 6, and 7), previous methods show limited capability in capturing details, with more pronounced blur and ghosting. In contrast, our reconstruction maintains sharper contours and better texture preservation, contributing to improved percep-tual and structural scores (see shapes and dynamic). We also evaluate the reconstruction capabilities of the proposed model in slow motion conditions, comparing it with the two best-performing baselines: ET-Net and CISTA-LSTC (see Table I). In Fig. 6, we present results from the Desk Slow sequence of the HQF dataset, where the camera motion slows down and event generation diminishes, causing intensity information to vanish. Despite this, our model demonstrates strong robustness, preserving structural details with minimal artifacts, resulting in lower LPIPS and higher SSIM scores. While CISTA-LSTC also preserves structural content reason-ably well, it introduces unrealistic artifacts and exaggerated contrast (particularly around text and object edges), which compromises visual fidelity and results in higher LPIPS scores. To evaluate the performance of the proposed model under extremely low-light conditions, we test it on the MVSEC night subset of the MVSEC dataset, following the setup introduced by [21]. As shown in Table II, we assess reconstruction quality using the BRISQUE metric, with corre-sponding visual results illustrated in Fig. 7 (compared to the two best-performing baselines: HyperE2VID and ET-Net). Our model consistently achieves lower BRISQUE scores and better preserves scene details, indicating that the reconstructions are perceptually closer to real-world images. To validate the superiority of the proposed method on higher resolution and high speed motion scenarios, we also tested our model on high-speed and HDR dataset (640 × 480 vs 
+
+240 × 180) . The GT images for this dataset are not available; therefore, we used BRISQUE evaluation metrics to evaluate 10 
+
+Sun Selfie Tunnel HyperE2VID 
+
+18.10 32.55 6.90 ET-Net 
+
+43.86 18.30 9.45 MSFET-E2V 
+
+9.91 5.12 2.87 
+
+Fig. 8: Qualitative comparison under challenging conditions. Below each image are BRISQUE scores (lower is better). Bold 
+
+values represent best performance. TABLE III: Comparison of model size and GPU inference speed across different input resolutions.                                  
+
+> Methods Parameters GPU Inference Speed (ms)
+> (Millions) 240×180 340×260 640×480 E2VID+ [6] 10.71 5.7 10.1 30.0 FireNet+ [6] 0.04 0.6 3.7 10.1 SPADE-E2VID [7] 12.49 16.1 24.3 38.2 HyperE2VID [21] 10.15 6.6 12.9 22.0 CISTA-LSTC [32] 10.40 2.0 24.3 52.9 ET-Net [10] 22.18 32.1 56.2 130.8 MSFET-E2V 16.71 16.8 26.4 35.73
+
+the perceptual quality of reconstructed images. Table II shows the quantitative results of the proposed method against SOTA methods. Our model achieves the lowest BRISQUE score, con-firming that the reconstruction is closer to the natural images. This can be seen in Fig. 8, where our model reconstructs high-quality and natural-looking images with fewer artifacts (see Sun) compared to the SOTA methods. Additionally, a comparison of computational resource con-sumption is presented in Table III, where we report the average inference time in milliseconds (ms), per sequence for each method, evaluated across test datasets with varying resolutions. Model complexity is indicated by the number of parameters (in millions), and inference times are measured on an RTX 3080 GPU. Compared to the transformer-based ET-Net, our model achieves significant reductions (between 53% and 73%) in resource usage (highlighted in green), while maintaining competitive or superior reconstruction quality. This under-scores the advantage of our frequency-enhanced self-attention mechanism, which enables both effective E2V reconstruction and efficient utilization of computational resources. In Fig. 9, we also validate the color reconstruction capability of our model by comparing it against E2VID+, ET-Net, and HyperE2VID. Results from CISTA-LSTC are omitted, as the method fails to produce satisfactory outcomes on this dataset. For color reconstruction, we adopt the procedure introduced by [5]. The results clearly demonstrate that our model not only Simple Wire Jenga Block Indoor Dark Indoor Kitchen GT MSFET-E2V HyperE2VID ET-Net E2VID+ 
+
+Fig. 9: Color reconstruction abilities of different methods. Overall, our model assigns vibrant and natural-looking colors with detailed scene reconstruction. assigns natural-looking colors to images without introducing artifacts but also successfully reconstructs fine details under challenging conditions, such as scenes with high dynamic range (e.g., Indoor Dark reconstruction). To further evaluate the robustness of the proposed model, we follow the evaluation protocol outlined in [21] where we assess the effect of using different event grouping strategies. First, we investigate the fixed temporal window grouping sce-nario by conducting ten experiments with varying integration windows, ranging from 10 ms to 100 ms. This allows us to analyze how the temporal resolution impacts the reconstruction quality. Second, we evaluate the performance of the proposed model under a fixed number of events grouping, conducting another nine experiments with event counts ranging from 5K to 45K. For both scenarios, we compute the mean LPIPS scores on the ECD dataset and compare our model against three best-performing methods: ET-Net, CISTA-LSTC, and HyperE2VID. As shown in Fig. 10, the proposed method consistently achieves superior reconstruction quality across a wide range of event grouping conditions. The only exceptions are the 80 ms and 30k event settings, where CISTA-LSTC obtains slightly better LPIPS scores. V. A BLATION STUDY 
+
+A. Investigation on Network Modules 
+
+We design three additional model variants to analyze the role of each component in our proposed model. 
+
+Model I: In this baseline variant, the DownConv blocks remain unchanged. However, the frequency domain pathway is removed from the CDAMs, and all attention components (Q,
+
+K, and V ) are derived solely from the spatio-temporal domain. This variant also omits the proposed WSB, instead using standard residual skip connections between DownConv and 11 
+
+Fig. 10: Comparison of LPIPS across different models. Left: different temporal windows grouping. Right: different number of events grouping. TABLE IV: Ablation study on the components of the proposed model. We evaluate model variants on three event datasets. Here bold values indicate best-performing model.                                                                                  
+
+> Model Spatio-temporal Skip connection Freq-domain RB WSB ECD HQF MVSEC
+> PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓
+> I✓✓✗✗✗10.35 0.465 0.355 11.35 0.462 0.384 6.58 0.244 0.578 II ✓✓✓✗✗12.44 0.510 0.298 13.17 0.485 0.321 8.48 0.264 0.533 III ✓✓✓✓✗13.27 0.534 0.286 14.23 0.517 0.289 10.05 0.297 0.521 MSFET-E2V ✓✗✓✓✓13.98 0.584 0.252 14.82 0.548 0.291 11.42 0.362 0.501
+
+Model I Model II Model III MSFET-E2V Event Voxel Grid GT 
+
+0.52/0.36 0.41/0.43 0.39/0.46 0.32/0.50 Fig. 11: Visual comparison of different variants of the proposed model along with their corresponding LPIPS/SSIM scores is presented. The best-performing model is highlighted in bold . Our proposed model, MSFET-E2V, demonstrates superior reconstruction quality and is particularly effective at preserving fine details. TABLE V: Ablation study on the role of frequency-domain subbands in the CDAM. Performance comparison across three datasets using CDAM variants: CDAM LL (only LF subbands), CDAM HF (only HF subbands), and the complete model MSFET-E2V (LF + HF). Here bold values indicate best-performing model.                                           
+
+> Datasets ECD HQF MVSEC Model CDAM LL CDAM HF MSFET-E2V CDAM LL CDAM HF MSFET-E2V CDAM LL CDAM HF MSFET-E2V
+> SSIM ↑0.499 0.543 0.584 0.462 0.485 0.548 0.299 0.324 0.362 LPIPS ↓0.322 0.283 0.252 0.344 0.289 0.291 0.578 0.533 0.502 PSNR ↑10.35 12.44 13.98 11.35 13.17 14.82 7.58 9.48 11.42
+
+RGD blocks. In RGD blocks, the reconstruction is performed without RB. As shown in Table IV (Model I), this leads to a significant drop in SSIM and LPIPS on all event datasets, highlighting the impact of excluding frequency information and advanced skip connections. Visual results in Fig. 11 fur-ther emphasize the resulting loss of detail and over-smoothed textures. Although Model I maintains structural consistency, it lacks textural sharpness and fine-detail fidelity. 
+
+Model II: This variant reintroduces the frequency domain pathway in the CDAM module, enabling the model to exploit both spatio-temporal and frequency domain cues. WSB and RB remain excluded. The performance improvement over Model II confirms the effectiveness of frequency-based at-tention in capturing structural and textural features that are essential for high-fidelity reconstructions. 
+
+Model III: Building on Model II, we incorporate RBs into RGD blocks to enhance representation learning during reconstruction. These blocks help preserve feature flow and facilitate deeper learning, yielding further improvements in quantitative scores. WSB is still not included, allowing for an isolated evaluation of RBs contribution. Finally, by introducing the WSB into the architecture, we arrive at the complete proposed MSFET-E2V model. As evidenced in Fig. 11, this full configuration yields the best performance across all metrics and produces visually sharper, more detailed reconstructions 12 
+
+CDAM LL CDAM HF MSFET-E2V Event Voxel Grid GT 
+
+0.33/0.47 0.32/0.49 0.25/0.52 
+
+0.30/0.46 0.28/0.47 0.25/0.49 
+
+0.38/0.48 0.33/0.48 0.28/0.51 
+
+0.26/0.48 0.22/0.50 0.20/0.56 Fig. 12: Visual Results on variants of CDAM. The reconstructed images are provided with LPIPS/SSIM score. Here bold 
+
+values indicate best-performing model. TABLE VI: Ablation study on the effect of encoder-decoder depth (d). We evaluate performance across three datasets for depths d ∈ { 1, 2, 3, 4}. Here bold values indicate best-performing model.                                                                    
+
+> Dataset d= 1 d= 2 d= 3 d= 4
+> PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓
+> ECD 8.19 0.399 0.302 10.35 0.496 0.286 13.98 0.584 0.252 10.25 0.581 0.256
+> HQF 10.56 0.362 0.396 11.96 0.496 0.324 14.82 0.548 0.291 15.32 0.526 0.298
+> MVSEC 7.86 0.218 0.605 9.86 0.299 0.558 11.42 0.362 0.501 11.42 0.358 0.504
+
+TABLE VII: Ablation on the number of voxel bins b. Best results for each dataset are shown in bold .                                                                                                     
+
+> Dataset b= 2 b= 4 b= 5 b= 6 b= 8 b= 10
+> PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓PSNR ↑SSIM ↑LPIPS ↓
+> ECD 12.92 0.522 0.347 13.98 0.579 0.264 13.98 0.584 0.252 13.98 0.584 0.249 13.98 0.579 0.256 13.45 0.572 0.259
+> HQF 12.30 0.498 0.369 14.32 0.544 0.291 14.82 0.548 0.291 14.82 0.549 0.291 14.80 0.548 0.291 13.55 0.541 0.312
+> MVSEC 9.81 0.298 0.572 11.36 0.355 0.504 11.42 0.362 0.501 11.42 0.362 0.501 11.42 0.362 0.509 11.25 0.342 0.512
+
+B. Investigation on Frequency Domain 
+
+In this experiment, we design models with different choices of subbands (XLL , X HL , X LH , X HH ) to see their role in CDAM. Here, we introduce two variants of CDAM. CDAM LL processes only the LF subband, XLL , in the frequency domain path, omitting all HF components. In this variant, the input undergoes DWT, but only the LL subband is passed through RB, while the HF components are discarded. The rest of the CDAM module, including the spatio-temporal path, remains unchanged. In contrast, CDAM HF processes only the HF subbands (XHL , X LH , X HH )) in the frequency domain path of CDAM. As shown in Table V, the removal of HF subbands leads to a notable degradation in perfor-mance across all datasets. Despite the spatio-temporal branch retaining structural cues, the absence of HF detail leads to a noticeable drop in SSIM and PSNR, with LPIPS scores indicating perceptual degradation in CDAM LL model. As shown in Fig. 12, the outputs are overly smoothed and lack sharp textures, highlighting the limited ability of XLL alone to capture fine-grained variations. In contrast, CDAM HF better preserves local textures and edges, resulting in improved perceptual quality and sharper reconstructions. However, it lacks the global context and structural coherence provided by XLL , which is reflected in relatively lower SSIM compared to the full model (MSFET-E2V). These observations confirm that both LF and HF com-ponents play complementary roles in enhancing reconstruction quality in the proposed CDAM block. 13 
+
+C. Investigation on Encoder-Decoder Depth 
+
+In this experiment we analyze the impact of varying the encoder-decoder depth (d) of proposed model on E2V recon-struction performance. As shown in Table VI, increasing depth from d = 1 to d = 3 consistently improves all performance metrics (PSNR ↑, SSIM ↑, and LPIPS ↓) across ECD, HQF, and MVSEC datasets, highlighting the role of deeper represen-tations in learning spatial-frequency correlations. While depth 
+
+d = 4 offers marginal gains in HQF, it underperforms slightly on ECD and MVSEC. To meet the demand for efficient models that use transformer-based self-attention for global feature extraction, we focus on minimizing memory usage. Since increasing the depth beyond d = 3 offers no notable gains, we adopt d = 3 as the optimal configuration for our final model. 
+
+D. Investigation on the Choice of Temporal Bins 
+
+We investigate the influence of the number of voxel bins used to encode the event stream on the quality of E2V recon-struction. As shown in Table VII, we evaluate our model across three benchmark datasets. The results show that increasing the number of voxel bins from 2 to 5 progressively improves reconstruction performance. This is because a higher number of bins allows more precise temporal discretizations, thereby enabling the model to extract richer motion and structure cues from asynchronous events. However, beyond 5 bins (e.g., 6, 8, or 10), we found that the values produced no significant differences. Particularly, the performance of proposed model decreases when bin number was set to 10. This could be because the higher number of bins provides more temporal resolution, potentially capturing finer details of motion, but it can also lead to sparse event representations, where many bins contain little or no information. Given these trade-offs and in alignment with most of the prior works in the literature [5], [6], [10], [21], we select 5 as the optimal number of bins. This configuration balances temporal resolution and computational efficiency, leading to the best reconstruction quality among the tested settings. VI. C ONCLUSION 
+
+In this paper, we propose MSFET-E2V, a novel multi-scale frequency-enhanced transformer model for high-quality event-to-video (E2V) reconstruction. Unlike existing methods, MSFET-E2V operates across three complementary domains, i.e., spatial, temporal, and frequency, to fully exploit the rich structure of event data. Central to our model is the proposed cross-domain attention module (CDAM), which effectively captures both local and global dependencies by utilizing con-volutional recurrent networks in the spatio-temporal domain. To further enhance fine-grained detail preservation, we incor-porate the discrete wavelet transform (DWT) within CDAM for frequency-aware feature representation. Additionally, we introduce the wavelet-enhanced skip block (WSB), which pro-cesses shallow encoder features in both spatial and frequency domains before fusing them with the features produced by re-construction blocks. This design significantly reduces artifacts and improves image fidelity. We also address a major lim-itation of existing transformer-based E2V models, their high computational cost and restricted spatial-domain attention. Our MSFET-E2V model achieves superior reconstruction quality while reducing inference time by up to approximately 70%, demonstrating that efficient, high-quality video reconstruction is feasible with reduced memory consumption. REFERENCES [1] F. Mahlknecht, D. Gehrig, J. Nash, F. M. Rockenbauer, B. Morrell, J. Delaune, and D. Scaramuzza, “Exploring event camera-based odom-etry for planetary robots,” IEEE Robot. Autom. Lett , vol. 7, no. 4, pp. 8651–8658, 2022. [2] J. Li, B. Liao, X. Lu, P. Liu, S. Shen, and Y. Zhou, “Event-aided time-to-collision estimation for autonomous driving,” in ECCV , Sep. 2024, pp. 57–73. [3] B. Chakravarthi, A. A. Verma, K. Daniilidis, C. Fermuller, and Y. Yang, “Recent event camera innovations: A survey,” in ECCV , Sep. 2024, pp. 342–376. [4] B. Liu, C. Xu, W. Yang, H. Yu, and L. Yu, “Motion robust high-speed light-weighted object detection with event camera,” IEEE Trans. Instrum. Meas. , vol. 72, pp. 1–13, 2023. [5] H. Rebecq, R. Ranftl, V. Koltun, and D. Scaramuzza, “High speed and high dynamic range video with an event camera,” IEEE Trans. Pattern Anal. Mach. Intell , vol. 43, no. 6, pp. 1964–1980, 2021. [6] T. Stoffregen, C. Scheerlinck, D. Scaramuzza, T. Drummond, N. Barnes, L. Kleeman, and R. Mahony, “Reducing the sim-to-real gap for event cameras,” in ECCV , Aug. 2020, pp. 534–549. [7] P. R. G. Cadena, Y. Qian, C. Wang, and M. Yang, “SPADE-E2VID: Spatially-adaptive denormalization for event-based video reconstruc-tion,” IEEE Trans. Image Process , vol. 30, pp. 2488–2500, 2021. [8] S. E. Finder, R. Amoyal, E. Treister, and O. Freifeld, “Wavelet convo-lutions for large receptive fields,” in ECCV , Sep. 2024, pp. 363–380. [9] Z. Wang, Y. Zhang, Y. Liu, D. Zhu, S. A. Coleman, and D. Kerr, “ELWNet: An extremely lightweight approach for real-time salient object detection,” IEEE Trans. Circuits Syst. Video Technol , vol. 33, no. 11, pp. 6404–6417, 2023. [10] W. Weng, Y. Zhang, and Z. Xiong, “Event-based video reconstruction using transformer,” in ICCV , Oct. 2021, pp. 2543–2552. [11] D. Gu, J. Li, and L. Zhu, “Learning adaptive parameter representation for event-based video reconstruction,” IEEE Signal Process. Lett , vol. 31, pp. 1950–1954, 2024. [12] R. Azad, A. Kazerouni, A. Sulaiman, A. Bozorgpour, E. K. Aghdam, A. Jose, and D. Merhof, “Unlocking fine-grained details with wavelet-based high-frequency enhancement in transformers,” in MLMI , Oct. 2023, pp. 207–216. [13] C. Ge, X. Fu, K. Wang, and Z.-J. Zha, “Event-based video reconstruction with deep spatial-frequency unfolding network,” IEEE Trans. Image Process , vol. 34, pp. 1779–1794, 2025. [14] J. Yu, X. Lu, L. Guo, C. Wang, G. Li, and J. Qian, “Event-based video reconstruction via spatial-temporal heterogeneous spiking neural network,” IEEE Trans. Circuits Syst. Video Technol , pp. 1–1, 2025. [15] T. Kim, H. Cho, and K.-J. Yoon, “Frequency-aware event-based video deblurring for real-world motion blur,” in CVPR , Jun. 2024, pp. 24 966– 24 976. [16] Q. Li, L. Shen, S. Guo, and Z. Lai, “WaveCNet: Wavelet integrated CNNs to suppress aliasing effect for noise-robust image classification,” 
+
+IEEE Trans. Image Process , vol. 30, pp. 7074–7089, 2021. [17] I. Lee, J. Kim, Y. Kim, S. Kim, G. Park, and K. Park, “Wavelet transform image coding using human visual system,” in APCCAS , Dec. 1995, pp. 619–623. [18] Y. Jeong, H. Cho, and K.-J. Yoon, “Towards robust event-based networks for nighttime via unpaired day-to-night event translation,” in ECCV , Sep. 2024, pp. 286–306. [19] H. Kim, S. Leutenegger, and A. Davison, “Real-time 3D reconstruction and 6-DOF tracking with an event camera,” in ECCV , Oct. 2016, pp. 349–364. [20] C. Scheerlinck, H. Rebecq, D. Gehrig, N. Barnes, R. E. Mahony, and D. Scaramuzza, “Fast image reconstruction with an event camera,” in 
+
+WACV , Mar. 2020, pp. 156–163. [21] B. Ercan, O. Eker, C. Saglam, A. Erdem, and E. Erdem, “HyperE2VID: Improving event-based video reconstruction via hypernetworks,” IEEE Trans. Image Process , vol. 33, pp. 1826–1837, 2024. 14 
+
+[22] D. Ha, A. Dai, and Q. V. Le, “Hypernetworks,” in ICLR , Apr. 2017. [23] L. Zhu, Y. Zheng, Y. Zhang, X. Wang, L. Wang, and H. Huang, “Temporal residual guided diffusion framework for event-driven video reconstruction,” in ECCV , Sep. 2024, pp. 411–427. [24] Z. Mei, J. Li, B. Zhang, C. Wang, L. Guo, G. Li, and J. Qian, “Temporal-aware spiking transformer hashing based on 3D-DWT,” arXiv preprint arXiv:2501.06786 , 2024. [25] Y. Fang, Z. Wang, L. Zhang, J. Cao, H. Chen, and R. Xu, “Spiking wavelet transformer,” in ECCV , Sep. 2024, pp. 19–37. [26] T. Yao, Y. Pan, Y. Li, C.-W. Ngo, and T. Mei, “Wave-ViT: Unifying wavelet and transformers for visual representation learning,” in ECCV ,Oct. 2022, pp. 328–345. [27] S.-H. Ieng, E. Lehtonen, and R. Benosman, “Complexity analysis of iterative basis transformations applied to event-based signals,” Front. Neurosci , vol. 12, p. 373, 2018. [28] A. Z. Zhu, L. Yuan, K. Chaney, and K. Daniilidis, “Unsupervised event-based optical flow using motion compensation,” in ECCV , Sep. 2019, pp. 711–714. [29] B. Zhang, J. Sun, F. Sun, F. Wang, and B. Zhu, “Image deblurring method based on self-attention and residual wavelet transform,” Expert Syst. Appl , vol. 244, p. 123005, 2024. [30] R. S. Stankovi´ c and B. J. Falkowski, “The Haar wavelet transform: its status and achievements,” Comput. Electr. Eng , vol. 29, no. 1, pp. 25–44, 2003. [31] O. Ronneberger, P. Fischer, and T. Brox, “U-Net: Convolutional net-works for biomedical image segmentation,” in MICCAI , Oct. 2015, pp. 234–241. [32] S. Liu and P. L. Dragotti, “Sensing diversity and sparsity models for event generation and video reconstruction from events,” IEEE Trans. Pattern Anal. Mach. Intell , vol. 45, no. 10, pp. 12 444–12 458, 2023. [33] X. Shi, Z. Chen, H. Wang, D.-Y. Yeung, W.-K. Wong, and W.-C. Woo, “Convolutional LSTM network: A machine learning approach for precipitation nowcasting,” in NeurIPS , Dec. 2015, pp. 802–810. [34] A. G. Roy, N. Navab, and C. Wachinger, “Concurrent spatial and channel ‘squeeze & excitation’ in fully convolutional networks,” in MICCAI ,Sep. 2018, pp. 421–429. [35] K. Simonyan and A. Zisserman, “Very deep convolutional networks for large-scale image recognition,” arXiv preprint arXiv:1409.1556 , 2014. [36] O. Russakovsky, J. Deng, H. Su, J. Krause, S. Satheesh, S. Ma, Z. Huang, A. Karpathy, A. Khosla, M. Bernstein, A. C. Berg, and L. Fei-Fei, “Imagenet large scale visual recognition challenge,” Int. J. Comput. Vision , vol. 115, no. 3, p. 211–252, 2015. [37] H. Rebecq, D. Gehrig, and D. Scaramuzza, “ESIM: an open event camera simulator,” in CoRL , Oct. 2018, pp. 969–982. [38] T.-Y. Lin, M. Maire, S. Belongie, J. Hays, P. Perona, D. Ramanan, P. Doll´ ar, and C. L. Zitnick, “Microsoft COCO: Common objects in context,” in ECCV , Sep. 2014, pp. 740–755. [39] C. Brandli, R. Berner, M. Yang, S.-C. Liu, and T. Delbruck, “A 240 × 180 130 db 3 μs latency global shutter spatiotemporal vision sensor,” 
+
+IEEE J. Solid-State Circuits , vol. 49, no. 10, pp. 2333–2341, 2014. [40] E. Mueggler, H. Rebecq, G. Gallego, T. Delbr¨ uck, and D. Scaramuzza, “The event-camera dataset and simulator: Event-based data for pose estimation, visual odometry, and SLAM,” Int. J. Robot. Res , vol. 36, pp. 142–149, 2016. [41] A. Z. Zhu, D. Thakur, T. ¨Ozaslan, B. Pfrommer, V. Kumar, and K. Daniilidis, “The multivehicle stereo event camera dataset: An event camera dataset for 3D perception,” IEEE Robot. Autom. Lett , vol. 3, no. 3, pp. 2032–2039, 2018. [42] C. Scheerlinck, H. Rebecq, T. Stoffregen, N. Barnes, R. Mahony, and D. Scaramuzza, “CED: Color event camera dataset,” in CVPRW , Jun. 2019. [43] B. Ercan, O. Eker, A. Erdem, and E. Erdem, “EVREAL: Towards a comprehensive benchmark and analysis suite for event-based video reconstruction,” in IEEE/CVF , Jun. 2023, pp. 3943–3952.

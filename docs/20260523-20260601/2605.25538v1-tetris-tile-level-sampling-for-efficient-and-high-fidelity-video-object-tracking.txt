@@ -1,0 +1,805 @@
+Title: Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking
+
+URL Source: https://arxiv.org/pdf/2605.25538v1
+
+Published Time: Tue, 26 May 2026 01:55:18 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking 
+
+## Chanwut Kittivorawong 
+
+chanwutk@berkeley.edu U. of California, Berkeley Berkeley, California, USA 
+
+## Alena Chao 
+
+alenachao@berkeley.edu U. of California, Berkeley Berkeley, California, USA 
+
+## Charlie Si 
+
+charliesi@berkeley.edu U. of California, Berkeley Berkeley, California, USA 
+
+## Alvin Cheung 
+
+akcheung@cs.berkeley.edu U. of California, Berkeley Berkeley, California, USA 
+
+## Abstract 
+
+Track materialization converts raw video into reusable object tracks that downstream queries can run against without rerunning track-ing, but extracting those tracks efficiently and with high fidelity re-mains expensive. Prior systems reduce cost through temporal frame sampling, erasing the inter-frame motion that fine-grained tracking requires. In stationary video, however, large portions of each frame contain no objects of interest, and the remaining regions tolerate different sampling rates. We present Tetris, a track-extraction sys-tem that decomposes videos into a tile-based polyomino data model, enabling fine-grained spatiotemporal pruning that reduces detector calls with minimal fidelity loss. Tetris runs three operators upstream of the user-provided detector: a classifier identifies relevant tiles and groups them into polyominoes, an integer linear program (ILP) prunes redundant polyominoes under a user-specified accuracy constraint, and a packer assembles the survivors into canvases that minimize detector calls. Across 7 stationary-video datasets, Tetris stays within a 5% tracking accuracy loss of a full-frame, every-frame reference pipeline, whereas prior systems exceed this bound on 3 of the 7 datasets. At this 5% bound, Tetris achieves up to 17.4 ×
+
+higher throughput than prior systems and up to 68.8 × higher than the reference pipeline. 
+
+## 1 Introduction 
+
+Track materialization from video converts raw video into a reusable set of object tracks that downstream analytics can query repeat-edly [ 5 , 18 ]. For stationary cameras deployed in traffic monitoring and surveillance, each track is a per-object trajectory that supports queries such as counting, retrieval, and motion analysis. Because each materialized track can serve many downstream queries, sys-tems compute tracks once, store them, and reuse them. The bottleneck in this workload is track extraction, the compute-intensive process that produces reusable tracks from raw video. Modern tracking-by-detection pipelines spend 99.4–99.9% of their runtime inside the object detector (Table 1), and long continuous video streams amplify this cost at scale. Reducing the number of de-tector invocations, or the amount of pixel data each invocation must process, is therefore the primary lever for improving throughput. Many downstream tasks demand fine-grained trajectories, not merely object presence. Decentralized vehicle coordination in un-derstructured traffic scenes relies on per-vehicle trajectories re-covered from object tracks [ 31 ], and traffic-flow studies such as the I-24 MOTION phantom-jam experiment depend on recover-ing when each vehicle decelerates, re-accelerates, and whether its motion propagates or damps a stop-and-go wave [ 25 ]. Missing, imprecise, or temporally coarse tracks are harmful during abrupt motion changes; producing tracks at the fidelity that such queries require is exactly what makes track extraction expensive. Prior track-materialization systems reduce cost through two strategies, both with corresponding accuracy limits. OTIF [ 5 ] and LEAP [ 32 ] apply whole-frame sampling, which erases the inter-frame motion that fine-grained tracking requires. OTIF additionally crops sampled frames with axis-aligned rectangular regions of in-terest (ROIs), that is, rectangles whose edges are parallel to the image axes. Such windows still enclose irrelevant pixels whenever the underlying relevant region is non-rectangular. §2.2 discusses both strategies in detail. Stationary-camera deployments are common in traffic monitor-ing and surveillance, and they expose a property that prior work has not fully exploited. Because the camera does not move and the scene’s physical layout is fixed, the spatial distribution of relevant content is stable over time. Objects recur in the same image regions and follow the same scene-induced motion patterns. This stability makes it possible to prune at a granularity finer than whole frames and with shapes finer than rectangular ROIs. We identify three properties of stationary video that make this stability exploitable, discussed in more detail in §2.3. First, spatial irrelevance : a mean of 94.5% of spatial regions per frame contain no objects of interest. Second, spatially varying sampling requirements :different regions tolerate different sampling rates because local motion patterns demand different temporal resolution, making any single whole-frame sampling rate either wasteful or inaccurate. Third, tight non-rectangular clustering : relevant regions form con-nected but non-rectangular shapes whose axis-aligned enclosing rectangles contain 40% more area than the regions themselves. To exploit these properties, we present Tetris, a track-extraction system that decomposes stationary-camera video into a tile-based 
+
+polyomino data model [ 11 ], enabling fine-grained spatiotempo-ral pruning that reduces detector calls without sacrificing fidelity. Tetris divides each frame into a grid of square tiles and groups connected relevant tiles into polyominoes, non-rectangular regions that tightly enclose relevant content (§4). Importantly, Tetris is ag-nostic to the object detector and tracker, and it lets the user define the accuracy target (§6.3). The Tetris execution engine (§5) runs an optimized tracking pipeline of three operators (classify, prune, pack) upstream of the user-provided detector, then unpacks the resulting detections for the tracker (§3). This extraction-time pipeline is pre-ceded by a one-time training phase that, once per dataset, trains a lightweight relevance classifier specialized to the user-provided detector (§ 6.1) and learns the maximum tile sampling gaps the pruner relies on (§6.2). To use Tetris, users provide a stationary-camera video dataset, an object detector and a tracker, and either a throughput requirement  
+
+> arXiv:2605.25538v1 [cs.CV] 25 May 2026 tetris-db.github.io, , Chanwut Kittivorawong, Alena Chao, Charlie Si, and Alvin Cheung
+
+or an accuracy requirement. Tetris then runs a one-time preparation step on samples from the dataset, producing the artifacts needed for efficient extraction. These artifacts include a relevance classifier, learned maximum tile sampling gaps, and a Pareto frontier of can-didate configurations that helps the user select an operating point. After the user selects a configuration, Tetris’s execution engine ex-tracts tracks on the remaining video data under that configuration. On seven publicly available stationary-video datasets, Tetris keeps HOTA loss below 5% relative to the reference pipeline (§2.1), while prior systems exceed this bound on 3 of the 7 datasets. At this 5% bound, Tetris delivers 1.5-17.4 × higher throughput than prior systems and 4.7-68.8 × higher throughput than the refer-ence pipeline. At a 10% HOTA-loss bound, Tetris achieves 1.6-24.7 × higher throughput than prior systems and 10.4-91.2 × higher throughput than the reference pipeline (§7). In sum, we make the following contributions. 
+
+• A tile-based polyomino data model and an execution engine for efficient track extraction. The engine runs three operators up-stream of the user-provided detector: a classifier identifies poly-ominoes of relevant tiles, an ILP prunes redundant polyominoes constrained by learned maximum tile sampling gaps, and a poly-omino packing algorithm packs survivors into fewer canvases to minimize detector invocations. 
+
+• A method for learning maximum tile sampling gaps from empiri-cal per-tile mistrack rates. For each mistrack-rate tolerance, the method selects the largest measured gap that remains within the tolerance at each tile, turning an exponential search over per-tile gap assignments into a one-dimensional sweep over the scalar tolerance. At runtime, these gaps become ILP constraints that let the execution engine prune polyominoes according to empirically measured mistrack rates. 
+
+• An evaluation on seven stationary-video datasets demonstrating that, at a 5% HOTA-loss bound, Tetris consistently meets the bound, whereas prior systems fail to do so on 3 of the 7 datasets. Compared with prior systems at 5% bound, Tetris delivers up to 17.4 × higher throughput. At matched throughput, Tetris also achieves up to 0.42 points higher HOTA at 1000 FPS. 
+
+## 2 Background and Observations 
+
+This section describes the tracking-by-detection pipeline that Tetris accelerates (§2.1), positions our work within efficient track materi-alization (§2.2), and presents empirical observations on stationary video that motivate the design choices of Tetris (§2.3). 
+
+## 2.1 Tracking by Detection 
+
+Tracking by detection is the most widely used paradigm for multi-object tracking [ 23 ]. As shown in Fig. 1, the tracking-by-detection pipeline takes an 𝑁 -frame video as input and processes it in two stages. First, an object detector [ 20 , 27 , 28 ] runs independently on each of the 𝑁 frames, producing a set of bounding boxes per frame, where each box is a tuple (𝑥 1, 𝑦 1, 𝑥 2, 𝑦 2) specifying the pixel coordi-nates of a rectangular region enclosing a detected object. We let 𝑁 ′
+
+denote the number of detection calls; in this naive pipeline, 𝑁 ′ = 𝑁 
+
+since the detector is invoked once per frame. Second, an object tracker performs data association ; it links bounding boxes across consecutive frames that likely correspond to the same physical Reference    
+
+> Object Detector
+> Ncalls
+> Bounding
+> Boxes (x1,y1,x2,
+> y2)[][N]
+> Reference
+> Object Tracker Tracks Video
+> Image[N] (x1,y1,x2,y2,
+> tid)[][N]
+> Materialized
+> Tracks
+
+Figure 1: Tracking-by-detection pipeline. Table 1: Detection time proportion of tracking-by-detection.               
+
+> Dataset CalDoT 1 CalDoT 2 B3D 1 B3D 2 B3D 3 B3D 4 Amsterdam Detection time proportion 99.7% 99.7% 99.6% 99.4% 99.5% 99.6% 99.9%
+
+object, assigning each a consistent track identifier to produce a set of tracks [ 6– 8, 29 , 30 , 34 ]. Each resulting track is a sequence of per-frame bounding boxes sharing a track identifier. Because the object detector utilizes expensive machine-learning inference on every frame, while data association can be performed using simple statistical methods such as bounding box overlaps [ 6,7, 34 ], detection dominates the pipeline’s computational cost. Object detection accounts for 99.4–99.9% of the runtime of an unoptimized full-frame, every-frame tracking-by-detection pipeline (Table 1). Reducing the number of detector invocations, or the amount of data each invocation must process, is therefore the primary strategy for improving end-to-end throughput. We call this unoptimized full-frame, every-frame pipeline built from the user-provided detector and tracker the reference pipeline ; Tetris optimizes against it and we use it throughout as the accuracy and runtime baseline. 
+
+## 2.2 Track Materialization 
+
+Track materialization is the data-management task of converting raw video into persistent object tracks that downstream queries can reuse. It is a concrete instance of video ETL [ 18 ]. In our set-ting, Tetris accelerates the track-extraction step that produces these reusable tracks from stationary camera streams, so downstream sys-tems can store or query them without rerunning tracking. Examples include counting, trajectory retrieval, and motion analysis. The primary cost of track materialization is producing those reusable tracks. As mentioned, detection dominates runtime, so prior systems reduce this cost by reducing detector work. One com-mon approach is temporal frame sampling. OTIF [ 5] samples frames uniformly to reduce execution time proportionally, and LEAP [ 32 ]introduces a predictive strategy that skips frames whose object states can be inferred from previously sampled frames. A comple-mentary approach is spatial pruning within each sampled frame. For example, OTIF uses a proxy model to identify axis-aligned regions of interest (ROIs) that the detector then processes. Both approaches reduce detector work. Temporal sampling reduces the number of frames passed to the detector, and spatial pruning reduces the amount of pixel content the detector must process within sampled frames. But each has a corresponding limitation. Frame sampling erases inter-frame motion that fine-grained tracking requires, and rectangular ROIs waste detector work when relevant content is not perfectly rectangular. We evaluate track-extraction quality with HOTA [ 22 ], which jointly penalizes missing detections, fragmented tracks, and identity switches, making it the appropriate fidelity metric for the fine-grained tracking we target. §2.3 quantifies the headroom these limitations leave on stationary video. Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking tetris-db.github.io, , 
+
+Figure 2: (Left) Per-tile relevance percentage across CalDoT1. Most tile locations are rarely or never relevant. (Middle) Per-tile mistrack rate (%) for B3D4 when sampling every 4 frames. (Right) A connected group of relevant tiles (green tiles) and its axis-aligned window (red dotted lines). Red tiles are irrel-evant but included in the window. 
+
+## 2.3 Observations from Stationary Video 
+
+We present empirical evidence from our seven stationary-video datasets for the three properties claimed in §1. We formally detail these datasets in §7; here, we use two of them as running examples: CalDoT1, a highway traffic camera from the OTIF benchmark [ 5], and B3D4, an intersection camera [31]. 
+
+Observation 1: Spatial Irrelevance. Fig. 2 (left) shows the percent-age of frames in which each tile location contains a detected object on CalDoT1. Most tile locations are rarely relevant, and many are never relevant. Across our seven datasets collected across different traffic cameras, a mean of 94.5% of tiles per frame contain no objects of interest, quantifying the opportunity for tile-level filtering. 
+
+Observation 2: Spatially-Varying Sampling Requirements. Fig. 2 (middle) visualizes the per-tile mistrack percentage on the B3D4 dataset when sampling every four frames. In the B3D4 intersection scene, tiles along the approaching lanes (right lanes) of each leg exhibit higher mistrack rates than tiles along the exiting lanes (left lanes). This is because vehicles approaching the intersection acceler-ate and decelerate unpredictably, making their positions harder for the tracker to interpolate across skipped frames. Tiles immediately before the stop line are an exception because vehicles are nearly stationary and thus easy to track. Vehicles exiting the intersection maintain steady speed, allowing the tracker to predict their posi-tions accurately even with aggressive frame skipping. These spatial divergences in tracking difficulty are reflected in the high variance of per-tile mistrack rates. Across the seven datasets combined, the standard deviation is 20.6%. On individual datasets, the rates vary significantly as well; for example, the standard deviation is 18.2% on B3D4 and 27.7% on CalDoT1. These spatial patterns show that using a single whole-frame sampling rate is suboptimal, and that a system that learns maximum tile sampling gaps can reduce the number of tiles processed with minimal tracking accuracy loss. 
+
+Observation 3: Tight Spatial Grouping. Fig. 2 (right) compares the area of a connected relevant-tile group against the area of its axis-aligned window on B3D4. On average across our datasets, axis-aligned windows contain 40% more tiles than the connected groups they enclose. This overhead compounds with the pruning from Observations 1 and 2, since a system that prunes at the granularity of rectangular regions reintroduces irrelevant content that tile-level pruning would have discarded. 
+
+From observations to system design. These three observations motivate the core components of Tetris: tile-level relevance classifi-cation (§5.1, Obs. 1), per-tile polyomino pruning, which skips more tiles in regions that tolerate infrequent observation (§5.2, Obs. 2), and polyomino grouping rather than rectangular ROIs (§4, Obs. 3). §3 presents the integrated system. 
+
+## 3 Tetris System Overview 
+
+Consider a user with a large video dataset captured by station-ary cameras and a user-provided object detector and tracker for identifying and tracking objects of interest (e.g., vehicles in traffic monitoring). The user’s goal is to materialize tracks for all objects of interest across the dataset, subject to a throughput requirement or an accuracy requirement. Tetris accelerates the track-extraction process, maximizing throughput while bounding accuracy loss, and is agnostic to the choice of object detector and tracker. Tetris therefore produces two kinds of outputs: intermediate ar-tifacts , which include a relevance classifier, maximum tile sampling gaps, and a throughput–accuracy frontier to help the user choose an operating point; and final tracks obtained by applying the se-lected configuration to the remaining video data. The artifacts guide execution, but they are not the final tracks. Tetris does not change how tracks are represented or queried downstream; it changes how efficiently they are extracted. At its core, Tetris divides each video frame into a grid of square 
+
+tiles and treats tiles as the fundamental unit of processing. Each tile is classified as either relevant (containing objects of interest) or irrelevant (background), allowing Tetris to discard large portions of a frame without running the expensive object detector. Con-nected relevant tiles within a frame form a polyomino , an arbitrary two-dimensional shape composed of edge-adjacent squares, which must be processed together to avoid splitting objects across tile boundaries. Not every polyomino needs to be processed in every frame. Our learned maximum tile sampling gaps determine how frequently each region must be sampled to keep tracking accuracy within a given tolerance. After pruning, the remaining polyomi-noes are packed into rectangular canvases for batch detection. We formally define tiles and polyominoes in §4. Shown in Fig. 3, Tetris learns runtime artifacts and generates a Pareto frontier on small samples, then extracts tracks on the full dataset. Tetris samples two disjoint video subsets from the input video dataset: a training sample for learning the relevance classifier and maximum tile sampling gaps and a validation sample for generating the Pareto frontier. Each video subset consists of at most 60 one-minute videos. The remaining data is reserved for efficient track extraction via the Tetris execution engine (§5). 
+
+Learning Runtime Artifacts (§6.1, §6.2). On the training sample, Tetris trains a lightweight relevance classifier specialized to the user-provided detector (§6.1) and learns maximum tile sampling gaps (§6.2). The user-provided detector and tracker together define the unoptimized full-frame, every-frame reference pipeline . Because deployment video lacks ground-truth tracks during optimization, Tetris uses this reference pipeline’s results as the target for accuracy evaluation. The relevance classifier learns to predict whether a tile contains objects of interest from the tile’s color image, the difference between consecutive frames, and the tile’s position. The maximum tetris-db.github.io, , Chanwut Kittivorawong, Alena Chao, Charlie Si, and Alvin Cheung Sec. 6.2: Learning Maximum Tile Sampling Gaps  Sec. 5                               
+
+> Execute
+> Sec. 6.3: Gen. the Pareto Frontier
+> Video Reference
+> Object Detector Bounding
+> Boxes Training Data
+> Creator
+> Positive Tiles
+> Negative Tiles Classifi-
+> cation
+> Head
+> 6-channel
+> Input
+> Position
+> Encoder
+> Relevance Classifier
+> Video Relevance
+> Classifier
+> Polyominoes' Original Positions
+> Polyominoes
+> Packer Packed
+> Canvas Reference
+> Object Detector
+> |C| calls
+> Packed
+> Bounding
+> Boxes
+> Bounding Box
+> Unpacker Bounding
+> Boxes
+> Polyominoes
+> Pruner Relevant
+> Polyominoes
+> Maximum
+> tile
+> sampling
+> gap
+> Mistrack
+> Rate
+> Tolerance 20% 10% 0% Config 1 Optimized
+> Tracking
+> Pipeline
+> Config N Optimized
+> Tracking
+> Pipeline Runtime
+> Accuracy
+> Frame
+> Sampler Relevant
+> Polyominoes Video
+> Sec. 5: Tetris' Execution Engine (Track Extraction)
+> Back
+> bone
+> Sec. 6.1: Relevance Classifier Training
+> Config k
+> Optimized
+> Tracking
+> Pipeline
+> Training video samples Validation video samples All videos
+> Choose
+> 1 set of
+> config.
+> System Config.
+> Operator (UDF) Operator (System)
+> Image[N/s] Bitmap2D[N/s] Image[|C|];
+> |C| <N/s (x1,y1,x2,y2)[][|C|] (x1,y1,x2,y2)[][|C|] Bitmap2D[N/S]
+> Image[N]
+> (Img,DiffImg,(x,y))[]
+> Same
+> Component
+> BC
+> Pareto-optimal
+> Object
+> Tracker
+> Config k
+> C'
+> A.1 A.2
+> Train
+> Object
+> Tracker
+> Sample(1)
+> Object
+> Tracker Sample(2)
+> Object
+> Tracker Sample(4)
+> Object
+> Tracker Sample(8)
+> 40%
+> Eval.
+> Mistrack
+> Rates
+> s / T r/ M / P / A
+> Reference Tracking
+
+Figure 3: System overview. The learning and Pareto frontier generation stages produce intermediate artifacts: the relevance classifier (§6.1), maximum tile sampling gaps (§6.2), and a throughput-accuracy curve from swept system configurations (§6.3). The user selects a configuration, then the Tetris execution engine (§5) uses it to extract tracks on the full dataset. 
+
+tile sampling gaps specify, for each tile location, how frequently that location must be sampled to maintain accurate tracks. 
+
+Generating the Pareto Frontier (§6.3). On the validation sample, Tetris executes the unoptimized reference pipeline to establish the reference tracks, then the Tetris execution engine extracts tracks from the validation sample under a range of parameter configura-tions. Each configuration produces a different throughput-accuracy operating point. The output is a user-visible set of Pareto-optimal configurations that lie on the throughput-accuracy frontier, each representing a distinct trade-off between throughput and tracking accuracy against the reference tracks. 
+
+Track Extraction (§5). Given the user’s throughput or accuracy requirement, the user selects a configuration from the Pareto fron-tier, and Tetris’s execution engine extracts tracks on the remaining video data by executing a tracking pipeline of three Tetris operators upstream of the user-provided detector, followed by a lightweight unpacking step before the tracker. First, the relevance classifier evaluates each tile and groups connected relevant tiles into poly-ominoes (§5.1). Second, an ILP prunes polyominoes based on the maximum tile sampling gaps to minimize the total number of tiles processed (§5.2). Third, a two-dimensional first-fit-descending algo-rithm packs the surviving polyominoes into rectangular canvases of the same resolution as the original video frames (§5.3). The user-provided object detector then processes each canvas, and Tetris unpacks the resulting bounding boxes back to original frame coor-dinates for the tracker (§5.4). 
+
+## 4 Data Model for Optimization 
+
+Tetris operates on a tile-level data model that lets the Tetris execu-tion engine process only regions relevant to object tracking. This section defines its two core abstractions: tiles and polyominoes. 
+
+## 4.1 Tiles and Relevance 
+
+Each video frame is divided into a grid of square tiles of size 𝑇 𝑆 ×𝑇 𝑆 
+
+pixels. For a frame of height 𝐻 𝐹 and width 𝑊 𝐹 , the grid contains 
+
+𝐻 = 𝐻 𝐹 /𝑇 𝑆 rows and 𝑊 = 𝑊 𝐹 /𝑇 𝑆 columns. We denote the tile at row 𝑖 and column 𝑗 for a particular frame by its position (𝑖, 𝑗 ).Tetris classifies each tile as either relevant or irrelevant to the end-goal object tracking task. Relevant tiles visually contain the objects of interest (e.g., vehicles in traffic monitoring), while irrelevant tiles contain only background content such as empty roads, trees, buildings, or sky, as shown in Fig. 4 (A). Formally, a relevance classifier assigns each tile a score 𝑆𝑐𝑜𝑟𝑒 𝑖,𝑗 ∈ [ 0, 1], where values close to 1 indicate high relevance and values close to 0 indicate irrelevance. A tile is relevant if 𝑆𝑐𝑜𝑟𝑒 𝑖,𝑗 ≥ 𝑇 𝑟 for a threshold 𝑇 𝑟 ;otherwise it is irrelevant. Irrelevant tiles are discarded entirely, saving Tetris from running the expensive object detector on regions that contain no objects of interest. The design and training of the relevance classifier are described in §5.1. |C|  Canvases |C|  Canvases 
+
+Frame #1  Canvas #1  Canvas #1  
+
+> NFrames
+> Pack
+
+N < |C| 
+
+> Detect
+
+|C| 
+
+calls 
+
+A B C
+
+Figure 4: A video frame divided into a grid of tiles. Relevant tiles (highlighted) contain objects of interest, while irrelevant tiles (grayed) are discarded to save computation. Connected relevant tiles form a polyomino (green border). Polyominoes from multiple frames are packed into a single canvas. 
+
+## 4.2 Relevant Polyominoes 
+
+An object of interest may span multiple adjacent tiles within the same frame. If each relevant tile were processed independently by the object detector, the detector could incorrectly localize the object, for instance, reporting two half-detections for a vehicle that straddles two tiles. Therefore, connected relevant tiles must be processed together, as shown in Fig. 4 (A). We group connected relevant tiles into a polyomino [ 11 , 17 ], an arbitrary shape formed by edge-connected tiles on a grid. Let 𝑃 de-note the set of relevant polyominoes in the frame. Each polyomino 
+
+𝑝 𝑘 ∈ 𝑃 is a set of tile positions on the grid, and |𝑝 𝑘 | denotes the number of tiles in 𝑝 𝑘 . All polyominoes in 𝑃 are pairwise disjoint. Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking tetris-db.github.io, , 
+
+Unlike prior systems such as OTIF [ 5 ] that group relevant tiles into the smallest enclosing rectangular region of interest (ROI), poly-ominoes can take any connected shape. This flexibility is important because rectangular ROIs can be highly wasteful. For example, if objects align diagonally across a frame, the smallest enclosing rec-tangle may span the entire frame, forcing the system to process large irrelevant regions. Polyominoes avoid this excess coverage by tightly following the shape of the relevant area. The procedure for constructing polyominoes from classified tiles is detailed in §5.1. In subsequent sections, when discussing multiple frames, we add a frame index 𝑓 to these symbols (e.g., 𝑆𝑐𝑜𝑟𝑒 𝑓 ,𝑖,𝑗 , 𝑃 𝑓 , 𝑝 𝑓 ,𝑘 ). 
+
+## 5 Tetris Execution Engine 
+
+Once the user selects a system configuration (§6.3), Tetris’s execu-tion engine extracts tracks on the remaining video data. The goal is to reduce runtime while maintaining tracking accuracy. At a high level, the execution engine identifies the regions of each frame that are relevant to tracking and packs them into canvases that reduce the number of calls to the object detector, as shown in Fig. 3 (C ′). The execution engine runs an optimized tracking pipeline com-posed of three Tetris operators upstream of the user-provided detec-tor, followed by a lightweight unpacking step before the tracker. The detector must be user-provided because it encodes domain-specific knowledge of what objects look like; the tracker only consumes per-frame bounding boxes, so Tetris accepts either the user-provided tracker or its built-in SORT [ 6 ]. Before the three operators run, the engine may apply whole-frame sampling at a fixed rate 𝑠 , processing only every 𝑠 -th frame and skipping the rest. This step is a standard optimization used by prior video analytics systems [ 5], not a con-tribution of Tetris; the engine exposes 𝑠 as a runtime knob so it can compose with the per-tile sampling realized by the three operators. The three Tetris operators are: (1) Relevance Classification (§5.1) identifies the regions of video frames that contain objects of interest. A video frame is divided into a grid of square tiles. Tiles that contain objects of interest are marked as relevant. The rest are marked as irrelevant. Con-nected relevant tiles within the same frame form a polyomino. The operator outputs a list of relevant polyominoes. (2) Polyomino Pruning (§5.2) samples at the tile level rather than frame level. Given the maximum tile sampling gaps learned offline, it prunes polyominoes whose tiles are covered by neigh-boring frames, minimizing the number of tiles to process. (3) Polyomino Packing (§5.3) packs the remaining polyominoes into canvases to minimize the number of detector calls. After these three operators, Tetris invokes the user-provided detec-tor on each packed canvas, unpacks the resulting detections back to their original frame coordinates, and feeds them to the selected tracking algorithm to produce object tracks (§5.4). 
+
+## 5.1 Relevance Classification 
+
+Prior work [ 5 ] in video analytics systems deploys coarse-grained proxy models to identify regions that may contain objects of interest, avoiding calls to the detector on regions predicted to be irrelevant. Unlike these prior proxy models, which classify regions from RGB 2nd Conv Layer    
+
+> onward ...
+> 1st Conv Layer
+> (3-channel)
+> FC Layer
+> FC Layer
+> Classification (T/F)
+> Img
+> Our
+> Extension
+> 2nd Conv Layer
+> onward ...
+> 1st Conv Layer
+> (6-channel)
+> FC Layer
+> FC Layer
+> Stack[ Img , ΔImg ]
+> Concat FC Layer
+> Classification (T/F)
+> TilePosition(x, y)
+> Backbone Classification
+> Head
+> New Modified
+
+Figure 5: The architecture of the relevance classifier. (Left) The original image classification architecture. (Right) Our extended classifier architecture to additionally accept the difference between consecutive frames and the tile positions. 
+
+appearance alone, Tetris’s relevance classifier additionally condi-tions on per-tile motion (frame differences) and spatial position, which stationary video makes especially informative. Frame differ-ences highlight local motion that is usually absent from background tiles, and tile position captures stable scene priors such as lanes, sidewalks, and sky. Together, these cues help determine tile rele-vance in visually ambiguous regions where RGB appearance alone leaves useful evidence unused. 
+
+Model Architecture. Building on the observations above, we note two additional cues for tile-level classification: the frame-difference image is a strong indicator of relevance (moving objects produce visible local changes), and tile position provides a stable spatial prior (e.g., sky tiles are rarely relevant). Our classifier therefore accepts the tile’s RGB image, the frame-difference image, and the tile position as input, and is specialized to the user-provided detector (§6.1). We use ShuffleNet [ 24 ] (the smallest model in the torchvision hub [ 26 ]) as the backbone, and extend it to additionally accept the difference between consecutive frames and tile positions. At video frame 𝑓 , the tile position is represented as a 2D co-ordinate (𝑖, 𝑗 ). Let Img 𝑓 ,𝑖,𝑗 denote the RGB tile image at position 
+
+(𝑖, 𝑗 ) on frame 𝑓 , and ΔImg 𝑓 ,𝑖,𝑗 the corresponding frame-difference image, defined as 
+
+ΔImg 𝑓 ,𝑖,𝑗 = |Img 𝑓 ,𝑖,𝑗 − Img 𝑓 −1,𝑖,𝑗 |, (1) where |·| denotes element-wise absolute value. Our classification function on each tile is defined as 
+
+𝑆𝑐𝑜𝑟𝑒 𝑓 ,𝑖,𝑗 = Relevance (Img 𝑓 ,𝑖,𝑗 , ΔImg 𝑓 ,𝑖,𝑗 , (𝑖, 𝑗 )) (2) The score is a scalar value between 0 and 1, with 1 indicating high relevance and 0 indicating irrelevance. If 𝑆𝑐𝑜𝑟𝑒 𝑓 ,𝑖,𝑗 is greater than a threshold 𝑇 𝑟 , the tile at position (𝑖, 𝑗 ) on frame 𝑓 is considered relevant. Otherwise, the tile is considered irrelevant. For a particular frame 𝑓 , Tetris outputs a matrix 𝑆𝑐𝑜𝑟𝑒𝑠 𝑓 of size 
+
+𝐻 × 𝑊 . The element 𝑆𝑐𝑜𝑟𝑒 𝑓 ,𝑖,𝑗 is the relevance score for the tile at position (𝑖, 𝑗 ) on frame 𝑓 .The architecture of the extended classifier is shown in Fig. 5. The first layer of the backbone of the original classifier is a convolutional layer that accepts the color image (3 channels). Here, we replace the original first layer with a 6-channel convolutional layer that accepts the color image and the difference between consecutive frames. Accepting the difference image allows the model to capture the motion of the objects in the video. In the original classifier, tetris-db.github.io, , Chanwut Kittivorawong, Alena Chao, Charlie Si, and Alvin Cheung 
+
+the classification head contains two fully connected layers. Here, we concatenate the feature output from the backbone (visual and motion features) with the tile position embeddings, and pass the concatenated output through two fully connected layers to obtain the relevance score for each tile. The position embeddings are computed through a learned fully connected layer instead of by directly passing the tile position to the classification head. The final output is a scalar value between 0 and 1, where 1 means the tile is highly relevant, and 0 means the tile is irrelevant. The classifier is trained on a training sample per video dataset in § 6.1. We show that a small off-the-shelf model is sufficient and that added input modalities improve classification accuracy in §7.2.1. 
+
+Output Polyominoes. After classifying all tiles in a frame, Tetris groups connected relevant tiles into polyominoes as defined in §4.2. The resulting polyominoes cannot be passed to the object detector directly due to their irregular shapes; § 5.3 describes how Tetris packs them into rectangular canvases for batch detection. 
+
+## 5.2 Polyomino Pruning 
+
+Prior work in frame sampling [ 3 – 5, 15 , 19 , 32 ] either includes all relevant regions in a video frame or excludes the whole video frame from processing. This is wasteful because some regions of the video frame may require more frequent sampling to track objects accu-rately. For example, as observed in § 2.3, tiles along approaching lanes at an intersection exhibit higher mistrack rates because vehi-cles accelerate and decelerate unpredictably, making their positions harder for the tracker to interpolate across skipped frames. Con-versely, vehicles exiting the intersection maintain steady speed, allowing the tracker to predict their positions accurately even with aggressive frame skipping. Therefore, we propose a novel sampling method that performs tile-level rather than frame-level sampling. 
+
+5.2.1 Maximum Tile Sampling Gaps. Given a mistrack-rate tol-erance 0 ≤ ¯𝑀 ≤ 1, Tetris derives a matrix ¯𝐺 ¯𝑀 of maximum tile sampling gaps, of size 𝐻 × 𝑊 over the tile grid, as illustrated in Fig. 3 (A.2). Here, (𝑖, 𝑗 ) indexes a tile location in the grid. Each element ¯𝑔 ¯𝑀 𝑖,𝑗 is a positive integer specifying that the tile at location 
+
+(𝑖, 𝑗 ) must be sampled at least once every ¯𝑔 ¯𝑀 𝑖,𝑗 frames to keep the tracker’s mistrack rate within the tolerance ¯𝑀 . Thus, each value of ¯𝑀 induces a different matrix ¯𝐺 ¯𝑀 . The optimization objective of this sampling problem is to minimize the number of tiles to sample, while strictly adhering to the maximum tile sampling gaps ¯𝐺 ¯𝑀 . §6.2 describes how Tetris obtains ¯𝐺 ¯𝑀 .
+
+5.2.2 Optimization Problem. Sampling tiles is not trivial because we cannot simply consider each tile to be independent of the others. As explained in §5.1, connected relevant tiles must be processed together; they cannot be split apart. If a tile is sampled, the whole polyomino that contains the tile must be sampled. This problem then becomes choosing a subset of relevant polyominoes to pro-cess, such that the total number of tiles to sample is minimized, while strictly adhering to the maximum tile sampling gaps ¯𝐺 ¯𝑀 .Fig. 6 shows a simple 1D example. Although the actual problem is two-dimensional, the 1D abstraction makes the coupling between per-position maximum tile sampling gaps and polyomino-level se-lection easier to see. In the example, each frame contains one or two                     
+
+> 𝐴
+> 4
+> 𝐵
+> 4
+> 𝐶
+> 2
+> 𝐷
+> 2
+> 𝐸
+> 2
+> 𝐹
+> 2
+> 𝐺
+> 4
+> 𝐻
+> 4
+> position
+> ¯𝑔 ¯𝑀 𝑗
+> Frame  𝑓 1
+> 𝑓 2
+> 𝑓 3
+> 𝑓 4
+> 𝑓 5
+> 𝑓 6
+> Total = 27 tiles
+> Selected total = 21 tiles
+> (𝐹 –𝐺 )in 𝑓 1dropped:
+> 𝐹 ,𝐺 covered by 𝑓 2,𝑓 3
+> similarly, (𝐵 –𝐶 )in 𝑓 3
+> and (𝐺 –𝐻 )in 𝑓 5dropped
+
+Figure 6: A 1D illustration of polyomino pruning with het-erogeneous maximum tile sampling gaps. Each row shows one frame’s polyominoes; teal boxes are kept and gray boxes are pruned. As a result of pruning, 21 out of 27 tiles are kept. 
+
+polyominoes of varying shape, and per-tile maximum tile sampling gaps range from 2 to 4. The solver exploits the fact that some poly-ominoes’ positions are already covered by neighboring frames: for instance, positions 𝐹 and 𝐺 in frame 𝑓 1 are covered by the polyomi-noes kept in 𝑓 2 and 𝑓 3, so the solver drops (𝐹 –𝐺 ) while retaining 
+
+(𝐴 –𝐵 –𝐶 ). This partial-frame pruning reduces the total from 27 tiles (frame-level selection) to 21, a saving that frame-level approaches cannot achieve. This problem is NP-hard (proof in §A.1). Since the problem is NP-hard, we formulate it as an integer linear program and rely on a modern ILP solver, which handles Tetris’s instance sizes efficiently in practice. 
+
+5.2.3 ILP Formulation. We reformulate the problem as an integer linear program (ILP) and solve it using an ILP solver. Assume that we select the subset of relevant polyominoes from 𝑁 video frames. 
+
+• Let 𝑃 be the set of all relevant polyominoes in all 𝑁 frames. 
+
+• Let 𝑃 𝑓 be the list of relevant polyominoes in frame 𝑓 .
+
+• Let 𝑝 𝑓 ,𝑘 be the 𝑘 -th relevant polyomino in frame 𝑓 .
+
+• Let 𝑠 𝑓 ,𝑘 be a binary variable that is 1 if the polyomino 𝑝 𝑓 ,𝑘 is selected, and 0 otherwise. 
+
+• Let 𝑆𝑖𝑧𝑒 (𝑝 𝑓 ,𝑘 ) be the number of tiles in the polyomino 𝑝 𝑓 ,𝑘 .
+
+• Let 𝐶𝑜𝑣𝑒𝑟𝑠 (𝑝 𝑓 ,𝑘 , 𝑖, 𝑗 ) be a Boolean function that returns 𝑡𝑟𝑢𝑒 if the polyomino 𝑝 𝑓 ,𝑘 covers the tile at position (𝑖, 𝑗 ), and 𝑓 𝑎𝑙𝑠𝑒 
+
+otherwise. Formally, 
+
+𝐶𝑜𝑣𝑒𝑟𝑠 (𝑝 𝑓 ,𝑘 , 𝑖, 𝑗 ) :=
+
+(
+
+true if (𝑖, 𝑗 ) ∈ 𝑝 𝑓 ,𝑘 ,
+
+false otherwise. 
+
+• Let 𝐶𝑜𝑣𝑒𝑟𝑎𝑔𝑒𝑆𝑝𝑎𝑛 (𝑓 𝑠𝑡 , 𝑓 𝑒𝑛 , 𝑖, 𝑗 ) be the set of binary variables 𝑠 𝑓 ,𝑘 
+
+for corresponding polyominoes that cover tile location (𝑖, 𝑗 ) in frames 𝑓 𝑠𝑡 through 𝑓 𝑒𝑛 . Formally, 
+
+𝐶𝑜𝑣𝑒𝑟𝑎𝑔𝑒𝑆𝑝𝑎𝑛 (𝑓 𝑠𝑡 , 𝑓 𝑒𝑛 , 𝑖, 𝑗 ) :=
+
+
+
+𝑠 𝑓 ,𝑘 
+
+𝑓 𝑠𝑡 ≤ 𝑓 ≤ 𝑓 𝑒𝑛 ,
+
+1 ≤ 𝑘 ≤ | 𝑃 𝑓 |,𝐶𝑜𝑣𝑒𝑟𝑠 (𝑝 𝑓 ,𝑘 , 𝑖, 𝑗 )
+
+
+
+As a shorthand, we define the coverage span with size ¯𝑔 ¯𝑀 𝑖,𝑗 starting at frame 𝑓 and tile at position (𝑖, 𝑗 ) as 
+
+𝐶𝑆 ¯𝑀 𝑓 ,𝑖,𝑗 := 𝐶𝑜𝑣𝑒𝑟𝑎𝑔𝑒𝑆𝑝𝑎𝑛 (𝑓 , 𝑓 + ¯𝑔 ¯𝑀 𝑖,𝑗 − 1, 𝑖, 𝑗 )
+
+We can then represent the problem as a set of constraints as follows: Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking tetris-db.github.io, , 
+
+• For each tile at position (𝑖, 𝑗 ), each coverage span of size ¯𝑔 ¯𝑀 𝑖,𝑗 must either be empty or contain at least one selected polyomino: 
+
+∀𝑖 ∀𝑗 ∀𝑓 : ( 𝐶𝑆 ¯𝑀 𝑓 ,𝑖,𝑗 = ∅ ) ∨ ( 1 ≤∑︁   
+
+> 𝑠 ∈𝐶𝑆 ¯𝑀 𝑓 ,𝑖,𝑗
+
+𝑠 )
+
+This enforces that each tile position (𝑖, 𝑗 ) has a sampling gap no greater than ¯𝑔 ¯𝑀 𝑖,𝑗 frames. However, empty spans are permitted for tiles that are not relevant for ¯𝑔 ¯𝑀 𝑖,𝑗 consecutive frames, preventing the ILP from becoming unsolvable. Given the constraints, the objective of the ILP problem is to minimize the number of selected tiles, which is 
+
+> 𝑁
+
+∑︁   
+
+> 𝑓 =1
+> |𝑃 𝑓 |
+
+∑︁ 
+
+> 𝑘 =1
+
+𝑠 𝑓 ,𝑘 × 𝑆𝑖𝑧𝑒 (𝑝 𝑓 ,𝑘 )
+
+The ILP outputs a set of selected polyominoes 𝑃 𝑠 , defined as 
+
+𝑃 𝑠 := 𝑝 𝑓 ,𝑘 | 𝑠 𝑓 ,𝑘 = 1 .
+
+This selected set satisfies the maximum tile sampling gaps and yields the fewest selected tiles. 
+
+## 5.3 Polyomino Packing 
+
+After pruning, the surviving polyominoes must be converted into detector-compatible inputs. Our key idea is to pack multiple poly-ominoes, potentially from different frames, into fixed-size 2D can-vases. Each canvas has the same resolution as the original video frame, so one detector invocation can process several relevant re-gions at once. This reduces the number of detector calls without changing the detector itself. Keeping the original frame resolu-tion also preserves object scale, avoiding the scale mismatch that rescaling would introduce for the user-provided detector. 
+
+5.3.1 Optimization Problem. Given a set of relevant polyominoes 
+
+𝑃 = {𝑝 1, 𝑝 2, . . . , 𝑝 𝑛 }, we aim to pack them into 2D canvases of size 𝑊 × 𝐻 tiles, equivalent to the original frame size of 𝑊 𝐹 × 𝐻 𝐹 
+
+pixels. The packed polyominoes must not overlap with each other. The optimization objective is to pack all the polyominoes into the fewest canvases possible without any polyominoes overlapping. This problem is NP-hard (proof in §A.2). To obtain an approximate solution, we designed an algorithm inspired by the first-fit-descending (FFD) bin-packing algorithm [ 2]. 
+
+5.3.2 FFD Polyomino Packing Algorithm. We use an efficient greedy heuristic inspired by FFD bin packing. The algorithm sorts poly-ominoes by descending size and places each polyomino into the first existing canvas where it fits without overlap. If no existing canvas can fit it, the algorithm opens a new canvas. Unlike one-dimensional bin packing, packing feasibility depends on both the remaining free area and the geometric placement of the polyomino. This heuristic does not guarantee an optimal packing, but it keeps the placement stage efficient while directly targeting the objective of minimizing the number of canvases. To describe the algorithm, we use the following notation. 𝑃 is the list of all polyominoes resulting from the pruning process in §5.2. 
+
+C is the set of canvases currently available for packing. ℎ and 𝑤 are the canvas height and width in tiles. The algorithm for polyomino packing is as follows:                                                                                   
+
+> 1def tryPlace (p: Polyomino , c: Canvas ):
+> 2for iin range (c. height -p. height +1):
+> 3for jin range (c. width -p. width +1):
+> 4if canPlaceAt (p , c , (i , j )): return i , j
+> 5def pack (P: list [ Polyomino ], h: int , w: int ):
+> 6C: set [ Canvas ] ={}
+> 7for pin sorted (P , key = len , reverse = True ):
+> 8position =None
+> 9for cin C:
+> 10 if position := tryPlace (p , c ): break
+> 11 if position is None : C|= {c := newCanvas (h , w )}
+> 12 markPlacement (p , c , position or (0 , 0))
+> 13 yield p , c , position or (0 , 0)
+
+Listing 1: FFD Polyomino Packing Algorithm 
+
+The pack algorithm (Line 5) first sorts the polyominoes by size in descending order (Line 7). Then, for each polyomino, it tries to place the polyomino into the first canvas that can fit the polyomino (Line 9). The tryPlace function (Line 10) tries to place the poly-omino into the canvas. It returns the first position where the poly-omino can be placed, or None if the polyomino cannot be placed in the canvas. If the polyomino cannot be placed into any canvas, a new canvas is created and the polyomino is placed at (0, 0) in the new canvas (Line 11). The overall runtime is 𝑂 (𝑛 · ( log 𝑛 +𝑚 ·ℎ ·𝑤 · | 𝑝 |)) ,where 𝑛 is the number of polyominoes, 𝑚 the number of canvases, and |𝑝 | the largest polyomino size. 
+
+5.3.3 Render Canvases. After the placements are determined, Tetris renders the pixel content of the polyominoes into the canvases. 
+
+## 5.4 Detect, unpack, and track 
+
+Recall from §2.1 that 𝑁 is the number of input frames and 𝑁 ′ is the number of object detector calls; the reference pipeline issues 𝑁 ′ = 𝑁 
+
+calls, one per frame. Tetris’s preceding stages, relevance classifica-tion, pruning, and packing, aggregate the surviving polyominoes across frames into a set of canvases C. Because Tetris invokes the detector once per canvas, 𝑁 ′ = |C| ≤ 𝑁 . The three stages therefore reduce the number of detection calls from 𝑁 ′ = 𝑁 in the reference pipeline to 𝑁 ′ = |C| in Tetris, which can be substantially smaller. This subsection describes the remaining steps: running the detector on each canvas, unpacking the resulting bounding boxes to original frame coordinates, and associating detections into tracks. 
+
+5.4.1 Detection in Canvases. Tetris passes each packed canvas to the user-provided object detector. Because each canvas has the same resolution as the original video frame, objects appear at the same scale as in the reference pipeline, so the detector’s per-object accuracy profile is preserved. A single detector call on a canvas is also sufficient to recover the detections for every polyomino packed into it. The total number of detector calls is therefore reduced from 𝑁 in the reference pipeline to |C| , which is the quantity minimized by §5.1, §5.2, and §5.3. 
+
+5.4.2 Unpacking Object Bounding Boxes. The detector outputs bounding boxes in canvas coordinates, which Tetris maps back to the original frame coordinates. For each bounding box, Tetris locates its center within the canvas, identifies the polyomino con-taining that center, and subtracts the polyomino’s placement offset to recover the original tile position. tetris-db.github.io, , Chanwut Kittivorawong, Alena Chao, Charlie Si, and Alvin Cheung 
+
+5.4.3 Tracking. The unpacked detections are in the original per-frame coordinate system, so Tetris feeds them to the tracker un-changed, producing tracks in the original video coordinate system. 
+
+## 6 Learning Runtime Artifacts and Generating the Pareto Frontier 
+
+Before extracting tracks on the full video dataset via the Tetris exe-cution engine (§5), Tetris learns dataset-specific runtime artifacts and generates a Pareto frontier of system configurations. These procedures run once per dataset and require only small training and validation samples. Tetris chooses the training and validation samples at random; each consists of at most 60 one-minute videos. They produce intermediate artifacts and a throughput-accuracy frontier, not the final tracks. The procedure operates in three phases, each producing an arti-fact used by the final extraction run. First, Tetris trains a relevance classifier specialized to the user-provided detector (§ 6.1), which the execution engine uses to identify relevant tiles. Second, it mea-sures empirical per-tile mistrack rates, derives maximum tile sam-pling gaps for the tracker (§6.2), and passes those gaps to the ILP for tile-granularity pruning. Third, it generates a Pareto-optimal throughput-accuracy frontier by sweeping system configurations (§6.3), from which the user selects an operating point. After these phases complete, the Tetris execution engine (§5) extracts tracks on the remaining data using the selected configuration. The second phase is the most technically challenging because it must choose tile sampling gaps without exhaustively searching all assignments. A tile sampling gap specifies how many frames may elapse before that tile must be processed again. Because dif-ferent parts of a stationary scene have different motion patterns, the best gap may vary across the 𝐻 × 𝑊 tile grid. Exhaustively choosing one gap from Γ for every tile would require evaluating 
+
+|Γ|𝐻 ×𝑊 assignments, which is computationally infeasible. Tetris therefore learns these gap choices through a scalar mistrack-rate tolerance ¯𝑀 ∈ [ 0, 1]. For each tile (𝑖, 𝑗 ) and each candidate gap 
+
+𝛾 ∈ Γ, Tetris measures the empirical mistrack rate on the training sample. Given a tolerance ¯𝑀 , Tetris chooses the largest gap whose measured mistrack rate is at most ¯𝑀 for each tile. The resulting per-tile choices form the maximum-gap matrix ¯𝐺 ¯𝑀 . Sweeping ¯𝑀 
+
+produces a sequence of candidate matrices, turning the exponen-tial gap-assignment problem into a one-dimensional sweep. Each candidate matrix is still evaluated end-to-end by running the Tetris execution engine on a held-out validation sample. 
+
+## 6.1 Relevance Classifier Training 
+
+Tetris trains the relevance classifier to imitate the user-supplied object detector at the tile level, adapting the model-specialization paradigm [ 15 ] from frame-level to tile-level granularity. It runs the detector on the training video samples and labels each tile as relevant if any detector bounding box overlaps its region. Tetris trains a lightweight relevance classifier by minimizing binary cross-entropy between the predicted relevance score 𝑆𝑐𝑜𝑟𝑒 𝑓 ,𝑖,𝑗 (Eq. 2) and the detector-derived label. This learned classifier is the runtime artifact used by the execution engine in §5.1 (shown in Fig. 3 (A.1)).                                                                                
+
+> 𝛾 =2
+> 00001122
+> 00113399
+> 11449940 40
+> 𝛾 =4
+> 66556655
+> 7710 10 19 19 25 25
+> 11 11 23 23 44 44 79 79
+> 𝛾 =8
+> 42 42 35 35 30 30 59 59
+> 56 56 46 46 44 44 63 63
+> 62 62 60 60 69 69 81 81
+> ¯𝑀 =0.4
+> 44888844
+> 44444444
+> 44442222
+> ¯𝑀 =0.6
+> 888816 16 88
+> 88888844
+> 44444422
+> ¯𝑀 =0.8
+> 8816 16 16 16 16 16
+> 8816 16 16 16 16 16
+> 88888844
+> · · · · · ·
+> · · · · · ·
+> MissRate (𝜸 )
+> (percent)
+> ¯𝑮 ¯𝑴
+> ¯𝑔 ¯𝑀 𝑖,𝑗 =max {𝛾 |MissRate (𝛾 )
+> 𝑖,𝑗 ≤¯𝑀 }
+
+Figure 7: Mapping from measured mistrack rates to maxi-mum tile sampling gaps on a 3 × 4 tile crop from B3D4. 
+
+## 6.2 Learning Maximum Tile Sampling Gaps 
+
+The main learned artifact in this section is ¯𝐺 ¯𝑀 , a matrix of maxi-mum tile sampling gaps that lets the runtime prune polyominoes at tile granularity. As discussed at the beginning of § 6, learning 
+
+¯𝐺 ¯𝑀 turns an exponential joint search over per-tile gaps into a one-dimensional sweep over the mistrack-rate tolerance ¯𝑀 . For each tile (𝑖, 𝑗 ) and candidate sampling gap 𝛾 ∈ Γ, Tetris measures an empirical mistrack rate from the training sample. Given a chosen tolerance ¯𝑀 , Tetris derives ¯𝐺 ¯𝑀 by selecting gaps from the mea-sured rates under this tolerance, which the ILP (§5.2) adheres to at runtime, as illustrated in Fig. 3 (A.2). Instead of enumerating the exponential space of |Γ|𝐻 ×𝑊 gap assignments, we parameterize the selection through a single scalar mistrack-rate tolerance ¯𝑀 . At each tile, we take the largest sam-pling gap whose empirical mistrack rate remains within ¯𝑀 . In general, tiles with higher mistrack rates receive smaller maximum gaps, while tiles with lower mistrack rates receive larger maximum gaps. Varying ¯𝑀 deterministically yields different learned gaps. Specifically, the measured rates define a deterministic mapping 
+
+𝑓 : [0, 1] → Γ𝐻 ×𝑊 where 𝑓 ( ¯𝑀 ) = ¯𝐺 ¯𝑀 . This collapses the com-binatorial per-tile search into a one-dimensional search over ¯𝑀 ,performed when generating the Pareto frontier (§6.3). In this sense, sweeping ¯𝑀 approximates an exhaustive sweep over ¯𝐺 ∈ Γ𝐻 ×𝑊 .Given ¯𝑀 , Tetris derives ¯𝐺 ¯𝑀 by applying the gap-selection rule to the measured rates, as illustrated in Fig. 7. The resulting matrix has size 𝐻 × 𝑊 and the ILP (§5.2) strictly adheres to these maximum tile sampling gaps, defined as 
+
+¯𝑔 ¯𝑀 𝑖,𝑗 = max 𝛾 ∈ Γ | MissRate (𝛾 ) 
+
+> 𝑖,𝑗
+
+≤ ¯𝑀 ,
+
+with ¯𝑔 ¯𝑀 𝑖,𝑗 defaulting to 1 if no gap in Γ satisfies the criterion. Tetris measures empirical mistrack rates as follows. First, Tetris runs the reference pipeline on the training video samples at the native frame rate to obtain reference tracking results. It then re-runs the tracker at each candidate sampling gap in the set Γ =
+
+{1, 2, 4, 8, 16 }, where gap 𝛾 means the tracker processes every 𝛾 -th frame. For each tile position (𝑖, 𝑗 ) and sampling gap 𝛾 , Tetris counts the number of tracking associations that differ from the native-rate reference and computes a per-tile empirical mistrack rate given by 
+
+MissRate (𝛾 ) 
+
+> 𝑖,𝑗
+
+= MissedA (𝛾 ) 
+
+> 𝑖,𝑗
+
++ 1TotalA 𝑖,𝑗 + 2 ,Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking tetris-db.github.io, , 
+
+where MissedA (𝛾 ) 
+
+> 𝑖,𝑗
+
+is the number of incorrect associations at tile 
+
+(𝑖, 𝑗 ) when sampling every 𝛾 frames, and TotalA 𝑖,𝑗 is the total num-ber of associations at tile (𝑖, 𝑗 ) at the native rate. Laplace smoothing avoids undefined rates for tiles with no observations. Computing ¯𝑔 ¯𝑀 𝑖,𝑗 as max {𝛾 ∈ Γ | MissRate (𝛾 ) 
+
+> 𝑖,𝑗
+
+≤ ¯𝑀 } tile-by-tile is a heuristic approximation of the combinatorial per-tile search, as it assumes per-tile mistrack rates are independent of other tiles’ gaps. We empirically show in §7.2.4 that ¯𝐺 ¯𝑀 lies on or near the Pareto frontier of exhaustive per-tile gap assignments. 
+
+## 6.3 Generating the Pareto Frontier 
+
+Pareto frontier generation operates on the validation sample and produces a throughput-accuracy curve, shown in Fig. 3 (B). This curve is a user-visible tuning aid rather than the final tracking output. Each point on the curve corresponds to a system parame-ter configuration, recording the runtime throughput and tracking accuracy achieved under that configuration. The user selects an operating point from this curve based on a throughput constraint or an accuracy constraint. Tetris first executes the unoptimized reference pipeline, on the validation video samples to obtain reference tracking results. Be-cause deployment video lacks ground-truth tracks during optimiza-tion, these results serve as the tracking references against which all optimized configurations are evaluated. 
+
+Additional Knobs. Alongside ¯𝑀 , 𝑇 𝑟 , and 𝑃 , Tetris sweeps the whole-frame sampling rate 𝑠 and the tracker choice 𝐴 . The sam-pling rate 𝑠 , described in § 5, retains every 𝑠 -th frame before the three Tetris operators run, a common technique in video analytics systems [ 5 , 33 ]. The tracker choice 𝐴 determines which tracker the execution engine invokes (§5.4.3). Tetris’s data model and execution engine are tracker-agnostic. The sweep considers the user-provided tracker and SORT [ 6], a lightweight Kalman-filter [ 14 ] tracker that Tetris uses as a built-in default. Because SORT operates only on bounding-box geometry, Tetris includes it without video-specific retraining. For each tracker option, Tetris repeats the measurement procedure of § 6.2. Given a tolerance ¯𝑀 , Tetris derives the corre-sponding maximum tile sampling gaps ¯𝐺 ¯𝑀 for the current tracker option and passes them to the ILP; the configuration sweep treats 𝐴 
+
+as a discrete parameter, and each ( ¯𝑀, 𝐴 ) pair yields a distinct operat-ing point. Additional trackers can be added at the cost of additional measurement and sweep time. 
+
+Configuration Sweep. Tetris then extracts tracks via the Tetris execution engine (§ 5) over a sweep of parameter configurations (shown in Table 2), recording the runtime throughput and the HOTA tracking accuracy of each configuration relative to the reference pipeline. This step uses the measured empirical rates from §6.2 to instantiate ¯𝐺 ¯𝑀 for each tolerance. Rather than sweeping maximum tile sampling gaps independently, which would require enumer-ating Γ𝐻 ×𝑊 possible maximum-gap matrices, the configuration sweep varies only the mistrack-rate tolerance ¯𝑀 . The mapping learned in §6.2 converts each tolerance into a full matrix ¯𝐺 ¯𝑀 , so sweeping ¯𝑀 acts as a tractable approximation to sweeping the exponential space of maximum-gap matrices. We employ a straight-forward configuration sweep over the remaining parameter space; the search space for video analytics system configurations has been 
+
+Table 2: System configuration parameters.                                 
+
+> Parameter Candidate values Whole-frame sampling rate 𝑠 1,2,4,8,16 (every 𝑠 -th frame; §6.3) Relevance threshold 𝑇 𝑟 (§5.1) 0.25 ,0.5,0.75
+> Mistrack-rate tolerance ¯𝑀 (§5.2) none, 0.4,0.6,0.8
+> Tile padding 𝑃 (§5.3) 0;0.5tile (top-left); 0.5tile (bottom-right); 1tile Tracker option 𝐴 (§5.4.3) user-provided tracker, SORT
+
+thoroughly explored in prior work [ 5, 33 ], and Tetris’s sweep covers only the five knobs in Table 2. 
+
+Pareto Frontier. From all swept configurations, Tetris extracts the Pareto-optimal subset. These are configurations for which no other configuration achieves both higher throughput and higher accu-racy. These Pareto-optimal points form the throughput-accuracy frontier. An example is shown in Fig. 3 (B, red curve). Users can specify a throughput constraint (Tetris selects the most accurate configuration meeting it), an accuracy constraint (Tetris selects the highest-throughput configuration meeting it), or pick a configura-tion directly from the frontier. Once the user selects an operating point, the chosen configu-ration and the learned artifacts are passed to the Tetris execution engine (§ 5), which extracts tracks on the remaining video data. Tetris retains every 𝑠 -th frame from the input video and discards the rest. On each retained frame, the specialized relevance classifier (§ 6.1) scores tiles against threshold 𝑇 𝑟 . The polyomino-pruning ILP (§5.2) enforces the maximum tile sampling gaps ¯𝐺 ¯𝑀 learned in §6.2, derived from the chosen tolerance ¯𝑀 . Surviving polyominoes are padded the pattern 𝑃 and packed into canvases (§5.3). Finally, detection runs on the canvases and the selected tracker 𝐴 produces the tracks for the full dataset, as shown in Fig. 3 (C). 
+
+## 7 Evaluation 
+
+We evaluate Tetris’s object tracking efficiency while maintaining tracking fidelity, comparing against prior systems on seven datasets. 
+
+Accuracy Metrics. Prior systems evaluate accuracy using prede-fined queries [ 5 , 15 , 32 ], which can restrict evaluation to anticipated situations and fail to capture more complex object behaviors. We instead adopt HOTA [ 22 ] as a query-agnostic measure of track reconstruction quality. HOTA balances detection accuracy with trajectory association accuracy, so missing detections, fragmented tracks, and merged identities all reduce the score. 
+
+Datasets. We evaluate Tetris on seven video datasets (CalDoT1, CalDoT2, Amsterdam, B3D1, B3D2, B3D3, and B3D4) that vary in scene density, camera viewpoint, and object motion patterns, allowing us to test performance across a diverse set of real-world conditions. CalDoT1/2 (720 ×480 pixels) were introduced in prior work (OTIF), while Amsterdam (1280 ×720 pixels) was introduced by an independent system (NoScope). We introduce the B3D (1080 ×720 pixels) datasets (B3D1, B3D2, B3D3, B3D4) to expand the evaluation beyond existing benchmarks. All datasets consist of approximately one-minute clips captured at 15 FPS. CalDoT1/2 [ 5 ] consist of highway traffic footage from California Department of Transportation cameras; Amsterdam [ 15 ] is captured from an urban street-side camera. These datasets exhibit structured tetris-db.github.io, , Chanwut Kittivorawong, Alena Chao, Charlie Si, and Alvin Cheung 0.0                                                                                                                                                                
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> HOTA Score
+> 1020301002003001,0002,0003,00010,000
+> Throughput(FPS)
+> Dataset:CalDoT1
+> 1020301002003001,0002,0003,00010,000
+> Throughput(FPS)
+> Dataset:CalDoT2
+> 1020301002003001,0002,0003,00010,000
+> Throughput(FPS)
+> Dataset:B3D1
+> 1020301002003001,0002,0003,00010,000
+> Throughput(FPS)
+> Dataset:B3D2
+> 1020301002003001,0002,0003,00010,000
+> Throughput(FPS)
+> Dataset:B3D3
+> 1020301002003001,0002,0003,00010,000
+> Throughput(FPS)
+> Dataset:B3D4
+> 1020301002003001,0002,0003,00010,000
+> Throughput(FPS)
+> Dataset:AmsterdamHOTAvs
+> Throughput
+> Pareto
+> Fronts
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> Speedup
+> (Ours / Other)
+> 0.00.20.40.60.8
+> HOTAScore
+> Dataset:CalDoT1
+> 0.20.40.6
+> HOTAScore
+> Dataset:CalDoT2
+> 0.00.20.40.60.8
+> HOTAScore
+> Dataset:B3D1
+> 0.00.20.40.60.8
+> HOTAScore
+> Dataset:B3D2
+> 0.00.20.40.60.8
+> HOTAScore
+> Dataset:B3D3
+> 0.00.20.40.60.8
+> HOTAScore
+> Dataset:B3D4
+> 0.00.20.40.6
+> HOTAScore
+> Dataset:AmsterdamComparison
+> toother
+> systems:
+> Speedupat
+> HOTAScore
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> HOTA Gain
+> (Ours - Other)
+> 05001,0001,5002,000
+> Throughput(FPS)
+> Dataset:CalDoT1
+> 05001,0001,500
+> Throughput(FPS)
+> Dataset:CalDoT2
+> 02004006008001,0001,200
+> Throughput(FPS)
+> Dataset:B3D1
+> 100200300400500600
+> Throughput(FPS)
+> Dataset:B3D2
+> 02004006008001,000
+> Throughput(FPS)
+> Dataset:B3D3
+> 02004006008001,000
+> Throughput(FPS)
+> Dataset:B3D4
+> 02004006008001,000
+> Throughput(FPS)
+> Dataset:AmsterdamComparison
+> toother
+> systems:
+> AccuracyGain
+> atThroughput
+> Polytris
+> Polytris
+> (-Sampling)
+> Polytris
+> (-Sampling,
+> -Pruning)
+> Reference
+> OTIF
+> LEAP
+> System
+
+Figure 8: End-to-end throughput-accuracy results across seven datasets. Top row: tracking accuracy (HOTA) versus throughput for Tetris, the reference pipeline, prior systems, and ablations. Middle row: speedup of Tetris over each prior system at matched HOTA accuracy levels. Bottom row: HOTA gain of Tetris over each prior system at matched throughput levels. 
+
+motion in relatively constrained settings. The B3D datasets are drawn from the Berkeley DeepDrive Drone Dataset [ 31 ], consisting of aerial footage of unsignalized intersections and roundabouts with less predictable motion and higher interaction density. We mask non-road and parking areas in the B3D videos. By including B3D, we extend beyond the structured highway and low-density roadway settings of CalDoT and Amsterdam to scenes with less predictable motion and higher interaction density. For CalDoT1/2 and Amsterdam, we partition the data into train-ing, validation, and testing splits, each consisting of 60 one-minute clips. For the B3D datasets, because of the amount of footage avail-able, we use training, validation, and testing splits of 8, 5, and 5 approximately one-minute clips, respectively. 
+
+Ground Truth. We obtain ground truth detection and tracking annotations for the test splits used in our end-to-end evaluation (§7.1). For CalDoT1 and CalDoT2, we use the dense per-frame ob-ject detection labels provided by the OTIF dataset. For Amsterdam, we start from the same OTIF dense labels, filter to vehicle classes only, and apply minor manual corrections to remove erroneous annotations. For B3D1, B3D2, B3D3, and B3D4, we generate dense detection labels using the RetinaNet [ 20 ] detector from the B3D paper with overlapping tiled inference [ 1 , 35 ]. Specifically, we ex-tract four fixed crops at the corners of each frame, each spanning two-thirds of the frame width and height, and merge the resulting detections via non-maximum suppression (NMS). Ground truth tracking annotations for all datasets are generated using OC-SORT [ 7], a multi-object tracker that supersedes BYTE-Track [ 34 ] and SORT [ 6]. We select these ground truth methods to ensure independence from the components used in the eval-uated systems. In our experiments, the user-provided tracker is BYTETrack, which also serves as the reference while generating the Pareto frontier. OC-SORT is used only for ground truth gen-eration, ensuring that evaluation results are not biased by shared tracking components. Ground-truth annotations are used only for evaluation; Tetris does not access them while learning runtime artifacts or generating the Pareto frontier. 
+
+Prior Systems. We compare Tetris against two prior approaches: OTIF [ 5] and LEAP [ 32 ]. OTIF utilizes a lightweight proxy model to identify irrelevant regions within frames for more efficient batching, along with uniform frame sampling and a specialized tracker to further reduce calls to the object detector. LEAP uses predictive sampling to prune frames that are unlikely to contain relevant information. For both methods, we use the authors’ publicly available implementations. For OTIF, we use the training split for its recurrent rate tracker, since the original “tracker” split is unavailable across all datasets. For LEAP, the distilled detector weights are not publicly available, so we use the original non-distilled detector to ensure reproducibility. For a fair comparison across systems, we standardize the object detector used in all experiments. Specifically, we use YOLOv5 [ 16 ]for the CalDoT1, CalDoT2, and Amsterdam datasets, and Reti-naNet [ 20 ] for the B3D datasets, using the detector released with B3D. This ensures that throughput and accuracy differences arise from system design rather than underlying detection models. For Tetris, the user-provided tracker is BYTETrack and the built-in de-fault is SORT, so Pareto frontier generation searches over the two tracker options {BYTETrack , SORT }. When generating the Pareto frontier (§ 6.3), BYTETrack at full frame rate serves as the user-provided tracker in the reference pipeline (§ 2.1). Pareto-optimal operating points may draw from either tracker option. 
+
+Detector Training. We train the YOLOv5 models on the training splits using the same curated labels described above: the dense de-tection labels from the OTIF dataset for CalDoT1 and CalDoT2, and the vehicle-filtered, manually corrected OTIF labels for Amsterdam. 
+
+Experiment Setup. All evaluated systems consist of two stages: a preparation stage that produces intermediate artifacts and a track extraction stage that uses them. We report throughput only for Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking tetris-db.github.io, , 
+
+track extraction on the test split. Each data point in the results corresponds to a distinct system configuration. For Tetris and OTIF, configurations are the Pareto-optimal operating points selected on the validation set (§6.3). LEAP, having a single fixed configuration, contributes one point. For Tetris and OTIF, we report only the Pareto-optimal points from the test-set results. 
+
+Hardware. All experiments are conducted on a server equipped with dual Intel Xeon Gold 6248 CPUs (2.50 GHz), 504 GB of RAM, and an NVIDIA Quadro RTX 6000 GPU (24 GB VRAM). All sys-tems are evaluated using a single GPU. Reported runtimes measure computation time only, excluding disk I/O. 
+
+Track Interpolation. Tracking outputs from all systems are lin-early interpolated to produce detection points on every frame for every track. This step ensures a fair comparison under the HOTA metric, which penalizes missing per-frame detections within tracks. Systems that employ frame skipping inherently produce tracks with detection gaps; without interpolation, these gaps would ex-aggerate the HOTA penalty even when the underlying motion is faithfully captured, for example, a vehicle traveling at constant speed along a straight path. By applying interpolation uniformly across all systems, we isolate tracking quality from the artifacts of frame-sampling strategies. 
+
+## 7.1 End-to-end Results 
+
+Fig. 8 summarizes the throughput-accuracy tradeoff across all seven datasets. Tetris consistently dominates the Pareto frontier, achiev-ing higher HOTA scores than both OTIF and LEAP at the same throughput, and higher throughput at the same accuracy level. Tetris achieves up to 0.42 points higher HOTA than the best prior system at 1000 FPS. These gains hold across datasets with varying scene density and motion complexity. In realistic deployment scenarios where tracking accuracy is critical, we measure the maximum speedup each system achieves over the full-frame, every-frame reference pipeline at bounded HOTA accuracy loss. Tetris achieves a speedup while staying within a 5% HOTA drop from the reference pipeline on all 7 datasets, while prior systems meet this constraint on only 4/7 datasets. To avoid overclaiming Tetris’s improvement over prior systems, we restrict prior systems to Pareto-optimal configurations and compare against a prior configuration whose HOTA is no higher than Tetris’s selected configuration. Under this 5% constraint, Tetris achieves 1.5 × to 17.4 × speedup over prior systems, and 4.7 × to 68.8 × speedup over the reference pipeline. At a 10% HOTA drop, Tetris achieves 10.4 × to 91.2 × speedup over the reference pipeline. Under both constraints, Tetris consistently achieves higher speedup than all other systems on every dataset. LEAP is designed to optimize for object-existence queries, such as counting or detecting the time period during which an object is present, rather than reconstructing full per-frame object tracks. Accordingly, LEAP outputs a time interval and a reference motion pattern for each detected object rather than a per-frame trajectory. To evaluate LEAP under the HOTA metric, we assign the closest reference track to each detected object. However, the resulting tra-jectories exhibit substantial misalignment with ground truth tracks, leading to low accuracy scores across all datasets. OTIF achieves 0 2 4 6 8                   
+
+> runtime(ms/frame)
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> F1
+> 02468
+> runtime(ms/frame)
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> 1.00
+> Recall
+> 02468
+> runtime(ms/frame)
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> Precision
+> ClassificationAccuracy
+> Dataset
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Packing Efficacy (%)
+> PackingEfficacy
+> CalDoT1
+> CalDoT2
+> B3D1
+> B3D2
+> B3D3
+> B3D4
+> Amsterdam
+> Modified
+> Baseline
+
+Figure 9: (Left) Relevance-classifier comparison. Modified: §5.1. Baseline: RGB-only ShuffleNet. (Right) Packing efficacy. 
+
+reasonable accuracy, but its speedup derives primarily from uniform frame skipping, with its segmentation proxy model contributing comparatively little to throughput gains, as reported by Bastani et al. [ 5 ]. This reliance on frame skipping produces coarse-grained tracks that degrade accuracy at higher throughput operating points, consistent with the observation that uniform temporal sampling cannot accommodate spatially varying sampling requirements (§2.3, Obs. 2). The limited benefit of OTIF’s proxy is visible directly in the B3D4 Pareto front. Its most accurate point disables the segmen-tation proxy entirely, while the next point enables it and exhibits a sharp accuracy drop with little speedup gain. This points to a limi-tation that motivates Tetris’s design. OTIF’s rectangular crops are a poor fit for the irregular shape of real activity regions (§2.3, Obs. 3), forcing the proxy to either over-include background (yielding little speedup) or aggressively discard tiles with detections (yielding the observed accuracy drop). 
+
+## 7.2 Ablation Studies 
+
+In this subsection, we systematically break down the contribu-tion of the operators in Tetris’s tracking pipeline. We examine the throughput improvements achieved by sequentially enabling our core spatial and temporal optimization operators, and then by en-abling whole-frame sampling as an additional configuration knob. We also validate the one-dimensional tolerance sweep against the full combinatorial per-tile gap search. 
+
+7.2.1 Relevance Classifier Accuracy. We compare the deployed rel-evance classifier against the original RGB-only ShuffleNet baseline. Across 7 datasets at 𝑇 𝑟 = 0.50 , adding the frame-difference im-age and position encoding improves F1 over the baseline on all 7 datasets, as shown in the left panel of Fig. 9. The augmented classi-fier yields an average F1 gain of 1.26%. The largest gain appears on B3D 2, where F1 rises from 0.7552 to 0.7781 (gain 2.28%). This gain comes with 19.2% higher classifier inference time on average. 
+
+7.2.2 Packing Efficacy. We quantify how tightly Tetris’s packer fills each generated canvas by measuring the fraction of total canvas tile-cells that the packer actually uses, packing efficacy = occupied tiles occupied tiles + empty tiles ,
+
+where the denominator is the number of canvases × canvas height 
+
+× canvas width, measured in tile units. Without tile padding, the packer utilizes 88.93% of the available canvas area on average across 7 datasets, peaking at 99.62% on B3D 3. The right panel of Fig. 9 shows the per-dataset packing efficacy without tile-padding. tetris-db.github.io, , Chanwut Kittivorawong, Alena Chao, Charlie Si, and Alvin Cheung 
+
+The two least densely packed datasets are B3D 2 and CalDoT 1, which fall noticeably below the per-dataset average (CalDoT 1 down to 58.77%). We traced both to dataset-specific properties of the relevant polyominoes. B3D 2 captures a busy unsignalized in-tersection in which vehicles routinely cluster shoulder-to-shoulder. Adjacent tiles with vehicles merge into a single connected poly-omino, so the per-canvas polyomino population is shifted toward fewer, larger polyominoes than on the less-congested B3D scenes. Specifically, aggregated across all validation videos, B3D 2 produces 23.3 polyominoes per canvas averaging 6.86 tiles each, versus 57.5 polyominoes per canvas averaging 3.74 tiles each on B3D 3. Cal-DoT 1 exhibits a similar effect. Aggregated across all validation videos, CalDoT 1 produces 13.5 polyominoes per canvas averaging 4.17 tiles each, versus 37.0 polyominoes per canvas averaging 2.55 tiles each on CalDoT 2. 
+
+7.2.3 Optimization Operators. We measure the impact of each op-timization technique by incrementally enabling them and compar-ing their throughput over the reference baseline under a strict 5% maximum HOTA loss. Tetris first introduces the relevance classifi-cation and polyomino packing operators. As shown by the Pareto front results, this combined spatial pruning approach brings the throughput speedup over the reference execution up to 12.2 × (av-erage 6.7 ×) while safely remaining within the tracking accuracy constraint. Next, Tetris adds the fine-grained polyomino pruning operator, which significantly accelerates tracking in simple, low-activity video regions. The inclusion of polyomino pruning further increases the maximum speedup to 17.9 × (average 11.1 ×) over the baseline execution. Finally, we evaluate enabling the whole-frame sampling knob 𝑠 > 1 (§6.3). Together, the complete execution en-gine achieves a maximum speedup of 68.8 × (average 26.7 ×) while still strictly adhering to the 5% tracking accuracy loss constraint. 
+
+7.2.4 Maximum tile sampling gaps. We evaluate this sweep. It varies the mistrack-rate tolerance ¯𝑀 from § 6.2. Each tolerance yields ¯𝐺 ¯𝑀 . We show that the sweep approximates exhaustive per-tile gap selection. To keep the exhaustive baseline feasible, we reduce the tile grid to 3 × 3 and the candidate gap set to {1, 2, 4},yielding 39 ≈ 20 ,000 per-tile gap assignments. We do not report throughput directly on this sweep, because re-running full tracking execution on every assignment is prohibitively expensive; instead, we use the pruning ratio (fraction of tiles skipped) as a throughput proxy. The study uses BYTETrack as the tracker. To isolate the effect of the maximum tile sampling gaps from classifier and detector variance, the experimental pipeline con-structs polyominoes directly from reference-pipeline bounding boxes (rather than classifier output), retains only detections whose centers fall inside a retained polyomino, and feeds the retained detections to BYTETrack. We report HOTA against the reference tracking output alongside the pruning ratio. Fig. 10 shows the resulting trade-off per dataset. The heuristic points (blue diamonds), obtained by sweeping ¯𝑀 , lie on or near the Pareto frontier of the exhaustive per-tile sweep across datasets, indicating that the one-dimensional tolerance sweep loses little relative to the full combinatorial search. Quantitatively, at each heuristic pruning level we compare against the exhaustive Pareto point with the highest pruning ratio not exceeding that level; HOTA loss versus that anchor is at most 8.27% (mean 0.78%). 
+
+Figure 10: HOTA vs. pruning ratio per dataset. Gray: exhaus-tive per-tile sampling assignments over a 3 × 3 grid with gaps 
+
+{1, 2, 4}. Black: Pareto frontier of the exhaustive sweep. Blue diamonds: our heuristic ¯𝐺 ¯𝑀 swept over ¯𝑀 with BYTETrack. 
+
+## 8 Conclusion 
+
+We presented Tetris, a track-extraction system that decomposes stationary-camera video into a tile-based polyomino data model, enabling fine-grained spatiotemporal pruning that reduces detector calls with minimal fidelity loss. Tetris observes that stationary video exhibits three exploitable properties, namely spatial irrelevance, spatially varying sampling requirements, and objects of interest clustering into connected, non-rectangular regions that rectangular cropping cannot tightly enclose. The polyomino data model cap-tures these properties at tile-level granularity. At extraction time, the Tetris execution engine runs a tracking pipeline of three oper-ators upstream of the user-provided detector, followed by a light-weight unpacking step before the tracker: a relevance classifier iden-tifies relevant polyominoes, an ILP formulation prunes redundant polyominoes based on learned maximum tile sampling gaps, and a polyomino packing algorithm assembles the survivors into compact canvases that minimize detector invocations. This extraction-time pipeline is preceded by a one-time training phase that trains the rele-vance classifier specialized to the user-provided detector and learns the maximum tile sampling gaps the pruner relies on, together with a Pareto-frontier sweep that exposes throughput-accuracy operat-ing points to the user. Our evaluation across seven stationary-video datasets shows that Tetris consistently stays within a 5% HOTA loss on all 7 datasets, whereas prior systems exceed this bound on 3 of the 7 datasets. Tetris achieves up to 17.4 × higher throughput than prior systems and up to 68.8 × higher than the reference pipeline. 
+
+Limitations and Future Work. Tetris currently relies on the as-sumption that cameras are stationary, which provides the spatial stability needed for tile-level relevance filtering and maximum tile sampling gaps. An interesting direction for future work is ex-tending Tetris’s tile-level spatiotemporal optimization to moving cameras, where spatial patterns shift over time but may still exhibit exploitable structure within short temporal windows. 
+
+## References       
+
+> [1] Fatih Cagatay Akyon, Sinan Onur Altinuc, and Alptekin Temizel. 2022. Slicing Aided Hyper Inference and Fine-Tuning for Small Object Detection. In 2022 IEEE International Conference on Image Processing (ICIP) . IEEE, 966–970. doi:10.1109/ icip46576.2022.9897990 [2] Brenda S Baker. 1985. A new proof for the first-fit decreasing bin-packing algorithm. Journal of Algorithms 6, 1 (1985), 49–70. doi:10.1016/0196-6774(85) 90018-5
+
+Tetris: Tile-level Sampling for Efficient and High-Fidelity Video Object Tracking tetris-db.github.io, , 
+
+[3] Jaeho Bang, Gaurav Tarlok Kakkar, Pramod Chunduri, Subrata Mitra, and Joy Arulraj. 2023. Seiden: Revisiting Query Processing in Video Database Systems. 
+
+Proc. VLDB Endow. 16, 9 (May 2023), 2289–2301. doi:10.14778/3598581.3598599 [4] Favyen Bastani, Songtao He, Arjun Balasingam, Karthik Gopalakrishnan, Mo-hammad Alizadeh, Hari Balakrishnan, Michael Cafarella, Tim Kraska, and Sam Madden. 2020. MIRIS: Fast Object Track Queries in Video. In Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data (Portland, OR, USA) (SIGMOD ’20) . Association for Computing Machinery, New York, NY, USA, 1907–1921. doi:10.1145/3318464.3389692 [5] Favyen Bastani and Samuel Madden. 2022. OTIF: Efficient Tracker Pre-processing over Large Video Datasets. In Proceedings of the 2022 International Conference on Management of Data (Philadelphia, PA, USA) (SIGMOD ’22) . Association for Computing Machinery, New York, NY, USA, 2091–2104. doi:10.1145/3514221. 3517835 [6] Alex Bewley, Zongyuan Ge, Lionel Ott, Fabio Ramos, and Ben Upcroft. 2016. Simple online and realtime tracking. In 2016 IEEE International Conference on Image Processing (ICIP) . 3464–3468. doi:10.1109/ICIP.2016.7533003 [7] Jinkun Cao, Jiangmiao Pang, Xinshuo Weng, Rawal Khirodkar, and Kris Kitani. 2023. Observation-Centric SORT: Rethinking SORT for Robust Multi-Object Tracking. In 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 9686–9696. doi:10.1109/CVPR52729.2023.00934 [8] Yunhao Du, Zhicheng Zhao, Yang Song, Yanyun Zhao, Fei Su, Tao Gong, and Hongying Meng. 2023. StrongSORT: Make DeepSORT Great Again. IEEE Trans-actions on Multimedia 25 (2023), 8725–8737. doi:10.1109/TMM.2023.3240881 [9] M.R. Garey, D.S. Johnson, and L. Stockmeyer. 1976. Some simplified NP-complete graph problems. Theoretical Computer Science 1, 3 (1976), 237–267. doi:10.1016/ 0304-3975(76)90059-1 [10] Michael R. Garey and David S. Johnson. 1990. Computers and Intractability; A Guide to the Theory of NP-Completeness . W. H. Freeman & Co., USA. [11] S.W. Golomb. 1996. Polyominoes: Puzzles, Patterns, Problems, and Packings . Prince-ton University Press. https://books.google.com/books?id=sbQj2dILLIsC [12] Klaus Jansen, Stefan Kratsch, DáNiel Marx, and Ildikó Schlotter. 2013. Bin packing with fixed number of bins revisited. J. Comput. Syst. Sci. 79, 1 (Feb. 2013), 39–49. doi:10.1016/j.jcss.2012.04.004 [13] D. S. Johnson, A. Demers, J. D. Ullman, M. R. Garey, and R. L. Graham. 1974. Worst-Case Performance Bounds for Simple One-Dimensional Packing Algorithms. 
+
+SIAM J. Comput. 3, 4 (Dec. 1974), 299–325. doi:10.1137/0203025 [14] R. E. Kalman. 1960. A New Approach to Linear Filtering and Prediction Problems. 
+
+Journal of Basic Engineering 82, 1 (03 1960), 35–45. doi:10.1115/1.3662552 [15] Daniel Kang, John Emmons, Firas Abuzaid, Peter Bailis, and Matei Zaharia. 2017. NoScope: optimizing neural network queries over video at scale. Proc. VLDB Endow. 10, 11 (Aug. 2017), 1586–1597. doi:10.14778/3137628.3137664 [16] Rahima Khanam and Muhammad Hussain. 2024. What is YOLOv5: A deep look into the internal features of the popular object detector. arXiv:2407.20892 [cs.CV] https://arxiv.org/abs/2407.20892 [17] Donald E. Knuth. 2000. Dancing links. arXiv:cs/0011047 [cs.DS] https://arxiv. org/abs/cs/0011047 [18] Ferdinand Kossmann, Ziniu Wu, Eugenie Lai, Nesime Tatbul, Lei Cao, Tim Kraska, and Sam Madden. 2023. Extract-Transform-Load for Video Streams. Proc. VLDB Endow. 16, 9 (2023), 2302–2315. doi:10.14778/3598581.3598600 [19] Yuanqi Li, Arthi Padmanabhan, Pengzhan Zhao, Yufei Wang, Guoqing Harry Xu, and Ravi Netravali. 2020. Reducto: On-Camera Filtering for Resource-Efficient Real-Time Video Analytics. In Proceedings of the Annual Conference of the ACM Special Interest Group on Data Communication on the Applications, Technologies, Architectures, and Protocols for Computer Communication (SIG-COMM ’20) . Association for Computing Machinery, New York, NY, USA, 359–376. doi:10.1145/3387514.3405874 [20] Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He, and Piotr Dollár. 2017. Focal Loss for Dense Object Detection. In 2017 IEEE International Conference on Computer Vision (ICCV) . 2999–3007. doi:10.1109/ICCV.2017.324 [21] Andrea Lodi, Silvano Martello, and Daniele Vigo. 2002. Recent advances on two-dimensional bin packing problems. Discrete Applied Mathematics 123, 1 (2002), 379–396. doi:10.1016/S0166-218X(01)00347-X [22] Jonathon Luiten, Aljo ˘shia O ˘sep, Patrick Dendorfer, Philip Torr, Andreas Geiger, Laura Leal-Taixé, and Bastian Leibe. 2021. HOTA: A Higher Order Metric for Evaluating Multi-object Tracking. Int. J. Comput. Vision 129, 2 (Feb. 2021), 548–578. doi:10.1007/s11263-020-01375-2 [23] Wenhan Luo, Junliang Xing, Anton Milan, Xiaoqin Zhang, Wei Liu, and Tae-Kyun Kim. 2021. Multiple object tracking: A literature review. Artificial Intelligence 
+
+293 (2021), 103448. doi:10.1016/j.artint.2020.103448 [24] Ningning Ma, Xiangyu Zhang, Hai-Tao Zheng, and Jian Sun. 2018. Shuf-fleNet V2: Practical Guidelines for Efficient CNN Architecture Design. arXiv:1807.11164 [cs.CV] https://arxiv.org/abs/1807.11164 [25] Kara Manke. 2022. Massive traffic experiment pits machine learning against ‘phantom’ jams. Berkeley News. https://news.berkeley.edu/2022/11/22/massive-traffic-experiment-pits-machine-learning-against-phantom-jams/ [26] PyTorch Contributors. 2026. Models and pre-trained weights — Torchvision main documentation. https://docs.pytorch.org/vision/main/models.html#table-of-all-available-classification-weights Accessed: 2026-04-19. [27] Joseph Redmon, Santosh Divvala, Ross Girshick, and Ali Farhadi. 2016. You Only Look Once: Unified, Real-Time Object Detection. In 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR) . 779–788. doi:10.1109/CVPR. 2016.91 [28] Shaoqing Ren, Kaiming He, Ross Girshick, and Jian Sun. 2015. Faster R-CNN: towards real-time object detection with region proposal networks. In Proceedings of the 29th International Conference on Neural Information Processing Systems -Volume 1 (Montreal, Canada) (NIPS’15) . MIT Press, Cambridge, MA, USA, 91–99. [29] Nicolai Wojke and Alex Bewley. 2018. Deep Cosine Metric Learning for Person Re-identification. In 2018 IEEE Winter Conference on Applications of Computer Vision (WACV) . IEEE, 748–756. doi:10.1109/WACV.2018.00087 [30] Nicolai Wojke, Alex Bewley, and Dietrich Paulus. 2017. Simple Online and Realtime Tracking with a Deep Association Metric. In 2017 IEEE International Conference on Image Processing (ICIP) . IEEE, 3645–3649. doi:10.1109/ICIP.2017. 8296962 [31] Fangyu Wu, Dequan Wang, Minjune Hwang, Chenhui Hao, Jiawei Lu, Jiamu Zhang, Christopher Chou, Trevor Darrell, and Alexandre Bayen. 2025. De-centralized Vehicle Coordination: The Berkeley DeepDrive Drone Dataset and Consensus-Based Models. In 2025 IEEE International Conference on Robotics and Automation (ICRA) . 2438–2444. doi:10.1109/ICRA55743.2025.11127341 [32] Yanchao Xu, Dongxiang Zhang, Shuhao Zhang, Sai Wu, Zexu Feng, and Gang Chen. 2024. Predictive and Near-Optimal Sampling for View Materialization in Video Databases. Proc. ACM Manag. Data 2, 1, Article 19 (March 2024), 27 pages. doi:10.1145/3639274 [33] Baiyan Zhang, Zepeng Li, Dongxiang Zhang, Huan Li, Kian-Lee Tan, and Gang Chen. 2025. High-Throughput Ingestion for Video Warehouse: Comprehensive Configuration and Effective Exploration. Proc. ACM Manag. Data 3, 3, Article 169 (June 2025), 27 pages. doi:10.1145/3725407 [34] Yifu Zhang, Peize Sun, Yi Jiang, Dongdong Yu, Fucheng Weng, Zehuan Yuan, Ping Luo, Wenyu Liu, and Xinggang Wang. 2022. ByteTrack: Multi-Object Tracking by Associating Every Detection Box. (2022). [35] F. Özge Ünel, Burak O. Özkalayci, and Cevahir Çiğla. 2019. The Power of Tiling for Small Object Detection. In 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW) . 582–591. doi:10.1109/CVPRW.2019. 00084 
+
+## A NP-hardness Proofs 
+
+This appendix contains the NP-hardness proofs for the two opti-mization problems introduced in §5: polyomino pruning (§5.2) and polyomino packing (§5.3). 
+
+## A.1 Polyomino Pruning is NP-hard 
+
+We show this by reduction from Minimum Vertex Cover on planar graphs, which is NP-hard [ 9 , 10 ]. Given a planar graph 𝐺 = (𝑉 , 𝐸 ),we embed it in a polynomial-size grid with edges routed along grid lines. We create |𝑉 | frames, one per vertex. On frame 𝑣 , we construct a single connected star-shaped polyomino centered at vertex 𝑣 ’s grid cell, extending along each incident edge path to its midpoint. We set ¯𝐺 ¯𝑀 = |𝑉 | for all edge-midpoint cells, requiring each to be covered at least once across all frames, and impose no constraint on other cells. Since each edge midpoint appears in exactly two polyominoes (one per endpoint), covering all midpoints is equiva-lent to selecting a vertex cover. After padding all polyominoes to equal size, minimizing total tiles is equivalent to minimizing the number of selected vertices. 
+
+## A.2 Polyomino Packing is NP-hard 
+
+Two-dimensional rectangular bin packing is a well-known NP-hard problem [ 10 , 12 , 13 , 21 ], and our polyomino packing problem strictly generalizes it. Since rectangles are a special case of polyominoes, any instance of 2D rectangular bin packing can be expressed as an instance of polyomino packing. Therefore, polyomino packing is at least as hard as 2D bin packing.
