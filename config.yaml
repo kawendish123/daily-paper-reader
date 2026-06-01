@@ -25,3 +25,73 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: mec-video
+      description: 请帮我查找流式视频分析、模型选择和移动边缘计算相关的论文
+      enabled: true
+      paper_sources:
+        - arxiv
+        - biorxiv
+      keywords:
+        - keyword: streaming video analysis
+          keyword_cn: 流式视频分析
+          query: streaming video analysis
+        - keyword: model selection
+          keyword_cn: 模型选择
+          query: model selection
+        - keyword: mobile edge computing
+          keyword_cn: 移动边缘计算
+          query: mobile edge computing
+        - keyword: video analytics
+          keyword_cn: 视频分析
+          query: video analytics
+        - keyword: edge computing
+          keyword_cn: 边缘计算
+          query: edge computing
+        - keyword: real-time video processing
+          keyword_cn: 实时视频处理
+          query: real-time video processing
+      intent_queries:
+        - query: streaming video analysis techniques
+          query_cn: 流式视频分析技术
+          enabled: true
+          source: manual
+          note: ''
+        - query: model selection for edge computing
+          query_cn: 边缘计算中的模型选择
+          enabled: true
+          source: manual
+          note: ''
+        - query: mobile edge computing applications in video analytics
+          query_cn: 移动边缘计算在视频分析中的应用
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-06-01T11:14:16.999Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
+  biorxiv:
+    papers_table: biorxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_biorxiv_papers_exact
+    vector_rpc_exact: match_biorxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_biorxiv_papers_bm25
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
