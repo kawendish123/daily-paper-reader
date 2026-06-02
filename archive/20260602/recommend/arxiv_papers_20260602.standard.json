@@ -1,0 +1,132 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-02T22:00:42.249923+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2606.00620v1",
+      "source": "arxiv",
+      "title": "FlowNar: Scalable Streaming Narration for Long-Form Videos",
+      "abstract": "Recent Large Multimodal Models (LMMs), primarily designed for offline settings, are ill-suited for the dynamic requirements of streaming video. While recent online adaptations improve real-time processing, they still face critical scalability challenges, with resource demands typically growing at least linearly with video duration. To overcome this bottleneck, we propose FlowNar, a novel framework for scalable streaming video narration. The core of FlowNar is a dynamic context management strategy for historical visual context removal, combined with our CLAM (Cross Linear Attentive Memory) module for streaming visual history retention, ensuring bounded visual memory usage and computational complexity, crucial for efficient streaming. We also introduce a realistic self-conditioned evaluation protocol and complementary evaluation metrics to assess streaming narration models under deployment-like conditions. Experiments on the Ego4D, EgoExo4D, and EpicKitchens100 datasets demonstrate that FlowNar substantially improves narration quality over strong baselines while being highly efficient, supporting processing of 10$\\times$ longer videos and achieving 3$\\times$ higher throughput (FPS). The code is available at https://github.com/zeyun-zhong/FlowNar.",
+      "authors": [
+        "Zeyun Zhong",
+        "Manuel Martin",
+        "Chengzhi Wu",
+        "David Schneider",
+        "Frederik Diederichs",
+        "Juergen Gall",
+        "Juergen Beyerer"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-30T08:51:28+00:00",
+      "link": "https://arxiv.org/pdf/2606.00620v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "scalable streaming narration for long-form videos with dynamic context management",
+      "llm_evidence_cn": "面向长视频的可扩展流式叙述，具有动态上下文管理",
+      "llm_evidence": "面向长视频的可扩展流式叙述，具有动态上下文管理",
+      "canonical_evidence": "面向长视频的可扩展流式叙述，具有动态上下文管理",
+      "llm_tldr_en": "FlowNar introduces a dynamic context management strategy and CLAM module for bounded-memory streaming video narration, enabling scalable real-time processing of long videos.",
+      "llm_tldr_cn": "现有大语言模型不适用于流式视频场景，且资源需求随视频时长线性增长。FlowNar提出动态历史视觉上下文移除和交叉线性注意记忆模块，确保内存和计算复杂度有界，实现长视频的可扩展实时叙述。实验表明该框架在保持叙述质量的同时大幅降低资源消耗，推进了流式视频分析的实用化。",
+      "llm_tldr": "现有大语言模型不适用于流式视频场景，且资源需求随视频时长线性增长。FlowNar提出动态历史视觉上下文移除和交叉线性注意记忆模块，确保内存和计算复杂度有界，实现长视频的可扩展实时叙述。实验表明该框架在保持叙述质量的同时大幅降低资源消耗，推进了流式视频分析的实用化。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.00744v1",
+      "source": "arxiv",
+      "title": "Edge Detection Framework Utilizing SOT-MTJ Bit-Cell Arrays",
+      "abstract": "Traditional edge detection algorithms, foundational to computer vision, face significant challenges in energy efficiency and processing latency on conventional CMOS-based hardware. Existing algorithms, such as Canny, are computationally expensive, posing challenges in resource-constrained hardware where energy efficiency and low latency are critical. This study introduces a novel, hardware-efficient algorithm that leverages the intrinsic characteristics of magnetic tunnel junction (MTJ) devices. We present a detailed device-level analysis of an MTJ-based system for edge detection, outlining its operational cycles, including write, read, and reset methods. The algorithm's efficacy is evaluated against the standard Canny edge detection method. We provide a quantitative performance analysis, including metrics such as energy consumption and latency, which demonstrates that our proposed spintronics-based approach offers a promising solution for achieving low-power, high-speed image processing.",
+      "authors": [
+        "Kushagra Singh",
+        "Debasis Das"
+      ],
+      "primary_category": "cond-mat.mes-hall",
+      "categories": [
+        "cond-mat.mes-hall"
+      ],
+      "published": "2026-05-30T14:24:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.00744v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "hardware-efficient edge detection for resource-constrained edge devices",
+      "llm_evidence_cn": "面向资源受限边缘设备的硬件高效边缘检测",
+      "llm_evidence": "面向资源受限边缘设备的硬件高效边缘检测",
+      "canonical_evidence": "面向资源受限边缘设备的硬件高效边缘检测",
+      "llm_tldr_en": "This work presents a novel edge detection algorithm using SOT-MTJ bit-cells that is hardware-efficient and low-latency, suitable for edge computing.",
+      "llm_tldr_cn": "传统边缘检测算法在CMOS硬件上能耗高、延迟大，难以用于资源受限的边缘设备。本文利用磁隧道结（MTJ）器件的特性，提出了一种硬件高效的边缘检测框架，通过写入、读取和重置操作实现低延迟的边缘检测。与Canny算法相比，该方法在保持精度的同时大幅降低了能耗，适用于边缘计算环境下的实时视频处理。",
+      "llm_tldr": "传统边缘检测算法在CMOS硬件上能耗高、延迟大，难以用于资源受限的边缘设备。本文利用磁隧道结（MTJ）器件的特性，提出了一种硬件高效的边缘检测框架，通过写入、读取和重置操作实现低延迟的边缘检测。与Canny算法相比，该方法在保持精度的同时大幅降低了能耗，适用于边缘计算环境下的实时视频处理。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.01149v1",
+      "source": "arxiv",
+      "title": "CoSTL: Comprehensive Spatial-Temporal Representation Learning for Moment Retrieval and Highlight Detection",
+      "abstract": "Video Moment Retrieval (MR) and Highlight Detection (HD) are crucial tasks in video analysis that aim to localize specific moments and estimate clip-wise relevance based on a given text query. Recent approaches treat them as similar video grounding tasks and use the same architecture to solve them. These tasks require both fine-grained comprehension at the image level and high-level temporal understanding across the entire video. Existing approaches have primarily focused on temporal modeling using frame-level features, often neglecting the rich visual information related to the text query within individual frames. This oversight leads to inaccurate grounding results. To address this limitation, we propose a Comprehensive Spatial-Temporal Representation Learning Framework (CoSTL), which captures both fine-grained image-level information and temporal dynamics. Specifically, CoSTL incorporates a text-driven progressive fine-grained image encoder, performing a two-step text-driven knowledge extraction process to learn fine-grained spatial representations. Furthermore, a multi-scale temporal perception module captures comprehensive spatial-temporal representations, enhancing the model's ability to process temporal dynamics. We demonstrate state-of-the-art performance on four public benchmarks: QVHighlights, Charades-STA, TACoS, and TVSum.",
+      "authors": [
+        "Xin Dong",
+        "Wenjia Geng",
+        "Wenfeng Deng",
+        "Yansong Tang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-31T10:36:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.01149v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video moment retrieval and highlight detection as video analytics",
+      "llm_evidence_cn": "视频时刻检索和高亮检测作为视频分析",
+      "llm_evidence": "视频时刻检索和高亮检测作为视频分析",
+      "canonical_evidence": "视频时刻检索和高亮检测作为视频分析",
+      "llm_tldr_en": "CoSTL proposes a comprehensive spatial-temporal representation learning method that combines fine-grained image-level and temporal video-level features for accurate moment retrieval and highlight detection in videos.",
+      "llm_tldr_cn": "现有视频时刻检索和高亮检测方法过分依赖帧级时序建模，忽略了单帧内的丰富视觉信息。CoSTL提出一种综合时空表示学习方法，同时捕获图像级细粒度信息和视频级时序上下文，从而在多个基准数据集上取得更精确的定位和相关性估计。该方法为视频理解任务提供了更鲁棒的表示。",
+      "llm_tldr": "现有视频时刻检索和高亮检测方法过分依赖帧级时序建模，忽略了单帧内的丰富视觉信息。CoSTL提出一种综合时空表示学习方法，同时捕获图像级细粒度信息和视频级时序上下文，从而在多个基准数据集上取得更精确的定位和相关性估计。该方法为视频理解任务提供了更鲁棒的表示。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

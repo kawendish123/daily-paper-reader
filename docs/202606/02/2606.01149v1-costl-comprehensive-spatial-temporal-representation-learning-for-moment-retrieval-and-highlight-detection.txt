@@ -1,0 +1,326 @@
+Title: CoSTL: Comprehensive Spatial-Temporal Representation Learning for Moment Retrieval and Highlight Detection
+
+URL Source: https://arxiv.org/pdf/2606.01149v1
+
+Published Time: Tue, 02 Jun 2026 02:16:08 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# CoSTL: Comprehensive Spatial-Temporal Representation Learning for Moment Retrieval and Highlight Detection ⋆
+
+Xin Dong ∗1,2, Wenjia Geng ∗1, Wenfeng Deng 2, and Yansong Tang †1 
+
+> 1
+
+Shenzhen International Graduate School, Tsinghua University  
+
+> 2
+
+Pengcheng Laboratory 
+
+Abstract. Video Moment Retrieval (MR) and Highlight Detection (HD) are crucial tasks in video analysis that aim to localize specific moments and estimate clip-wise relevance based on a given text query. Recent ap-proaches treat them as similar video grounding tasks and use the same architecture to solve them. These tasks require both fine-grained com-prehension at the image level and high-level temporal understanding across the entire video. Exsiting approaches have primarily focused on temporal modeling using frame-level features, often neglecting the rich visual information related to the text query within individual frames. This oversight leads to inaccurate grounding results. To address this limitation, we propose a Co mprehensive Spatial-Temporal Representa-tion Learning Framework (CoSTL), which captures both fine-grained image-level information and temporal dynamics. Specifically, CoSTL in-corporates a text-driven progressive fine-grained image encoder, per-forming a two-step text-driven knowledge extraction process to learn fine-grained spatial representations. Furthermore, a multi-scale tempo-ral perception module captures comprehensive spatial-temporal repre-sentations, enhancing the model’s ability to process temporal dynamics. We demonstrate state-of-the-art performance on four public benchmarks: QVHighlights, Charades-STA, TACoS, and TVSum. 
+
+Keywords: Video Moment Retrieval · Highlight Detection · Spatial-Temporal Representation Learning · Multi-Scale Temporal Modeling. 
+
+# 1 Introduction 
+
+Video understanding has become increasingly popular and important in recent years. With the rapid growth in the number of available videos, accurately ex-tracting key information from them has become a challenging problem. Conse-quently, moment retrieval [1–4] and highlight detection [5–8] have emerged as significant topics in the field of video analysis, playing crucial roles in intelligent retrieval, automated video editing, and a variety of other applications [9, 10]. Given the shared characteristics of these two tasks, a unified framework [11–14] is often employed to address them together.  
+
+> ⋆
+
+These authors contributed equally. † Corresponding author.  
+
+> arXiv:2606.01149v1 [cs.CV] 31 May 2026 2X. Dong et al.
+
+Fig. 1: Comparison of highlight saliency scores across different methods: (a) denotes the previous state-of-the-art UVCOM; (b) illustrates the image-text matching scores of MLLM at various time scales and (c) presents our method. The results in (a) indicate that the previous approach struggles to capture fine-grained spatial details, while (b) highlights the temporal dynamics. Given a text query, moment retrieval aims to localize the corresponding accu-rate moment within the entire video, and highlight detection also has to provide a saliency score for each related video frame. These two tasks require a comprehen-sive understanding of multi-granularity information. As illustrated in Fig. 1, two main problems exist in these tasks: (i) Fine-grained Visual Understanding at the Spatial Level : Accurate localization requires precise comprehension of visual details within each frame. For example, to locate the moment correspond-ing to “Blonde woman wears a large gray scarf with a red top”, the model must identify fine-grained elements like the “red top”. The previous state-of-the-art method UVCOM [15], as shown in Fig. 1 (a), produces entirely incorrect results due to insufficient spatial detail extraction, which only adopts frame-level fea-tures. (ii) Temporal Dynamic Modeling at the Temporal Level : While fine-grained spatial understanding is crucial, it is insufficient on its own. Fig. 1 (b) demonstrates this by employing a fine-grained multimodal language model (BLIP2) [16] to calculate per-frame saliency scores. Despite capturing detailed information, this approach struggles to model the overall action due to its solely spatial focus. The resulting per-frame saliency scores (blue line) exhibit sig-nificant and unrealistic jumps between frames. However, these fluctuations are mitigated when considering a larger temporal context (red line), highlighting the importance of temporal modeling. To address this issue, we propose a model that captures optimal spatial-temporal representations corresponding to the text query, spanning from the CoSTL: Comprehensive S-T Representation Learning for MR and HD 3
+
+image level to the video level. At the image level, our model aims to extract fine-grained spatial features. Inspired by recent advancements in multimodal large language models, we introduce a text-driven progressive fine-grained frame en-coder. This encoder employs a two-step text-driven feature extraction process: the first step involves extracting the desired features from all spatial patches, while the second step further interacts with the text to obtain the representation of the entire video frame. After obtaining fine-frained spatial-level representa-tions, then we address the aforementioned temporal dynamics challenge with a multi-scale temporal perception module at the video level. This module captures action information at both coarse and fine granularities, modeling both macro-level actions and precise temporal details. This multi-scale approach facilitates the learning of richer and more robust spatial-temporal representations. Fig. 1 (c) shows that our method can get correct prediction results for complex scenes. We conduct extensive experiments on four popular Moment Retrieval and Highlight Detection benchmarks to validate the effectiveness of our model. The results demonstrate that our model outperforms existing methods on all bench-marks. Overall, our contributions are summarized as follows: 
+
+– We find the primary bottleneck affecting the performance of MR/HD is the neglect of fine-grained visual information extraction and temporal dynamics modeling. Based on this observation, we designed CoSTL, a comprehensive spatial-temporal representation learning framework that effectively learns optimal image-spatial and video-temporal level knowledge. 
+
+– In CoSTL, a text-driven progressive fine-grained image encoder is proposed to learn fine-grained spatial-level embedding, followed by a multi-scale tem-poral perception module to model temporal dynamics within the video. 
+
+– Extensive experiments across moment retrieval and highlight detection on four benchmarks demonstrate the significance of our method. 
+
+# 2 Related Works 
+
+Video grounding (VG) refers to extracting specific moments and relevant clips from videos based on a given text query [17, 18]. With the increasing volume of video content, which is central to applications ranging from online streaming to automated video editing, there is a growing need for efficient VG.Two funda-mental tasks in VG are Moment Retrieval (MR) [19–21, 11] and Highlight Detection (HD) [22–25, 11]. Specifically, MR focuses on localizing a specific moment in the video that aligns with a given text query while HD aims to iden-tify and score multiple important segments that capture significant actions or events within the video. Recent works discovers new frames works to solve MR and HD simultaneously since they share many similar properties [11, 25, 15]. 
+
+Moment Retrieval. Previous methods can be categorized into two types [15]: proposal-based and proposal-free. Proposal-based methods typically follow a two-stage matching process [19–21]. In the first stage, candidate proposals are generated using multi-scale sliding windows [26, 27]. In the second stage, these proposals are paired and ranked by explicitly modeling channel-level or 4 X. Dong et al. 
+
+sequence-level interactions. Despite their promising performance, these methods often suffer from high computational overhead due to the need to generate a large number of proposals, which can negatively affect efficiency and complicate the subsequent matching process. In contrast, proposal-free methods [28–33] by-pass the proposal generation step entirely. Instead, they directly regress the start and end boundaries of the target without requiring predefined proposals. These methods typically decompose both video and language into structured hierar-chies, such as word-phrase-sentence or event-actions-objects. This hierarchical representation allows for systematic encoding of the semantic content in both video and query text. The semantic correlation between text and vision is then learned through interactions among these multi-modal semantic units. 
+
+Highlight Detection. Early HD videos typically feature a clear theme indicated by their titles or topics [34, 35]. Recently, QVHighlight [13] introduced a benchmark for joint MR and HD, allowing users to generate various highlights from a single video based on different text queries. Many prior works [5, 7, 8, 36, 34] adopt a ranking-based approach, where video segments are ranked by importance, with higher scores for more relevant segments. In contrast, Xiong et al. [7] focus on using only video-level tags as weak supervision. Recently, Liu et al. [37] proposed a parameter-efficient framework for video temporal grounding using multi-layer CLIP features, achieving top results. 
+
+# 3 Method 
+
+3.1 Overview 
+
+Given a video V = {vi}Hi=1 and a natural language query T = {ti}Li=1 , where 
+
+H and L are the number of video frames and text tokens. The goal of moment retrieval is to give multiple relevant moment offsets, presented in the form of center coordinate and duration di = [ dsi , d ei ] ∈ R2, it also requires foreground indicator fi ∈ { 0, 1}, indicating the corresponding di is valid or not. Highlight detection aims to generate the saliency score si ∈ [0 , 1] for each frame in the video, which represents the relevance score between the visual content of clip 
+
+vi and text query T . Fig. 2 provides an overview of our proposed method for moment retrieval and highlight detection. It offers a unified framework that can both conduct fine-grained spatial information extraction and multi-scale tem-poral perception, producing optimal spatial-temporal representations for these two tasks. We achieve this through two key modules: a Text-driven Progressive Fine-grained Image Encoder (TDE) operating at the spatial level and a Multi-scale Temporal Perception Module (MTP) focusing on the temporal dimension. The TDE extracts detailed spatial features, while the MTP captures dynamic temporal patterns at multiple scales. The following sections detail the design and functionality of both the TDE and MTP modules. 
+
+3.2 Text-Driven Progressive Fine-grained Encoder 
+
+The Text-driven Progressive Fine-grained Encoder (TDE) extracts text-relevant fine-grained image features from a given raw image through a two-step inter-CoSTL: Comprehensive S-T Representation Learning for MR and HD 5
+
+Fig. 2: Overall architecture of our framework. The input video and query are first encoded by a text-driven progressive fine-grained image encoder, obtaining pre-cise spatial-level representations for each frame. These representations are then passed through a multi-scale temporal perception module to capture temporal dynamics, followed by different prediction heads to get final results. action with the provided text. Compared to directly employing global features from a Vision Transformer (ViT) [38], TDE preserves more fine-grained infor-mation pertinent to the text. Given a raw video as input, we first extract initial visual features, represented as Fv ∈ RB×N ×T ×Dv , encompassing all spatial in-formation. Here, B denotes the batch size, N the number of video frames, T
+
+the number of patches per frame, and Dv the dimension of the visual features. We then initialize learnable queries Fq ∈ RB×N ×M ×Dq , where M represents the number of learnable queries and Dq is their dimension. The first interaction with the text employs the same Q-Former architecture as in BLIP2 [16]. This step aims to adaptively extract text-relevant spatial features from the patch-level visual representations Fv . Specifically, the learnable queries interact with each other through self-attention layers, then interact with the visual features through cross-attention layers. This process can be formulated as: 
+
+F ′ 
+
+> v
+
+= M LP (M HCA (Fv , M HSA (Fq ))) (1) where M HCA represents multi-head cross-attention and M HSA represents multi-head self-attention, F ′ 
+
+> v
+
+∈ RB×N ×M ×Dq , which compress the spatial in-formation dimension from T to M . Besides, the learnable queries additionally interact with the text through the same self-attention layers. 
+
+Ft = M LP (M HSA (T )) (2) where Ft ∈ RB×N ×Dt , and Dt denotes the dimension of text features. F ′ 
+
+> v
+
+learns text-related representation through the same self-attention layers. In the first step, we utilize an Image Q-Former to reduce the spatial dimen-sion of the image features to M , which aims to retain fine-grained information relevant to the text while distilling the most important spatial features. Subse-quently, we conduct second interaction with the text, aiming to obtain a global 6 X. Dong et al. 
+
+spatial-level representation that effectively captures the text’s semantic content. 
+
+F ′′  
+
+> v
+
+= sof tmax 
+
+
+
+wv F ′
+
+> v
+
+⊤
+
+wtFt
+
+√dk
+
+ · F ′ 
+
+> v
+
+∈ RB×N ×Dq (3) where wv and wt are learnable matrices for projecting features and dk is projected feature dimension. 
+
+3.3 Multi-Scale Temporal Perception Module 
+
+Multi-scale temporal perception allows us to capture both short-term and long-term temporal dependencies, crucial for understanding complex actions and events within the video. Specifically, we operate over three distinct temporal scales: S = {s1, s 2, s 3}. For each scale si ∈ S, we first generate a corresponding video representation by temporally downsampling the original video features: 
+
+F si 
+
+> v
+
+= M axpooling (F ′′  
+
+> v
+
+)(si) ∈ RB×(N/s i)×Dq (4) To capture temporal dependencies at each scale, the video features F s1 
+
+> v
+
+, F s2 
+
+> v
+
+, F s3
+
+> v
+
+are individually processed by a standard Transformer encoder layer: ˆF si 
+
+> v
+
+= F F N (M HSA (F si 
+
+> v
+
+)) (5) This yields scale-specific video representations ˆF s1 
+
+> v
+
+, ˆF s2 
+
+> v
+
+, ˆF s3 
+
+> v
+
+. Then we apply linear temporal interpolation to each feature F si 
+
+> v
+
+to ensure consistent temporal dimensions across all scales: ˜F si 
+
+> v
+
+= upsampling 
+
+ ˆF si
+
+> v
+
+
+
+∈ RB×N ×Dq (6) These multi-scale representations are then fused to the final spatial-temporal representation ˜Fv , capturing a comprehensive view of the temporal dynamics. ˜Fv = ˜F s1 
+
+> v
+
++ ˜F s2 
+
+> v
+
++ ˜F s3 
+
+> v
+
+(7) 
+
+3.4 Prediction Heads and Loss Function 
+
+After obtaining spatial level representation F ′′  
+
+> v
+
+and spatial-temporal represen-tation ˜Fv , we adopt different prediction heads and optimization objectives for these two tasks. 
+
+Boundary Heads for Moment Retrieval. To predict moment boundaries from ˜Fv , we employ two parallel branches of convolutional layers. Each branch consists of three 1x3 convolutional layers followed by a ReLU activation. The first branch has two output channels, outputing the predicted moment offsets ˜di. The second branch has a single output channel followed by a Sigmoid activa-tion function, producing a foreground indicator ˜fi. We supervise the foreground predictions ˜fi using a binary cross-entropy loss. 
+
+Lf = −λf
+
+
+
+fi log ˜fi + (1 − fi) log 
+
+
+
+1 − ˜fi
+
+ 
+
+(8) CoSTL: Comprehensive S-T Representation Learning for MR and HD 7
+
+Table 1: Summary of four mainstream datasets. We show their tasks, labels, number of samples and domains.                     
+
+> Dataset Task Label # Samples Domain
+> QVHighlights [13] MR + HL Interval + Curve 10.3K VLog, News Charades-STA [3] MR Interval 16.1K Indoor TACoS [39] MR Interval 18.2K Kitchens TVSum [35] HL Curve 50 Web
+
+Then the combination of smooth L1 loss and weighted generalized IoU loss is used to supervise prediction moment offsets ˜di:
+
+Lb = λL1 LSmoothL 1 
+
+ ˜di, d i
+
+
+
++ λiou wiLiou 
+
+ ˜di, d i
+
+
+
+(9) where λL1 and λGIoU are weighting factors for the respective loss components, and wi represents a dynamic weight applied to the GIoU loss. Higher GIoU values result in larger weights wi, emphasizing the importance of precise predictions for moments with high overlap. 
+
+Saliency Heads for Highlight Detection As for highlight detection, given 
+
+F ′′  
+
+> v
+
+, we apply linear head to get saliency score ˜ si. Then we also adopt binary cross-entropy loss Lh to supervise prediction ˜ si.
+
+Lh = −λs (si log ˜ si + (1 − si) log (1 − ˜si)) (10) Generally, the total loss is as follows: 
+
+Ltotal = Lf + Lb + Lh (11) 
+
+# 4 Experiments 
+
+4.1 Experiment Settings Datasets. We conduct experiments on four mainstream datasets on two tasks. The details of the datasets, tasks, labels, and domains are shown in Table 1. 
+
+Evaluation Metrics. We adopt Recall@K, IoU=x, mAP with IoU Thresh-olds as evaluation metrics. Specifically, Recall@K, IoU=x (R@K, IoU=x) eval-uate the fraction of moments that are correctly retrieved with an Intersection over Union (IoU) greater than or equal to a threshold within the top K retrieved results. They assess the localization accuracy of temporal segments. mAP with IoU thresholds is similar to mAP in highlight detection but adapted for tempo-ral moment retrieval, considering IoU thresholds to determine positive matches. For QVHighlights, we utilize Recall@1 with IoU thresholds 0.5 and 0.7, mean average precision (mAP) with IoU thresholds 0.5 and 0.75, and the average mAP over a series of IoU thresholds [0.5:0.05:0.95] are used for moment retrieval. For highlight detection, mAP and HIT@1 are used, a clip is treated as a true positive if it has a saliency score of Very Good. For TACoS, Recall@1 with IoU thresholds 0.3, 0.5 and 0.7, and mIoU are used. For TVSum, we use Top-5 mAP. 8 X. Dong et al. 
+
+Table 2: Video moment retrieval (MR) and highlight detection (HD) results on QVHighlights test split. denotes CLIP B/32, denotes SlowFast R-50, denotes audio features and denotes BLIP2 (CLIP L) feature. The best and second-best metrics are marked with bold and underline, respectively.                                                                                                     
+
+> Method Backbone Pretrain MR HD
+> R1 mAP ≥Very Good @0.5 @0.7 @0.5 @0.75 Avg. mAP HIT@1 M-DETR[13] ✗52.89 33.02 54.82 29.40 30.73 35.69 20.88 UniVTG[11] ✗58.86 40.86 57.60 35.59 35.47 38.20 60.96 MH-DETR[40] ✗60.05 42.48 60.75 38.18 38.38 38.22 60.51 EaTR[41] ✗61.36 45.79 61.86 41.91 41.74 37.15 58.65 QD-DETR[42] ✗62.40 44.96 62.52 39.88 39.86 38.94 62.40 CG-DETR[14] ✗65.43 48.38 64.51 42.77 42.86 40.33 66.21 UVCOM[15] ✗63.55 47.47 63.37 42.67 43.18 39.74 64.20 UVCOM *[15] ✗68.52 51.94 65.40 44.06 43.78 40.64 65.42 R2-tuning[15] ✗68.03 49.35 69.04 47.56 46.17 40.75 64.20 UMT[12] ✓60.83 43.26 57.33 39.12 38.08 39.12 62.39 UniVTG[11] ✓65.43 50.06 64.06 45.02 43.63 40.54 66.28
+> CoSTL (Ours) ✗75.43 54.24 71.48 48.45 46.68 41.36 71.59
+
+4.2 Comparison with State-of-the-arts Joint Moment Retrieval and Highlight Detection. We evaluate our method on QVHighlights dataset [13], which supports video moment retrieval and high-light detection. We compare our approach, CoSTL, against state-of-the-art meth-ods, including both pre-trained and non-pre-trained models. Because CoSTL initializes with BLIP-2 pre-trained weights, we also include a variant of the UVCOM [15] model using BLIP-2 features (denoted as UVCOM *) for a fair com-parison. As shown in Table 2, CoSTL achieves significant improvements across all metrics. Specifically, it surpasses the previous state-of-the-art, R2-tuning [37], by 3.73% on average across all metrics, demonstrating its effectiveness. 
+
+Moment Retrieval. We evaluate our method on two benchmarks Charades-STA and TACoS. As shown in Table 3, our CoSTL outperforms previous method on both two benchmarks, demonstrating the superiority of the spatial-temporal features in CoSTL. Specifically on R1@0.5, our method increases 2.26% in Charades-STA and increases 0.49% in TACoS compared to R2-tuning. 
+
+Highlight Detection. We also evaluate our method on highlight detection benchmark TVSum in Table 4, although the number of samples in each category of TVSum is very small, our method still achieves good results in each category and achieves the best average performance 86.5%. 3  
+
+> 3Since we need raw video of datasets and YouTube HL [34] is proposed too early and too many videos are lost, we did not test metrics on it. CoSTL: Comprehensive S-T Representation Learning for MR and HD 9
+
+Table 3: Comparison of different methods on Charades-STA and TACoS datasets in terms of R@0.5 and R@0.7.                                  
+
+> Method Charades-STA TACoS
+> R@0.5 R@0.7 R@0.5 R@0.7 2D TAN [1] 46.02 27.50 27.99 12.82 M-DETR [13] 53.63 31.37 24.64 11.97 QD-DETR [42] 57.31 32.55 --UniVTG [11] 58.01 35.65 34.97 17.35 UVCOM [15] 59.25 36.64 36.39 23.32 R2-tuning [37] 59.78 37.02 38.72 25.12
+> CoSTL (Ours) 62.04 40.13 39.21 25.69
+
+Table 4: Comparisons on TVSum. † denotes using audio modality, the best and second-best metrics are marked with bold and underline, respectively.                                                                                                                                                               
+
+> Method VT VU GA MS PK PR FM BK BT DS Avg.
+> sLSTM [43] 41.1 46.2 46.3 47.7 44.8 46.1 45.2 40.6 47.1 45.5 45.1 LIM-S [7] 55.9 42.9 61.2 54.0 60.4 47.5 43.2 66.3 69.1 62.6 56.3 Trailer [44] 61.3 54.6 65.7 60.8 59.1 70.1 58.2 64.7 65.6 68.1 62.8 SL-Module [45] 86.5 68.7 74.9 86.2 79.0 63.2 58.9 72.6 78.9 64.0 73.3 MINI-Net †[46] 80.6 68.3 78.2 81.8 78.1 65.8 57.8 75.0 80.2 65.5 73.2 TCG †[47] 85.0 71.4 81.9 78.6 80.2 75.5 71.6 77.3 78.6 68.1 76.8 Joint-VA †[6] 83.7 57.3 78.5 86.1 80.1 69.2 70.0 73.0 97.4 67.5 76.3 UniVTG [11] 83.9 85.1 89.0 80.1 84.6 81.4 70.9 91.7 73.5 69.3 81.0 UMT †[12] 87.5 81.5 88.2 78.8 81.5 87.0 76.0 86.9 84.4 79.6 83.1 QD-DETR [42] 88.2 87.4 85.6 85.0 85.8 86.9 76.4 91.3 89.2 73.7 85.0 UVCOM [15] 87.6 91.6 91.4 86.7 86.9 86.9 76.9 92.3 87.4 75.6 86.3 R2-tuning [37] 85.0 85.9 91.0 81.7 88.8 87.4 78.1 89.27 90.3 74.7 85.2
+> CoSTL (Ours) 86.6 91.7 92.6 84.9 87.8 85.7 79.4 89.6 89.7 77.3 86.5
+
+4.3 Ablation Studies Module analysis. We analyze the effectiveness of our proposed Text-driven Progressive Fine-grained Image Encoder (TDE) and Multi-scale Temporal Per-ception Module (MTP). To evaluate the contribution of the MTP module, we conduct an ablation study where we remove the MTP module and directly feed the features F ′′  
+
+> v
+
+into the prediction heads. As for TDE, to confirm that the per-formance improvement stems from the design of the TDE module and not simply from enhanced visual features, we replace the TDE module with the standard BLIP-2 features, which are then processed by the MTP module. Table 5 presents the ablation results. Both the MTP and TDE modules individually contribute to improved performance, and their combination yields even better results, such as a 7.30% increase in mAP(MR). More specifically, the MTP module demon-strates a significant impact on moment retrieval metrics, exemplified by a 6.62% improvement in R1@0.5, validating the effectiveness of its multi-scale temporal modeling. Conversely, the TDE module shows a greater impact on highlight de-10 X. Dong et al. 
+
+Table 5: Performance comparison for different modules. We ablated the impor-tance of each module in MR and HD tasks.                        
+
+> TDE MTP MR HD
+> R1 @ 0.5 R1 @0.7 mAP Avg. mAP HIT@1
+> ✓68.81 43.38 39.89 40.18 70.73
+> ✓72.05 47.88 42.05 38.75 65.17
+> ✓✓75.43 54.24 46.68 41.46 71.59
+
+tection, with a 6.42% increase in HIT@1, demonstrating its ability to extract fine-grained spatial information. 
+
+Text-driven progressive fine-grained encoder TDE progressively re-fines spatial feature embeddings to be more precise and relevant to the text query through a two-step interaction process. To evaluate the effectiveness of each step, we conduct two experiments. Firstly, to assess the effectiveness of valid spatial information extraction in Step 1, we replaced this step with stan-dard BLIP-2 features. Then to evaluate the effectiveness of frame information aggregation in Step 2, we compared several alternative aggregation methods, in-cluding standard pooling (M1) and an attention mechanism without text-based enhancement (M2). From Table 6, we can see that both Step 1 and Step 2 play an important role on performance improvement, e.g., 5.04% increase in R1@0.5 for Step 1. The comparison results with other aggregation strategies also show the effectiveness of our Step 2 design, e.g., 6.98% increase in R1@0.5 vs M1 and 4.62% increase in R1@0.5 vs M2. 
+
+Multi-scale temporal perception module MTP captures temporal dy-namics in videos through multi-scale temporal aggregation, thereby obtaining spatial-temporal features for subsequent prediction. To investigate the role of multi-scale temporal perception, we conducted experiments with different scale configurations: S = 1 (single-scale) and S = 1 , 2 (dual-scale). The single-scale setting serves as a baseline without multi-scale information, while the dual-scale setting aggregates information at two temporal scales. As Table 5 demonstrates, the MTP module primarily affects moment retrieval performance. Therefore, we focus our analysis on moment retrieval metrics. Table 7 shows that our multi-scale design leads to improved performance. Specifically, using multi-scale ag-gregation ( S = 1 , 2, 3) results in a 3.97% increase in R1@0.5 compared to the single-scale baseline ( S = 1). Furthermore, our full multi-scale approach outper-forms dual-scale aggregation ( S = 1 , 2) by 1.39% in R1@0.5. Table 6: Ablation studies on text-driven progressive fine-grained encoder.                                
+
+> Step1 Step2 MR HD
+> R1 @0.5 R1 @0.7 mAP Avg. mAP HIT@1
+> ✓70.39 43.38 39.38 38.75 65.17
+> ✓M1 68.46 52.17 45.73 39.21 69.59
+> ✓M2 70.81 52.38 45.89 40.18 70.73
+> ✓✓75.43 54.24 46.68 41.46 71.59 CoSTL: Comprehensive S-T Representation Learning for MR and HD 11
+
+Fig. 3: More visualizations of joint moment retrieval and highlight detection re-sults on QVHighlights val split. Our method can accurately regress the bound-aries of moments and predict highlight saliency scores through its novel design. 
+
+4.4 Qualitative Results 
+
+We show more visualizations of qualitative results in Fig. 3, comparing our method with the strong baseline UVCOM [15]. Our method demonstrates im-proved accuracy in both moment boundary regression and highlight detection. In the first example, showcasing a complex query with detailed descriptions of people’s attributes “headphones”, our method precisely locates the corre-sponding visual details within the video frames, outperforming UVCOM which struggles with such fine-grained queries. The second example highlights our method’s ability to not only extract de-tailed visual information but also understand the temporal dynamics of actions across a broader time span, which can capture “Wait for an elevator” and “Take Table 7: Analysis of different temporal scale S in MTP, where TS denotes number of temporal scales                  
+
+> Number MR of TS R1@0.3 R1@0.5 R1@0.7 mAP 185.43 71.46 53.17 45.43 287.75 74.04 53.83 45.73 388.28 75.43 54.24 46.68
+
+12 X. Dong et al. 
+
+an elevator” simultaneously.l approach might falter. UVCOM, in contrast, misses the overall context of the action. These examples demonstrate the effectiveness of our proposed spatial-temporal modeling approach in handling both fine-grained details and broader temporal context. 
+
+# 5 Conclusion 
+
+This paper introduces CoSTL, a comprehensive spatial-temporal representation learning framework for video moment retrieval and highlight detection. Existing methods often struggle to capture fine-grained spatial information and effectively model temporal dynamics, leading to inaccurate results. CoSTL addresses these limitations by tackling two key challenges: (1) Capturing fine-grained visual de-tails related to the text within individual frames. (2) Effectively modeling the dy-namic temporal relationships within a video. We introduced specialized modules designed to address each of these challenges. Experimental results demonstrate the effectiveness of our proposed method. 
+
+# References 
+
+1. Songyang Zhang, Houwen Peng, Jianlong Fu, and Jiebo Luo. Learning 2d tempo-ral adjacent networks for moment localization with natural language. In AAAI ,volume 34, pages 12870–12877, 2020. 2. Meng Liu, Xiang Wang, Liqiang Nie, Qi Tian, Baoquan Chen, and Tat-Seng Chua. Cross-modal moment localization in videos. In ACM , pages 843–851, 2018. 3. Jiyang Gao, Chen Sun, Zhenheng Yang, and Ram Nevatia. Tall: Temporal activity localization via language query. In ICCV , pages 5267–5275, 2017. 4. Kristen Grauman, Andrew Westbury, Eugene Byrne, Zachary Chavis, Antonino Furnari, Rohit Girdhar, Jackson Hamburger, Hao Jiang, Miao Liu, Xingyu Liu, et al. Ego4d: Around the world in 3,000 hours of egocentric video. In CVPR ,pages 18995–19012, 2022. 5. Michael Gygli, Yale Song, and Liangliang Cao. Video2gif: Automatic generation of animated gifs from video. In CVPR , pages 1001–1009, 2016. 6. Taivanbat Badamdorj, Mrigank Rochan, Yang Wang, and Li Cheng. Joint visual and audio learning for video highlight detection. In ICCV , pages 8127–8137, 2021. 7. Bo Xiong, Yannis Kalantidis, Deepti Ghadiyaram, and Kristen Grauman. Less is more: Learning highlight detection from video duration. In CVPR , pages 1258– 1267, 2019. 8. Ting Yao, Tao Mei, and Yong Rui. Highlight detection with pairwise deep ranking for first-person video summarization. In CVPR , pages 982–990, 2016. 9. Sujia Wang, Xiangwei Shen, Yansong Tang, Xin Dong, Wenjia Geng, and Lei Chen. Localization-aware multi-scale representation learning for repetitive action counting. VCIP , pages 1–5, 2024. 10. Zhao Yang, Jiaqi Wang, Yansong Tang, Kai Chen, Hengshuang Zhao, and Philip HS Torr. Lavt: Language-aware vision transformer for referring image seg-mentation. In Proceedings of the CVPR , pages 18155–18165, 2022. 11. Kevin Qinghong Lin, Pengchuan Zhang, Joya Chen, Shraman Pramanick, Difei Gao, Alex Jinpeng Wang, Rui Yan, and Mike Zheng Shou. Univtg: Towards unified video-language temporal grounding. In ICCV , pages 2794–2804, 2023. CoSTL: Comprehensive S-T Representation Learning for MR and HD 13 12. Ye Liu, Siyuan Li, Yang Wu, Chang-Wen Chen, Ying Shan, and Xiaohu Qie. Umt: Unified multi-modal transformers for joint video moment retrieval and highlight detection. In CVPR , pages 3042–3051, 2022. 13. Jie Lei, Tamara L Berg, and Mohit Bansal. Detecting moments and highlights in videos via natural language queries. NeurIPS , 34:11846–11858, 2021. 14. WonJun Moon, Sangeek Hyun, SuBeen Lee, and Jae-Pil Heo. Correlation-guided query-dependency calibration in video representation learning for temporal ground-ing. arXiv preprint arXiv:2311.08835 , 2023. 15. Yicheng Xiao, Zhuoyan Luo, Yong Liu, Yue Ma, Hengwei Bian, Yatai Ji, Yujiu Yang, and Xiu Li. Bridging the gap: A unified video comprehension framework for moment retrieval and highlight detection. In CVPR , pages 18709–18719, 2024. 16. Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. In International conference on machine learning , pages 19730–19742. PMLR, 2023. 17. Sungho Moon, Seunghun Lee, Jiwan Seo, and Sunghoon Im. Cva: Context-aware video-text alignment for video temporal grounding. In Proceedings of the CVPR ,2026. 18. Zuhao Yang, Yingchen Yu, Yunqing Zhao, Shijian Lu, and Song Bai. Timeexpert: an expert-guided video llm for video temporal grounding. ICCV , pages 24286– 24296, 2025. 19. Mingxing Zhang, Yang Yang, Xinghan Chen, Yanli Ji, Xing Xu, Jingjing Li, and Heng Tao Shen. Multi-stage aggregated transformer network for temporal language localization in videos. In CVPR , pages 12669–12678, 2021. 20. Yitian Yuan, Lin Ma, Jingwen Wang, Wei Liu, and Wenwu Zhu. Semantic condi-tioned dynamic modulation for temporal sentence grounding in videos. N e u r l ,32, 2019. 21. Hao Wang, Zheng-Jun Zha, Liang Li, Dong Liu, and Jiebo Luo. Structured multi-level interaction network for video moment localization via language query. In 
+
+CVPR , pages 7026–7035, 2021. 22. Michael Gygli, Yale Song, and Liangliang Cao. Video2gif: Automatic generation of animated gifs from video. In CVPR , pages 1001–1009, 2016. 23. Yifan Jiao, Xiaoshan Yang, Tianzhu Zhang, Shucheng Huang, and Changsheng Xu. Video highlight detection via deep ranking modeling. In Image and Video Technology: 8th Pacific-Rim Symposium, PSIVT 2017, Wuhan, China, November 20-24, 2017, Revised Selected Papers 8 , pages 28–39. Springer, 2018. 24. Taivanbat Badamdorj, Mrigank Rochan, Yang Wang, and Li Cheng. Joint visual and audio learning for video highlight detection. In ICCV , pages 8127–8137, 2021. 25. Ye Liu, Siyuan Li, Yang Wu, Chang-Wen Chen, Ying Shan, and Xiaohu Qie. Umt: Unified multi-modal transformers for joint video moment retrieval and highlight detection. In CVPR , pages 3042–3051, 2022. 26. Meng Liu, Xiang Wang, Liqiang Nie, Xiangnan He, Baoquan Chen, and Tat-Seng Chua. Attentive moment retrieval in videos. In The 41st international ACM SIGIR conference on research & development in information retrieval , pages 15–24, 2018. 27. Lisa Anne Hendricks, Oliver Wang, Eli Shechtman, Josef Sivic, Trevor Darrell, and Bryan Russell. Localizing moments in video with temporal language. arXiv preprint arXiv:1809.01337 , 2018. 28. Kun Li, Dan Guo, and Meng Wang. Proposal-free video grounding with contextual pyramid network. In AAAI , volume 35, pages 1902–1910, 2021. 29. Jonghwan Mun, Minsu Cho, and Bohyung Han. Local-global video-text interac-tions for temporal grounding. In CVPR , pages 10810–10819, 2020. 14 X. Dong et al. 30. Cristian Rodriguez, Edison Marrese-Taylor, Fatemeh Sadat Saleh, Hongdong Li, and Stephen Gould. Proposal-free temporal moment localization of a natural-language query in video using guided attention. In Proceedings of the IEEE/CVF winter conference on applications of computer vision , pages 2464–2473, 2020. 31. Haoyu Tang, Jihua Zhu, Meng Liu, Zan Gao, and Zhiyong Cheng. Frame-wise cross-modal matching for video moment retrieval. IEEE Transactions on Multi-media , 24:1338–1349, 2021. 32. Yitian Yuan, Tao Mei, and Wenwu Zhu. To find where you talk: Temporal sentence localization in video with attention based location regression. In AAAI , volume 33, pages 9159–9166, 2019. 33. Hao Zhang, Aixin Sun, Wei Jing, and Joey Tianyi Zhou. Span-based localizing network for natural language video localization. arXiv preprint arXiv:2004.13931 ,2020. 34. Min Sun, Ali Farhadi, and Steve Seitz. Ranking domain-specific highlights by analyzing edited videos. In ECCV , pages 787–802. Springer, 2014. 35. Yale Song, Jordi Vallmitjana, Amanda Stent, and Alejandro Jaimes. Tvsum: Sum-marizing web videos using titles. In CVPR , pages 5179–5187, 2015. 36. Youngjae Yu, Sangho Lee, Joonil Na, Jaeyun Kang, and Gunhee Kim. A deep ranking model for spatio-temporal highlight detection from a 360 ◦ video. In AAAI ,volume 32, 2018. 37. Ye Liu, Jixuan He, Wanhua Li, Junsik Kim, Donglai Wei, Hanspeter Pfister, and Chang Wen Chen. R2-tuning: Efficient image-to-video transfer learning for video temporal grounding. arXiv preprint arXiv:2404.00801 , 2024. 38. Alexey Dosovitskiy. An image is worth 16x16 words: Transformers for image recog-nition at scale. arXiv preprint arXiv:2010.11929 , 2020. 39. Michaela Regneri, Marcus Rohrbach, Dominikus Wetzel, Stefan Thater, Bernt Schiele, and Manfred Pinkal. Grounding action descriptions in videos. Trans-actions of the Association for Computational Linguistics , 1:25–36, 2013. 40. Yifang Xu, Yunzhuo Sun, Benxiang Zhai, Youyao Jia, and Sidan Du. Mh-detr: Video moment and highlight detection with cross-modal transformer. In IJCNN ,pages 1–8. IEEE, 2024. 41. Jinhyun Jang, Jungin Park, Jin Kim, Hyeongjun Kwon, and Kwanghoon Sohn. Knowing where to focus: Event-aware transformer for video grounding. In ICCV ,pages 13846–13856, 2023. 42. WonJun Moon, Sangeek Hyun, SangUk Park, Dongchan Park, and Jae-Pil Heo. Query-dependent video representation for moment retrieval and highlight detec-tion. In CVPR , pages 23023–23033, 2023. 43. Ke Zhang, Wei-Lun Chao, Fei Sha, and Kristen Grauman. Video summarization with long short-term memory. In ECCV , pages 766–782. Springer, 2016. 44. Lezi Wang, Dong Liu, Rohit Puri, and Dimitris N Metaxas. Learning trailer mo-ments in full-length movies with co-contrastive attention. In ECCV , pages 300–316. Springer, 2020. 45. Minghao Xu, Hang Wang, Bingbing Ni, Riheng Zhu, Zhenbang Sun, and Changhu Wang. Cross-category video highlight detection via set-based learning. In ICCV ,pages 7970–7979, 2021. 46. Fa-Ting Hong, Xuanteng Huang, Wei-Hong Li, and Wei-Shi Zheng. Mini-net: Multiple instance ranking network for video highlight detection. In ECCV , pages 345–360. Springer, 2020. 47. Qinghao Ye, Xiyue Shen, Yuan Gao, Zirui Wang, Qi Bi, Ping Li, and Guang Yang. Temporal cue guided video highlight detection with low-rank audio-visual fusion. In ICCV , pages 7950–7959, 2021.

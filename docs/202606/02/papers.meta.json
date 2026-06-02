@@ -1,0 +1,54 @@
+{
+  "label": "2026-06-02",
+  "date": "2026-06-02",
+  "generated_at": "2026-06-02T22:03:12",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202606/02/2606.00620v1-flownar-scalable-streaming-narration-for-long-form-videos",
+      "section": "deep",
+      "title_en": "FlowNar: Scalable Streaming Narration for Long-Form Videos",
+      "authors": "Zeyun Zhong, Manuel Martin, Chengzhi Wu, David Schneider, Frederik Diederichs, Juergen Gall, Juergen Beyerer",
+      "date": "2026-05-30",
+      "pdf": "https://arxiv.org/pdf/2606.00620v1",
+      "score": "9.0",
+      "evidence": "面向长视频的可扩展流式叙述，具有动态上下文管理",
+      "tldr": "现有大型多模态模型在流式视频场景下资源需求随时长线性增长，难以扩展。FlowNar提出动态上下文管理策略和跨线性注意记忆模块，实现有界视觉内存和计算复杂度。在Ego4D等数据集上，叙述质量显著提升，支持10倍长视频处理，吞吐量提高3倍。为流式视频叙述提供高效可扩展方案。",
+      "tags": "query:mec-video",
+      "abstract_en": "Recent Large Multimodal Models (LMMs), primarily designed for offline settings, are ill-suited for the dynamic requirements of streaming video. While recent online adaptations improve real-time processing, they still face critical scalability challenges, with resource demands typically growing at least linearly with video duration. To overcome this bottleneck, we propose FlowNar, a novel framework for scalable streaming video narration. The core of FlowNar is a dynamic context management strategy for historical visual context removal, combined with our CLAM (Cross Linear Attentive Memory) module for streaming visual history retention, ensuring bounded visual memory usage and computational complexity, crucial for efficient streaming. We also introduce a realistic self-conditioned evaluation protocol and complementary evaluation metrics to assess streaming narration models under deployment-like conditions. Experiments on the Ego4D, EgoExo4D, and EpicKitchens100 datasets demonstrate that FlowNar substantially improves narration quality over strong baselines while being highly efficient, supporting processing of 10$\\times$ longer videos and achieving 3$\\times$ higher throughput (FPS). The code is available at https://github.com/zeyun-zhong/FlowNar.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/02/2606.00744v1-edge-detection-framework-utilizing-sot-mtj-bit-cell-arrays",
+      "section": "quick",
+      "title_en": "Edge Detection Framework Utilizing SOT-MTJ Bit-Cell Arrays",
+      "authors": "Kushagra Singh, Debasis Das",
+      "date": "2026-05-30",
+      "pdf": "https://arxiv.org/pdf/2606.00744v1",
+      "score": "7.0",
+      "evidence": "面向资源受限边缘设备的硬件高效边缘检测",
+      "tldr": "传统边缘检测算法（如Canny）在CMOS硬件上计算开销大，能效低、延迟长，难以满足实时嵌入需求。本文提出一种利用SOT-MTJ位单元阵列的硬件原生边缘检测框架，通过器件级写、读、复位操作实现并行梯度提取。实验表明，该方案相比Canny算法在能耗和延迟上均有显著降低，同时保持有竞争力的边缘质量。该自旋电子学方法为低功耗高速图像处理开辟了新路径，尤其适用于资源受限的物联网和边缘设备。",
+      "tags": "query:mec-video",
+      "abstract_en": "Traditional edge detection algorithms, foundational to computer vision, face significant challenges in energy efficiency and processing latency on conventional CMOS-based hardware. Existing algorithms, such as Canny, are computationally expensive, posing challenges in resource-constrained hardware where energy efficiency and low latency are critical. This study introduces a novel, hardware-efficient algorithm that leverages the intrinsic characteristics of magnetic tunnel junction (MTJ) devices. We present a detailed device-level analysis of an MTJ-based system for edge detection, outlining its operational cycles, including write, read, and reset methods. The algorithm's efficacy is evaluated against the standard Canny edge detection method. We provide a quantitative performance analysis, including metrics such as energy consumption and latency, which demonstrates that our proposed spintronics-based approach offers a promising solution for achieving low-power, high-speed image processing.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/02/2606.01149v1-costl-comprehensive-spatial-temporal-representation-learning-for-moment-retrieval-and-highlight-detection",
+      "section": "quick",
+      "title_en": "CoSTL: Comprehensive Spatial-Temporal Representation Learning for Moment Retrieval and Highlight Detection",
+      "authors": "Xin Dong, Wenjia Geng, Wenfeng Deng, Yansong Tang",
+      "date": "2026-05-31",
+      "pdf": "https://arxiv.org/pdf/2606.01149v1",
+      "score": "7.0",
+      "evidence": "视频时刻检索和高亮检测作为视频分析",
+      "tldr": "视频时刻检索与高亮检测需同时理解帧内细节和时序动态。现有方法侧重帧级时序建模，忽略帧内与文本相关的视觉信息，导致定位不准。为此提出CoSTL框架，通过文本驱动的渐进式细粒度图像编码器提取空间特征，并利用多尺度时序感知模块融合时空表示。在QVHighlights、Charades-STA、TACoS和TVSum四个基准上取得最优结果，证实了联合建模细粒度图像与动态时序的有效性。",
+      "tags": "query:mec-video",
+      "abstract_en": "Video Moment Retrieval (MR) and Highlight Detection (HD) are crucial tasks in video analysis that aim to localize specific moments and estimate clip-wise relevance based on a given text query. Recent approaches treat them as similar video grounding tasks and use the same architecture to solve them. These tasks require both fine-grained comprehension at the image level and high-level temporal understanding across the entire video. Existing approaches have primarily focused on temporal modeling using frame-level features, often neglecting the rich visual information related to the text query within individual frames. This oversight leads to inaccurate grounding results. To address this limitation, we propose a Comprehensive Spatial-Temporal Representation Learning Framework (CoSTL), which captures both fine-grained image-level information and temporal dynamics. Specifically, CoSTL incorporates a text-driven progressive fine-grained image encoder, performing a two-step text-driven knowledge extraction process to learn fine-grained spatial representations. Furthermore, a multi-scale temporal perception module captures comprehensive spatial-temporal representations, enhancing the model's ability to process temporal dynamics. We demonstrate state-of-the-art performance on four public benchmarks: QVHighlights, Charades-STA, TACoS, and TVSum.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
