@@ -1,0 +1,925 @@
+Title: Real-Time Generation of Streamable Talking Portrait Video with Reference-Guided Deep Compression VAEs
+
+URL Source: https://arxiv.org/pdf/2606.01620v1
+
+Published Time: Tue, 02 Jun 2026 01:59:12 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# Real-Time Generation of Streamable Talking Portrait Video with Reference-Guided Deep Compression VAEs 
+
+## Sicheng Xu 1 Yu Deng 1 Shoukang Hu 1 Yichuan Wang 2 Yizhong Zhang 1
+
+## Zhan Chen 2 Jiaolong Yang 1 Baining Guo 11Microsoft Research 2Microsoft AI 42 FPS        
+
+> Single/
+> Multiple Images
+> Audio Video
+> with
+> High Speed Lip-Audio Sync. Expressiveness Head Motion Torso Motion Hair Dynamics Shadow real-time streaming
+
+Figure 1. Our method synthesizes streamable talking portrait videos given speech audio and one or multiple reference images, enabling generation of 512 × 512 videos at 42 FPS on a single GPU. The results exhibit rich visual dynamics, including audio-synchronized lip motion, facial expressions, head and torso movement, hair dynamics, and lighting and shadow effects, advancing the level of realism and liveliness for real-time talking portraits. Identities presented in the paper are non-existent and created by Gemini 2.5 flash image [16]. 
+
+## Abstract 
+
+Video diffusion models have significantly advanced por-trait video generation, yet their high computational de-mands limit their use in interactive applications. This work presents a framework for streamable talking portrait video generation conditioned on speech audio and reference im-ages. Designed meticulously for streaming scenarios, it fea-
+
+1
+
+> arXiv:2606.01620v1 [cs.CV] 1 Jun 2026
+
+tures a causal video VAE for deep latent compression and an autoregressive latent denoising model. Our causal VAE integrates a variable number of reference images as guid-ance, allowing the network to focus on dynamic informa-tion rather than static appearance, thereby enhancing com-pression efficacy and reconstruction quality. Additionally, we extend the residual auto-encoding paradigm to improve spatial-temporal causality handling in our VAE. The gener-ator is based on a Rectified Flow Transformer architecture and produces video latents in a blockwise auto-regressive manner. Our method enables the real-time generation of high-quality talking portrait videos, achieving speeds sig-nificantly faster than baseline models. Furthermore, com-prehensive experiments demonstrate that it is on par with or even outperforms these large models in realism, vividness, and video quality. 
+
+## 1. Introduction 
+
+With the advent of Large Language Models such as Chat-GPT [1], there has been a growing trend toward leveraging human–AI interaction tools to enhance work efficiency and interpersonal communication. Among these tools, lifelike talking portraits featuring dynamic visual representations play a crucial role in conveying subtle cues that go beyond spoken or written language. For example, they are essential for applications such as social companionship, interactive education, and mental health support, where dynamic and empathetic communication is paramount. Generating talking portrait videos from audio has been actively studied in the past. Most earlier works have focused on the face or head region [8, 36, 51, 54, 55, 59, 74] and highly-realistic talking head results have been achieved [17, 59]. However, these methods often rely on specific human face or head priors and extending them to encompass larger portrait regions like the torso is difficult. Additionally, their ability to generate non-rigid dynamics beyond facial areas and complex lighting and shadow effects is limited, prevent-ing them from reaching a higher degree of realism. Recent advances in large diffusion models for video gen-eration have dramatically pushed the boundaries for talk-ing portrait video [2, 28, 38, 42, 45, 53, 56, 58]. These large models are able to generate vivid and realistic dynam-ics across much larger regions beyond head and produce high-quality videos with strong aesthetic appeal. However, their high computational cost restricts their application to offline content generation, hindering their use in broader real-time and interactive streaming scenarios. For instance, state-of-the-art models require several minutes to generate a 5-second video on modern GPUs [13, 24, 53]. Although various approaches have been proposed to improve the effi-ciency of video diffusion [64, 66], adapting the large models for real-time streaming scenarios is still a formidable task. Our goal is to achieve efficient talking portrait video gen-eration from audio. Specifically, we have three objectives: 
+
+1) real-time, streamable generation to support interactive applications; 2) high visual quality and vividness to ensure realism, including precise audio-lip synchronization, vivid facial and body motions, realistic lighting and dynamic ef-fects, and high video quality; 3) handling a wide torso region beyond the head to improve immersiveness. Col-lectively, these requirements present significant challenges, particularly in achieving both efficiency and quality to a high standard, which remains largely unattainable with the existing methods. Towards these objectives, we present a new framework for streamable talking portrait video generation. Our mod-els include a causal video VAE for latent compression and an autoregressive latent denoising model conditioned on au-dio. The causality of the VAE ensures smooth video genera-tion given arbitrary-length video latents, preventing tempo-ral discontinuities. Meanwhile, the autoregressive scheme of the denoising generator which can leverage key–value (KV) caching for efficient inference is naturally suited for streaming. To obtain a compact latent space for efficient generation, we introduce two key designs for our causal VAE. First, in contrast to ordinary VAEs, we introduce reference image guidance to the VAE decoder. The intuition is that, un-like generic video generation, talking portrait videos typi-cally feature a fixed subject as the dominant content. The user’s reference image shares significant information with the generated videos. By incorporating it into the VAE, compression efficacy is enhanced as the network can fo-cus less on the subject’s appearance and background, and more on extracting dynamic information. We train the VAE to accept one or multiple reference images and they signif-icantly improve reconstruction quality. Second, we extend the residual auto-encoding paradigm of DC-AE [6] to our causal video VAE. Temporal and spatial residual encoding are applied in separate steps when resolution changes, with the first frame handled individually to preserve causality in temporal processing. This design also leads to significantly enhanced reconstruction fidelity. Given the learned compact latent vectors, we apply a Rectified Flow Transformer [15, 31] as the generator con-ditioned on the audio input and the reference image(s). The generator is trained in a blockwise autoregressive manner with a teacher-forcing strategy [76]. We train our VAE and generator on a corpus of talking portrait videos. Compre-hensive experiments show that our method is not only sig-nificantly faster than the baseline portrait video generation models but also producing comparable or even better re-sults than these models across various metrics of realism and vividness. Our main contributions are summarized as follows: 2• We present a framework for streamable talking portrait video generation with a block-wise autoregressive denois-ing model and a causal video decoder, which can contin-uously generate arbitrary-length video from audio. • We propose a reference-guided video VAE with a causal residual video auto-encoding scheme adapted from DC-AE [6], which can incorporate one or more reference por-trait images into decoder to attain significantly enhanced video reconstruction fidelity. • We implement a video compression rate of 768, approxi-mately 10-15 × higher than those of the VAE in popular video diffusion models [50, 61], and we achieve a video generation speed of 42 FPS, over 25 × faster than exist-ing diffusion-based talking portrait generation model [13, 24, 53], and meanwhile comparable or higher quality 
+
+results compared to these models across various metrics. 
+
+## 2. Related Work 
+
+Audio-driven talking portrait generation. Generating talking head videos from audio input has been a long-standing problem in computer vision and graphics. Early works primarily focus on synthesizing lip movements syn-chronized with the input speech [3, 4, 8, 36, 43]. Later methods expand the scope to full-head generation, mod-eling a broader range of motions such as eye gaze and blinks [51, 74], facial expressions [18, 23, 27, 63, 70], and head pose [54, 62, 77, 78]. These methods typically lever-age motion representation learning, where motion is explic-itly disentangled from appearance and encoded into com-pact forms such as sparse keypoints [18, 27, 37], 3D pa-rameters [62, 70], or learned latent representations [14, 59]. This design simplifies generation complexity and improves controllability, but limits fine-grained realism, making it difficult to capture subtle effects like hair dynamics or dy-namics beyond the head region, like torso and chest move-ment. Recently, large video generation foundation mod-els [29, 38, 50, 61] have enabled high-fidelity portrait video generation [9, 13, 26, 28, 45, 52, 56, 71]. While these meth-ods excel at capturing rich video dynamics, their high com-putational cost makes them impractical for real-time appli-cations. Our work aims to bridge this gap by achieving fine-grained motion fidelity with real-time generation efficiency. 
+
+Efficient image and video generation. Score-based gen-erative modeling [21, 31, 32, 41] has emerged as a leading approach for modern image and video generation. A com-mon practice [38, 50, 61] is to employ a VAE to compress visual data into a compact latent space, thus reducing the token context length required for diffusion-based genera-tion. Recent approaches [6, 7, 19, 35, 46, 68, 69] further explore acceleration by increasing the compression ratio, effectively lowering the computational cost during gener-ation. However, these methods primarily focus on static image synthesis or offline video generation. Their appli-cations to real-time, streamable talking portrait generation, which demands both low-latency and temporally coherent synthesis, still underexplored. Instead of increasing the VAE compression ratio to re-duce latent context, another common approach uses post-training distillation [39, 40, 64, 65] to accelerate generation by decreasing the number of denoising steps. Some recent methods further combine autoregressive modeling [30, 33, 67] with distillation to enable real-time video generation. In contrast, our method achieves real-time 512 ×512 talking video generation without distillation, thanks to reference-guided deep-compression VAE and a native auto-regressive design that reduces latent token length while supporting se-quential generation. 
+
+Auto-regressive video generation. Auto-regressive (AR) modeling has gained significant attention in video gener-ation for its ability to capture temporal dependencies while supporting efficient, low-latency, long-horizon synthesis via KV caching. Early works such as PixelRNN and Pixel-CNN [48, 49] demonstrated the effectiveness of autore-gressive density estimation, inspiring extensions to spatio-temporal generation. Transformer-based AR models on dis-crete VQ-VAE tokens, such as VideoGPT [60], enabled video synthesis in a compact discrete latent space. Recently, autoregressive mechanisms have also been integrated into diffusion frameworks [5, 22, 67]. MAGI-1 [44] further scales AR generation to 24 billion parameters, supporting long-context video synthesis with streaming decoding. In this paper, we also employ auto-regressive modeling with block-wise causal attention, trained using teacher forcing. This design provides an essential and efficient mechanism for streamable real-time talking video generation. 
+
+## 3. Method 
+
+Our goal is to generate a realistic talking portrait video from one or several reference images and arbitrary speech au-dio in real time. This task can be formulated as a condi-tional probabilistic modeling problem of the portrait video 
+
+y = [ x1, x2, ..., xn], given the reference image set r =
+
+{x1, x2, ..., xm} and the audio signal a:
+
+y ∼ p(y | r, a). (1) Following the modern video generation paradigm, we decompose the generation process into two sub-tasks: (1) generating a compact latent representation z conditioned on the audio, and (2) decoding z into the final video y.
+
+3.1. Reference-Guided Deep Video Compression 
+
+For efficient generation, we require a highly compact latent space to reduce the latent token length. We also need to 3Reconstructed 
+
+> Video
+
+Spatial 
+
+Temporal 
+
+Down. 
+
+Spatial 
+
+Up. 
+
+Spatial 
+
+Temporal 
+
+Up. 
+
+Spatial 
+
+Down.     
+
+> Self-Attn.
+> 𝑸𝑸 𝐟𝐟 𝒛𝒛
+> 𝑲𝑲 𝐟𝐟 𝒓𝒓
+> 𝑸𝑸 𝐟𝐟 𝒛𝒛
+> 𝑲𝑲 𝐟𝐟 𝒛𝒛
+
+𝐟𝐟 𝒓𝒓      
+
+> ×N
+> share
+> weight
+> Input Video
+> Reference
+> Images
+> Causal Video Encoder Causal Video Decoder
+> Cross-Attn.
+> FFN
+> 𝒛𝒛
+> Input Video
+> 𝐳𝐳 𝒓𝒓
+> 𝐳𝐳 𝒕𝒕
+> 𝒛𝒛 𝟎𝟎
+> N×
+> Input Audio
+> rand. sample
+> & encode
+> encode
+> encode &
+> temporal compress
+> 𝒂𝒂 ′
+> Channel-wise
+> concat
+> Channel-wise
+> concat
+> �𝒛𝒛 𝟎𝟎
+> add noise
+> E𝟏𝟏
+> E𝟏𝟏
+> D𝟐𝟐
+> D𝟏𝟏
+> E𝟐𝟐
+
+Spatial 
+
+Down.  
+
+> G
+> D𝒓𝒓𝒓𝒓𝒓𝒓
+> Causal Transformer Blocks
+> D: Upsample Block
+> Channel-to-Space/Time
+
++ 
+
+> E: Downsample Block
+> Time/Space-to-Channel
+
++
+
+> Causal Residual
+> Video Autoencoding
+
+Figure 2. Overview of our framework. Left : The proposed reference-guided causal video VAE. Qfz and Kfz are query–key pairs from fz ,upsampled from video latent z via D1. Right : Rectified flow transformer with block-wise causal attention for modeling the probabilistic distribution of the compact video latents. 
+
+enable streaming video decoding to prevent temporal dis-continuity and minimize latency during real-time synthesis. To this end, we employ a causal VAE for latent space learning. As shown in Fig. 2, our causal auto-encoder adopts a two-stage symmetric architecture. The encoder comprises two cascaded modules: E1 performs both spa-tial and temporal downsampling, while E2 further com-presses the spatial resolution. They compress the input video y ∈ R3×(T +1) ×H×W 1 into a latent tensor z ∈
+
+RCz ×Tz ×Hz ×Wz . The decoder mirrors this hierarchy with 
+
+D1 handling spatial upsampling and D2 jointly performing spatial–temporal upsampling for reconstruction. E1, E2,
+
+D1, D2 are convolutional neural networks equipped with 
+
+causal convolutions . We also adopt RMSNorm [72] as nor-malization layer to preserve temporal causality [50]. 
+
+Reference guidance injection with Transformer. Un-like generic video generation, talking portrait videos typi-cally feature a fixed subject as the dominant content. The reference images share significant information with the videos. In light of this, we inject reference images into our VAE to improve compression efficacy and enhance recon-struction fidelity. With reference guidance, the network can focus less on the subject’s appearance and background con-tent, and more on extracting human motion information. Specifically, between these two decoding stages of D1
+
+and D2, we incorporate a transformer-based fusion net-work Dref to integrate reference image features and refine the decoded representations. For reference images r ∈
+
+RC×M ×H×W 2, which are randomly sampled from the in-put video y during training or provided by user during infer-ence, we reuse E1 to process r frame by frame, producing mid-level feature maps fc ∈ RCf ×M ×Hf ×Wf which retain 
+
+> 1
+
+The temporal dimension T + 1 arises from the common design that makes causal video VAEs applicable to a single image ( i.e ., the first frame). 
+
+> 2
+
+For simplicity, we slightly abuse dimension notation of tensors here: 
+
+M is used as the batch dimension processed by convolution operations instead of the temporal dimension. T   
+
+> Downsampling
+> Time to Channel Conv2D
+> Channel Averaging
+> Space to Channel
+> Space to Channel
+> CausalConv3D
+> Channel Averaging
+> H
+> WC
+> first frame feature
+> Channel to Time
+> Upsampling
+> CausalConv3D
+> Channel
+> Duplicating
+> Channel to Space
+> first
+> frame feature
+> Channel to Space
+> Conv2D
+> Channel
+> Duplicating Channel to Time
+> Channel to Time T
+
+Figure 3. Causal residual video auto-encoding. We apply sepa-rate temporal and spatial down/up-sampling with residual encod-ing. The first frame is handled independently to preserve causality. 
+
+appearance cues of the subject and background. The de-coder D1 upsamples the latent z to fz ∈ RCf ×Tz ×Hf ×Wf
+
+which has the same spatial dimensions as fc. Within the transformer fusion module Dref , frame-wise self-attention is applied to fz to maintain temporal causality, followed by cross-attention layers that inject fine-grained visual infor-mation from fc. The fused features are then passed to D2.During training, we randomly sample different numbers of reference images to allow the model to handle a variable number of reference inputs provided by the user at test time. 
+
+Causal residual video auto-encoding (CR-VA). To fur-ther enhance reconstruction quality under high compression rates, we extend the residual auto-encoding paradigm of DC-AE [6] to our causal video VAE. Specifically, for res-olution changes in the VAE, we apply temporal and spatial residual encoding in a two-step process: 1) Temporal residual (if applicable): apply channel-to-time/time-to-channel to change temporal resolu-tion, with channel averaging/duplication for dimension matching. The first frame is excluded. 2) Spatial residual : apply channel-to-space/space-to-4channel to all frames, also using channel averaging/du-plication for dimension matching. This step is applied after temporal processing when enabled. The main branch applies the same temporal and spatial op-erations as the residual encoding, but uses convolution lay-ers for feature dimension matching. Figure 3 illustrates the downsampling and upsampling process. More detailed ex-planations can be found in the supplementary material. 
+
+VAE Training and compression ratio. The training pro-cess uses the objective to minimize the discrepancy between the reconstructed frames ˆy and the original input y:
+
+Eˆy [λ1∥ˆy − y∥1 + λ2LPIPS (ˆ y, y)] , (2) where LPIPS measures perceptual difference [73], and 
+
+λ1, λ2 are scalar weights. We also incorporate a KL-regularization on z to encourage a well-structured latent space following [25, 38]. Our VAE encodes y ∈ R3×(T +1) ×H×W with spatial and temporal downsampling factors of 64 and 4, respectively, and a latent channel dimension of 64 . The resultant latent tensor z ∈ RCz ×Tz ×Hz ×Wz has dimensions Cz , Tz , Hz ,and Wz equal to 64 , (T / 4+1) , H/ 64 , and W/ 64 , respec-tively. This amounts to an overall compression ratio of 768 ,which is significantly higher than those of popular generic video generation models ( e.g ., 48 in [50, 61]). 
+
+3.2. Blockwise AutoRegressive Latent Generation 
+
+For latent generation, we model the distribution of z condi-tioned on the reference image set r and audio a. We adopt a Rectified Flow framework [31, 32], which formulates the generation process as solving an ODE that models the trans-port vector field from a noise distribution to the target data distribution. We apply a Transformer network G to approx-imate the conditional velocity field with audio–visual inputs in an autoregressive manner, as described below. 
+
+Input encoding. We encode r in a frame-wise manner us-ing the encoder to obtain the reference latents zr as visual conditions. For the audio input, we apply a pretrained au-dio encoder [36] to extract audio features, which are fur-ther compressed by a trainable temporal embedder (by a factor of 4) to temporally align with the video latents. The compressed audio features are then broadcast along the spa-tial axes, matching the spatiotemporal dimensions of z for element-wise fusion, yielding a′. To construct the input to G for training, we encode video clips into latent repre-sentations z, which serve as the generation targets. Then we add noise ϵt to z to construct noised latent zt for each time step t. The noisy latent zt is concatenated with a′
+
+along the channel dimension. The resultant tensor is then flattened and concatenated with the flattened reference la-tents zr , forming the input to the network G. The denoising timestep t is injected via AdaLN [34]. 𝑸𝑸 𝐳𝐳 𝒓𝒓       
+
+> 𝑸𝑸 𝐳𝐳 𝟏𝟏 :𝒏𝒏−𝒌𝒌 𝟎𝟎
+> 𝑸𝑸 {𝐳𝐳 𝒕𝒕 ,𝒂𝒂 ′}𝟏𝟏 :𝒏𝒏
+> 𝑲𝑲 𝐳𝐳 𝒓𝒓 𝑲𝑲 𝐳𝐳 𝟏𝟏 :𝒏𝒏−𝒌𝒌 𝟎𝟎 𝑲𝑲 {𝒛𝒛 𝒕𝒕 ,𝒂𝒂 ′}𝟏𝟏 :𝒏𝒏
+
+Figure 4. The causal block-wise attention mask. 
+
+Blockwise attention and autoregressive generation. 
+
+To facilitate streamable gen-eration and reduce latency, we configure G to generate latents in an autoregressive manner. In this setup, the content to be generated at each time only attends to the generated context in the past, thus preserving temporal causality. To improve computa-tional efficiency, we partition the latent sequence into non-overlapping blocks of size k for blockwise generation. As illustrated in Fig. 4, full self-attention is applied for latents within each block, while inter-block attention is restricted to preceding blocks only. This blockwise causal attention maintains the temporal causality enforced by the autore-gressive design. It reduces memory and computation costs significantly and facilitates streamable generation. 
+
+Generator Training. We apply the teacher-forcing strat-egy [57] for the autoregressive generation training. To pro-vide clean temporal context, the model is conditioned on the ground-truth of the previous latents during training, aug-mented with Gaussian noise to prevent drift and reduce train–inference mismatch. Given the constructed audio–visual inputs, the model is trained via the conditional flow-matching loss: 
+
+Et, z0,ϵ, zr ,a′ ∥G(zt, zr , a′, t ) − (ϵt − z0)∥22, (3) where z0 is the clean video latent. During training, we ran-domly replace zr and a′ with learnable null embeddings to enable classifier-free guidance (CFG) at inference time. Ad-ditionally, zr is randomly masked to enable inference with a flexible number of reference images. In practice, we ran-domly sample latent windows as training targets. Since the first frame is temporally uncompressed and differs from the rest, a learnable mask is added to the first frame if the sam-pled segment includes it. 
+
+Streaming generation and decoding. At inference time, the model autoregressively predicts video latents block by block, which are streamed to the decoder for video frame generation. Within each window, KV caching is applied to reuse past context and reduce inference costs. For videos exceeding one window, the last block from the previous window is reused as the context for the next, ensuring seam-less window-by-window generation. 
+
+## 4. Experiments 
+
+4.1. Implementation Details 
+
+Network architectures. In our causal video VAE, the four modules E1, E2, D1, D2 are primarily built on causal 5Figure 5. Talking portrait videos generated by our method, which naturally and comprehensively capture portrait video dynamics. (Best viewed with zooming in; see the supplementary videos for a more comprehensive evaluation.) 
+
+convolutional residual blocks. E1 contains eight resid-ual blocks, where every two blocks perform spatial down-sampling, resulting in a total spatial compression factor of 16. Temporal downsampling is applied at the 4th and 6th blocks, leading to a temporal compression factor of 4. The output feature dimension of E1 is 1024. E2 further com-presses the latent with two residual blocks, each performing one additional downsampling. The decoders D1 and D2
+
+are symmetric to E2 and E1, respectively. The reference-guidance decoder Dref consists of six transformer blocks with a head dimension of 64 and 16 attention heads. For the video generator G, two MLP-based audio em-bedders are used to temporally align audio features with video latents, one dedicated to the first audio frame and the other shared across the remaining frames. G comprises 24 transformer blocks with 12 attention heads and a head 6Table 1. Quantitative results of audio-driven portrait video generation on two benchmarks at 512 × 512 resolution. Inference speed is measured on a single H100 GPU. M denotes the number of reference images used; all other methods and ours with M = 1 use the first frame as reference for generation. FPS is calculated as the number of frames per generation window of each method, divided by its generation time (we use a window with the longest KV cache to report the speed lower bound of our method). FantasyTalking’s results on PortraitOneMin are not reported as its implementation failed to handle long video generation.                                                                                                          
+
+> HDTF PortraitOneMin Speed Method SC↑SD↓CAPP ↑FVD 25 ↓SC↑SD↓CAPP ↑FVD 25 ↓FPS ↑
+> EchoMIMIC 5.291 9.557 0.341 143.620 4.863 9.594 0.208 177.141 1.4 EchoMIMIC-Distilled 5.513 9.350 0.348 174.061 5.531 9.187 0.201 201.899 13.3 Hallo 7.457 7.841 0.242 90.880 6.721 8.275 0.210 179.072 1.2 Hallo2 7.547 7.819 0.247 88.170 6.829 8.244 0.196 162.672 1.2 Hallo3 7.256 8.596 0.337 76.430 6.836 8.724 0.301 175.340 0.27 Sonic 8.799 6.602 0.689 43.920 8.185 7.031 0.598 95.047 1.7 FantasyTalking 4.167 11.144 0.407 89.726 —0.36 Ours
+> M= 1 8.943 6.286 0.699 62.300 8.537 6.619 0.648 91.964 42.3 M= 2 9.056 6.175 0.739 49.400 8.438 6.688 0.677 81.517
+> M= 3 8.998 6.226 0.739 43.270 8.546 6.648 0.659 73.693
+
+Table 2. Ablation study on the effects of reference guidance and video residual auto-encoding (VRA) for our VAE. M denotes the number of reference images, and ∆PSNR indicates the PSNR improvement obtained by using reference guidance.                                                                                            
+
+> VoxCeleb2 HDTF Configuration L1↓PSNR ↑∆PSNR LPIPS ↓L1↓PSNR ↑∆PSNR LPIPS ↓
+> w/o CR-VA
+> M= 0 (No ref.) 0.020 29.071 –0.088 0.021 28.306 –0.087
+> M= 1 0.014 31.676 2.605 0.051 0.013 32.068 3.762 0.040
+> M= 2 0.013 32.305 3.234 0.043 0.012 32.663 4.357 0.035
+> M= 3 0.012 32.766 3.695 0.039 0.012 33.149 4.843 0.032
+> M= 0 (No ref.) 0.018 29.604 –0.087 0.020 28.678 –0.086 w. CR-VA M= 1 0.013 32.354 2.750 0.045 0.012 33.469 4.791 0.032 (Ours) M= 2 0.012 33.281 3.677 0.036 0.010 34.510 5.832 0.027
+> M= 3 0.011 33.979 4.375 0.031 0.010 35.374 6.696 0.023
+
+dimension of 128. We employ 3D Rotary Positional Em-bedding (3D RoPE) [50] to encode the spatiotemporal posi-tions of video latents, ensuring consistent temporal model-ing. Ground-truth latents serving as context are augmented with noise levels from t = 0 to t = 0 .7.
+
+Training and inference details. We train our model on filtered VoxCeleb2 [11] data that contain 50 hours of talking portrait videos and an in-house talking portrait dataset with 280 hours of videos. The training set contains about 10K unique identities. The video frames are cropped to portrait regions. We segment the videos into clips with lengths of up to 10 seconds for training. For efficient training, the VAE is initially trained on 5-frame clips at 256 2 resolution. The clip length is progres-sively increased during training to reduce temporal drift and enhance temporal consistency. The model is then fine-tuned at a higher resolution of 512 2. For the generator G, one generation window comprises 32 generated latent frames, corresponding to 128 video frames (or 125 for the first win-dow). The block size k is set to 4 latent frames. During training, the number of reference conditions is randomly sampled between 1 and 3. At inference, the same refer-ence images are used for both generation and VAE decod-ing. Classifier-free guidance is applied to audio features and reference latents (scale = 2). The denoising process uses 12 steps with a timestep shift [15] of 5, set empirically. More details can be found in the supplementary material. 
+
+Evaluation benchmarks. We evaluate our method on two benchmarks. The first is HDTF [75], processed in the same manner as the training data. To ensure a balanced rep-resentation across identities, we randomly sample up to two segments per identity, resulting in a total of 123 segments from 66 unseen identities. The second benchmark is a self-collected dataset called PortraitOneMin, which consists of 32 one-minute clips from 16 unseen identities, sourced from online coaching and educational lectures, featuring diverse speaking styles. For the video VAE reconstruction ablation, we include a test split from VoxCeleb2 containing approxi-mately 1K clips. All evaluations are conducted at 512 ×512 resolution. 
+
+4.2. Talking Portrait Generation Results 
+
+Figure 1 and 5 showcase talking portrait videos gener-ated by our method. The identities are synthetic and non-7existent, created by Gemini 2.5 Flash image [16] based on text prompts provided by GPT-4o [1]. Our method gener-ates high-quality portrait videos that are both realistic and lifelike, featuring vivid dynamics such as accurate lip-audio synchronization, expressive facial expressions, natural head and torso movements, subtle hair dynamics, shadow effects, etc. We highly recommend readers watch the videos in the supplementary material to better appreciate the qual-ity, naturalness, and vividness of our results. 
+
+4.3. Comparison with Prior Methods 
+
+4.3.1. Audio-Driven Talking Portrait Generation 
+
+Recent audio-driven talking portrait approaches are pre-dominantly offline methods leveraging large image or video diffusion models. We compare our method with several rep-resentative approaches, including Echomimic and its dis-tilled version [9], the Hallo series [12, 13, 58], Sonic [24], and FantasyTalking [53]. Echomimic and Hallo are built on Stable Diffusion [38]; Hallo2 and Sonic are based on Stable Video Diffusion [2]; Hallo3 leverages CogVideoX [61]; and FantasyTalking builds upon Wan2.1 [50]. Note that these methods require significantly more computational resources and are unable to perform real-time generation . The com-parison with these methods primarily provides a reference for our generation quality. 
+
+Quantitative evaluations. Table 1 compares our method with previous approaches on HDTF and PortraitOneMin. For audio-lip synchronization, we use the confidence score 
+
+SC and the feature distance SD from SyncNet [10] as met-rics. For head pose, we use the CAPP metric proposed by [59] to measure its alignment with the input audio. To assess overall video quality, we compute the Fréchet Video Distance (FVD) [47] using sequences of 25 consecutive frames. All compared methods use the first frame as con-dition. Since our method supports multi-reference infer-ence, we include two additional variants: for M = 2 , the last frame of the original video is added as a reference; for 
+
+M = 3 , the middle frame is also included. For the single-reference setting, our method achieves the best lip-sync and head-audio alignment. It provides compa-rable or better overall video quality on both benchmarks, even against large foundation-based models trained with massive data and compute. As the number of reference images increases, the FVD of our results shows a notice-able decrease. This improvement can be attributed to two factors: multiple reference frames offer more portrait in-formation, serving as anchor points that simplify generative distribution modeling thus enhances generation quality; ad-ditionally, they substantially improve decoding fidelity of VAE, as will be demonstrated in our ablation study. Crucially, our method enables real-time online genera-tion on a single GPU, a capability that is not supported by these baseline approaches. This underscores the potential of our method as a capable solution for human-centric interac-tive video generation, offering a distinct path from existing approaches based on large foundation models. 
+
+Qualitative evaluations. We refer readers to the supple-mentary videos for visual comparisons between our method and the previous approaches. 
+
+4.4. Ablation Study 
+
+Reference guidance for video VAE. To evaluate the ef-fectiveness of our reference-guided reconstruction, we train variants that exclude the reference injection. For fairness, only the cross-attention layers in Dref are removed, while all other components remain identical. We further study the effect of the number of reference images, using the same sampling strategy as in the generation comparison. Experi-ments are conducted on VoxCeleb2 and HDTF. Table 2 shows that incorporating reference guidance significantly improves video quality. On VoxCeleb2, the PSNR increases from 29.071 to 31.676 (+2.605 dB), and on HDTF from 28.306 to 32.068 (+3.762 dB) with just one ref-erence image used. Moreover, increasing the number of ref-erence images leads to further gains, clearly validating the effectiveness of our reference-guided video VAE design. 
+
+Causal residual video auto-encoding (CR-VA) We fur-ther evaluate the impact of CR-VA within our framework. Without reference guidance, CR-VA brings a slight im-provement in reconstruction quality, as shown in Table 2. As the number of reference images increases, CR-VA con-sistently outperforms the interpolation-based baselines and further amplifies the benefits of reference guidance . For instance, on VoxCeleb2, the PSNR gain from M = 0 to 
+
+M = 3 is 4.375 dB with CR-VA, higher than 3.695 dB with-out it. On HDTF, the corresponding improvement is 6.696 dB versus 4.843 dB. These results indicate that CR-VA and the reference guidance strategy can work synergistically to enhance reconstruction quality. 
+
+## 5. Conclusion 
+
+In this paper, we present a streamable framework for audio-driven talking portrait video generation, capable of produc-ing arbitrary-length videos in real time. At the core of our approach is a causal video VAE with deep latent compres-sion guided by one or more reference images, which focuses on dynamic motion rather than static appearance. A causal residual video auto-encoding scheme is also introduced to further enhance fidelity. Built on this compact latent space, a blockwise autoregressive Rectified Flow Transformer en-ables efficient long-range generation and seamless stream-ing. Experiments demonstrate that our method surpasses or matches the visual quality of prior state-of-the-art diffusion foundation based portrait models while achieving over 25 ×
+
+faster generation. 8References 
+
+[1] Gpt-4o system card. 2024. 2, 8 [2] Andreas Blattmann, Tim Dockhorn, Sumith Kulal, Daniel Mendelevitch, Maciej Kilian, Dominik Lorenz, Yam Levi, Zion English, Vikram Voleti, Adam Letts, et al. Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:2311.15127 , 2023. 2, 8 [3] Matthew Brand. Voice puppetry. In Proceedings of the 26th annual conference on Computer graphics and interac-tive techniques , pages 21–28, 1999. 3 [4] Christoph Bregler, Michele Covell, and Malcolm Slaney. Video rewrite: Driving visual speech with audio. In Sem-inal Graphics Papers: Pushing the Boundaries, Volume 2 ,pages 715–722. 2023. 3 [5] Boyuan Chen, Diego Martí Monsó, Yilun Du, Max Sim-chowitz, Russ Tedrake, and Vincent Sitzmann. Diffusion forcing: Next-token prediction meets full-sequence diffu-sion. Advances in Neural Information Processing Systems ,37:24081–24125, 2024. 3 [6] Junyu Chen, Han Cai, Junsong Chen, Enze Xie, Shang Yang, Haotian Tang, Muyang Li, Yao Lu, and Song Han. Deep compression autoencoder for efficient high-resolution diffu-sion models. arXiv preprint arXiv:2410.10733 , 2024. 2, 3, 4[7] Junyu Chen, Wenkun He, Yuchao Gu, Yuyang Zhao, Jincheng Yu, Junsong Chen, Dongyun Zou, Yujun Lin, Zhekai Zhang, Muyang Li, et al. Dc-videogen: Efficient video generation with deep compression video autoencoder. 
+
+arXiv preprint arXiv:2509.25182 , 2025. 3 [8] Lele Chen, Zhiheng Li, Ross K Maddox, Zhiyao Duan, and Chenliang Xu. Lip movements generation at a glance. In 
+
+European Conference on Computer Vision , pages 520–535, 2018. 2, 3 [9] Zhiyuan Chen, Jiajiong Cao, Zhiquan Chen, Yuming Li, and Chenguang Ma. Echomimic: Lifelike audio-driven portrait animations through editable landmark conditions. In Pro-ceedings of the AAAI Conference on Artificial Intelligence ,pages 2403–2410, 2025. 3, 8 [10] Joon Son Chung and Andrew Zisserman. Out of time: auto-mated lip sync in the wild. In Asian Conference on Computer Vision Workshops , pages 251–263. Springer, 2017. 8 [11] Joon Son Chung, Arsha Nagrani, and Andrew Zisserman. Voxceleb2: Deep speaker recognition. arXiv preprint arXiv:1806.05622 , 2018. 7 [12] Jiahao Cui, Hui Li, Yao Yao, Hao Zhu, Hanlin Shang, Kaihui Cheng, Hang Zhou, Siyu Zhu, and Jingdong Wang. Hallo2: Long-duration and high-resolution audio-driven portrait im-age animation. In The Thirteenth International Conference on Learning Representations . 8 [13] Jiahao Cui, Hui Li, Yun Zhan, Hanlin Shang, Kaihui Cheng, Yuqi Ma, Shan Mu, Hang Zhou, Jingdong Wang, and Siyu Zhu. Hallo3: Highly dynamic and realistic portrait image animation with video diffusion transformer. In Proceedings of the Computer Vision and Pattern Recognition Conference ,pages 21086–21095, 2025. 2, 3, 8 [14] Nikita Drobyshev, Antoni Bigata Casademunt, Konstantinos Vougioukas, Zoe Landgraf, Stavros Petridis, and Maja Pan-tic. Emoportraits: Emotion-enhanced multimodal one-shot head avatars. arXiv preprint arXiv:2404.19110 , 2024. 3 [15] Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Dominik Lorenz, Axel Sauer, Frederic Boesel, et al. Scaling recti-fied flow transformers for high-resolution image synthesis. In Forty-first international conference on machine learning ,2024. 2, 7 [16] Alisa Fortin, Guillaume Vernade, Kat Kampf, and Am-maar Reshi. Introducing gemini 2.5 flash image: Our state-of-the-art image model. https://developers. googleblog.com/en/introducing- gemini- 2-5-flash-image/ , 2025. Google Developer Blog. 1, 8 [17] Jianzhu Guo, Dingyun Zhang, Xiaoqiang Liu, Zhizhou Zhong, Yuan Zhang, Pengfei Wan, and Di Zhang. Livepor-trait: Efficient portrait animation with stitching and retarget-ing control. arXiv preprint arXiv:2407.03168 , 2024. 2 [18] Siddharth Gururani, Arun Mallya, Ting-Chun Wang, Rafael Valle, and Ming-Yu Liu. Space: Speech-driven portrait an-imation with controllable expression. In Proceedings of the ieee/cvf international conference on computer vision , pages 20914–20923, 2023. 3 [19] Yoav HaCohen, Nisan Chiprut, Benny Brazowski, Daniel Shalem, Dudu Moshe, Eitan Richardson, Eran Levin, Guy Shiran, Nir Zabari, Ori Gordon, et al. Ltx-video: Realtime video latent diffusion. arXiv preprint arXiv:2501.00103 ,2024. 3 [20] Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance. arXiv preprint arXiv:2207.12598 , 2022. 13 [21] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising dif-fusion probabilistic models. Advances in neural information processing systems , 33:6840–6851, 2020. 3 [22] Xun Huang, Zhengqi Li, Guande He, Mingyuan Zhou, and Eli Shechtman. Self forcing: Bridging the train-test gap in autoregressive video diffusion. arXiv preprint arXiv:2506.08009 , 2025. 3 [23] Xinya Ji, Hang Zhou, Kaisiyuan Wang, Qianyi Wu, Wayne Wu, Feng Xu, and Xun Cao. Eamm: One-shot emotional talking face via audio-based emotion-aware motion model. In ACM SIGGRAPH 2022 conference proceedings , pages 1– 10, 2022. 3 [24] Xiaozhong Ji, Xiaobin Hu, Zhihong Xu, Junwei Zhu, Chum-ing Lin, Qingdong He, Jiangning Zhang, Donghao Luo, Yi Chen, Qin Lin, Qinglin Lu, and Chengjie Wang. Sonic: Shifting focus to global audio perception in portrait anima-tion. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition (CVPR) , pages 193– 203, 2025. 2, 3, 8 [25] Diederik P Kingma, Max Welling, et al. Auto-encoding vari-ational bayes, 2013. 5 [26] Ruineng Li, Daitao Xing, Huiming Sun, Yuanzhou Ha, Jinglin Shen, and Chiuman Ho. Tokenmotion: Decoupled motion control via token disentanglement for human-centric video generation. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 1951–1961, 2025. 3 [27] Borong Liang, Yan Pan, Zhizhi Guo, Hang Zhou, Zhibin Hong, Xiaoguang Han, Junyu Han, Jingtuo Liu, Errui Ding, 
+
+9and Jingdong Wang. Expressive talking head generation with granular audio-visual control. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 3387–3396, 2022. 3 [28] Gaojie Lin, Jianwen Jiang, Jiaqi Yang, Zerong Zheng, and Chao Liang. Omnihuman-1: Rethinking the scaling-up of one-stage conditioned human animation models. arXiv preprint arXiv:2502.01061 , 2025. 2, 3 [29] Shanchuan Lin, Xin Xia, Yuxi Ren, Ceyuan Yang, Xuefeng Xiao, and Lu Jiang. Diffusion adversarial post-training for one-step video generation. arXiv preprint arXiv:2501.08316 ,2025. 3 [30] Shanchuan Lin, Ceyuan Yang, Hao He, Jianwen Jiang, Yuxi Ren, Xin Xia, Yang Zhao, Xuefeng Xiao, and Lu Jiang. Autoregressive adversarial post-training for real-time inter-active video generation. arXiv preprint arXiv:2506.09350 ,2025. 3 [31] Yaron Lipman, Ricky TQ Chen, Heli Ben-Hamu, Maximil-ian Nickel, and Matt Le. Flow matching for generative mod-eling. arXiv preprint arXiv:2210.02747 , 2022. 2, 3, 5 [32] Xingchao Liu, Chengyue Gong, and Qiang Liu. Flow straight and fast: Learning to generate and transfer data with rectified flow. arXiv preprint arXiv:2209.03003 , 2022. 3, 5 [33] Chetwin Low and Weimin Wang. Talkingmachines: Real-time audio-driven facetime-style video via autoregressive diffusion models. arXiv preprint arXiv:2506.03099 , 2025. 3[34] William Peebles and Saining Xie. Scalable diffusion models with transformers. In Proceedings of the IEEE/CVF Inter-national Conference on Computer Vision , pages 4195–4205, 2023. 5 [35] Xiangyu Peng, Zangwei Zheng, Chenhui Shen, Tom Young, Xinying Guo, Binluo Wang, Hang Xu, Hongxin Liu, Mingyan Jiang, Wenjun Li, et al. Open-sora 2.0: Training a commercial-level video generation model in $200 k. arXiv preprint arXiv:2503.09642 , 2025. 3 [36] KR Prajwal, Rudrabha Mukhopadhyay, Vinay P Nambood-iri, and CV Jawahar. A lip sync expert is all you need for speech to lip generation in the wild. In ACM International Conference on Multimedia , pages 484–492, 2020. 2, 3, 5, 15 [37] Jinwei Qi, Chaonan Ji, Sheng Xu, Peng Zhang, Bang Zhang, and Liefeng Bo. Chatanyone: Stylized real-time portrait video generation with hierarchical motion diffusion model. 
+
+arXiv preprint arXiv:2503.21144 , 2025. 3 [38] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 10684–10695, 2022. 2, 3, 5, 8 [39] Axel Sauer, Frederic Boesel, Tim Dockhorn, Andreas Blattmann, Patrick Esser, and Robin Rombach. Fast high-resolution image synthesis with latent adversarial diffusion distillation. In SIGGRAPH Asia 2024 Conference Papers ,pages 1–11, 2024. 3 [40] Axel Sauer, Dominik Lorenz, Andreas Blattmann, and Robin Rombach. Adversarial diffusion distillation. In European Conference on Computer Vision , pages 87–103. Springer, 2024. 3 [41] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Ab-hishek Kumar, Stefano Ermon, and Ben Poole. Score-based generative modeling through stochastic differential equa-tions. arXiv preprint arXiv:2011.13456 , 2020. 3 [42] Michał Stypułkowski, Konstantinos Vougioukas, Sen He, Maciej Zi˛ eba, Stavros Petridis, and Maja Pantic. Diffused heads: Diffusion models beat gans on talking-face genera-tion. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision , pages 5091–5100, 2024. 2 [43] Supasorn Suwajanakorn, Steven M Seitz, and Ira Kemelmacher-Shlizerman. Synthesizing obama: learn-ing lip sync from audio. ACM Transactions on Graphics , 36 (4):1–13, 2017. 3 [44] Hansi Teng, Hongyu Jia, Lei Sun, Lingzhi Li, Maolin Li, Mingqiu Tang, Shuai Han, Tianning Zhang, WQ Zhang, Weifeng Luo, et al. Magi-1: Autoregressive video genera-tion at scale. arXiv preprint arXiv:2505.13211 , 2025. 3 [45] Linrui Tian, Qi Wang, Bang Zhang, and Liefeng Bo. Emo: Emote portrait alive generating expressive portrait videos with audio2video diffusion model under weak conditions. In 
+
+European Conference on Computer Vision , pages 244–260. Springer, 2024. 2, 3 [46] Rui Tian, Qi Dai, Jianmin Bao, Kai Qiu, Yifan Yang, Chong Luo, Zuxuan Wu, and Yu-Gang Jiang. Reducio! generating 1k video within 16 seconds using extremely compressed mo-tion latents. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 19237–19247, 2025. 3[47] Thomas Unterthiner, Sjoerd van Steenkiste, Karol Kurach, Raphaël Marinier, Marcin Michalski, and Sylvain Gelly. Fvd: A new metric for video generation. 2019. 8 [48] Aaron Van den Oord, Nal Kalchbrenner, Lasse Espeholt, Oriol Vinyals, Alex Graves, et al. Conditional image genera-tion with pixelcnn decoders. Advances in neural information processing systems , 29, 2016. 3 [49] Aäron Van Den Oord, Nal Kalchbrenner, and Koray Kavukcuoglu. Pixel recurrent neural networks. In Interna-tional conference on machine learning , pages 1747–1756. PMLR, 2016. 3 [50] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianx-iao Yang, Jianyuan Zeng, Jiayu Wang, Jingfeng Zhang, Jin-gren Zhou, Jinkai Wang, Jixuan Chen, Kai Zhu, Kang Zhao, Keyu Yan, Lianghua Huang, Mengyang Feng, Ningyi Zhang, Pandeng Li, Pingyu Wu, Ruihang Chu, Ruili Feng, Shiwei Zhang, Siyang Sun, Tao Fang, Tianxing Wang, Tianyi Gui, Tingyu Weng, Tong Shen, Wei Lin, Wei Wang, Wei Wang, Wenmeng Zhou, Wente Wang, Wenting Shen, Wenyuan Yu, Xianzhong Shi, Xiaoming Huang, Xin Xu, Yan Kou, Yangyu Lv, Yifei Li, Yijing Liu, Yiming Wang, Yingya Zhang, Yi-tong Huang, Yong Li, You Wu, Yu Liu, Yulin Pan, Yun Zheng, Yuntao Hong, Yupeng Shi, Yutong Feng, Zeyinzi Jiang, Zhen Han, Zhi-Fan Wu, and Ziyu Liu. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314 , 2025. 3, 4, 5, 7, 8 [51] Duomin Wang, Yu Deng, Zixin Yin, Heung-Yeung Shum, and Baoyuan Wang. Progressive disentangled representation 
+
+10 learning for fine-grained controllable talking head synthesis. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 17979–17989, 2023. 2, 3 [52] Jiahao Wang, Hualian Sheng, Sijia Cai, Weizhan Zhang, Caixia Yan, Yachuang Feng, Bing Deng, and Jieping Ye. Echoshot: Multi-shot portrait video generation. In The Thirty-ninth Annual Conference on Neural Information Pro-cessing Systems , 2025. 3 [53] Mengchao Wang, Qiang Wang, Fan Jiang, Yaqi Fan, Yun-peng Zhang, Yonggang Qi, Kun Zhao, and Mu Xu. Fanta-sytalking: Realistic talking portrait generation via coherent motion synthesis. In Proceedings of the 33rd ACM Interna-tional Conference on Multimedia , pages 9891–9900, 2025. 2, 3, 8 [54] Suzhen Wang, Lincheng Li, Yu Ding, Changjie Fan, and Xin Yu. Audio2head: Audio-driven one-shot talking-head gener-ation with natural head motion. In International Joint Con-ference on Artificial Intelligence , 2021. 2, 3 [55] Ting-Chun Wang, Arun Mallya, and Ming-Yu Liu. One-shot free-view neural talking-head synthesis for video conferenc-ing. In IEEE/CVF Conference on Computer Vision and Pat-tern Recognition , pages 10039–10049, 2021. 2 [56] Huawei Wei, Zejun Yang, and Zhisheng Wang. Aniportrait: Audio-driven synthesis of photorealistic portrait animation. 
+
+arXiv preprint arXiv:2403.17694 , 2024. 2, 3 [57] Ronald J Williams and David Zipser. A learning algorithm for continually running fully recurrent neural networks. Neu-ral computation , 1(2):270–280, 1989. 5 [58] Mingwang Xu, Hui Li, Qingkun Su, Hanlin Shang, Liwei Zhang, Ce Liu, Jingdong Wang, Yao Yao, and Siyu Zhu. Hallo: Hierarchical audio-driven visual synthesis for portrait image animation. arXiv preprint arXiv:2406.08801 , 2024. 2, 8[59] Sicheng Xu, Guojun Chen, Yu-Xiao Guo, Jiaolong Yang, Chong Li, Zhenyu Zang, Yizhong Zhang, Xin Tong, and Baining Guo. Vasa-1: Lifelike audio-driven talking faces generated in real time. Advances in Neural Information Pro-cessing Systems , 37:660–684, 2024. 2, 3, 8, 13 [60] Wilson Yan, Yunzhi Zhang, Pieter Abbeel, and Aravind Srinivas. Videogpt: Video generation using vq-vae and trans-formers. arXiv preprint arXiv:2104.10157 , 2021. 3 [61] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiao-han Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072 , 2024. 3, 5, 8 [62] Zhenhui Ye, Tianyun Zhong, Yi Ren, Jiaqi Yang, Weichuang Li, Jiawei Huang, Ziyue Jiang, Jinzheng He, Rongjie Huang, Jinglin Liu, et al. Real3d-portrait: One-shot realistic 3d talking portrait synthesis. arXiv preprint arXiv:2401.08503 ,2024. 3 [63] Fei Yin, Yong Zhang, Xiaodong Cun, Mingdeng Cao, Yanbo Fan, Xuan Wang, Qingyan Bai, Baoyuan Wu, Jue Wang, and Yujiu Yang. Styleheat: One-shot high-resolution editable talking face generation via pre-trained stylegan. In European Conference on Computer Vision , pages 85–101, 2022. 3 [64] Tianwei Yin, Michaël Gharbi, Taesung Park, Richard Zhang, Eli Shechtman, Fredo Durand, and William T Freeman. Im-proved distribution matching distillation for fast image syn-thesis. In NeurIPS , 2024. 2, 3 [65] Tianwei Yin, Michaël Gharbi, Richard Zhang, Eli Shecht-man, Fredo Durand, William T Freeman, and Taesung Park. One-step diffusion with distribution matching distillation. In 
+
+Proceedings of the IEEE/CVF conference on computer vi-sion and pattern recognition , pages 6613–6623, 2024. 3 [66] Tianwei Yin, Michaël Gharbi, Richard Zhang, Eli Shecht-man, Frédo Durand, William T Freeman, and Taesung Park. One-step diffusion with distribution matching distillation. In 
+
+CVPR , 2024. 2 [67] Tianwei Yin, Qiang Zhang, Richard Zhang, William T Free-man, Fredo Durand, Eli Shechtman, and Xun Huang. From slow bidirectional to fast autoregressive video diffusion mod-els. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 22963–22974, 2025. 3 [68] Qihang Yu, Mark Weber, Xueqing Deng, Xiaohui Shen, Daniel Cremers, and Liang-Chieh Chen. An image is worth 32 tokens for reconstruction and generation. Advances in Neural Information Processing Systems , 37:128940– 128966, 2024. 3 [69] Sihyun Yu, Weili Nie, De-An Huang, Boyi Li, Jinwoo Shin, and Anima Anandkumar. Efficient video diffusion mod-els via content-frame motion-latent decomposition. arXiv preprint arXiv:2403.14148 , 2024. 3 [70] Zhentao Yu, Zixin Yin, Deyu Zhou, Duomin Wang, Finn Wong, and Baoyuan Wang. Talking head generation with probabilistic audio-to-visual diffusion priors. In Proceedings of the IEEE/CVF International Conference on Computer Vi-sion , pages 7645–7655, 2023. 3 [71] Shenghai Yuan, Jinfa Huang, Xianyi He, Yunyang Ge, Yu-jun Shi, Liuhan Chen, Jiebo Luo, and Li Yuan. Identity-preserving text-to-video generation by frequency decompo-sition. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 12978–12988, 2025. 3 [72] Biao Zhang and Rico Sennrich. Root mean square layer nor-malization. In Advances in Neural Information Processing Systems . Curran Associates, Inc., 2019. 4 [73] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shecht-man, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE conference on computer vision and pattern recogni-tion , pages 586–595, 2018. 5 [74] Wenxuan Zhang, Xiaodong Cun, Xuan Wang, Yong Zhang, Xi Shen, Yu Guo, Ying Shan, and Fei Wang. Sadtalker: Learning realistic 3d motion coefficients for stylized audio-driven single image talking face animation. In IEEE/CVF Conference on Computer Vision and Pattern Recognition ,pages 8652–8661, 2023. 2, 3, 13 [75] Zhimeng Zhang, Lincheng Li, Yu Ding, and Changjie Fan. Flow-guided one-shot talking face generation with a high-resolution audio-visual dataset. In IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 3661– 3670, 2021. 7 [76] Deyu Zhou, Quan Sun, Yuang Peng, Kun Yan, Runpei Dong, Duomin Wang, Zheng Ge, Nan Duan, and Xiangyu Zhang. 
+
+11 Taming teacher forcing for masked autoregressive video gen-eration. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 7374–7384, 2025. 2 [77] Hang Zhou, Yasheng Sun, Wayne Wu, Chen Change Loy, Xiaogang Wang, and Ziwei Liu. Pose-controllable talking face generation by implicitly modularized audio-visual rep-resentation. In Proceedings of the IEEE/CVF Conference on computer Vision and Pattern Recognition , pages 4176–4186, 2021. 3 [78] Yang Zhou, Xintong Han, Eli Shechtman, Jose Echevar-ria, Evangelos Kalogerakis, and Dingzeyu Li. Makelttalk: speaker-aware talking-head animation. ACM Transactions On Graphics (TOG) , 39(6):1–15, 2020. 3 
+
+12 A. More Results and Comparisons 
+
+Audio-driven talking head comparison. We also com-pare with several audio-driven talking head methods, in-cluding SadTalker [74] and VASA-1 [59]. These meth-ods rely on motion-disentangled representations to sim-plify the generation process, but this design choice may also constrain their expressiveness to capture fine-grained details and complex dynamics beyond the head region. We recropped both the training and test datasets and fine-tuned our model accordingly. As shown in Table I, our method achieves lip-sync ( SC , SD ) and audio–pose align-ment (CAPP) comparable to VASA-1, while producing higher-quality videos, as reflected by FVD. 
+
+Table I. Quantitative results of audio-driven head video generation on two benchmarks at 512 × 512 resolution. Inference speed is measured on a single RTX 4090 GPU.                           
+
+> HDTF (head) PortraitOneMin (head) Speed Method SC↑SD↓CAPP ↑FVD 25 ↓SC↑SD↓CAPP ↑FVD 25 ↓FPS ↑
+> SadTalker 7.497 7.490 0.479 193.843 6.957 7.705 0.413 270.667 3.8 VASA-1 9.489 5.928 0.742 114.863 8.602 6.541 0.679 119.474 37.9 Ours M=1 9.196 6.024 0.707 84.569 8.182 6.820 0.601 102.468 23.3
+
+Qualitative results for reference-guided video VAE. 
+
+Figure I shows reconstruction results for two examples from the HDTF test set under different VAE configurations. The VAE trained without reference guidance ( M = 0 ) exhibits noticeably higher reconstruction errors. Incorporating a sin-gle reference image ( M = 1 ) substantially improves recon-struction fidelity, reducing errors in static appearance and background regions, and producing sharper, more accurate results. Using multiple reference images further enhances reconstruction quality, consistent with our quantitative re-sults in the main paper. 
+
+Qualitative comparisons with prior methods. Fig-ure IV and V present two representative talking-portrait ex-amples along with comparisons to other methods. Com-pared with others, our approach demonstrates better identity and appearance consistency with the reference image, more accurate audio–lip synchronization, and more vivid and ex-pressive body and facial dynamics. Moreover, our method supports real-time streaming generation, whereas none of the comparison methods provide this capability. We provide additional visual results in the supplemen-tary videos , including qualitative comparisons with prior methods as well as more examples of our talking-portrait generation. We encourage readers to watch these videos for a more comprehensive demonstration of the realism and ex-pressiveness achieved by our method. 
+
+Effects of the classifier-free guidance scale. Given the audio and reference images as input conditions, we adopt classifier-free guidance (CFG) [20] to enhance generation 
+
+Table II. Impact of different classifier-free guidance scales on the HDTF test set. The number of reference images is set to one.                                      
+
+> Settings SC↑SD↓FVD 25 ↓
+> λa= 1 , λ r= 1 7.476 7.311 101.112
+> λa= 2 , λ r= 1 9.234 6.065 79.677
+> λa= 2 , λ r= 2 (default) 8.943 6.286 62.300
+> λa= 2 , λ r= 3 8.749 6.409 80.183
+> λa= 3 , λ r= 2 9.262 6.097 71.464
+> λa= 3 , λ r= 3 9.024 6.279 81.358
+
+quality. The resulting guided prediction is computed as: 
+
+Gcfg =λa(Gfull − Ga′=∅) + λr (Gfull − Gzr =∅)
+
+− Gfull + Ga′=∅ + Gzr =∅, (I) where Gfull denotes the fully conditioned output, and Ga′=∅
+
+and Gzr =∅ are obtained by replacing the audio feature a′
+
+and the reference latents zr with their respective learnable null tokens. The coefficients λa and λr control the guidance strength for each condition, with λa = λr = 1 correspond-ing to no CFG 3.Table II presents the effects of different CFG scales. Increasing the audio guidance scale λa improves lip-sync quality, but large values may reduce diversity, as reflected by FVD 25 (λa = 2 vs λa = 3 , with λr = 2 ). Similarly, a higher reference guidance scale λr strengthens alignment with the reference image, enhancing stability and overall video quality, but large λr can negatively impact diversity and lip-sync ( λr = 1 , 2, 3 while λa = 2 ). Based on these observations, we set λa = λr = 2 as our default setting. 
+
+## B. More Implementation Details 
+
+Causal residual video auto-encoding Figure III provides the PyTorch-style pseudocode for our implementations of causal residual video auto-encoding. Consistent with the two-step residual encoding paradigm described in the main text, we decouple resolution changes into temporal and spa-tial operations. Two key implementation details are high-lighted here: • Causality preservation (split-first strategy) : To strictly maintain the causal nature of the video frames, we em-ploy a “split-first” strategy. The first frame is isolated from temporal downsampling/upsampling operations, en-suring that the latent representation of the first frame de-pends solely on itself and not on future frames. • Parameter-free residual shortcuts : The shortcuts perform dimension matching without learnable parameters. For downsampling, we apply PixelUnshuffle3d 
+
+to rearrange space/time into channels, followed by                       
+
+> 3An equivalent formulation of Eq. (I) is Gcfg = (1 + λa+λr)Gfull −
+> λaGa′=∅−λrGzr=∅, with λaand λrare defined differently. In this formulation, setting λa=λr= 0 corresponds to no CFG.
+
+13 Reference images  𝑴𝑴 = 𝟏𝟏 (𝒓𝒓 𝟏𝟏 )𝑴𝑴 = 𝟎𝟎 (no ref.)  𝑴𝑴 = 𝟐𝟐 (𝒓𝒓 𝟏𝟏 , 𝒓𝒓 𝟑𝟑 ) 𝑴𝑴 = 𝟑𝟑 (𝒓𝒓 𝟏𝟏 , 𝒓𝒓 𝟐𝟐 , 𝒓𝒓 𝟑𝟑 ) Ground-truth 
+
+𝑟𝑟 1
+
+𝑟𝑟 2
+
+𝑟𝑟 3
+
+𝑟𝑟 1
+
+𝑟𝑟 2
+
+𝑟𝑟 3Figure I. Qualitative results of the reference-guidance module (with CR-VA), with the second and fourth rows showing L2 error maps between predictions and ground truth (red →white →blue indicates high →low error). SpatialDownBlock-1024 
+
+CausalResBlock-256 
+
+SpatialDownBlock-2048 
+
+CausalResBlock-2048 
+
+Norm-SiLU-Causalconv-128 
+
+𝐸𝐸 2
+
+SpatialDownBlock-256 
+
+CausalResBlock-256 
+
+CausalResBlock-256 
+
+SpatialDownBlock-512 
+
+CausalResBlock-512 
+
+CausalResBlock-512 
+
+CausalResBlock-512 
+
+CausalResBlock-512 
+
+CausalResBlock-1024 
+
+CausalResBlock-1024 
+
+SpatialTemporalDownBlock-512 
+
+𝐸𝐸 1
+
+SpatialTemporalDownBlock-1024 
+
+CausalResBlock-512 
+
+CausalResBlock-512 
+
+SpatialUpBlock-512 
+
+CausalResBlock-256 
+
+CausalResBlock-256 
+
+SpatialUpBlock-256 
+
+CausalResBlock-128 
+
+CausalResBlock-128 
+
+SpatialTemporalUpBlock-128 
+
+CausalResBlock-64 
+
+CausalResBlock-64 
+
+SpatialTemporalUpBlock-64 
+
+Norm-SiLU-Causalconv-3 
+
+CausalResBlock-512 
+
+SpatialUpBlock-512 
+
+CausalResBlock-1024 
+
+SpatialUpBlock-1024 
+
+𝐷𝐷 1
+
+𝐷𝐷 2
+
+SelfAttn-CrossAttn-FFN-1024 
+
+𝐷𝐷 𝑟𝑟𝑟𝑟𝑟𝑟 
+
+SelfAttn-CrossAttn-FFN-1024 
+
+SelfAttn-CrossAttn-FFN-1024 
+
+SelfAttn-CrossAttn-FFN-1024 
+
+SelfAttn-CrossAttn-FFN-1024 
+
+Encoder  Decoder 
+
+Figure II. Network architecture of our causal video VAE. The number after the dash in each block indicates the output channel dimension. 
+
+channel grouping and mean reduction. For up-sampling, we invert this process by channel du-plication (repeat_interleave ) followed by 
+
+PixelShuffle3d to restore space/time. 14 Network architecture. Details of our proposed causal video VAE structure are presented in Figure II. All down-sampling and upsampling blocks are equipped with the causal residual video auto-encoding (CR-VA) module, as described in Section 3 and Fig. 3 in the main paper. Each CausalResBlock consists of two causal convolution layers with an identity residual connection. The VAE encoder, de-coder, and generator have 497M, 406M, and 1B params re-spectively. 
+
+Training details of the causal video VAE. We adopt a progressive training strategy for the causal video VAE to re-duce training computational cost. Specifically, we first train the auto-encoder at a resolution of 256 2 using 5-frame clips, with a batch size of 512 on 128 H100 GPUs for 400k itera-tions. The learning rate is gradually decayed from 1 × 10 −4
+
+to 1 × 10 −5. We then extend the clip length to 17 frames (batch size 256) and 73 frames (batch size 128), training each stage for 80k iterations with a fixed learning rate of 
+
+1 × 10 −5. Finally, we finetune the model at a resolution of 
+
+512 2 for last two stages over 40k iterations. The full train-ing process takes approximately one week. 
+
+Training details of the denoising model. For training the denoising network G, we first encode the training videos into video latents z and reference latents zr . We then sam-ple segments of 32 latent frames together with 1–3 refer-ence latents for training. To enable CFG, reference latents and audio inputs are randomly dropped with a probability of 0.1. The model is trained with a batch size of 256 on 128 H100 GPUs for 250k iterations, which takes roughly three days. 
+
+Inference speed analysis. The input to our inference pipeline includes an audio signal and one or more reference images. We assume precomputed image features for gener-ation and decoding. The inference pipeline then consists of three main components: the pretrained audio encoder [36], the rectified flow transformer G, and the video decoder D.Using the longest KV window, the combined execution of the audio encoder and G (with 12 denoising steps by de-fault) takes tG = 0 .288 seconds to generate 4 video latent frames (corresponding to 16 video frames). Decoding the 16 frames with D takes tD = 0 .09 seconds. Overall, the full pipeline achieves real-time performance, with a total latency of tG + tD = 0 .378 seconds and a throughput of 
+
+16 /(tG + tD ) = 42 .3 FPS, as reported in Table 1 of the main paper. 
+
+Algorithm overview. We provide an overview of the training procedure for the generation model G and the full streaming inference process in Algorithm I and Algo-rithm II, respectively. 
+
+## C. Limitations 
+
+While our method produces realistic and natural talking portraits, it lacks fine-grained control over specific attributes (e.g ., eye gaze and head pose). This could be addressed by introducing additional motion-conditioning signals dur-ing video latent denoising. Moreover, the current frame-work does not support hand motion or larger-scale body movements. We expect these limitations to be addressed by training on datasets that include broader human regions and more diverse, expressive motion patterns. 
+
+## D. Ethics Consideration 
+
+This work aims for enabling real-time and interactive virtual avatars, opening up possibilities for various positive down-stream applications. We emphasize that our method is not intended for use in deceptive or malicious scenarios, such as impersonation, misinformation, or any applications that could cause harm, defamation, or other negative impacts on real individuals. We firmly oppose such misuse and are committed to strictly restricting the use of our method to prevent these risks. Additionally, as a generative model, our method’s perfor-mance is influenced by biases present in the training data. Therefore, careful attention should be paid to data collec-tion to ensure balanced and unbiased distributions across factors such as race, gender, age, and language. 15 1 def PixelUnshuffleShortcut (x, k_t, k_s, c_out):  
+
+> 2
+
+""" Residual Branch: Dimension Matching """  
+
+> 3
+
+B, C, T, H, W = x.shape  
+
+> 4
+
+# 1. Temporal: Space-to-Channel + Channel Averaging  
+
+> 5
+
+x0, xt = x[:, :, :1], x[:, :, 1:]  
+
+> 6
+
+# Fold time into channel: (B,C,T’,H,W)->(B,C* k_t,T’//k_t,H,W)  
+
+> 7
+
+xt = PixelUnshuffle3d(xt, factor=(k_t, 1, 1))  
+
+> 8
+
+# Group channels and average back to C 
+
+> 9
+
+xt = xt.view(B, C, k_t, -1, H, W).mean(dim=2)  
+
+> 10
+
+x = torch.cat([x0, xt], dim=2)  
+
+> 11 12
+
+# 2. Spatial: Space-to-Channel + Channel Averaging  
+
+> 13
+
+# Fold space into channel: (B,C,T,H,W)->(B,C* ks^2,T,H//ks,W//ks)  
+
+> 14
+
+x = PixelUnshuffle3d(x, factor=(1, k_s, k_s))  
+
+> 15
+
+# Group channels and average to c_out  
+
+> 16
+
+x = x.view(B, c_out, -1, *x.shape[2:]).mean( dim=2)  
+
+> 17
+
+return x 
+
+> 18 19
+
+class UnshuffleDownsampleBlock3d( nn .Module ):  
+
+> 20
+
+def __init__( self , c_in, c_out, k_t, k_s):  
+
+> 21
+
+self .conv_t = CausalConv3d (c_in, c_in// k_t, k=(1,3,3))  
+
+> 22
+
+self .conv_s = CausalConv3d (c_in, c_out//( k_s**2), k=3)  
+
+> 23
+
+self .shortcut = PixelUnshuffleShortcut 
+
+(...)  
+
+> 24 25
+
+def forward( self , x):  
+
+> 26
+
+# Residual Encoding Branch  
+
+> 27
+
+h = self .shortcut(x, k_t, k_s, c_out)  
+
+> 28 29
+
+# Main Branch: 1. Temporal (Split-First)  
+
+> 30
+
+x0, xt = x[:, :, :1], x[:, :, 1:]  
+
+> 31
+
+xt = self .conv_t(xt)  
+
+> 32
+
+xt = PixelUnshuffle3d(xt, factor=(k_t, 1, 1))  
+
+> 33
+
+x = torch.cat([x0, xt], dim=2)  
+
+> 34 35
+
+# Main Branch: 2. Spatial (All frames)  
+
+> 36
+
+x = self .conv_s(x)  
+
+> 37
+
+x = PixelUnshuffle3d(x, factor=(1, k_s, k_s))  
+
+> 38 39
+
+return x + h
+
+Algorithm 1: Spatial-Temporal Downsampling  
+
+> 1
+
+def PixelShuffleShortcut (x, k_t, k_s, c_out):  
+
+> 2
+
+""" Residual Branch: Dimension Matching """  
+
+> 3
+
+# 1. Spatial: Channel Dup + Channel-to-Space  
+
+> 4
+
+repeats = c_out * k_s**2 // x.shape[1]  
+
+> 5
+
+x = x.repeat_interleave(repeats, dim=1)  
+
+> 6
+
+x = PixelShuffle3d(x, factor=(1, k_s, k_s))  
+
+> 78
+
+# 2. Temporal: Channel Dup + Channel-to-Time  
+
+> 9
+
+x0, xt = x[:, :, :1], x[:, :, 1:]  
+
+> 10
+
+xt = xt.repeat_interleave(k_t, dim=1)  
+
+> 11
+
+xt = PixelShuffle3d(xt, factor=(k_t, 1, 1))  
+
+> 12
+
+x = torch.cat([x0, xt], dim=2)  
+
+> 13
+
+return x 
+
+> 14 15
+
+class ShuffleUpsampleBlock3d( nn .Module ):  
+
+> 16
+
+def __init__( self , c_in, c_out, k_t, k_s):  
+
+> 17
+
+self .conv_s = CausalConv3d (c_in, c_out*( k_s**2), k=3)  
+
+> 18
+
+self .conv_t = CausalConv3d (c_out, c_out* k_t, k=(1,3,3))  
+
+> 19
+
+self .shortcut = PixelShuffleShortcut (...)  
+
+> 20 21
+
+def forward( self , x):  
+
+> 22
+
+# Residual Encoding Branch  
+
+> 23
+
+h = self .shortcut(x, k_t, k_s, c_out)  
+
+> 24 25
+
+# Main Branch: 1. Spatial  
+
+> 26
+
+x = self .conv_s(x)  
+
+> 27
+
+x = PixelShuffle3d(x, factor=(1, k_s, k_s ))  
+
+> 28 29
+
+# Main Branch: 2. Temporal (Split-First)  
+
+> 30
+
+x0, xt = x[:, :, :1], x[:, :, 1:]  
+
+> 31
+
+xt = self .conv_t(xt)  
+
+> 32
+
+xt = PixelShuffle3d(xt, factor=(k_t, 1, 1))  
+
+> 33
+
+x = torch.cat([x0, xt], dim=2)  
+
+> 34 35
+
+return x + h
+
+Algorithm 2: Spatial-Temporal Upsampling 
+
+Figure III. Pseudo-code for Spatio-Temporal Resampling. Both the residual shortcut and the main branch follow the same two-step process: temporal then spatial for downsampling, and spatial then temporal for upsampling. The shortcut uses PixelUnshuffle3d + channel averaging (down) or channel duplication + PixelShuffle3d (up) for parameter-free dimension matching, while the main branch uses learnable CausalConv3d for the same purpose. The first frame is excluded from all temporal operations ( Split-First ) to preserve causality. 
+
+16 Algorithm I: Training Process of Latent Genera-tion Model with Teacher Forcing 
+
+Require: Video latents z, reference latents zr , audio feat. a
+
+Require: Trainable parameters: generator network 
+
+G
+
+for each training iteration do 
+
+> // Step 1: Sample latents and apply mask
+
+Sample a window of N = 32 latent frames 
+
+zwin ⊂ z;Sample M ∈ { 1, 2, 3} reference frames 
+
+zref ⊂ zr ;
+
+if first frame is in zwin then 
+
+Add learnable mask token M to first frame; 
+
+end 
+
+> // Step 2: Sample noises
+
+Sample t ∼ LogitNormal (0 , 1) and Gaussian noise ϵt and compute noisy latent: 
+
+zt = t · ϵt + (1 − t) · zwin , vt = ϵt − zwin ;
+
+> // Step 3: Add noises to ground-truth to reduce train-test gap
+
+Sample t′ ∼ Uniform [0 , 0.7] and Gaussian noise 
+
+ϵt′
+
+to augment ground-truth to provide KV context: 
+
+zaug = t′ · ϵt′
+
++ (1 − t′) · zwin ;
+
+> // Step 3: Prepare network input
+
+Compute temporally aligned audio embedding 
+
+a′;Concatenate channel-wise: zt and a′;Flatten along sequence dim: 
+
+[zref , zaug , zt ⊕ a′] → xinput ;
+
+> // Step 4: Forward network with causal blockwise attention (see Fig. 4)
+
+ˆv = G(xinput , t );Compute loss: L = ∥vt − ˆv∥22;Update G via gradient descent; 
+
+end Output : Trained G
+
+Algorithm II: Streaming Talking Portrait Video Generation 
+
+Require: Reference frames Ir , Generation network 
+
+G, Decoder D, and audio stream A
+
+Output : Streaming video output yi
+
+> // Step 1: Precomputation and initialization
+
+Precompute fr = E1(Ir ); zr = E(Ir );_, KV r = G(zr );Initialize KV list with reference KV: KV list = [ KV r ]
+
+;Set current index i = 0 ;
+
+while audio stream A is live do 
+
+Wait until next Ai = 16 audio frames are ready; Compute Audio Embedding a′ 
+
+> i
+
+from Ai;
+
+> // Step 2: Denoising Process
+
+for j = denoising steps T down to 0 do if i = 0 then 
+
+Add learnable mask token to first frame; 
+
+end if j = T then 
+
+Sample ztj 
+
+> i
+
+from Gaussian noise; 
+
+end 
+
+> // Forward G: predict v and get KV
+
+vji , KV ji = G(ztj 
+
+> i
+
+, t j , a ′
+
+> i
+
+, KV list )
+
+ztj−1 
+
+> i
+
+= SolveODE (ztj 
+
+> i
+
+, vji , t j );
+
+ztj 
+
+> i
+
+= ztj−1 
+
+> i
+
+;
+
+end   
+
+> // use z0
+> ito provide context for next window.
+
+zlast = z0 
+
+> i
+
+;
+
+> // Step 3: Update KV list
+
+Add KV 0 
+
+> i
+
+to KV list ;
+
+if |KV list | ≥ maximum KV length per window 
+
+then  
+
+> // Reset KV list per window; Re-feed the last block from the previous window to get KV due to positional encoding.
+
+KV list = [ KV r ]; _ , KV last = G(zlast , KV list );Add KV last to KV list ;
+
+end 
+
+> // Step 4: Decoding process. We also reuse cached features from previous frames for causal convolutions, omitted here for brevity.
+
+Decode video frames yi = D(z0 
+
+> i
+
+, fr );
+
+i = i + 1 ;
+
+end 
+
+17 Ours  Sonic  FantasyTalking Hallo3  Hallo2  Hallo  EchoMIMIC Figure IV. Talking portrait generation results from different methods using an input audio segment uttering “ face up to that ". The reference image and audio are from the HDTF dataset. Please refer to the supplementary video for a more detailed visual comparison. 
+
+18 Ours  Sonic Hallo3  Hallo2  Hallo  EchoMIMIC Figure V. Talking portrait generation results from different methods using an input audio segment uttering “ tomorrow? ". The reference image and audio are from the PortraitOneMin dataset. Please refer to the supplementary video for a more detailed visual comparison. 
+
+19

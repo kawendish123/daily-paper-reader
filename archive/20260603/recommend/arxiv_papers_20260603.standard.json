@@ -1,0 +1,365 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-03T22:42:54.029372+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2606.00774v1",
+      "source": "arxiv",
+      "title": "SCOPE: Cost-Efficient Model Selection for Compound AI Systems under Quality Constraints",
+      "abstract": "A compound AI system consists of multiple LLM modules, together handling complex and multi-step tasks that exceed the capabilities of a single model. Existing systems often use a single expensive LLM across all modules to improve the result quality of the whole system. However, this configuration incurs prohibitive costs, particularly for data management and analytics tasks at scale, such as data manipulation. To this end, we formalize the problem of constrained LLM selection for compound AI systems, leveraging the diverse pricing and capabilities of different LLMs to achieve competitive quality at lower cost. Given a query dataset and a user-specified quality threshold, we aim to select an LLM for each module to minimize the system's average cost while ensuring that overall quality meets the required threshold. To solve this problem, we propose SCOPE, a cost-efficient optimization algorithm. Unlike existing approaches that rely on expensive dataset-level evaluations, SCOPE exploits per-query results to rapidly estimate the system's cost and quality, and constructs confidence bounds to guide the search for promising LLM combinations. Furthermore, SCOPE provides theoretical guarantees for meeting the quality threshold and achieving near-optimal average cost. We evaluate SCOPE against 7 baselines on three data processing tasks, demonstrating that it outperforms all baselines. Under the same search budget and quality constraint, it finds solutions with up to $20\\times$ lower cost than the best competitor during the search and achieves up to $6\\times$ lower final cost in the returned solution.",
+      "authors": [
+        "Yiqian Huang",
+        "Shiqi Zhang",
+        "Tianyuan Jin",
+        "Xiaokui Xiao"
+      ],
+      "primary_category": "cs.DB",
+      "categories": [
+        "cs.DB"
+      ],
+      "published": "2026-05-30T15:33:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.00774v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "model selection for compound AI systems",
+      "llm_evidence_cn": "复合AI系统的模型选择",
+      "llm_evidence": "复合AI系统的模型选择",
+      "canonical_evidence": "复合AI系统的模型选择",
+      "llm_tldr_en": "SCOPE formalizes cost-efficient LLM selection under quality constraints for compound AI systems, minimizing cost while meeting quality thresholds.",
+      "llm_tldr_cn": "现有复合AI系统对所有模块使用统一昂贵大模型导致成本过高。本文形式化了复合AI系统的约束化LLM选择问题，利用不同LLM的定价和能力差异，在保证质量前提下最小化成本。在数据管理任务上展示了显著成本节约。",
+      "llm_tldr": "现有复合AI系统对所有模块使用统一昂贵大模型导致成本过高。本文形式化了复合AI系统的约束化LLM选择问题，利用不同LLM的定价和能力差异，在保证质量前提下最小化成本。在数据管理任务上展示了显著成本节约。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29063v1",
+      "source": "arxiv",
+      "title": "Accelerating HEVC Intra Partitioning via a CNN-Hierarchical Attention Transformer Hybrid",
+      "abstract": "The recursive quad-tree partitioning in High Efficiency Video Coding (HEVC) incurs considerable computational overhead, with exhaustive rate-distortion optimization for CTU partition prediction consuming the dominant share of encoding time. Although partition prediction through deep learning has emerged as a viable encoding accelerator, an architectural dichotomy remains largely unaddressed: CNNs are computationally efficient but spatially myopic due to their localized effective receptive fields, failing to capture long range semantic relationships and repetitive textures; conversely, transformer based architectures are better at capturing global context but incur prohibitive CPU latency, a critical liability that impedes deployment which is predominantly CPU-bound. This paper introduces Hybrid Fast Vision Transformer (HFViT), a hybrid architecture designed to accelerate HEVC intra-mode partition prediction. HFViT fuses a reparameterized depthwise-separable convolutional backbone with a Hierarchical Attention Transformer (HAT) mechanism, leveraging a carrier token scheme to enable efficient global information propagation at sub-quadratic complexity. Post-training structural fusion collapses batch normalization into preceding layers to further reduce latency. Comprehensive evaluation reveals the efficacy of HFViT in accelerating HEVC intra-encoding across resolutions. On standard JCT-VC test sequences, HFViT reduces the average VMAF BD-rate penalty by 2.4, 2.6, and 7.9 percentage points on Classes A, B and E, respectively, as compared to the competing ETH-CNN baseline while maintaining CPU inference latency within 8% of the CNN baseline and surpassing it on GPU by 40%, establishing practical viability for real-time encoder integration.",
+      "authors": [
+        "Krishna Kumar Sharma",
+        "Somdyuti Paul"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "published": "2026-05-27T20:10:22+00:00",
+      "link": "https://arxiv.org/pdf/2605.29063v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "accelerates HEVC intra partitioning for real-time video encoding",
+      "llm_evidence_cn": "加速HEVC帧内划分以实现实时视频编码",
+      "llm_evidence": "加速HEVC帧内划分以实现实时视频编码",
+      "canonical_evidence": "加速HEVC帧内划分以实现实时视频编码",
+      "llm_tldr_en": "Proposes a CNN-Hierarchical Attention Transformer hybrid to accelerate HEVC intra partition prediction, reducing encoding time while maintaining quality.",
+      "llm_tldr_cn": "针对HEVC帧内划分计算开销大的问题，提出CNN-层次注意力Transformer混合架构。CNN高效捕捉局部特征，Transformer捕获全局上下文，通过协同工作加速率失真优化过程。实验表明该方法在不损失编码质量的前提下显著提升编码速度，对实时视频处理具有重要价值。",
+      "llm_tldr": "针对HEVC帧内划分计算开销大的问题，提出CNN-层次注意力Transformer混合架构。CNN高效捕捉局部特征，Transformer捕获全局上下文，通过协同工作加速率失真优化过程。实验表明该方法在不损失编码质量的前提下显著提升编码速度，对实时视频处理具有重要价值。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.01620v1",
+      "source": "arxiv",
+      "title": "Real-Time Generation of Streamable Talking Portrait Video with Reference-Guided Deep Compression VAEs",
+      "abstract": "Video diffusion models have significantly advanced portrait video generation, yet their high computational demands limit their use in interactive applications. This work presents a framework for streamable talking portrait video generation conditioned on speech audio and reference images. Designed meticulously for streaming scenarios, it features a causal video VAE for deep latent compression and an autoregressive latent denoising model. Our causal VAE integrates a variable number of reference images as guidance, allowing the network to focus on dynamic information rather than static appearance, thereby enhancing compression efficacy and reconstruction quality. Additionally, we extend the residual auto-encoding paradigm to improve spatial-temporal causality handling in our VAE. The generator is based on a Rectified Flow Transformer architecture and produces video latents in a blockwise auto-regressive manner. Our method enables the real-time generation of high-quality talking portrait videos, achieving speeds significantly faster than baseline models. Furthermore, comprehensive experiments demonstrate that it is on par with or even outperforms these large models in realism, vividness, and video quality.",
+      "authors": [
+        "Sicheng Xu",
+        "Yu Deng",
+        "Shoukang Hu",
+        "Yichuan Wang",
+        "Yizhong Zhang",
+        "Zhan Chen",
+        "Jiaolong Yang",
+        "Baining Guo"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-01T03:12:23+00:00",
+      "link": "https://arxiv.org/pdf/2606.01620v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "streamable talking portrait video generation with causal video VAE for deep latent compression",
+      "llm_evidence_cn": "可流式说话人视频生成，因果视频VAE进行深度潜在压缩",
+      "llm_evidence": "可流式说话人视频生成，因果视频VAE进行深度潜在压缩",
+      "canonical_evidence": "可流式说话人视频生成，因果视频VAE进行深度潜在压缩",
+      "llm_tldr_en": "A framework for streamable talking portrait video generation using a causal video VAE and autoregressive latent denoising, achieving real-time performance with deep latent compression.",
+      "llm_tldr_cn": "针对视频扩散模型计算量大、难以用于交互式应用的问题，本文提出可流式说话人视频生成框架，采用因果视频VAE进行深度潜在压缩，结合自回归潜在去噪模型。通过参考图像引导，网络聚焦动态信息而非静态外观，提升了压缩效率和重建质量，实现了实时可流式生成。",
+      "llm_tldr": "针对视频扩散模型计算量大、难以用于交互式应用的问题，本文提出可流式说话人视频生成框架，采用因果视频VAE进行深度潜在压缩，结合自回归潜在去噪模型。通过参考图像引导，网络聚焦动态信息而非静态外观，提升了压缩效率和重建质量，实现了实时可流式生成。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.26546v1",
+      "source": "arxiv",
+      "title": "MobileExplorer: Accelerating On-Device Inference for Mobile GUI Agents via Online Exploration",
+      "abstract": "Mobile graphical user interface (GUI) agents enable AI models to autonomously operate smartphones on behalf of users. However, most existing systems focus primarily on optimizing task accuracy and rely on cloud-hosted models for inference, which introduces privacy concerns and network-dependent latency. As a result, fully on-device deployment of mobile GUI agents remains underexplored. We propose MobileExplorer, a new framework that accelerates on-device inference for vision-based mobile GUI agents via online exploration. The key idea is to exploit the long per-step reasoning time of vision-language models (VLMs) by performing lightweight, parallel exploration of UI elements. During model inference, the agent proactively probes semantically relevant UI elements and records these exploration traces as structured memory. To ensure reliable execution in live mobile environments, we design a two-level rollback mechanism that robustly restores the initial UI state when a fast but naive backtracking strategy fails. The collected exploration traces are then summarized into concise contextual hints and injected into the prompt to enhance the subsequent reasoning step. We evaluate MobileExplorer on multiple off-the-shelf devices using the AndroidWorld benchmark, as well as newly designed, more complex tasks and dynamic on-device environments. MobileExplorer reduces the average number of reasoning steps and end-to-end latency by 23\\%, while maintaining or improving task success rates by up to 5\\%. A video demonstration of MobileExplorer performance in the real world is available at https://youtu.be/thK7MJmdlvM .",
+      "authors": [
+        "Runxi Huang",
+        "Liyu Zhang",
+        "Shengzhong Liu",
+        "Xiaomin Ouyang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-26T04:53:53+00:00",
+      "link": "https://arxiv.org/pdf/2605.26546v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "on-device inference for mobile GUI agents, enabling mobile edge computing",
+      "llm_evidence_cn": "移动GUI智能体的设备端推理，支持移动边缘计算",
+      "llm_evidence": "移动GUI智能体的设备端推理，支持移动边缘计算",
+      "canonical_evidence": "移动GUI智能体的设备端推理，支持移动边缘计算",
+      "llm_tldr_en": "Proposes MobileExplorer to accelerate on-device inference for mobile GUI agents via parallel UI exploration, reducing latency without cloud dependency.",
+      "llm_tldr_cn": "针对移动GUI智能体依赖云端推理导致隐私和延迟问题，提出MobileExplorer框架。利用视觉语言模型每步推理时间长这一特点，并行探索UI元素，在设备端完成推理。实验证明该方法有效加速了移动端智能体推理，为移动边缘计算场景下的视频分析应用提供了可行的加速方案。",
+      "llm_tldr": "针对移动GUI智能体依赖云端推理导致隐私和延迟问题，提出MobileExplorer框架。利用视觉语言模型每步推理时间长这一特点，并行探索UI元素，在设备端完成推理。实验证明该方法有效加速了移动端智能体推理，为移动边缘计算场景下的视频分析应用提供了可行的加速方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.31595v1",
+      "source": "arxiv",
+      "title": "Learning Global Motion with Compact Gaussians for Feed-Forward 4D Reconstruction",
+      "abstract": "Dynamic scene reconstruction from monocular video remains a fundamental challenge in computer vision. Existing feed-forward methods predict 3D Gaussians pixel-wise for each frame, suffering from duplicated Gaussians and view-dependent biases that hinder effective learning of scene motion. We present C4G, a feed-forward 4D reconstruction framework built upon a compact set of timestamp-conditioned learnable Gaussian query tokens. Each token aggregates corresponding features across the full temporal context and decodes a 3D Gaussian whose position is modulated by the target timestamp, enabling globally coherent motion modeling without per-scene optimization. To capture fine-grained details, we further introduce a video diffusion model-based rendering enhancement module. Since our framework effectively aggregates features into Gaussians, we extend this capability to feature lifting, producing a 4D feature field that supports point tracking and dynamic scene understanding. C4G achieves strong novel-view synthesis performance using significantly fewer Gaussians and without requiring camera poses, while exhibiting stronger motion modeling and robustness to large temporal gaps.",
+      "authors": [
+        "Mungyeom Kim",
+        "Minkyeong Jeon",
+        "Honggyu An",
+        "Jaewoo Jung",
+        "Hyuna Ko",
+        "Jisang Han",
+        "Hyeonseo Yu",
+        "Donghwan Shin",
+        "Sunghwan Hong",
+        "Takuya Narihira",
+        "Kazumi Fukuda",
+        "Yuki Mitsufuji",
+        "Seungryong Kim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-29T17:57:41+00:00",
+      "link": "https://arxiv.org/pdf/2605.31595v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video-based 4D reconstruction from monocular video",
+      "llm_evidence_cn": "基于单目视频的4D重建",
+      "llm_evidence": "基于单目视频的4D重建",
+      "canonical_evidence": "基于单目视频的4D重建",
+      "llm_tldr_en": "Proposes C4G, a feed-forward 4D reconstruction framework using compact Gaussian query tokens for globally coherent motion modeling from video.",
+      "llm_tldr_cn": "针对动态场景重建中逐帧预测3D高斯导致重复和偏置的问题，提出C4G框架，利用紧凑的可学习高斯查询标记，结合时间戳条件，从完整时间上下文中聚合特征，实现全局一致的动态建模，无需逐场景优化。该方法在单目视频重建任务中展现了高效性和高质量。",
+      "llm_tldr": "针对动态场景重建中逐帧预测3D高斯导致重复和偏置的问题，提出C4G框架，利用紧凑的可学习高斯查询标记，结合时间戳条件，从完整时间上下文中聚合特征，实现全局一致的动态建模，无需逐场景优化。该方法在单目视频重建任务中展现了高效性和高质量。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.00910v1",
+      "source": "arxiv",
+      "title": "Reason, Retrieve, Re-rank: A Zero-Shot Reasoning-Aware Framework for Composed Video Retrieval",
+      "abstract": "Composed Video Retrieval (CoVR) seeks the target video that results from applying a free-form textual modification to a reference video. We address the \\emph{Reason-Aware} CoVR (CoVR-R) challenge at the CVPR~2026 VidLLMs workshop, where retrieval is strictly zero-shot. We present \\textbf{R3-CoVR} (\\emph{Reason, Retrieve, Re-rank}), a training-free pipeline built entirely from frozen foundation models. A multimodal large language model (Qwen3-VL-8B) reasons about the \\emph{after-effects} an edit implies -- state transitions, action phases, scene, camera and tempo -- and verbalises a concise post-edit description; a contrastive video--text encoder (SigLIP-2) embeds this description and the gallery for first-stage retrieval; finally a constraint-aware re-ranking stage uses the same multimodal model as a judge that scores each shortlisted candidate against the intended edited result. On the challenge test set, R3-CoVR attains \\textbf{91.9\\% R@1} and \\textbf{98.2\\% R@10}. Two findings drive these results: (i)~matching the description length to the contrastive encoder's text window lifts \\Rk{1} from $67.5$ to $72.7$; and (ii)~the constraint-aware re-ranker, which reorders only the shortlist, lifts \\Rk{1} from $72.7$ to $91.9$ -- the single largest gain. We analyse the re-ranker's behaviour, the retrieve/re-rank blend, and the shortlist depth, and we release a clean three-layer implementation.",
+      "authors": [
+        "Ali Alavi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-05-30T22:21:42+00:00",
+      "link": "https://arxiv.org/pdf/2606.00910v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "zero-shot composed video retrieval",
+      "llm_evidence_cn": "零样本组合视频检索",
+      "llm_evidence": "零样本组合视频检索",
+      "canonical_evidence": "零样本组合视频检索",
+      "llm_tldr_en": "R3-CoVR is a training-free pipeline using frozen foundation models for zero-shot composed video retrieval, reasoning about edit effects and re-ranking.",
+      "llm_tldr_cn": "组合视频检索需要根据参考视频和文本修改找到目标视频，现有方法依赖监督微调。本文提出R3-CoVR，完全基于冻结基础模型的免训练流水线，利用多模态大模型推理编辑后效应，生成描述后检索并重排序。在零样本设定下取得竞争性能。",
+      "llm_tldr": "组合视频检索需要根据参考视频和文本修改找到目标视频，现有方法依赖监督微调。本文提出R3-CoVR，完全基于冻结基础模型的免训练流水线，利用多模态大模型推理编辑后效应，生成描述后检索并重排序。在零样本设定下取得竞争性能。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.00511v1",
+      "source": "arxiv",
+      "title": "Saliency-Aware Model Merging",
+      "abstract": "Model merging aims to consolidate multiple task-specific models fine-tuned on different datasets into a unified architecture that performs cross-domain proficiency. Current data-free model merging methods often struggle to scale as they rely on simple parameter-level heuristics that ignore inter-layer dependencies and non-uniform distribution of expertise. This work proposes SA-Merging, which is built upon connectivity-based saliency formulations from structural pruning (e.g., SynFlow) and extends them to the data-free model merging setting. We define a saliency score over task vectors relative to a shared base model, and further introduce merge-aware modulation that incorporates agreement across experts to mitigate task interference. Based on this formulation, an iterative saliency-aware merging procedure progressively removes non-informative updates while preserving end-to-end connectivity. Furthermore, we extend SA-Merging to introduce rank-wise saliency decomposition for LoRAs without compromising their structural integrity. Extensive experiments on vision and language tasks demonstrate the effectiveness of our saliency-based approach, further reducing the gap between data-free and test-time adaptation methods.",
+      "authors": [
+        "Jungin Park",
+        "Jiyoung Lee",
+        "Kwanghoon Sohn"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-05-30T04:00:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.00511v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "saliency-aware model merging",
+      "llm_evidence_cn": "基于显著性的模型合并",
+      "llm_evidence": "基于显著性的模型合并",
+      "canonical_evidence": "基于显著性的模型合并",
+      "llm_tldr_en": "SA-Merging extends structural pruning saliency to data-free model merging, using connectivity-based saliency and expert agreement to reduce task interference.",
+      "llm_tldr_cn": "现有数据无关模型合并方法依赖简单参数启发式，忽略层间依赖。本文提出SA-Merging，基于结构剪枝的连通性显著性定义任务向量上的显著度，并引入合并感知调制缓解任务干扰。在多个领域合并任务上表现优异。",
+      "llm_tldr": "现有数据无关模型合并方法依赖简单参数启发式，忽略层间依赖。本文提出SA-Merging，基于结构剪枝的连通性显著性定义任务向量上的显著度，并引入合并感知调制缓解任务干扰。在多个领域合并任务上表现优异。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.02565v1",
+      "source": "arxiv",
+      "title": "Policy-based Foveated Imaging and Perception",
+      "abstract": "Ultra-high-resolution image sensors offer the potential to capture fine spatial details critical for many visual perception tasks, but acquiring and processing all pixels at full resolution is often infeasible under realistic bandwidth, latency, and power constraints. Existing approaches address this challenge through acquisition strategies such as spatial or temporal downsampling, which irrevocably discard information before task relevance can be assessed. In this work, we introduce a real-time, predictive, and task-aware foveated imaging system that operates directly at image acquisition time. Leveraging emerging dual-stream sensor architectures, our method dynamically allocates limited pixel bandwidth to task-relevant regions of interest while maintaining a low-resolution global context. We formulate foveated acquisition as a sensor attention policy-learning problem, in which past observations guide actions that determine future measurements, closing the perception-acquisition loop. Through extensive simulation across multiple perception tasks, we demonstrate that our approach achieves high task performance under strict pixel budgets and significantly outperforms relevant baselines operating at the same bandwidth. We further validate our system on a 200-megapixel dual-stream sensor, capturing real-world videos under realistic bandwidth and latency constraints, demonstrating the practical feasibility of task-driven, acquisition-time foveated imaging.",
+      "authors": [
+        "Howard Xiao",
+        "Jan Ackermann",
+        "Boyang Deng",
+        "Gordon Wetzstein"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-01T17:55:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.02565v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "real-time foveated imaging with bandwidth constraints",
+      "llm_evidence_cn": "实时注视点成像与带宽约束",
+      "llm_evidence": "实时注视点成像与带宽约束",
+      "canonical_evidence": "实时注视点成像与带宽约束",
+      "llm_tldr_en": "A real-time foveated imaging system allocates pixel bandwidth to task-relevant regions, enabling efficient streaming video analysis under constraints.",
+      "llm_tldr_cn": "超高分辨率图像在带宽和功耗约束下难以全帧处理。本文提出实时预测性注视点成像系统，利用双流传感器架构动态分配像素带宽到任务相关区域。该方法在采集阶段即感知任务需求，保持低分辨率全局感知。实验证明在资源受限条件下显著提升了视觉感知任务的效率。",
+      "llm_tldr": "超高分辨率图像在带宽和功耗约束下难以全帧处理。本文提出实时预测性注视点成像系统，利用双流传感器架构动态分配像素带宽到任务相关区域。该方法在采集阶段即感知任务需求，保持低分辨率全局感知。实验证明在资源受限条件下显著提升了视觉感知任务的效率。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.03837v1",
+      "source": "arxiv",
+      "title": "Where Do We (Not) Need Temporal Context in Low-Resource Video Task Adaptation?",
+      "abstract": "Parameter-efficient fine-tuning (PEFT) and probing enable adaptation of foundation models using only a small number of trainable parameters, making it attractive for video understanding where annotation and computation are expensive. However, video PEFT has focused on adapting image-pretrained models, while standard PEFT methods can also be applied to video representations. These settings are rarely compared and both confine temporal reasoning to a single component of the model, leaving open how temporal context should be distributed across backbone, PEFT and probe. In this work we provide a systematic study of model adaptation strategies for video understanding. We evaluate methods across appearance-focused, motion-focused and spatially dense settings, with a particular focus on scenarios with limited data where parameter-efficiency is most beneficial. Our results provide new insights into PEFT and probing across settings and demonstrate the importance of temporal context allocation for effective video adaptation",
+      "authors": [
+        "Luc P. J. Sträter",
+        "Hazel Doughty"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-02T16:19:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.03837v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "parameter-efficient fine-tuning model adaptation strategies",
+      "llm_evidence_cn": "参数高效微调模型适应策略",
+      "llm_evidence": "参数高效微调模型适应策略",
+      "canonical_evidence": "参数高效微调模型适应策略",
+      "llm_tldr_en": "Systematically studies where temporal context is needed in low-resource video task adaptation, comparing different PEFT configurations for video understanding.",
+      "llm_tldr_cn": "对于低资源视频任务，参数高效微调方法中的时间上下文分配策略尚不明确。本文系统比较了主干网络、PEFT模块和探测头中时间信息的分布效果。实验揭示不同组件对时间建模的贡献差异，为指导视频模型选择提供了原则。",
+      "llm_tldr": "对于低资源视频任务，参数高效微调方法中的时间上下文分配策略尚不明确。本文系统比较了主干网络、PEFT模块和探测头中时间信息的分布效果。实验揭示不同组件对时间建模的贡献差异，为指导视频模型选择提供了原则。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

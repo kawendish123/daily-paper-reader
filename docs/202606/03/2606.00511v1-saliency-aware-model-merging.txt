@@ -1,0 +1,726 @@
+Title: Saliency-Aware Model Merging
+
+URL Source: https://arxiv.org/pdf/2606.00511v1
+
+Published Time: Tue, 02 Jun 2026 00:32:58 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Saliency-Aware Model Merging 
+
+Jungin Park 1 Jiyoung Lee 2 * Kwanghoon Sohn 1 * 
+
+# Abstract 
+
+Model merging aims to consolidate multiple task-specific models fine-tuned on different datasets into a unified architecture that performs cross-domain proficiency. Current data-free model merging methods often struggle to scale as they rely on simple parameter-level heuristics that ig-nore inter-layer dependencies and non-uniform distribution of expertise. This work proposes 
+
+SA-Merging , which is built upon connectivity-based saliency formulations from structural prun-ing ( e.g. , SynFlow) and extends them to the data-free model merging setting. We define a saliency score over task vectors relative to a shared base model, and further introduce merge-aware modu-lation that incorporates agreement across experts to mitigate task interference. Based on this formu-lation, an iterative saliency-aware merging proce-dure progressively removes non-informative up-dates while preserving end-to-end connectivity. Furthermore, we extend SA-Merging to intro-duce rank-wise saliency decomposition for Lo-RAs without compromising their structural in-tegrity. Extensive experiments on vision and lan-guage tasks demonstrate the effectiveness of our saliency-based approach, further reducing the gap between data-free and test-time adaptation meth-ods. 
+
+# 1. Introduction 
+
+The pretraining-and-finetuning paradigm (Hu et al., 2022b; 2023) has catalyzed the proliferation of task- and domain-specialized “expert” models derived from a common founda-tion backbone such as LLaMA family (Touvron et al., 2023; Dubey et al., 2024; Adcock et al., 2026), Qwen family (Bai et al., 2023; Team et al., 2024; Yang et al., 2025) in NLP, and CLIP (Radford et al., 2021), ViT (Dosovitskiy et al., 2021) 
+
+> 1
+
+Yonsei University, Seoul, South Korea 2Ewha Wom-ans University, Seoul, South Korea. Correspondence to: Kwanghoon Sohn <khsohn@yonsei.ac.kr >, Jiyoung Lee 
+
+<lee.jiyoung@ewha.ac.kr >.
+
+Preprint. June 2, 2026. Weight -based Merging   
+
+> !!!"!#⋯#
+
+Pre -trained Task -specific Experts 
+
+> !∗
+
+!!"#
+
+!!
+
+!!$#
+
+"%"# "%
+
+Selected parameters 
+
+Connectivity score Saliency score Interference 
+
+Task vectors 
+
+> Layers
+
+Task vectors 
+
+> Layers
+
+"%$#
+
+!!"#
+
+!!
+
+!!$#
+
+"%"# "% "%$#
+
+(a) Existing weight-based model merging Weight -based Merging   
+
+> !!!"!#⋯#
+
+Pre -trained Task -specific Experts 
+
+> !∗
+
+!!"#
+
+!!
+
+!!$#
+
+"%"# "%
+
+Selected parameters 
+
+Connectivity score Saliency score Interference 
+
+Task vectors 
+
+> Layers
+
+Task vectors 
+
+> Layers
+
+"%$#
+
+!!"#
+
+!!
+
+!!$#
+
+"%"# "% "%$#
+
+(b) Our SA-Merging 
+
+Figure 1. Comparison between (a) existing weight-based model merging methods (Ilharco et al., 2023; Matena & Raffel, 2022; Jin et al., 2022), which treat each parameter independently, and (b) our SA-Merging that takes the inter-layer interaction and the inter-model interference into account at once. 
+
+in computer vision. While this specialization achieves supe-rior performance on isolated tasks, it introduces a significant infrastructure burden; storing and maintaining a growing library of distinct experts is computationally expensive and logistically cumbersome. More importantly, this compart-mentalized approach creates knowledge silos , precluding the synergistic sharing of information across related domains. Model merging (Ilharco et al., 2023; Matena & Raffel, 2022; Jin et al., 2022; Yadav et al., 2023) has emerged as a com-pelling paradigm for consolidating multiple fine-tuned ex-perts directly into a unified parameter space to obtain a single multitask model, without the prohibitive cost of joint retraining. A most prevalent approach (Ilharco et al., 2023; Wortsman et al., 2022) represents each expert by a task vector, which is the parameter-wise displacement between a finetuned expert and the foundational base model, and 1
+
+> arXiv:2606.00511v1 [cs.LG] 30 May 2026 Saliency-Aware Model Merging
+
+then merges them with weighted averaging. Despite its efficiency, this linear weight-space interpolation is inher-ently limited. As the dimensionality and heterogeneity of tasks grow, simple element-wise accumulation of task vec-tors suffers from severe parameter interference. This in-terference arises because traditional methods treat experts’ weights as i.i.d(independent and identically distributed) vari-ables, failing to preserve the delicate functional alignment required for multitask proficiency. Consequently, the result-ing merged models often exhibit a substantial performance gap compared to gold-standard multitask finetuning learning (MTL) (Yadav et al., 2023; Cheng et al., 2025; Sun et al., 2025). To mitigate such interference, recent data-free approaches have introduced pruning and masking heuristics such as magnitude trimming and sign election (Yadav et al., 2023; Du et al., 2024; He et al., 2024; Sun et al., 2025; Yu et al., 2023). These methods, however, still predominantly operate under an element-wise independence assumption, treating each parameter as an isolated decision variable. This stands in contrast to the compositional hierarchy of deep neural networks, where functionality is not localized to individual weights but emerges through non-linear interactions across consecutive layers. By decoupling parameters from their structural context, existing heuristics often inadvertently prune weights that are critical for maintaining the coherent pathway of information flow across the network. This paper investigates a fundamental yet overlooked ques-tion: Can we identify which parameters to keep by ac-counting for inter-layer interactions within a data-free model merging framework? In this work, we extend Syn-Flow (Tanaka et al., 2020), in which inter-layer interactions of parameters can be measured along a path from an input to an output node, to introduce an iterative saliency-aware model merging ( SA-Merging ) from multiple trained mod-els. We leverage a connectivity score (Tanaka et al., 2020) as a structural proxy for task-wise end-to-end influence. The gradient of score derives a saliency score, i.e. , the impor-tance of each parameter update. Intuitively, the gradient term quantifies the sensitivity of the network’s end-to-end connectivity to changing a particular coordinate of an ex-pert update, providing a data-free importance signal. To further mitigate task interference, we modulate this con-nectivity sensitivity with the current merged direction so that low-agreement coordinates receive low saliency even when their raw magnitudes are large. Building on this sig-nal, SA-Merging recursively masks and removes non-informative updates, and then aggregates the remaining up-dates to construct a stable merged model. We rigorously evaluate the efficacy of SA-Merging 
+
+through a diverse suite of benchmarks, encompassing eight vision tasks with various vision transformer (ViT) back-bones (Dosovitskiy et al., 2021), and eight natural lan-guage processing tasks with T5 (Raffel et al., 2020). Fur-thermore, we demonstrate the extensibility of our frame-work by generalizing connectivity-based saliency formula-tion to parameter-efficient tuning models ( e.g. , LoRA (Hu et al., 2022b)). Experimental results show that the pro-posed saliency score successfully complements the exist-ing magnitude-based merging basis. By effectively cap-turing the functional importance of parameter updates, 
+
+SA-Merging consistently outperforms the state-of-the-art data-free methods in both vision and language tasks. 
+
+# 2. Related Work 
+
+Given a shared foundation model, training-free model merg-ing has emerged as a powerful framework for constructing a unified checkpoint by directly orchestrating parameter weights. This approach circumvents the additional opti-mization while elegantly maintaining the inference cost of a single model. A foundational baseline in this domain is simple weight averaging (Wortsman et al., 2022), motivat-ing work on when weight-space composition succeeds and how to make it reliable. A widely used view in Ilharco et al. (2023)represents each expert as the base model plus a parameter update, en-abling merging through simple parameter-space operations. Follow-up work improves this approach by learning non-uniform scaling of updates (Zhang et al., 2024) or select-ing which parts of the update to keep using importance metrics (Bowen et al., 2024). ZipIt (Stoica et al., 2023) studies training-free merging across experts trained for dif-ferent tasks, highlighting distinct cross-task behaviors. A central limitation is interference, typically arising from con-flicting update directions and redundant or task-irrelevant changes. TIES-Merging addresses this by removing small-magnitude updates and resolving directional disagreements before merging (Yadav et al., 2023). Several recent meth-ods further reduce conflicts via selective or localized rules, including CAT Merging (Sun et al., 2025), probabilistic masking (SeWA) (Wang et al., 2025a), and post-training layer scaling (LiNeS) (Wang et al., 2024). Sparsification provides another effective mechanism: DARE applies drop-and-rescale to suppress destructive update components (Yu et al., 2023), while DELLA-Merging uses magnitude-based sampling to reduce conflicts (Deep et al., 2024). Other di-rections resolve interference in parameter-efficient merges via orthogonal subspaces (Zhang & Zhou, 2025), improve efficiency with frequency-domain transformations (Zheng & Wang, 2025), and tune merge coefficients through adaptive weighting or expert selection (Yang et al., 2023). To scale to many experts, sparse or modular mechanisms restrict composition to subsets of parameters or modules (Davari & Belilovsky, 2024; He et al., 2024; Lu et al., 2024). 2Saliency-Aware Model Merging 
+
+Because neural networks admit permutation symmetries, direct parameter-space merging can be sensitive to misalign-ment; re-basin methods mitigate this by merging modulo permutations (Ainsworth et al., 2022; Rinaldi et al., 2025). Finally, strictly data-free fusion considers the regime where only parameters are available (Jin et al., 2022), including task-vectorguided composition (Cheng et al., 2025), analy-ses of scaling behavior at larger expert counts (Yadav et al., 2024), theoretical failure modes as the number of experts grows (Wang et al., 2025b), and automated search over merging recipes (Akiba et al., 2025). In contrast to existing works, we derive a saliency basis that couples consecutive layers and iteratively prunes low-saliency updates, yielding a strictly data-free merging proce-dure that jointly accounts for update magnitude, cross-layer connectivity, and directional agreement. 
+
+# 3. Method 
+
+3.1. Problem formulation 
+
+As shown in Figure 2, we consider a pretrained base model with parameters θ0 and N independently fine-tuned experts 
+
+{θn}Nn=1 for different tasks or domains. Following Ilharco et al. (2023), we represent each expert by a task vector τn
+
+defined by 
+
+τn := θn − θ0. (1) Data-free model merging aims to construct a single merged model θ⋆ that performs well across tasks without access to any task-related data or test-time calibration samples. Many existing methods can be written as producing an ag-gregated expert via a (possibly parameter-wise) selection and reweighting rule: 
+
+θ⋆ = θ0 +
+
+> N
+
+X
+
+> n=1
+
+wn ˆτn, where ˆτn = mn ⊙ τn. (2) 
+
+wn is an expert weight and mn is a parameter-wise binary mask. For example, task arithmetic (Ilharco et al., 2023) corresponds to mn = 1 with uniform wn applied to task vectors, while interference-aware methods (Yadav et al., 2023; Sun et al., 2025) can be interpreted as estimating a structured mask m that suppresses redundant or conflicting parameters. 
+
+3.2. Saliency estimation 
+
+The main limitation of existing magnitude-based parameter selection rules lies in their localist bias. These methods im-plicitly assume that the importance of a parameter update is intrinsic to its own value. However, in deep models, the func-tional contribution of any single weight is fundamentally context-dependent, i.e. , its participation in the end-to-end pathways determined through chains of consecutive layers. Saliency Computation               
+
+> !!
+> (#)!%
+> (#)!&
+> (#)
+> ⋯
+> Saliency -based Pruning ×$
+> %!%%%&⋯&'
+> Pre -trained Task -specific Experts
+> %∗
+> Figure 2. Overall procedure of SA-Merging . The framework be-gins with a shared base model θ0and a set of task-specific experts (namely, task vector τ). In each iteration t, saliency scores S(t)
+> n
+> are computed for each expert update, capturing their functional contribution to the global model connectivity.
+
+For example, a large-magnitude update that is “blocked” by small weights in adjacent layers may have less functional saliency than a smaller update that resides on a high-capacity path. Motivated by SynFlow’s connectivity score, where saliency is computed for a single model, we reformulate the connectivity-based saliency score with respect to task vectors and further modulate it using the aggregated merge direction to account for cross-expert agreement. Let a model consist of L consecutive parameter blocks, and let θl denote the parameters in l-th block (for simplicity, think of a representative weight matrix per block). We define a connectivity score Rn, which acts a a data-free proxy for the total signal transmission capacity of the n-th task vector: 
+
+Rn(θ0, τ n) := 1⊤
+
+> L
+
+Y
+
+> l=1
+
+θl 
+
+> 0
+
++ τ ln
+
+!
+
+1, (3) where 1 is the all-ones vector and | · | represents the element-wise absolute value operator. Conceptually, Rn sums end-to-end path strengths across the network hierarchy. By abso-lute magnitudes, we ensure the score captures the potential magnitude of information flow, regardless of sign, so pa-rameters that lie on many strong paths have larger influence on Rn. In practice, we instantiate blocks at the granularity of consecutive layers ( e.g. , transformer blocks or MLP lay-ers) and apply Rn to the dominant weight tensors within each block ( e.g. , projection matrices), optionally excluding biases and normalization parameters. This follows the in-tent of capturing cross-layer connectivity while keeping the functionality inexpensive to differentiate. With the connectivity score, we estimate a saliency score Sn
+
+for each parameter in the n-th task vector. This is achieved 3Saliency-Aware Model Merging 
+
+by differentiating Rn w.r.t. its task vector and modulating the resulting gradient with the aggregate direction :
+
+Sn := ∂Rn
+
+∂τ n
+
+⊙
+
+> N
+
+X
+
+> i=1
+
+τi. (4) This formulation offers a dual-advantage for model merging; • Structural sensitivity: The gradient term ∂Rn/∂τ n
+
+weights each parameter by its contribution to the model’s total connectivity. Parameters that are critical to maintaining the functional backbone of the expert receive higher saliency. • Interference mitigation: By modulating with the ag-gregate direction P 
+
+> i=1
+
+τi, we perform implicit sign election. If an expert’s update at a specific coordinate contradicts the collective agreement of the ensemble, the resulting product will be small (or negative), effec-tively downweighting the update as unreliable noise. Through this mechanism, Sn effectively filters out parame-ters that are either structurally redundant or task-conflicting. 
+
+3.3. Iterative saliency-aware model merging 
+
+Rather than performing one-shot merging, which may over-look the shifting structural dependencies of the network, we follow the iterative pruning scheme in Tanaka et al. (2020) to progressively refine the merged parameter mask. We construct a binary mask mn for each task vector that re-tains only the most informative parameters. At each itera-tion t ∈ { 1, . . . , T }, we estimate task-wise saliency scores 
+
+{S (t) 
+
+> n
+
+} based on the current state of the task vectors. We then update the task vectors by keeping the top (1 − p) frac-tion of parameters according to their saliency, where the pruning rate p determines the sparsity level at each step. This process yields the updated mask m(t) 
+
+> n
+
+:
+
+τ (t+1)  
+
+> n
+
+:= m(t) 
+
+> n
+
+⊙ τ (t) 
+
+> n
+
+, (5) where τ (0)  
+
+> n
+
+represents the initial task vector. After T it-erations, the final merged parameters θ⋆ are obtained by aggregating all task vectors to the base parameter θ0:
+
+θ⋆ = θ0 +
+
+> N
+
+X
+
+> n=1
+
+τ (T ) 
+
+> n
+
+. (6) This iterative refinement ensures that the merged model is composed of experts that are not only individually sparse but also structurally aligned to minimize cross-task interfer-ence. We first set the number of iterations T to 10 as a fixed practical default. As shown in Figure 3(b), we observe a con-sistent trend that performance improves as increases across 
+
+Algorithm 1 Saliency-aware model merging  
+
+> 1:
+
+Input: base parameters θ0; task vectors {τn}Nn=1 ; itera-tions T ; prune ratio p 
+
+> 2:
+
+for t = 1 to T do  
+
+> 3:
+
+τ ∗ 
+
+> t
+
+← PNi=1 τn 
+
+> 4:
+
+for n = 1 to N do  
+
+> 5:
+
+Rn ← 1⊤
+
+QLl=1 θl 
+
+> 0
+
++ τ ln
+
+
+
+1 
+
+> 6:
+
+Sn ← ∂Rn 
+
+> ∂τ n
+
+⊙ τ ∗ 
+
+> t
+> 7:
+
+mn ← TopKMask( Sn, 1 − p) 
+
+> 8:
+
+end for  
+
+> 9:
+
+τn ← mn ⊙ τn {Update task vectors } 
+
+> 10:
+
+end for  
+
+> 11:
+
+τ ∗ ← PNi=1 τn {Final merged task vector } 
+
+> 12:
+
+Return: merged model θ⋆ ← θ0 + τ ∗
+
+all tasks. Furthermore, we observe that this trend holds consistently across different pruning ratios. Following prior sparsification and localized-merging literature such as TIES-merging (Yadav et al., 2023) and Localize-and-stitch (He et al., 2024), we then set a target number of parameters to keep after iterations to 10% of the total number of each task vector’s parameters. Therefore, the iteration pruning ratio is set to p = 0 .2 to satisfy (1 − p)T ≈ 0.1. The complete procedure for SA-Merging is formalized in Algorithm 1. 
+
+TopKMask( ·, 1 − p) selects the top (1 − p) fraction within each tensor (per-matrix masking), which avoids degenerate behavior where small tensors are removed entirely by global ranking. 
+
+3.4. Extend to LoRA experts 
+
+Beyond full-parameter merging, we extend our 
+
+SA-Merging to low-rank adaptation (LoRA) (Hu et al., 2022b), which has become the de facto standard for scalable model specialization. 
+
+LoRA as a task vector. In LoRA fine-tuning (Hu et al., 2022a), the pretrained weights are frozen and each adapted linear layer l is modified by a low-rank update. Let W l 
+
+> 0
+
+∈
+
+Rdout ×din denote the base weight and let expert n provide LoRA factors Aln ∈ Rr×din and Bln ∈ Rdout ×r (with rank r). The induced weight update is 
+
+∆W ln = s B lnAln, s := α/r, (7) and we treat τ ln := ∆ W ln as the task-vector component for layer l (and τn = 0 for all non-adapted parameters). This converts LoRA experts into the same merging form as (2) while keeping the merge-time protocol strictly data-free. 
+
+Rank-preserving saliency. Our base algorithm masks in-dividual coordinates of τn. For LoRA, masking arbitrary entries of ∆W ln generally destroys the low-rank structure and cannot be represented by the same adapter rank. To pre-serve the LoRA parameterization, we use a rank-preserving 
+
+4Saliency-Aware Model Merging 
+
+Table 1. Multi-task performance when merging CLIP ViT-B/32 models on the 8-task vision suite. Test-time/data-assisted methods use unlabeled test inputs, calibration corpora, or labeled validation sets (AdaMerging/AdaMerging++ (Yang et al., 2023), Representation Surgery (Yang et al., 2024)). Data-free baselines include weight averaging (Wortsman et al., 2022), Fisher (Matena & Raffel, 2022), RegMean (Jin et al., 2022), task arithmetic (Ilharco et al., 2023), TIES (Yadav et al., 2023), PCB (Du et al., 2024), and WUDI (Cheng et al., 2025). The best score is bold and second score is underlined. Method SUN397 Cars RESISC45 EuroSAT SVHN GTSRB MNIST DTD Avg. 
+
+Non-merging 
+
+Pretrained 62.3 59.7 60.7 45.5 31.4 32.6 48.5 43.8 48.0 Individual 79.2 77.7 96.1 99.7 97.5 98.7 99.7 79.4 90.8 Traditional MTL 73.9 74.4 93.9 98.2 95.8 98.9 99.5 77.9 88.9 
+
+Test-time / data-assisted 
+
+AdaMerging 64.5 68.1 79.2 93.8 87.0 91.9 97.5 59.1 80.1 AdaMerging++ 66.6 68.3 82.2 94.2 89.6 89.0 98.3 60.6 81.1 Rep. Surgery 63.8 59.9 83.3 97.9 87.0 87.0 98.6 69.4 80.9 
+
+Data-free model merging 
+
+Weight Avg. 65.3 63.4 71.4 71.7 64.2 52.8 87.5 50.1 65.8 Fisher Merging 68.6 69.2 70.7 66.4 72.9 51.1 87.9 59.9 68.3 RegMean 65.3 63.5 75.6 78.6 78.1 67.4 93.7 52.0 71.8 Task Arithmetic 55.2 54.9 66.7 78.9 80.2 69.7 97.3 50.4 69.1 TIES-Merging 59.8 58.6 70.7 79.7 86.2 72.1 98.3 54.2 72.4 PCB Merging 66.7 65.5 78.5 79.3 86.4 77.1 98.2 59.1 76.3 WUDI-Merging 71.1 71.0 85.7 95.6 94.2 94.7 99.5 69.7 85.2 
+
+SA-Merging (Ours) 72.0 71.8 86.5 96.0 95.0 95.0 99.6 71.0 85.9 
+
+masking rule that prunes rank-1 components rather than individual matrix entries. We decompose the LoRA update into a sum of its rank-1 constituent components: 
+
+∆W ln = s
+
+> r
+
+X
+
+> k=1
+
+bln,k (aln,k )⊤, (8) where bln,k is the k-th column of Bln and aln,k is the k-th row of Aln. Let Gln := ∂ R(θ0+τn) 
+
+> ∂∆Wln
+
+denote the connectivity sensitivity for layer l (the corresponding block of gn), and let ∆W l := P 
+
+> i
+
+∆W li be the aggregate merge direction for that layer. 
+
+Computing sensitivities without materializing ∆W ln.
+
+Since ∆W ln = sB lnAln, the chain rule gives 
+
+∂ R
+
+∂B ln
+
+= s G ln(Aln)⊤, ∂ R
+
+∂A ln
+
+= s (Bln)⊤Gln, (9) thereby one can obtain the needed quantities via automatic differentiation on the low-rank factors. The first-order effect of scaling component k is the scalar 
+
+γln,k := Gln, b ln,k (aln,k )⊤ = ( bln,k )⊤Glnaln,k , (10) and the agreement of that component with the aggregate direction is 
+
+ηln,k := 
+
+D
+
+∆W l, b ln,k (aln,k )⊤E
+
+= ( bln,k )⊤∆W laln,k .
+
+(11) We define a rank-wise merge-aware saliency as 
+
+sln,k := γln,k ηln,k . (12) This is the direct analogue of (4) : γ measures the connec-tivity importance along a rank-1 direction, and η measures cross-expert agreement along the same direction. In prac-tice, {γln,k }rk=1 can be computed efficiently as the diagonal of (Bln)⊤Gln(Aln)⊤ (and similarly for η). 
+
+Rank-component masking update. For each layer l and ex-pert n, we keep the top (1 − p) fraction of rank components by sln,k and define a binary mask vector mln ∈ { 0, 1}r .We then update the LoRA factors by zeroing the pruned components: 
+
+Bln ← Bln Diag( mln), Aln ← Diag( mln) Aln. (13) This preserves the LoRA form with rank at most r while implementing the same iterative pruning structure as shown in Algorithm 2. Finally, we sum the remaining LoRA updates across experts to obtain the merged adapter (or equivalently a merged weight update) for each adapted layer. 
+
+Optional post-hoc compression. If one instead materi-alizes the merged matrix update ∆W l,⋆ (e.g., by apply-ing element-wise masks on ∆W ln), a low-rank adapter can be recovered without data via truncated SVD: ∆W l,⋆ ≈
+
+s B l,⋆ Al,⋆ with rank r′ chosen for a desired parameter bud-get. This step is purely algebraic and does not use any task data. 
+
+# 4. Experiments 
+
+We evaluate SA-Merging under a strict data-free protocol: the merging process operates exclusively on the pretrained 5Saliency-Aware Model Merging                                                                                                                                          
+
+> Table 2. Multi-task performance when merging CLIP ViT-L/14 models on the 8-task vision suite. Test-time/data-assisted methods use unlabeled test inputs, calibration corpora, or labeled validation sets (AdaMerging/AdaMerging++ (Yang et al., 2023), Representation Surgery (Yang et al., 2024)). Data-free baselines include weight averaging (Wortsman et al., 2022), Fisher (Matena & Raffel, 2022), RegMean (Jin et al., 2022), task arithmetic (Ilharco et al., 2023), TIES (Yadav et al., 2023), PCB (Du et al., 2024), and WUDI (Cheng et al., 2025). Method SUN397 Cars RESISC45 EuroSAT SVHN GTSRB MNIST DTD Avg.
+> Non-merging
+> Pretrained 66.8 77.7 71.0 59.9 58.4 50.5 76.3 55.3 64.5 Individual 82.3 92.4 97.4 100.0 98.1 99.2 99.7 84.1 94.2 Traditional MTL 80.8 90.6 96.3 96.3 97.6 99.1 99.6 84.4 93.5
+> Test-time / data-assisted
+> AdaMerging 79.0 90.3 90.8 96.2 93.4 98.0 99.0 79.9 90.8 AdaMerging++ 79.4 90.3 91.6 97.4 93.4 97.5 99.0 79.2 91.0 Rep. Surgery 75.7 84.4 93.1 98.8 91.3 93.4 99.1 76.1 89.0
+> Data-free model merging
+> Weight Avg. 72.1 81.6 82.6 91.9 78.2 70.7 97.1 62.8 79.6 Fisher Merging 69.2 88.6 87.5 93.5 80.6 74.8 93.3 70.0 82.2 RegMean 73.3 81.8 86.1 97.0 88.0 84.2 98.5 60.8 83.7 Task Arithmetic 73.9 82.1 86.6 94.1 87.9 86.7 98.9 65.6 84.5 TIES-Merging 76.5 85.0 89.3 95.7 90.3 83.3 99.0 68.8 86.0 PCB Merging 76.8 86.2 89.4 96.5 88.3 91.0 98.6 73.6 87.5 WUDI-Merging 81.0 91.0 94.2 99.2 96.3 98.1 99.6 81.2 92.6
+> SA-Merging (Ours) 82.0 91.8 95.0 99.4 97.0 98.6 99.7 83.5 93.4
+
+base parameters θ0 and the fine-tuned expert parameters 
+
+{θn} (equivalently, task vectors {τn}). Our approach by-passes the need for training, validation, or even unlabeled calibration data to determine hyperparameters or impor-tance weights. We still follow standard evaluation proto-cols on the test sets of each task, while the merging proce-dure is data-free . By eliminating reliance on auxiliary data, 
+
+SA-Merging ensures a highly practical and scalable merg-ing procedure, independent of data availability or privacy constraints. 
+
+4.1. Benchmarks and protocol Base benchmark suite. To match recent data-free merg-ing evaluations (Cheng et al., 2025), we include all bench-mark families used in their experimental setting: (i) an 8-task vision suite with CLIP ViT backbones (Radford et al., 2021); (ii) the 8-task GLUE benchmark for discrim-inative language understanding (Wang et al., 2018) with RoBERTa encoders (Liu et al., 2019); (iii) a decoder-based, instruction/math/code merging suite evaluated on AlpacaE-val (Dubois et al., 2024), GSM8K (Cobbe et al., 2021), MATH (Hendrycks et al., 2021), HumanEval (Chen et al., 2021), and MBPP (Austin et al., 2021); and (iv) an addi-tional LoRA-merging setting with Flan-T5-base (Chung et al., 2024) experts. 
+
+Vision (CLIP ViT). We start from pretrained CLIP image encoders and fine-tune N =8 task experts on SUN397 (Xiao et al., 2016; 2010), Stanford Cars (Krause et al., 2013), RESISC45 (Cheng et al., 2017), EuroSAT (Helber et al., 2019), SVHN (Netzer et al., 2011), GTSRB (Stallkamp et al., 2012), MNIST (LeCun et al., 2002), and DTD (Cim-poi et al., 2014). We report top-1 accuracy per task and macro-average for ViT-B/32, ViT-B/16, and ViT-L/14. 
+
+Language (GLUE). We merge N =8 GLUE experts (CoLA, MNLI, MRPC, QNLI, QQP, RTE, SST-2, STS-B) for RoBERTa-Base and RoBERTa-Large (Liu et al., 2019), reporting the average normalized score following (Cheng et al., 2025) (100 corresponds to the corresponding single-task expert). 
+
+LoRA merging. To assess the broader applicability of our framework, we evaluate SA-Merging in the context of parameter-efficient fine-tuning (PEFT). Specifically, we consolidate eight distinct LoRA (Hu et al., 2022b) experts, each fine-tuned on a separate task from the GLUE bench-mark suite using the Flan-T5-base (Chung et al., 2024) backbone. In addition, we employ Qwen-14B’s (Bai et al., 2023) LoRA experts fine-tuned on four tasks, including MMLU (Hendrycks et al., 2020), TruthfulQA (Lin et al., 2021), BBQ (Parrish et al., 2021), and CNN/DailyMail (Her-mann et al., 2015). 
+
+4.2. Baselines 
+
+We compare against training-free merging methods that operate on full parameters or task vectors: simple weight averaging (Wortsman et al., 2022), task arithmetic (Ilharco et al., 2023), TIES-Merging (Yadav et al., 2023), DARE (Yu et al., 2023), WUDI-Merging (Cheng et al., 2025), PCB-6Saliency-Aware Model Merging                         
+
+> Table 3. Multi-task performance when merging RoBERTa experts on the 8-task GLUE benchmark. We report the average normalized score following (Cheng et al., 2025). Data-free baselines include weight averaging (Wortsman et al., 2022), task arithmetic (Ilharco et al., 2023), TIES (Yadav et al., 2023), DARE (Yu et al., 2023), PCB (Du et al., 2024), and WUDI (Cheng et al., 2025). Each task score is reported in Table B2 and Table B3. Method RoBERTa-Base RoBERTa-Large
+> Non-merging
+> Pretrained 41.7 38.2 Individual 100.0 100.0
+> Data-free model merging
+> Weight Avg. 52.6 53.3 Task Arithmetic 67.8 70.9 TIES-Merging 64.7 72.4 TA + DARE 63.7 70.9 TIES + DARE 65.6 72.8 PCB Merging 76.5 79.0 WUDI-Merging 85.3 88.8
+> SA-Merging (Ours) 87.1 90.2
+
+Merging (Du et al., 2024), Localize-and-Stitch (He et al., 2024), and CAT Merging (Sun et al., 2025). For complete-ness, we also report test-time/data-assisted baselines that use unlabeled calibration inputs or labeled validation sets at merge time, including AdaMerging (Yang et al., 2023), representation surgery (Yang et al., 2024), activation-guided consensus merging (ACM) (Yao et al., 2025), and DF-Merge (Lee et al., 2025); these results are explicitly grouped and labeled as non-data-free in the tables. 
+
+4.3. Main results 
+
+4.3.1. V ISION TASKS 
+
+Table 1 and Table 2 show the effectiveness of our 
+
+SA-Merging on multiple vision tasks. On the ViT-B/32 backbone, SA-Merging demonstrates an average accuracy of 85.9%, outperforming the best data-free base-line, WUDI-Merging (85.2%), and significantly surpass-ing data-assisted methods like AdaMerging++ (81.1%). This trend continues with the larger ViT-L/14 model, where SA-Merging reaches an average accuracy of 93.4%, nearly matching the performance of traditional MTL (93.5%) and individual experts (94.2%), without requiring any joint training or data access. The results with ViT-B/16 backbone are reported in Table B1. Across the ViT series, SA-Merging consistently improves over weight av-eraging and task arithmetic, and matches or exceeds strong sparsification-based baselines. 4.3.2. L ANGUAGE (GLUE) In Table 3, SA-Merging achieves a new state-of-the-art for data-free model merging with average normal-ized accuracy of 87.1% on RoBERTa-Base and 90.2% on RoBERTa-Large, surpassing the prior state-of-the-art WUDI-Merging with a 1.8p and 1.4p margins on RoBERTa-BASE and -Large, respectively. The performance gap be-tween SA-Merging and standard heuristics is substan-tial, exceeding +20% over TIES-Merging (64.7%) and Task Arithmetic (67.8%). Furthermore, the advantage of struc-tural saliency remains consistent as the model backbone scales, proving its effectiveness in managing the increased interference found in larger parameter spaces. These find-ings suggest that a robust structural saliency signal can effectively substitute for empirical data feedback, success-fully closing the gap between data-free and data-dependent merging regimes. 4.3.3. L ORA MERGING 
+
+Merging low-rank adapters trained on LLM is particularly challenging due to the highly compressed nature of the updates, which amplifies the risk of functional collapse when experts are naively aggregated. Table 4 shows our connectivity-based saliency scores effectively identify the most critical low-rank directions across tasks, although im-provements are smaller than full-parameter merging due to the low-rank parameterization and its initialization-induced noise. Nevertheless, these results underscore the robust ex-tensibility of SA-Merging , establishing it as a versatile, data-free framework capable of preserving functional path-ways even within highly constrained, low-rank parameter spaces. The results in Table 5 show that SA-Merging consistently outperforms the baselines under a larger-scale PEFT set-ting. This indicates that the proposed rank-wise saliency formulation is not restricted to smaller models, such as Flan-T5-base, but also generalizes to larger language models. Together with the strong performance on ViT full-parameter merging and language LoRA merging, these results fur-ther support the broader claim that SA-Merging is not modality-specific, but provides a general formulation for saliency-aware model merging. 
+
+4.4. Analysis 
+
+4.4.1. E FFECT OF PRUNING RATIO AND ITERATIONS 
+
+We sweep the pruning ratio p and number of iterations T and observe that moderate sparsification yields the best trade-off: overly aggressive pruning removes task-critical connectivity paths, while insufficient pruning leaves sign-conflicted coor-dinates intact. As shown in Figure 3(a), we observe that the merged model reaches its best performance at p = 0 .2 by balancing knowledge preservation and interference mitiga-tion. Figure 3(b) shows that SA-Merging exhibits a rapid and synchronized convergence across all tasks, reaching 7Saliency-Aware Model Merging 
+
+Table 4. LoRA merging results on the 8-task GLUE suite using Flan-T5-base experts, following the benchmark family in (Cheng et al., 2025). Test-time/data-assisted methods use unlabeled test inputs, calibration corpora, or labeled validation sets (AdaMerging++ (Yang et al., 2023), ACM (Yao et al., 2025), DF-Merge (Lee et al., 2025)). Data-free baselines include task arithmetic (Ilharco et al., 2023), TIES (Yadav et al., 2023), PCB (Du et al., 2024), and WUDI (Cheng et al., 2025). Method CoLA MNLI MRPC QNLI QQP RTE SST-2 STS-B Avg. 
+
+Non-merging 
+
+Individual 69.1 82.7 85.5 90.9 84.0 84.4 92.9 87.4 84.6 
+
+Test-time / data-assisted 
+
+AdaMerging++ 69.1 60.3 78.4 90.0 83.6 79.1 91.6 74.1 78.3 
+
+Data-free 
+
+Weight Avg. 67.0 55.0 77.0 89.0 83.0 77.0 91.0 70.0 76.1 Task Arithmetic. 67.5 55.5 78.0 89.2 83.2 78.0 91.2 71.0 76.7 TIES 68.3 56.3 79.4 89.8 83.7 79.4 91.6 71.2 77.5 PCB 68.0 60.0 80.0 90.0 83.7 79.0 91.8 79.5 79.0 WUDI 68.6 79.0 77.7 87.2 83.1 75.8 93.2 85.0 81.2 
+
+SA-Merging (Ours) 69.8 68.0 84.0 91.5 84.6 83.0 93.2 85.5 82.5 (a) Performance according to pruning ratio (b) Performance according to pruning iteration (c) Sign conflicts across models 
+
+Figure 3. Analysis on (a) pruning ratio, (b) pruning iteration, and (c) sign conflict across models. 
+
+Table 5. LoRA merging results on four tasks, including MMLU (Hendrycks et al., 2020), TruthfulQA (Lin et al., 2021), BBQ (Parrish et al., 2021), and CNN/DailyMail (Hermann et al., 2015), using Qwen-14B (Bai et al., 2023) experts, following the benchmark family in (Cheng et al., 2025). Method MMLU TruthfulQA BBQ CNN Avg. Individual 68.35 53.34 93.53 19.46 58.67 Task Arithmetic 67.56 52.33 78.38 20.54 54.70 TIES Merging 69.38 52.03 81.06 15.91 54.62 WUDI-Merging 69.17 55.71 80.56 17.33 55.69 
+
+SA-Merging (Ours) 69.87 55.60 81.35 18.48 56.33 
+
+peak performance within approximately 10 iterations. This indicates that our saliency signal effectively identifies and mitigates task interference through iterative refinement. 4.4.2. C ONFLICT LOCALIZATION .We further analyze where SA-Merging prunes parame-ters and find that pruned coordinates concentrate in layers with high sign disagreement across experts, while preserved coordinates align with strong connectivity gradients. This complements prior sign-based conflict analyses (Yadav et al., 2023; Sun et al., 2025) by introducing an explicit connectiv-ity weighting. As shown in Figure 3(c), our SA-Merging 
+
+introduces significantly fewer parameter conflicts between models. 
+
+# 5. Conclusion 
+
+We studied a strictly data-free model merging, where a sin-gle multitask checkpoint must be composed from a shared base model and multiple fine-tuned experts without access to any training or validation data during merging. We utilized the connectivity-aware saliency basis of the task vector that couples consecutive layers and yields parameter rankings that reflect end-to-end influence, and iterative saliency prun-ing that constructs a refined task-wise parameter mask for composing task vectors. Our SA-Merging superiorly nav-igates both full-parameter and low-rank adaptation settings, consistently outperforming prior arts in vision, language, and Flan-T5-base LoRA experts consolidation. 
+
+Limitations. Our connectivity function is a structural sur-rogate defined on parameters; while it is data-free and dif-8Saliency-Aware Model Merging 
+
+ferentiable, it is not guaranteed to correlate perfectly with downstream accuracy for every architecture and task. The computational cost scales with the number of experts and the number of pruning iterations, and careful engineering is required for very large models. Finally, our current write-up focuses on strictly data-free merging; extending the ap-proach to incorporate small amounts of calibration data (when available) is an important direction but departs from the strict setting. 
+
+# Impact Statement 
+
+This work introduces SA-Merging , a structural frame-work for efficient model merging that significantly advances the sustainability and accessibility of large-scale AI. By en-abling model consolidation without the need for joint retrain-ing, our method drastically reduces the energy consumption and carbon footprint associated with developing multitask systems. Furthermore, as a purely data-free approach, it facilitates the secure integration of expertise across mod-els without compromising the privacy of sensitive training data, which is paramount in domains such as healthcare and finance. 
+
+# Acknowledgements 
+
+This work was supported by the National Research Foun-dation of Korea(NRF) grant funded by the Korea govern-ment(MSIT) (RS-2025-02216328). 
+
+# References 
+
+Adcock, A., Srivastava, A., Dubey, A., Jauhri, A., Pande, A., Pandey, A., Sharma, A., Kadian, A., Kumawat, A., Kelsey, A., et al. The llama 4 herd: Architecture, train-ing, evaluation, and deployment notes. arXiv preprint arXiv:2601.11659 , 2026. Ainsworth, S. K., Hayase, J., and Srinivasa, S. Git re-basin: Merging models modulo permutation symmetries, 2022. arXiv:2209.04836. Akiba, T., Shing, M., Tang, Y., Sun, Q., and Ha, D. Evolu-tionary optimization of model merging recipes. Nature Machine Intelligence , 2025. Austin, J., Odena, A., Nye, M., Bosma, M., Michalewski, H., Dohan, D., Jiang, E., Cai, C., Terry, M., Le, Q., and Sutton, C. Program synthesis with large language models, 2021. arXiv:2108.07732. Bai, J., Bai, S., Chu, Y., Cui, Z., Dang, K., Deng, X., Fan, Y., Ge, W., Han, Y., Huang, F., et al. Qwen technical report. arXiv preprint arXiv:2309.16609 , 2023. Bowen, T., Songning, L., Jiemin, W., Zhihao, S., Shim-ing, G., and Yutao, Y. Beyond task vectors: Selec-tive task arithmetic based on importance metrics, 2024. arXiv:2411.16139. Chen, M., Tworek, J., Jun, H., Yuan, Q., Pinto, H. P. d. O., Kaplan, J., Edwards, H., Burda, Y., Joseph, N., Brockman, G., Ray, A., Puri, R., Krueger, G., Petrov, M., Khlaaf, H., Sastry, G., Mishkin, P., Chan, B., Gray, S., Ryder, N., Pavlov, M., Power, A., Kaiser, L., Bavarian, M., Win-ter, C., Tillet, P., Such, F., Cummings, D., Plappert, M., Chantzis, F., Barnes, E., Herbert-Voss, A., Guss, W., Nichol, A., Paino, A., Tezak, N., Tang, J., Babuschkin, I., Balaji, S., Jain, S., Saunders, W., Hesse, C., Carr, A., Leike, J., Achiam, J., Misra, V., Morikawa, E., Radford, A., Knight, R., Brundage, M., Murati, M., Mayer, K., Welinder, P., McGrew, B., Amodei, D., Sutskever, I., and Zaremba, W. Evaluating large language models trained on code, 2021. arXiv:2107.03374. Cheng, G., Han, J., and Lu, X. Remote sensing image scene classification: Benchmark and state of the art. Proceed-ings of the IEEE , 105(10):1865–1883, 2017. Cheng, R., Xiong, F., Wei, Y., Zhu, W., and Yuan, C. Who-ever started the interference should end it: Guiding data-free model merging via task vectors. In ICML , 2025. Chung, H. W., Hou, L., Longpre, S., Zoph, B., Tay, Y., Fe-dus, W., Li, Y., Wang, X., Dehghani, M., Brahma, S., et al. Scaling instruction-finetuned language models. Journal of Machine Learning Research , 25(70):1–53, 2024. Cimpoi, M., Maji, S., Kokkinos, I., Mohamed, S., and Vedaldi, A. Describing textures in the wild. In CVPR ,2014. Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., Plappert, M., Tworek, J., Hilton, J., Nakano, R., Hesse, C., and Schulman, J. Training verifiers to solve math word problems, 2021. arXiv:2110.14168. Davari, M. and Belilovsky, E. Model breadcrumbs: Scaling multi-task model merging with sparse masks. In ECCV ,2024. Deep, P. T., Bhardwaj, R., and Poria, S. Della-merging: Re-ducing interference in model merging through magnitude-based sampling, 2024. arXiv:2406.11617. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., and Houlsby, N. An image is worth 16x16 words: Transformers for image recognition at scale. In ICLR , 2021. 9Saliency-Aware Model Merging 
+
+Du, G., Lee, J., Li, J., Jiang, R., Guo, Y., Yu, S., Liu, H., Goh, S. K., Tang, H.-K., He, D., and Zhang, M. Parameter competition balancing for model merging. In NeurIPS ,2024. Dubey, A., Jauhri, A., Pandey, A., Kadian, A., Al-Dahle, A., Letman, A., Mathur, A., Schelten, A., Yang, A., Fan, A., et al. The llama 3 herd of models. arXiv e-prints , pp. arXiv–2407, 2024. Dubois, Y., Galambosi, B., Liang, P., and Hashimoto, T. B. Length-controlled alpacaeval: A simple way to debias automatic evaluators, 2024. arXiv:2404.04475. He, Y., Hu, Y., Lin, Y., Zhang, T., and Zhao, H. Localize-and-stitch: Efficient model merging via sparse task arith-metic. TMLR , 2024. Helber, P., Bischke, B., Dengel, A., and Borth, D. Eurosat: A novel dataset and deep learning benchmark for land use and land cover classification. IEEE Journal of Se-lected Topics in Applied Earth Observations and Remote Sensing , 12(7):2217–2226, 2019. Hendrycks, D., Burns, C., Basart, S., Zou, A., Mazeika, M., Song, D., and Steinhardt, J. Measuring massive multitask language understanding, 2020. arXiv:2009.03300. Hendrycks, D., Burns, C., Kadavath, S., Arora, A., Basart, S., Tang, E., Song, D., and Steinhardt, J. Measuring mathematical problem solving with the MATH dataset, 2021. arXiv:2103.03874. Hermann, K. M., Kocisky, T., Grefenstette, E., Espeholt, L., Kay, W., Suleyman, M., and Blunsom, P. Teaching machines to read and comprehend. In NeurIPS , 2015. Hu, E., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., and Chen, W. Lora: Low-rank adaptation of large language models. In ICLR , 2022a. Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., et al. Lora: Low-rank adaptation of large language models. In ICLR , 2022b. Hu, Z., Wang, L., Lan, Y., Xu, W., Lim, E.-P., Bing, L., Xu, X., Poria, S., and Lee, R. Llm-adapters: An adapter fam-ily for parameter-efficient fine-tuning of large language models. In EMNLP , pp. 5254–5276, 2023. Ilharco, G., Ribeiro, M. T., Wortsman, M., Gururangan, S., Schmidt, L., Hajishirzi, H., and Farhadi, A. Editing models with task arithmetic. In ICLR , 2023. Jin, X., Ren, X., Preotiuc-Pietro, D., and Cheng, P. Data-less knowledge fusion by merging weights of language models, 2022. arXiv:2212.09849. Krause, J., Stark, M., Deng, J., and Fei-Fei, L. 3d object representations for fine-grained categorization. In CVPR Workshop , 2013. LeCun, Y., Bottou, L., Bengio, Y., and Haffner, P. Gradient-based learning applied to document recognition. Proceed-ings of the IEEE , 86(11):2278–2324, 2002. Lee, S., Liu, J., Wang, Q., Wang, J., Cai, X., and Wu, Y. Dynamic fisher-weighted model merging via bayesian optimization, 2025. arXiv:2504.18992. Lin, S., Hilton, J., and Evans, O. Truthfulqa: Mea-suring how models mimic human falsehoods, 2021. arXiv:2109.07958. Liu, Y., Ott, M., Goyal, N., Du, J., Joshi, M., Chen, D., Levy, O., Lewis, M., Zettlemoyer, L., and Stoyanov, V. Roberta: A robustly optimized bert pretraining approach. 
+
+arXiv preprint arXiv:1907.11692 , 2019. Lu, Z., Fan, C., Wei, W., Qu, X., Chen, D., and Cheng, Y. Twin-merging: Dynamic integration of modular expertise in model merging. In NeurIPS , 2024. Matena, M. and Raffel, C. Merging models with fisher-weighted averaging. In NeurIPS , 2022. Netzer, Y., Wang, T., Coates, A., Bissacco, A., Wu, B., Ng, A. Y., et al. Reading digits in natural images with unsupervised feature learning. In NIPS workshop on deep learning and unsupervised feature learning , volume 2011, 2011. Parrish, A., Chen, A., Nangia, N., Padmakumar, V., Phang, J., Thompson, J., Htut, P. M., and Bowman, S. Bbq: A hand-built bias benchmark for question answering, 2021. arXiv:2110.08193. Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., and Sutskever, I. Learning transferable visual models from natural language supervision. In 
+
+ICML , 2021. Raffel, C., Shazeer, N., Roberts, A., Lee, K., Narang, S., Matena, M., Zhou, Y., Li, W., and Liu, P. J. Exploring the limits of transfer learning with a unified text-to-text transformer. JMLR , 2020. Rinaldi, F., Capitani, G., Bonicelli, L., Crisostomi, D., Bolelli, F., Ficarra, E., Rodol `a, E., Calderara, S., and Porrello, A. Update your transformer to the latest release: Re-basin of task vectors, 2025. arXiv:2505.22697. Stallkamp, J., Schlipsing, M., Salmen, J., and Igel, C. Man vs. computer: Benchmarking machine learning algo-rithms for traffic sign recognition. Neural networks , 32: 323–332, 2012. 10 Saliency-Aware Model Merging 
+
+Stoica, G., Bolya, D., Bjorner, J., Ramesh, P., Hearn, T., and Hoffman, J. Zipit! merging models from different tasks without training, 2023. arXiv:2305.03053. Sun, W., Li, Q., ao Geng, Y., and Li, B. Cat merging: A training-free approach for resolving conflicts in model merging. In ICML , 2025. Tanaka, H., Kunin, D., Yamins, D. L. K., and Ganguli, S. Pruning neural networks without any data by iteratively conserving synaptic flow. In NeurIPS , 2020. Team, Q. et al. Qwen2 technical report. arXiv preprint arXiv:2407.10671 , 2(3), 2024. Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux, M.-A., Lacroix, T., Rozi `ere, B., Goyal, N., Hambro, E., Azhar, F., et al. Llama: Open and efficient foundation lan-guage models. arXiv preprint arXiv:2302.13971 , 2023. Wang, A., Singh, A., Michael, J., Hill, F., Levy, O., and Bowman, S. R. Glue: A multi-task benchmark and analy-sis platform for natural language understanding. In Pro-ceedings of the 2018 EMNLP Workshop BlackboxNLP: Analyzing and Interpreting Neural Networks for NLP ,2018. doi: 10.18653/v1/W18-5446. Wang, K., Dimitriadis, N., Favero, A., Ortiz-Jimenez, G., Fleuret, F., and Frossard, P. Lines: Post-training layer scaling prevents forgetting and enhances model merging, 2024. arXiv:2410.17146. Wang, P., Hu, S., Tao, Z., Wang, G., Yu, D., Shen, L., Zheng, Q., and Tao, D. Sewa: Selective weight average via probabilistic masking, 2025a. arXiv:2502.10119. Wang, Z., Xu, X., Liu, Y., Zhang, Y., Lin, P., Feng, S., Yang, X., Wang, D., and Sch ¨utze, H. Why do more experts fail? a theoretical analysis of model merging, 2025b. arXiv:2505.21226. Wortsman, M., Ilharco, G., Gadre, S. Y., Roelofs, R., Gontijo-Lopes, R., Morcos, A. S., Namkoong, H., Farhadi, A., Carmon, Y., Kornblith, S., and Schmidt, L. Model soups: averaging weights of multiple fine-tuned models improves accuracy without increasing inference time. In ICML , 2022. Xiao, J., Hays, J., Ehinger, K. A., Oliva, A., and Torralba, A. Sun database: Large-scale scene recognition from abbey to zoo. In CVPR . IEEE, 2010. Xiao, J., Ehinger, K. A., Hays, J., Torralba, A., and Oliva, A. Sun database: Exploring a large collection of scene categories. International Journal of Computer Vision ,119(1):3–22, 2016. Yadav, P., Tam, D., Choshen, L., Raffel, C., and Bansal, M. Ties-merging: Resolving interference when merging models. In NeurIPS , 2023. Yadav, P., Vu, T., Lai, J., Chronopoulou, A., Faruqui, M., Bansal, M., and Munkhdalai, T. What matters for model merging at scale?, 2024. arXiv:2410.03617. Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Gao, C., Huang, C., Lv, C., et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388 , 2025. Yang, E., Wang, Z., Shen, L., Liu, S., Guo, G., Wang, X., and Tao, D. Adamerging: Adaptive model merging for multi-task learning, 2023. arXiv:2310.02575. Yang, E., Shen, L., Wang, Z., Guo, G., Chen, X., Wang, X., and Tao, D. Representation surgery for multi-task model merging. In ICML , 2024. Yao, Y., Liu, S., Liu, Z., Li, Q., Liu, M., Han, X., Guo, Z., Wu, H., and Song, L. Activation-guided consensus merging for large language models. In NeurIPS , 2025. Yu, L., Yu, B., Yu, H., Huang, F., and Li, Y. Language mod-els are super mario: Absorbing abilities from homologous models as a free lunch, 2023. arXiv:2311.03099. Zhang, F. Z., Albert, P., Rodriguez-Opazo, C., van den Hengel, A., and Abbasnejad, E. Knowledge composition using task vectors with learned anisotropic scaling. In 
+
+NeurIPS , 2024. Zhang, H. and Zhou, J. Unraveling lora interference: Or-thogonal subspaces for robust model merging. In ACL ,2025. Zheng, S. and Wang, H. Free-merging: Fourier transform for efficient model merging. In ICCV , 2025. 11 Saliency-Aware Model Merging 
+
+# A. Additional Details 
+
+A.1. Implementation details 
+
+The connectivity score (3) is defined over the dominant linear operators. For Transformer architectures, we apply it to the major projection matrices (attention and MLP). For parameters that do not participate in these products ( e.g. , LayerNorm scale/shift and biases), we keep them unpruned by default. 
+
+A.2. LoRA algorithm 
+
+We provide the overall merging process with LoRA in Algorithm 2. 
+
+Algorithm 2 LoRA-based SA-Merging 
+
+1: Input: Base parameters θ0, LoRA adapters {A(0)  
+
+> n
+
+, B (0)  
+
+> n
+
+}Nn=1 , iterations T , pruning rate p.
+
+2: Initialize: Rank-wise masks ml, (1)  
+
+> n
+
+← 1r for all layers l and tasks n.
+
+3: for t = 1 to T do 
+
+4: ∆W (t) ← PNi=1 sB (t−1)  
+
+> i
+
+A(t−1)  
+
+> i
+
+{Compute aggregate low-rank direction }
+
+5: for n = 1 to N do 
+
+6: Compute gradient: G(t) 
+
+> n
+
+← ∂Rn  
+
+> ∂(θ0+sB (t−1)
+> nA(t−1)
+> n)
+
+7: γn,k ← diag (( B(t−1)  
+
+> n
+
+)⊤G(t) 
+
+> n
+
+(A(t−1)  
+
+> n
+
+)⊤) {Rank-wise connectivity importance }
+
+8: ηn,k ← diag (( B(t−1)  
+
+> n
+
+)⊤∆W (t)(A(t−1)  
+
+> n
+
+)⊤) {Rank-wise agreement }
+
+9: sn,k ← | γn,k ηn,k | { Compute rank-wise saliency }
+
+10: Update mask: m(t) 
+
+> n
+
+← TopKMask (1 − p) components based on sn,k 
+
+11: Update factors: B(t) 
+
+> n
+
+← B(t−1)  
+
+> n
+
+Diag (m(t) 
+
+> n
+
+), A(t) 
+
+> n
+
+← Diag (m(t) 
+
+> n
+
+)A(t−1) 
+
+> n
+
+12: end for 
+
+13: end for 
+
+14: Merge: θ⋆ ← θ0 + λ PNn=1 sB (T ) 
+
+> n
+
+A(T )
+
+> n
+
+15: Return: θ⋆
+
+A.3. Additional interpretation of connectivity gradients 
+
+For a sequence of linear layers with weights {θl}Ll=1 , define the forward “flow” vectors 
+
+a0 := 1, al := |θl| al−1, (14) and the backward flow vectors 
+
+bL := 1, bl−1 := |θl|⊤bl. (15) Then R(θ) = 1⊤aL = bl⊤al, and the gradient satisfies a prefix–suffix factorization: entries of ∂R/∂ |θl| are proportional to 
+
+bl(al−1)⊤ (Tanaka et al., 2020). This makes the sensitivity large for parameters that connect large upstream and downstream flows, aligning saliency with inter-layer connectivity. 
+
+# B. Additional results 
+
+Performance with CLIP ViT-B/16 on vision tasks. 
+
+We provide the result of ViT-B/16 in Table B1. The evaluation on the 8-task vision suite using the CLIP ViT-B/16 backbone further validates the robustness and precision of SA-Merging in high-resolution regimes. As shown in Table B1, 
+
+SA-Merging consistently outperforms strong data-free baselines, providing a massive performance leap of up to 16p compared to standard heuristics (Ilharco et al., 2023; Yadav et al., 2023). 
+
+Per-task performance on the GLUE benchmark. 
+
+Per-task normalized scores for RoBERTa-Base and RoBERTa-Large on the 8-task GLUE benchmark in Table B2 and Table B3. 12 Saliency-Aware Model Merging 
+
+Table B1. Multi-task performance when merging CLIP ViT-B/16 models on the 8-task vision suite. Test-time/data-assisted methods use unlabeled test inputs, calibration corpora, or labeled validation sets (AdaMerging/AdaMerging++ (Yang et al., 2023), Representation Surgery (Yang et al., 2024)). Data-free baselines include weight averaging (Wortsman et al., 2022), Fisher (Matena & Raffel, 2022), RegMean (Jin et al., 2022), task arithmetic (Ilharco et al., 2023), TIES (Yadav et al., 2023), PCB (Du et al., 2024), and WUDI (Cheng et al., 2025). Method SUN397 Cars RESISC45 EuroSAT SVHN GTSRB MNIST DTD Avg. 
+
+Non-merging 
+
+Pretrained 63.8 64.6 65.7 54.5 52.0 43.3 51.7 45.1 55.0 Individual 81.8 86.8 96.9 99.7 97.8 99.1 99.7 82.0 92.9 
+
+Test-time / data-assisted 
+
+AdaMerging 64.4 64.2 75.4 86.7 86.3 86.7 97.6 46.9 76.0 AdaMerging++ 70.2 80.7 81.6 94.8 91.6 95.8 98.5 66.2 84.9 Rep. Surgery 68.3 72.3 88.7 97.7 91.0 89.5 98.9 72.9 84.9 DF-Merge 76.0 83.0 91.2 98.1 95.8 96.8 99.5 76.0 89.6 
+
+Data-free model merging 
+
+Weight Avg. 67.7 70.0 75.3 79.5 74.9 60.1 94.4 43.8 70.7 Fisher Merging 68.5 69.9 75.2 80.4 73.2 61.2 94.5 50.7 71.7 RegMean 69.1 71.6 77.6 88.8 83.7 70.2 96.9 54.6 76.6 Task Arithmetic 61.1 65.9 74.0 76.2 88.0 73.9 98.4 53.0 73.8 TIES-Merging 69.1 72.5 80.5 84.0 85.0 71.5 98.1 54.9 77.0 PCB Merging 70.5 73.0 82.0 86.0 89.0 80.0 98.6 65.0 80.5 WUDI-Merging 75.7 82.5 90.7 98.0 95.4 96.6 99.4 74.7 89.1 
+
+SA-Merging (Ours) 76.8 83.5 92.0 98.2 95.8 97.0 99.5 76.0 89.8 
+
+Table B2. Per-task multi-task performance when merging RoBERTa-Base experts on the 8-task GLUE benchmark. Method CoLA SST-2 MRPC STS-B QQP QNLI MNLI RTE Avg. 
+
+Non-merging 
+
+Pretrained 0.0 53.8 85.0 4.0 37.5 53.1 37.1 71.2 41.7 Individual 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 
+
+Data-free model merging 
+
+Weight Averaging 0.0 59.2 85.8 47.0 45.4 63.9 48.0 71.2 52.6 Task Arithmetic 8.4 88.3 89.6 32.8 82.0 85.4 75.5 80.4 67.8 TIES-Merging 31.8 88.9 86.2 10.9 61.1 85.9 83.0 69.6 64.7 Task Arithmetic (w/ DARE) 0.0 88.1 86.6 30.2 84.3 79.1 64.0 77.2 63.7 TIES-Merging (w/ DARE) 11.8 95.5 85.8 9.4 86.8 88.7 83.1 63.6 65.6 WUDI-Merging 81.8 98.3 78.7 60.5 92.7 90.5 93.3 86.4 85.3 
+
+SA-Merging (Ours) 85.0 98.8 82.0 70.0 93.5 91.5 94.0 82.0 87.1 
+
+Computational cost comparison. In Table B4, we provide the comparison of different merging approaches, including TIES-Merging (Yadav et al., 2023), AdaMerging (Yang et al., 2023), WUDI-Merging (Cheng et al., 2025), and our 
+
+SA-Merging , in terms of accuracy, time, and GPU memory usage with ViT-B/32 on the 8-task vision suite. The results show that SA-Merging achieves the best performance of 85.9% with 20s runtime, which is 6 × faster than WUDI-Merging. However, SA-Merging keeps the task vectors, the connectivity scores for each expert, and their gradients during the merging process, requiring about 3 × more GPU memory than WUDI-Merging. While TIES-Merging is a very lightweight one-shot heuristic, it achieves lower performance than other methods. Our SA-Merging remains substantially more efficient than calibration-based AdaMerging, and is also faster than WUDI-Merging, while delivering the best accuracy. 13 Saliency-Aware Model Merging 
+
+Table B3. Per-task multi-task performance when merging RoBERTa-Large experts on the 8-task GLUE benchmark. Method CoLA SST-2 MRPC STS-B QQP QNLI MNLI RTE Avg. 
+
+Non-merging 
+
+Pretrained 0.0 51.5 40.9 20.9 36.4 56.0 37.6 62.4 38.2 Individual 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 
+
+Data-free model merging 
+
+Weight Averaging 7.4 55.1 84.2 46.3 56.7 73.8 35.8 66.7 53.3 Task Arithmetic 7.4 86.1 86.8 78.0 90.7 77.0 73.3 67.6 70.9 TIES-Merging 42.7 78.1 85.2 51.7 89.9 81.9 79.7 70.0 72.4 Task Arithmetic (w/ DARE) 4.1 85.2 85.8 71.6 91.3 85.6 75.2 68.1 70.9 TIES-Merging (w/ DARE) 2.9 90.4 86.8 75.4 92.4 86.4 79.0 69.1 72.8 WUDI-Merging 82.2 98.7 87.3 81.4 94.6 96.6 93.4 77.1 88.8 
+
+SA-Merging (Ours) 86.5 99.0 88.5 85.0 95.0 96.5 94.0 77.1 90.2 
+
+Table B4. Comparisons in computational cost. We report the performance on 8-task vision suite, required time, and GPU memory for TIES-Merging (Yadav et al., 2023), AdaMerging (Yang et al., 2023), WUDI-Merging (Cheng et al., 2025), and our SA-Merging .Method Accuracy (%) Time GPU Memory (GB) TIES Merging 72.4 4s 0AdaMerging 81.1 127min 17.1 WUDI-Merging 85.2 1min 54s 4.0 
+
+SA-Merging (Ours) 85.9 20s 14.5 
+
+14

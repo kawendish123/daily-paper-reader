@@ -1,0 +1,616 @@
+Title: Accelerating HEVC Intra Partitioning via a CNN-Hierarchical Attention Transformer Hybrid
+
+URL Source: https://arxiv.org/pdf/2605.29063v1
+
+Published Time: Fri, 29 May 2026 00:18:34 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+> 1
+
+# Accelerating HEVC Intra Partitioning via a CNN-Hierarchical Attention Transformer Hybrid 
+
+Krishna Kumar Sharma and Somdyuti Paul 
+
+Abstract —The recursive quad-tree partitioning in High Effi-ciency Video Coding (HEVC) incurs considerable computational overhead, with exhaustive rate-distortion optimization for CTU partition prediction consuming the dominant share of encoding time. Although partition prediction through deep learning has emerged as a viable encoding accelerator, an architectural di-chotomy remains largely unaddressed: CNNs are computationally efficient but spatially myopic due to their localized effective re-ceptive fields, failing to capture long range semantic relationships and repetitive textures; conversely, transformer based architec-tures are better at capturing global context but incur prohibitive CPU latency, a critical liability that impedes deployment which is predominantly CPU-bound. This paper introduces Hybrid Fast Vision Transformer (HFViT), a hybrid architecture designed to accelerate HEVC intra-mode partition prediction. HFViT fuses a reparameterized depthwise-separable convolutional backbone with a Hierarchical Attention Transformer (HAT) mechanism, leveraging a carrier token scheme to enable efficient global in-formation propagation at sub-quadratic complexity. Post-training structural fusion collapses batch normalization into preceding layers to further reduce latency. Comprehensive evaluation re-veals the efficacy of HFViT in accelerating HEVC intra-encoding across resolutions. On standard JCT-VC test sequences, HFViT reduces the average VMAF BD-rate penalty by 2.4, 2.6, and 7.9 percentage points on Classes A, B and E, respectively, as compared to the competing ETH-CNN baseline while maintaining CPU inference latency within 8% of the CNN baseline and surpassing it on GPU by 40%, establishing practical viability for real-time encoder integration. 
+
+Index Terms —HEVC, CU partition prediction, intra coding, rate-distortion optimization, Hierarchical Attention Transformer 
+
+I. I NTRODUCTION 
+
+# THE explosive growth of high-resolution, high dynamic range and high frame rate video content demands in-creasingly efficient compression technologies. High Efficiency Video Coding (HEVC/H.265) achieves approximately 50% bitrate reduction compared to H.264/AVC while maintaining equivalent perceptual quality [1]. However, this compres-sion efficiency is achieved at the expense of significantly higher computational cost, with HEVC encoders exhibiting two to four times higher complexity than their H.264 pre-decessors [2]. The primary computational bottleneck stems from HEVC’s flexible Coding Unit (CU) partitioning mech-anism. Unlike H.264’s fixed macroblock structure, HEVC employs quad-tree partitioning where each 64 ×64 Coding Tree Unit (CTU) is recursively subdivided into CUs of sizes 
+
+Krishna Kumar Sharma and Somdyuti Paul are with the Department of Artificial Intelligence, Indian Institute of Technology Kharagpur, Kharagpur, West Bengal 721302, India (e-mail: krishnakumarsharma0737@gmail.com; somdyuti@ai.iitkgp.ac.in) 
+
+{64,32,16,8 }×{ 64,32,16,8 } across three levels [1]. The ref-erence encoder performs rate-distortion optimization (RDO) [3], evaluating all feasible partition combinations which lie within a combinatorial search space. This brute-force search consumes 60–80% of total encoding time [4], [5]. Traditional acceleration approaches for partitioning HEVC CUs employ heuristic-based early termination using hand-crafted features such as texture variance, edge orientations, motion vectors, etc. [6]–[8]. These methods achieve modest speedups in the range of 30–45% at the expense of 1.5–3.0% BD-rate penalties. Deep learning has transformed this land-scape with convolutional neural networks (CNNs) automati-cally learning hierarchical representations, achieving over 50% encoding time reduction [9]–[11]. Moreover, CNN inference exhibits regular computational patterns enabling efficient GPU acceleration. Despite these advances, CNNs face an inherent architectural limitation: their local receptive fields constrain global context modeling. Although the theoretical receptive field of CNNs progressively increases with the depth of the architecture, the pixels closer to the center contribute more to the output than those at the edges. This asymmetry causes the effective receptive field, which can be modeled by a Gaussian dis-tribution, to be a fraction of the theoretical receptive field [12]. Vision Transformer (ViT) [13] addresses this through self-attention mechanisms that compute pairwise relationships across all tokens, extracted in the form of non-overlapping spatial patches. Irrespective of their spatial location within the image, all patches contribute equally to the output, thereby allowing transformer models to truly learn from the global context. While ViTs are highly parallelizable and very fast on GPUs due to the efficiency of parallelizing matrix multiplica-tions required for attention computations that are conducted using highly optimized kernels, they remain significantly slower than CNNs on CPUs due to irregular memory access patterns, higher memory bandwidth requirements, and lack of equivalently optimized kernels. This is a crucial consideration for practical encoder integration, where inference is frequently CPU-bound. This paper proposes Hybrid Fast Vision Transformer (HFViT) , a novel architecture that bridges the accuracy-efficiency gap in data-driven learning of HEVC CU partition prediction. Unlike CNNs that reason locally and standard vision transformers that reason expensively with quadratic complexity, HFViT employs hierarchical local-global attention mechanisms capturing both fine-grained texture details and long-range spatial dependencies at near-CNN computational cost. Through QP-conditioned feature modulation, HFViT 
+
+> arXiv:2605.29063v1 [eess.IV] 27 May 2026 2
+
+makes partition decisions that adapt to both content com-plexity and target encoding quality, enabling rate-distortion (RD) aware predictions. Task-specific optimizations, including carrier token interactions for efficient global information ex-change and batch normalization (BN) [14] layer fusion during deployment, allow HFViT to achieve superior RD performance compared to CNN baselines while maintaining competitive real-time encoding speed even when deployed without GPU acceleration. Our key contributions can be summarized as follows:  
+
+> •
+
+We conducted an extensive exploration of efficient trans-former based architectures, systematically evaluating their computational complexity and inference latency on both CPU and GPU to identify architectures suitable for HEVC CU partition prediction.  
+
+> •
+
+We introduced a novel HFViT architecture specifically designed for HEVC intra-mode CU partition prediction, incorporating hierarchical attention with carrier token interaction and QP-aware feature modulation.  
+
+> •
+
+We integrated the trained HFViT model with the reference HEVC encoder to demonstrate HFViT’s superior RD performance over CNN baselines across different quality metrics with competitive encoding speed across multiple resolutions. 1
+
+The rest of the paper is organized as follows. Section II re-views relevant prior works. Section III describes the proposed HFViT architecture. Section IV presents the experimental results. Finally, Section V concludes the paper and provides directions for extending the work. II. R ELATED WORK 
+
+Building upon the acceleration approaches for partitioning CUs outlined earlier, we review specific methodological ad-vances and identify the critical gaps motivating our work. Among heuristic methods, inter-level correlations for adaptive mode decisions were exploited in [6], while texture homo-geneity with gradient analysis was used in [7]. In [4] an RD cost-based early termination was proposed, and in [5] motion divergence metrics were introduced for inter-CU selection. These methods rely on manually designed thresholds requiring content-specific tuning. Among learned approaches, [9] pioneered learned CU par-tition decision using shallow CNNs, which was subsequently extended with deeper architectures and asymmetric convolu-tions in [10], forming the ETH-CNN baseline used throughout our evaluation. Multi-scale feature fusion matching the CU hierarchy was used in [11]. Lightweight CNN-based learned partition prediction has also been introduced for partitioning VP9 superblocks using a bottom-up block merge prediction mechanism [15] and using shape adaptive pooling layers to partition CUs in VVC [16]. With the introduction of Vision Transformer (ViT) [13], transformer based neural network architectures were shown to achieve superior performance as compared to CNN based 
+
+> 1To facilitate reproducibility, the source code and trained models are made publicly available at https://github.com/Krishna737Sharma/HFViT CU Parti tioning in HEVC.
+
+architectures on several vision tasks. Subsequent efforts to reduce the quadratic complexity of attention computation have produced notable efficient architectural innovations. Swin Transformer [17] introduced shifted window attention achiev-ing linear complexity. LeViT [18] combined convolutional stems with attention-based downsampling. MobileFormer [19] proposed parallel CNN-transformer branches with bidirec-tional bridging. EfficientViT [20] employed cascaded group at-tention for memory efficiency. FastViT [21] utilized structural reparameterization for accelerated inference. FasterViT [22] introduced carrier tokens enabling hierarchical global context propagation. EfficientFormer [23] achieved inference speeds comparable to MobileNet [24] through a latency-driven de-sign paradigm. Recent work has also explored applying transformer-based models to HEVC’s successor standard Ver-satile Video Coding (VVC/H.266) [25], where more complex multi-type tree partitioning further increases the benefit of global context modeling [26]. However, none of these archi-tectures address video coding-specific requirements or CPU-bound latency constraints to achieve inference speeds that are competitive with CNN baselines. To quantify this efficiency gap and motivate the need for HFViT, we systematically adapted several popular transformer architectures designed to reduce complexity of attention com-putation for the purpose of CU partition prediction, and bench-marked their inference latency on both CPU and GPU. Table I presents the inference times of each architecture. The inference time of the ETH-CNN model is also shown for reference. The same batch size of 64 was used for evaluating the latency of all models and all the architectures were designed to have similar learning capacity in terms of the number of trainable parameters to facilitate a fair comparison.                                                
+
+> TABLE I COMPARATIVE ANALYSIS OF TRANSFORMER ARCHITECTURES FOR
+> HEVC CTU P ARTITION PREDICTION (BS 64)
+> Model Params CPU Latency (Time / CTU) GPU Latency (Time / CTU) GFLOPS
+> ViT [13] 1,279,317 4.77 ms 0.109 ms 0.176 Swin-T [17] 1,087,578 1.73 ms 0.188 ms 0.034 LeViT [18] 1,081,461 1.11 ms 0.109 ms 0.030 MobileFormer [19] 1,172,597 1.09 ms 0.344 ms 0.009 EfficientFormer [23] 969,861 3.02 ms 0.125 ms 0.029 EfficientViT [20] 1,430,770 0.50 ms 0.109 ms 0.009 FastViT [21] 957,155 6.41 ms 0.313 ms 0.206 FasterViT [22] 1,373,725 0.59 ms 0.062 ms 0.014 ETH-CNN [10] 1,288,210 0.25 ms 0.078 ms 0.003
+> HFViT (Ours) 1,670,794 0.27 ms 0.047 ms 0.0048
+
+While comparing models with similar capacity, we note that transformer based architectures have significantly higher computational complexity as compared to the ETH-CNN model as reported in units of Giga Floating-Point Operations Per Second (GFLOPS) in the last column of Table I. The consequent CPU latency is the critical bottleneck for practical encoder integration, as HEVC encoders are predominantly de-ployed in CPU-bound pipelines. On CPU, transformers exhibit substantially higher latency than CNNs due to limitations of caching mechanisms, higher memory bandwidth requirements, 3                   
+
+> HAT-1 Carrier Token Interaction HAT-2 GAP MLP Head
+> QP
+> I
+> 64 ×64 ×1F0
+> 32 ×32 ×8F1
+> 16 ×16 ×16 F2
+> 8×8×24 F3
+> 4×4×32
+> F3
+> 4×4×32
+> ci
+> 4×32
+> Fo
+> 4×4×32 fs∈R32 ˆy∈R21
+> q/ 51
+> Conv 3×3
+> Stride 2
+> ResBlock
+> Stride 2
+> ResBlock
+> Stride 2
+> ResBlock
+> Stride 2
+> Flatten
+> to Tokens
+> ci
+> Carrier Tokens
+> c′
+> i
+> Updated Tokens
+> Concat
+> Fig. 1. HFViT architecture: hierarchical convolutional stages extract multi-scale features F0–F3, followed by dual HAT blocks with carrier token interaction for efficient global context modeling. QP is injected at the classification head for rate-distortion-aware prediction.
+
+and the absence of heavily optimized kernels comparable to those available for convolutions. Even the fastest competing transformer, EfficientViT, incurs 0.50 ms/CTU, which is twice the ETH-CNN baseline of 0.25 ms/CTU. ViT ( 4.77 ms) and Swin-T ( 1.73 ms) are slower still by margins that would negate any encoding time savings. This persistent CPU efficiency gap is the primary obstacle preventing transformer adoption in real-time encoding pipelines. GPU latency presents a more favorable picture for trans-formers, owing to heavily optimized attention kernels and the inherently parallel nature of self-attention computation. On GPU, most efficient transformers (ViT, LeViT, EfficientViT) match or approach the ETH-CNN baseline of 0.078 ms/CTU at approximately 0.109 ms/CTU. However, GPU-bound inference is less representative of practical deployment scenarios where inference is frequently CPU-bound. Table I shows that FasterViT provides the most promising trade-off between CPU and GPU latencies, which motivated the design of the proposed HFViT model. Building upon FasterViT [22] and FastViT [21], HFViT bridges the CPU efficiency gap through targeted, domain-specific architectural adaptations. Instead of employing deep designs tailored for high-resolution RGB imagery, HFViT adopts a streamlined hierarchical structure with channel dimensions specifically optimized for low-resolution, single-channel CTU inputs. Furthermore, HFViT applies post-training BN [14] fusion, wherein BN parameters are absorbed into the preceding layers to eliminate runtime normalization overhead. This structural reparameterization reduces inference-time computational over-head without affecting model performance. As a result, HFViT achieves a CPU latency of 0.27 ms/CTU, which is within 
+
+8% of the ETH-CNN baseline ( 0.25 ms/CTU), while attaining a GPU latency of 0.047 ms/CTU, outperforming ETH-CNN (0.078 ms/CTU) by approximately 40% . Consequently, HFViT demonstrates practical viability for real-time CTU partition prediction in both CPU and GPU-based encoding pipelines, representing a significant advancement over prior CNN-based models that lack global context modeling and earlier trans-former architectures that incur prohibitive CPU latencies. III. P ROPOSED HFV IT A RCHITECTURE 
+
+A. Overview and Design Rationale 
+
+The overall HFViT pipeline, illustrated in Fig. 1, con-sists of (1) a convolutional embedding stem incorporating four progressive downsampling stages, followed by (2) dual Hierarchical Attention Transformer (HAT) blocks with carrier token interaction, and a (3) QP-conditioned classification head. HFViT is primarily motivated by the FasterViT architec-ture [22], which introduced the HAT mechanism with carrier tokens for efficient global context propagation. We combined the HAT mechanism with several task-oriented adaptations that were introduced for low-latency CU partition prediction as follows:  
+
+> •
+
+Depthwise Separable Lightweight Convolutional Stem: while FasterViT features a convolutional stem for feature extraction, we designed the convolutional stem using depthwise separable convolutions [19] to reduce the number of trainable parameters as well as computational complexity. Further, as the input is a low-resolution, single-channel luminance block, we employed a conser-vative channel progression of 8 → 16 → 24 → 32 , unlike convolutional feature extraction stages designed for vision tasks on higher resolution RGB images that adopt more aggressive channel expansions. This tailored allocation avoids the severe overfitting that occurs when applying such models directly to simple inputs, substantially reduc-ing the parameter count while preserving representational capacity.  
+
+> •
+
+Shallower Attention Hierarchy: since HEVC CTUs have a fixed, relatively small spatial resolution of 64 ×64 ,a deep HAT architecture is unnecessary. Thus, we created a shallower attention hierarchy comprising two HAT lay-ers that capture global context while drastically reducing computational overhead.  
+
+> •
+
+QP-Conditioned Prediction Head: as partition decisions depend on the quantization parameter (QP), we intro-duced explicit QP conditioning directly into the classifi-cation head. This allows a single model to make dynamic, rate-distortion-aware partition decisions that adaptively scale with the target encoding quality.  
+
+> •
+
+Batch Norm Fusion: inspired by FastViT [21], our architecture utilizes BN fusion during inference in two places: (i) in the depthwise separable convolutional stem, and (ii) in the fully connected layers of the classification head. During training, the convolution-BN and linear-BN structures are decoupled, and BN provides extra trainable variables that stabilize gradients and improve optimization. During inference, structural reparameteriza-tion is applied to mathematically fuse the BN parameters directly into the weights of the preceding convolutional or fully connected layers. This yields a single, highly efficient operation in each case, eliminating BN latency entirely during deployment. The architecture is termed hybrid because it strategically merges two distinct design philosophies. It borrows the CNN-driven computational efficiency and structural reparameteri-zation, and fuses it with the global reasoning capability of hierarchical attention mechanism facilitated by carrier tokens. 4
+
+This tailored combination bridges the critical gap between the ultra-low CPU latency required for practical HEVC encoding and the robust spatial context modeling necessary for accurate CU partition prediction. 
+
+B. Problem Formulation 
+
+Given a CTU luminance (Y-channel) block I ∈{0, 1, . . . , 255 }64 ×64 and quantization parameter q ∈{0, 1, · · · , 51 }, HFViT predicts optimal quad-tree partitions across three depth levels without exhaustive RDO. The input 
+
+I is normalized to [0 , 1] before processing. At depth d ∈{0, 1, 2} for CU sizes {64 × 64 , 32 × 32 , 16 × 16 }, HFViT predictions are:  
+
+> •
+
+Depth 0: One decision y0 ∈ { 0, 1} 
+
+> •
+
+Depth 1: Four decisions y1 ∈ { 0, 1}4 
+
+> •
+
+Depth 2: Sixteen decisions y2 ∈ { 0, 1}16 
+
+The complete target is y = [ y0, y1, y2]T ∈ { 0, 1}21 . Our model learns: 
+
+fθ : ( I, q ) → ˆy ∈ [0 , 1] 21 (1) The stagewise components of HFViT are elucidated in the subsequent paragraphs. 
+
+C. Depthwise Separable Convolution 
+
+The convolutional stem of HFViT consists of four depthwise-separable convolution [27] stages, progressively downsampling the input from 64 ×64 to 4×4 while ex-panding the channel dimensions following [n0, n 1, n 2, n 3] = [8 , 16 , 24 , 32] .For the first stage ( ℓ=0 ), there is no residual block; the stride-2 depthwise kernel Ud 
+
+> 0
+
+∈ R1×3×3 acts directly on the normalised single-channel input image I, followed by the pointwise projection Up 
+
+> 0
+
+∈ Rn0×1×1×1:
+
+F0 = GELU  BN  Up 
+
+> 0
+
+∗ (Ud 
+
+> 0
+
+∗ I) (2) For stages ℓ ∈ {1, 2, 3}, a residual block first pro-cesses Fℓ−1 while preserving its channel dimension nℓ−1.A depthwise kernel Wdℓ ∈ Rnℓ−1×3×3 is applied indepen-dently per channel, followed by a pointwise kernel Wpℓ ∈
+
+Rnℓ−1×nℓ−1×1×1, with BN [14] and GELU activation [28] (where GELU (x) = xΦ( x), and Φ( x) is the cumulative distribution function of the standard normal distribution): 
+
+F′ 
+
+> ℓ
+
+= Fℓ−1 + GELU  BN  Wpℓ ∗ (Wdℓ ∗ Fℓ−1) (3) A stride-2 depthwise convolution Udℓ ∈ Rnℓ−1×3×3 then halves the spatial resolution, while a pointwise projection 
+
+Upℓ ∈ Rnℓ×nℓ−1×1×1 expands the channel dimension from 
+
+nℓ−1 to nℓ, producing Fℓ:
+
+Fℓ = GELU  BN  Upℓ ∗ (Udℓ ∗ F′
+
+> ℓ
+
+) (4) Consequently, the sizes of the feature maps at each succes-sive downsampling step are F0 ∈ R32 ×32 ×8, F1 ∈ R16 ×16 ×16 ,
+
+F2 ∈ R8×8×24 , and F3 ∈ R4×4×32 , respectively. 
+
+HAT Block Internal Process (HAT-1 / HAT-2) 
+
+Feature Map F3  
+
+> [4 ,4,32]
+
+Carrier Tokens ci  
+
+> [4 ,1,32]
+
+Window Partition 
+
+X′ 
+
+> i
+
+= Xi + Epos 
+
+Concatenation along token dimension           
+
+> Zi= [ X′
+> i;ci]∈[4 ,5,32] (4 spatial + 1 carrier)
+
+Layer Normalisation (LN) 
+
+Linear QKV Projection WQ, WK , WV        
+
+> Qi,Ki,Vishapes: [4 ,2heads ,5,16]
+
+Multi-Head Self-Attention (h=2 , dh=16 )    
+
+> Ai=Softmax
+> QiK⊤
+> i
+> √dh
+> +B
+> 
+
+Context Matrix 
+
+> (AiVi)
+
+Output Projection WO
+
++
+
+Layer Normalisation (LN) 
+
+Feed-Forward Network: P1 →, GELU, → P2     
+
+> P1∈R32 ×64 ,P2∈R64 ×32
+
++
+
+HAT Output   
+
+> [4 ,4,32]
+
+Updated c′  
+
+> i
+> [4 ,1,32]
+
+Zi
+
+Z′
+
+> i
+
+Z′′  
+
+> i
+> first 4 tokens last token
+> Zi
+> Z′
+> i
+> Fig. 2. Internal structure of a HAT block. Spatial tokens and a carrier token are concatenated, processed through multi-head self-attention, a context matrix, and a feed-forward network with residual connections, then split back into updated spatial features and carrier token. 5
+
+D. Hierarchical Attention Transformer 
+
+Following FasterViT [22], we employed the HAT mecha-nism with carrier tokens to enable efficient global context ex-change without the quadratic complexity of full self-attention. Here, the term hierarchical refers to concurrently modeling spatial relationships at distinct semantic levels: fine-grained local spatial relationships (between image patches within a window) and local-to-global information exchange (via carrier tokens that facilitate global communication in the subsequent interaction layer). 
+
+1) Carrier Token Mechanism: We partition F3 ∈ R4×4×32 
+
+into 4 non-overlapping windows of size 2 × 2. Each window generates a carrier token via adaptive average pooling: 
+
+ci = AdaptiveAvgPool (F(i)3 ) ∈ R1×32 , i ∈ { 1, 2, 3, 4} (5) 
+
+2) Windowed Self-Attention (HAT-1): The spatial tokens within each local window i, denoted Xi ∈ R4×32 (the flattened patch tokens of that window), are first injected with a learned 2D absolute position embedding Epos ∈ R4×32 :
+
+X′ 
+
+> i
+
+= Xi + Epos (6) These spatial location-aware tokens and their corresponding carrier token ci are concatenated to form the complete token sequence for the window: 
+
+Zi = [ X′
+
+> i
+
+; ci] ∈ R5×32 (7) We compute multi-head self-attention using a pre-Layer Normalization (LN) [29] structure with h = 2 heads and a per-head dimension of dh = 16 . The queries, keys, and values are derived via learnable linear projections WQ, WK , WV ∈
+
+R32 ×32 acting on the layer-normalized tokens ˜Zi = LN (Zi):
+
+Qi, Ki, Vi = ˜ZiWQ, ˜ZiWK , ˜ZiWV (8) To provide the attention mechanism with explicit relational awareness, a relative positional bias B ∈ R5×5 is added to the attention logits prior to normalization, yielding the attention matrix Ai:
+
+Ai = Softmax 
+
+ QiKTi
+
+√dh
+
++ B
+
+
+
+(9) The context representations, AiVi are processed by an output projection WO ∈ R32 ×32 and integrated via a residual connection. Finally, a feed-forward network (FFN) with an expansion ratio of r=2 transforms the features: 
+
+Z′ 
+
+> i
+
+= Zi + ( AiVi)WO (10) 
+
+Z′′  
+
+> i
+
+= Z′ 
+
+> i
+
++ GELU (LN (Z′
+
+> i
+
+)P1) P2 (11) where P1 ∈ R32 ×64 and P2 ∈ R64 ×32 are the learnable feed-forward weight matrices. The operations in this block, as illustrated in Fig. 2, ensure that each spatial token within a local window attends to all other spatial tokens in the same window as well as to its associated carrier token. The carrier token simultaneously aggregates a condensed summary of its window’s local spatial details, which is subsequently shared across all windows in the carrier token interaction layer. 
+
+3) Carrier Token Interaction Layer: As illustrated in Fig. 3, the carrier tokens facilitate global context propagation by exchanging information across all spatial windows via self-attention. The carrier tokens are grouped and squeezed into 
+
+C ∈ R4×32 , then layer-normalized to ˜C = LN (C).
+
+Carrier Token Interaction Layer 
+
+Global context exchange between windows via ci self-attention     
+
+> c1
+> Win 1
+> [1 ,32]
+> c2
+> Win 2
+> [1 ,32]
+> c3
+> Win 3
+> [1 ,32]
+> c4
+> Win 4
+> [1 ,32]
+
+Input from HAT-1 
+
+Concatenation & Squeeze      
+
+> Group all carrier tokens →C∈[4 ,32]
+
+Layer Normalisation (LN) 
+
+> Normalize each 32-dim carrier token embedding
+
+Linear QKV Projection WQc , WKc , WVc       
+
+> Qc,Kc,Vceach [2 heads ,4,16]
+
+Self-Attention across all windows     
+
+> Ac=Softmax QcK⊤
+> c
+> √dh
+> !
+
+Context Matrix 
+
+> (AcVc)
+
+Output Projection WOc
+
++
+
+Reshape to per-window format    
+
+> →[4 ,1,32]
+
+Output: Globally-informed c′           
+
+> i
+> Fed into HAT-2 for second round of local +global attention
+> C
+> C′
+> C
+> Fig. 3. Internal processing of the carrier token interaction layer. The four carrier tokens c1, . . . , c4are grouped as C∈R4×32 and exchange global information via a 4×4self-attention matrix ( Ac) before being projected and distributed back to their respective windows as c′
+> i.
+
+The interaction between carrier tokens is formulated as an attention operation followed by mapping the tokens back to their embedding space without an additional FFN. The opera-tions use learned projection matrices WQc , WKc , WVc , WOc ∈6
+
+R32 ×32 as follows: 
+
+Qc, Kc, Vc = ˜CW Qc , ˜CW Kc , ˜CW Vc (12) 
+
+Ac = Softmax 
+
+ QcKTc
+
+√dh
+
+
+
+(13) 
+
+C′ = C + ( AcVc)WOc (14) After the carrier token interaction layer, a second identical HAT block ( HAT-2 ) computes attention between the globally-enriched carrier tokens c′ 
+
+> i
+
+and the spatial features. 
+
+E. Classification Head with QP Conditioning 
+
+Following the dual HAT block processing, the refined spatial tokens are rearranged into a 2D feature map to aggregate the learned context features. This final spatial representation, which excludes the auxiliary carrier tokens used for context exchange, is denoted as: 
+
+Fout ∈ R4×4×32 . (15) To condense the spatial information into a global descriptor, Global Average Pooling (GAP) is applied across the spatial dimensions. This yields a 32-dimensional feature vector: 
+
+fs = GAP (Fout ) ∈ R32 . (16) To ensure the model makes partition decisions that are sensitive to the target bitrate and quality, the quantization parameter (QP) is incorporated into the prediction logic. The QP value q is normalized to the range [0 , 1] and concatenated with the spatial features to form a fused feature vector: 
+
+˜f = [ fs; q/ 51] ∈ R33 . (17) The classification is performed by a three-layer multilayer perceptron (MLP) head equipped with BN [14] and dropout [30] regularization to improve generalization. The first fully connected (FC) layer expands the fused features to d1 neurons with a dropout rate of p1. The second FC layer further projects the features to d2 neurons with a dropout rate of p2. Finally, the third FC layer has 21 output neurons with logistic activations representing the split likelihoods for every potential CU across the three depth levels: 
+
+h1 = Dropout 
+
+
+
+ReLU 
+
+
+
+BN (WT 
+
+> 1
+
+˜f )
+
+
+
+, p 1
+
+
+
+(18) 
+
+h2 = Dropout  ReLU  BN (WT 
+
+> 2
+
+h1) , p 2
+
+ (19) 
+
+ˆy = Sigmoid (WT 
+
+> 3
+
+h2) ∈ [0 , 1] 21 (20) where W1 ∈ Rd1×33 , W2 ∈ Rd2×d1 , and W3 ∈ R21 ×d2
+
+are learnable weight matrices. The dimensions d1 and d2
+
+are varied to control the number of trainable parameters of the model as per the number of training samples available at different resolutions to achieve a good fit. The dropout rates p1 and p2 decrease progressively, reflecting the reduced overfitting risk as the representation compresses toward the 21-dimensional output. This QP-conditioned head allows the architecture to jointly reason about spatial texture complexity and the target com-pression level, enabling a single trained model to predict CU partitions across the entire QP range. 
+
+F. Fused Batch Normalization 
+
+During inference, we fuse BN into preceding layers follow-ing structural reparameterization conventions. Figure 4 illus-trates how the separate convolution–BN–activation chain used during training is collapsed into a single fused convolution– activation unit at inference time, eliminating the redundant BN forward pass and reducing memory bandwidth. For a convolution with weight W and bias b, and BN parameters (γ, β, μ, σ 2), where γ is the learnable per-channel scale, β is the learnable per-channel shift, μ is the running mean accumulated during training, and σ2 is the corresponding running variance, the fused parameters are computed as: 
+
+ˆW = γ
+
+√σ2 + ϵ W (21) 
+
+ˆb = γ(b − μ)
+
+√σ2 + ϵ + β (22) where ϵ is a small positive constant of the order of 10 −6.Similar fusion is also performed for the linear FC layers in the classification head, directly improving overall inference latency.         
+
+> Convolution
+> BN
+> GELU
+> Before Fusion
+> (During Training)
+> Fused Conv+BN
+> GELU
+> After Fusion
+> (During Inference)
+> Fusion
+> Reduced latency & memory
+> Fig. 4. Layer fusion process: batch normalization parameters (γ, β, μ, σ 2)
+> are absorbed into convolutional weights Wpost-training, producing fused weights ˆWand ˆbvia BN fusion, eliminating redundant operations during inference.
+
+IV. E XPERIMENTAL RESULTS 
+
+A. Experimental Setup 
+
+Table II summarizes the experimental configuration, includ-ing the dataset, encoder version, training hyperparameters, and the training and inference hardwares used for all experiments reported in this work. The hierarchical binary cross-entropy loss employed for training reflects the conditional structure of the HEVC quad-tree. At the 64 ×64 level (L 1), every CTU always has a valid split decision, so a standard binary cross-entropy is applied. At the 32 ×32 (L 2) and 16 ×16 (L 3) levels, a binary validity mask derived from the parent block’s ground-truth split decision ensures that only semantically meaningful partition decisions contribute to the loss. Concretely, if a 64 ×64 CTU is not split at L 1, all four corresponding 32 ×32 decisions at L 2 and all sixteen 16 ×16 decisions at L 3 are masked out and contribute nothing to the training objective. The total loss is the equally weighted sum of the three level-wise losses, reflecting the design choice that partition errors at any depth level incur equivalent rate-distortion cost. To ensure representative evaluation, experiments were con-ducted across four resolution subsets of the CPH-Intra 7                  
+
+> TABLE II EXPERIMENTAL CONFIGURATION
+> Component Specification
+> Dataset Name CPH-Intra [31] Encoder HM 16.5, intra-mode
+> Training Hardware
+> GPU NVIDIA A40 (46 GB VRAM) CPU 2×Intel Xeon Silver 4509Y (32 Cores / 64 Threads)
+> Training Hyperparameters
+> Optimizer AdamW Learning Rate 1×10 −4
+> Weight Decay 0.01 Batch Size 64 Scheduler Cosine Annealing Max Epochs 10,000 Loss Function Hierarchical Binary Cross-Entropy
+> Inference System
+> CPU AMD Ryzen 5 7235HS (3.2 GHz, 4C/8T) RAM 12 GB DDR4
+
+dataset [31], [11] which contains CTUs and their respective ground truth partitions derived from the brute-force RDO of the HM 16.5 encoder at the four reference QPs {22 , 27 , 32 , 37 }
+
+and at four different resolutions spanning from 768 ×512 to 4928 ×3264. The dataset for each resolution is derived by downsampling 2000 images (partitioned into 1700 images for training, 100 for validation and 200 for testing) from a resolution of 4928 ×3264 to the target resolution [10]. All three models (HFViT, ETH-CNN, and H-FCN) were trained separately for each of the four resolutions (4928 ×3264, 2880 ×1920, 1536 ×1024, and 768 ×512), with a single unified model trained across four QPs {22 , 27 , 32 , 37 } at each reso-lution. Table III details the number of CTU samples allocated to training, validation, and testing for each resolution.       
+
+> TABLE III CPH-I NTRA DATASET SPLIT SIZES (N UMBER OF CTU S AMPLES )ACROSS RESOLUTIONS
+
+Resolution Train Valid Test Total 
+
+4928 ×3264 1,668,975 98,175 196,350 1,963,500 2880 ×1920 573,750 33,750 67,500 675,000 1536 ×1024 163,200 9,600 19,200 192,000 768 ×512 40,800 2,400 4,800 48,000 
+
+B. Partition Prediction Accuracy 
+
+Table IV presents the partition prediction accuracy of all three models across four resolutions evaluated on the test partition of the CPH-Intra dataset. Accuracy is reported at the levels of 64 × 64 (L 1), 32 × 32 (L 2), 16 × 16 (L 3) CUs. The overall accuracy across the three levels of CU partitions is also reported. We compared the performance of HFViT with ETH-CNN [10] and H-FCN [15], which are CNN based architectures introduced for the task of accelerating intra-mode partition prediction. Specifically, the ETH-CNN [10] model achieved benchmark results on the CPH-Intra dataset, while the H-FCN [15] introduced an extremely lightweight bottom-up hierarchi-cal fully convolutional architecture that achieved competitive performance. Table IV also reports the number of trainable parameters for the different models at each resolution. Since the number of CTUs available in the CPH-Intra dataset varies across different resolutions, we reduced the number of param-eters of ETH-CNN [10] and HFViT, keeping the depth and structure of the models fixed to reduce overfitting whenever necessary while training at the lower resolutions. For ETH-CNN [10], the parameter reduction at lower resolutions was achieved by reducing the number of output channels in each convolutional layer uniformly across all three branches, which in turn reduced the dimensionality of the concatenated feature vector fed to the fully connected layers, with the hidden layer widths of all three fully connected branches scaled down pro-portionally. For HFViT, the parameter reduction was achieved solely by reducing the hidden dimensions d1 and d2 of the two intermediate fully connected layers in the QP-conditioned classification head, while all other architectural components, including the convolutional backbone, HAT blocks, and carrier token interaction layer, were kept unchanged. The H-FCN [15] has substantially fewer parameters, so its architecture was kept fixed across resolutions. In terms of overall accuracy across the three levels of partition, HFViT consistently outperformed ETH-CNN [10] at every resolution and depth level, while H-FCN had the best accuracy at level L 3 of the partition tree. However, H-FCN struggled with predicting accurate partition decisions at higher resolutions as evinced by its wider performance gaps with the other models at 4928 ×3264 and 2880 ×1920. This suggests that the limited learning capacity and bottom-up architecture of the H-FCN model is not effective at capturing the fine grained texture variations that are crucial for partition decision at higher resolutions. HFViT achieved the best overall accuracy across all three partition levels and resolutions.                                                                          
+
+> TABLE IV PARTITION PREDICTION ACCURACY (%) A CROSS MODELS ,RESOLUTIONS ,AND DEPTH LEVELS
+> Model Resolution Parameters L1L2L3Overall
+> ETH-CNN [10] 4928 ×3264 1,288,210 85.90 80.42 77.61 81.31 2880 ×1920 1,288,210 82.32 80.56 75.96 79.61 1536 ×1024 1,288,210 88.84 81.16 73.55 81.18 768 ×512 401,494 88.73 75.53 65.27 76.51 H-FCN [15] 4928 ×3264 19,187 72.87 76.24 80.67 76.59 2880 ×1920 19,187 79.51 78.12 80.20 79.27 1536 ×1024 19,187 84.75 83.90 81.91 83.52 768 ×512 19,187 90.25 85.87 82.87 86.33
+> HFViT
+> 4928 ×3264 1,670,794 86.36 81.56 79.51 82.48
+> 2880 ×1920 1,670,794 88.73 82.90 78.34 83.32
+> 1536 ×1024 1,318,666 93.51 86.37 79.13 86.34
+> 768 ×512 454,282 94.94 87.12 79.70 87.25
+
+C. Rate-Distortion Performance 
+
+To evaluate RD performance, we integrated the trained HFViT model with the reference HM encoder such that the RDO based CU partition decisions in the intra mode were replaced by the predictions of HFViT. Subsequently, the HM 8
+
+encoder integrated with the HFViT model was used to perform intra-mode encoding of several test sequences. The quality of the decoded frames was measured using PSNR, MS-SSIM [32] and VMAF [33], where the latter two are widely used to evaluate perceptual quality in the video coding industry. The RD performance of the videos encoded using CU par-titions predicted by HFViT was quantified by computing the Bjøntegaard delta rate (BD-rate) [34] metric with the encodes obtained by using the unmodified HM encoder as reference. The encoding speedup over the HM Encoder is defined as: Speedup =
+
+
+
+1 − TModel 
+
+Tref 
+
+
+
+× 100% , (23) where Tref is the encoding time of the reference unmodified HM encoder and TModel is the encoding time of the HM encoder integrated with the proposed model. The BD-rate and speedup computations for ETH-CNN and H-FCN also follow the same procedure. 
+
+1) Performance on Test Set: To evaluate the performance of the HFViT model, we compiled a test set consisting of ten uncompressed sequences spanning a wide range of spatial information (SI) and temporal information (TI) [35], [36] values, as shown in Fig. 5, to ensure adequate content diversity. The wide spread across both axes in Fig. 5 confirms that the test set covers low-motion static scenes as well as high-motion dynamic content with varying texture complexity, ensuring that the reported results are not biased toward any particular content type. These ten sequences, which are widely used for video coding performance evaluation, were originally at 
+
+3840 × 2160 and 4096 × 2160 resolutions in YUV 4:4:4 format at 10-bit depth, which were subsequently converted to YUV 4:2:0 format at 8-bit depth, and were downsampled to 2880 × 1920 , 1536 × 1024 , and 768 × 512 for the evaluation at the respective lower resolutions. For evaluation at the resolution of 4928 × 3264 , the frames of the test sequences were padded by replicating the edge pixels. Table V reports the average BD-rate and speedup obtained per resolution. To quantify the reliability of our experimental results, the corresponding 95% confidence intervals (CIs) are also reported in Table V. The narrow confidence intervals for HFViT across all metrics confirm that its performance gains are statistically significant and consistent across diverse content types. Table V reveals that the proposed HFViT model attained the best RD performance with respect to the perceptual VMAF quality metric across all four resolutions. Its RD perfor-mances in terms of PSNR and MS-SSIM were also better than both ETH-CNN and H-FCN at all resolutions except at 
+
+768 × 512 , where H-FCN achieved the lowest average BD-rates for these two metrics. However, at the highest resolution, H-FCN struggled to predict partitions accurately, as already pointed out in Section IV-B, consequently impairing its RD performance. Considering the tradeoff between BD-rate and speedup, our model achieved the most impressive gains at the highest resolution of 4928 ×3264, which is quite attractive considering the current preponderance of video content at UHD or higher resolutions. At lower resolutions, HFViT consistently achieved superior RD performance while attaining competitive speedups.      
+
+> Fig. 5. Spatial Information (SI) vs. Temporal Information (TI) [35] of the ten test sequences used in the experiments. The sequences are at 3840 ×2160
+> and 4096 ×2160 resolution, 4:2:0 chroma subsampling, and 8-bit depth. Each point is annotated with the sequence name and its total frame count.
+
+2) Performance on JCT-VC Test Sequences: We also eval-uated the proposed model on the JCT-VC test set [37] which is the standardized set of test sequences widely used to benchmark HEVC codec performance. Table VI reports BD-rate (for PSNR, VMAF, MS-SSIM [32]) and encoding speedup across the different test classes. The key observations from this table are enumerated as follows: 1) HFViT achieved the best overall rate-distortion trade-off, with average VMAF BD-rates of 3.12%, 3.36%, and 6.03% for Classes A, B, and E respectively. The BD-rates attained by HFViT for both the perceptual metrics (MS-SSIM and VMAF) consistently outperformed ETH-CNN [10] and H-FCN across all three classes. HFViT also achieved a lower PSNR BD-rate than the two CNN based models for Class B and Class E sequences, while for Class A sequences H-FCN gave the lowest PSNR BD-rates. 2) HFViT delivered superior speedup for Class A se-quences and competitive speedups for Class B and Class E sequences as compared to the ETH-CNN model. Across all three classes, H-FCN, despite its lightweight architecture, attained lower speedup than the proposed HFViT model. 3) For Class E sequences, all models incurred higher BD-rate penalties than at the other classes, which can be attributed to the limited availability of similar content in the training dataset. Yet, HFViT significantly reduced the average BD-rates across all metrics as compared to ETH-CNN. While H-FCN [15] also achieved compara-ble BD-rates, HFViT offers superior speedups than H-FCN for Class E sequences. 
+
+3) Rate-Distortion Curves: To visualize the compression efficiency trade-offs, Fig. 6 presents comprehensive RD curves comparing HFViT, ETH-CNN [10], and H-FCN [15] against the HM encoder on three representative test sequences: Steam-LocomotiveTrain (Class A, 2560 ×1600), BQTerrace (Class B, 9
+
+TABLE V BD-RATE AND SPEED -UP WITH 95% C ONFIDENCE INTERVALS (CI) M ETRICS ACROSS RESOLUTIONS AND MODELS (10 TEST SEQUENCES PER RESOLUTION ). 
+
+Resolution Model BD-rate PSNR (%) BD-rate VMAF (%) BD-rate MS-SSIM (%) Speedup (%) 
+
+Mean [95% CI] Mean [95% CI] Mean [95% CI] Mean [95% CI] 4928 ×3264 ETH-CNN [10] 4.59 [3.65, 5.53] 4.96 [3.87, 6.05] 5.07 [3.89, 6.25] 78.57 [76.71, 80.44] H-FCN [15] 10.18 [3.27, 17.09] 10.59 [3.97, 17.21] 10.72 [4.07, 17.37] 59.96 [57.46, 62.47] 
+
+HFViT 2.86 [2.33, 3.39] 2.81 [2.15, 3.47] 3.25 [2.24, 4.27] 79.41 [77.92, 80.90] 
+
+2880 ×1920 ETH-CNN [10] 6.07 [4.10, 8.04] 5.96 [3.95, 7.98] 6.81 [3.81, 9.81] 76.19 [69.74, 82.64] 
+
+H-FCN [15] 4.54 [2.60, 6.47] 4.47 [2.53, 6.41] 5.19 [2.25, 8.12] 66.34 [61.28, 71.41] 
+
+HFViT 3.27 [2.20, 4.33] 3.07 [2.23, 3.91] 3.66 [1.51, 5.81] 75.73 [70.55, 80.91] 1536 ×1024 ETH-CNN [10] 7.73 [5.39, 10.07] 7.68 [5.07, 10.30] 8.44 [6.00, 10.88] 75.14 [69.62, 80.65] 
+
+H-FCN [15] 4.47 [2.48, 6.47] 4.43 [2.59, 6.28] 4.94 [3.10, 6.79] 54.60 [51.09, 58.11] 
+
+HFViT 4.07 [2.74, 5.40] 3.94 [2.74, 5.13] 4.41 [3.19, 5.62] 64.27 [59.08, 69.46] 768 ×512 ETH-CNN [10] 9.22 [4.45, 13.98] 7.95 [3.99, 11.91] 9.04 [4.11, 13.98] 66.67 [56.21, 77.13] 
+
+H-FCN [15] 2.89 [1.90, 3.89] 3.55 [2.51, 4.59] 3.84 [2.69, 4.99] 40.83 [31.53, 50.13] 
+
+HFViT 3.35 [2.27, 4.44] 3.46 [2.43, 4.49] 4.15 [3.16, 5.14] 46.56 [40.38, 52.75] TABLE VI PERFORMANCE COMPARISON OF ETH-CNN, H-FCN AND PROPOSED HFV IT ON JCT-VC T EST SEQUENCES                                                                                                                                                                                                               
+
+> Class Test Sequence ETH-CNN [10] H-FCN [15] HFViT BD-rate BD-rate BD-rate Speed-up BD-rate BD-rate BD-rate Speed-up BD-rate BD-rate BD-rate Speed-up PSNR (%) VMAF (%) MS-SSIM (%) (%) PSNR (%) VMAF (%) MS-SSIM (%) (%) PSNR (%) VMAF (%) MS-SSIM (%) (%)
+> Class A (2560 ×1600) SteamLocomotiveTrain 4.72 6.26 5.51 80.45 3.06 3.58 3.55 76.29 2.54 2.25 3.00 80.33 Traffic 0.42 3.42 1.66 40.91 1.24 1.08 0.78 40.15 2.28 0.32 0.07 73.03 PeopleOnStreet 0.50 1.01 1.40 37.61 1.42 1.83 1.56 40.29 2.62 1.46 0.60 67.56 NebutaFestival 3.65 11.40 3.87 76.38 1.86 8.84 3.13 76.07 1.76 8.43 2.40 78.18
+> Average 2.32 5.52 3.11 58.83 1.89 3.83 2.25 58.20 2.30 3.12 1.52 74.77
+> Class B (1920 ×1080) BasketballDrive 8.74 8.80 9.32 75.01 5.01 5.46 5.61 58.31 4.55 4.71 4.84 66.17 BQTerrace 3.77 5.25 5.68 64.51 2.30 3.51 3.39 50.81 2.27 3.19 3.28 55.65 Cactus 6.06 6.36 7.52 73.32 3.25 3.40 4.19 52.17 3.24 3.56 4.21 58.67 Kimono1 4.75 4.60 4.91 81.77 4.18 3.44 3.91 63.71 3.15 2.47 3.06 74.46 ParkScene 4.59 4.82 5.50 74.57 2.35 2.44 3.95 53.67 2.77 2.86 4.28 62.78
+> Average 5.58 5.96 6.59 73.83 3.42 3.65 4.21 55.73 3.19 3.36 3.94 63.55
+> Class E (1280 ×720) Johnny 18.42 17.74 19.17 79.43 7.76 7.42 8.49 58.45 8.81 7.60 9.46 67.20 KristenAndSara 14.43 13.41 15.47 75.29 7.13 6.72 7.85 54.63 6.12 5.50 6.18 66.22 FourPeople 12.14 10.62 13.58 66.02 5.50 5.43 7.76 49.12 5.09 4.98 6.04 60.06
+> Average 15.00 13.93 16.08 73.58 6.80 6.52 8.03 54.07 6.67 6.03 7.23 64.49
+
+1920 ×1080), and KristenAndSara (Class E, 1280 ×720). Each row corresponds to one video sequence, and each column shows a different quality metric—PSNR, VMAF, and MS-SSIM—plotted against bitrate (kbps) at QP values 
+
+{22 , 27 , 32 , 37 }. The RD curves visually corroborate the quan-titative findings from Table VI, validating that HFViT achieves the closest approximation to the RDO based reference encoder across all evaluated quality metrics and video classes. 
+
+D. Qualitative Partition Visualization 
+
+While Table IV summarizes accuracy numerically, it cannot reveal where partition errors occur spatially. To complement the quantitative results, Fig. 7 provides a visual comparison of the predicted CU partition maps against the ground truth de-rived by the HM encoder’s RDO on two representative frames at 1536 ×1024 taken from the validation partition of the CPH-Intra dataset. These examples are chosen to illustrate model behaviour under different encoding conditions: Frame 17 at QP 37 (high quantization, coarser partitions) and Frame 22 at QP 32 (moderate quantization, finer structure). Visually in-specting the predicted boundaries reveals how well each model reproduces the encoder’s depth-level decisions, particularly in regions with complex textures or abrupt transitions, where HFViT’s global context modeling provides the most visible advantage over the purely local CNN baselines. 
+
+E. Ablation Studies 
+
+To individually assess the contribution of each architectural choice made to design HFViT, Table VII presents an abla-tion study conducted on the 1536 ×1024 resolution subset, evaluating three configurations: the full HFViT model, HFViT without BN fusion, and HFViT without depthwise separable convolutions. Two key observations emerge from Table VII. First, BN fusion acts as a strictly lossless runtime optimization; it yielded an 8.71% improvement in inference speedup (from 55.56% to 64.27%) without altering partition predictions and hence the BD-rate. Second, replacing depthwise separable convolutions 10 
+
+Fig. 6. Rate-distortion curves comparing HFViT, ETH-CNN [10], and H-FCN [15] against the HM 16.5 anchor across three video sequences and three quality metrics. Row 1: SteamLocomotiveTrain (Class A, 2560 ×1600). Row 2: BQTerrace (Class B, 1920 ×1080). Row 3: KristenAndSara (Class E, 1280 ×720). Columns present PSNR (left), VMAF (centre), and MS-SSIM (right) plotted against bitrate (kbps) at QP ∈ { 22 , 27 , 32 , 37 }. HFViT consistently tracks closest to the HM 16.5 anchor across all sequences and metrics, outperforming both ETH-CNN [10] and H-FCN [15]. TABLE VII IMPACT OF BN F USION AND DEPTHWISE SEPARABLE CONVOLUTION ON 
+
+PERFORMANCE (1536 ×1024 R ESOLUTION )               
+
+> Model Variant BD-rate PSNR (%) BD-rate VMAF (%) BD-rate MS-SSIM (%) Speed-up wrt HM (%)
+> HFViT 4.07 3.94 4.41 64.27
+> HFViT w/o BN Fusion 4.07 3.94 4.41 55.56 HFViT w/o Depthwise Sep. Conv. 3.33 3.25 3.90 55.56
+
+with regular convolutions increased the model size from 1,318,666 to 1,335,265 trainable parameters and improved compression efficiency (reducing BD-rate penalties by 0.5– 0.7%) at the expense of reducing the speedup by 8.71%. This confirms that utilizing depthwise separable convolutions effectively trades a marginal drop in accuracy for a leaner model and significantly faster CPU inference. V. C ONCLUSION 
+
+This paper addressed a key challenge of incorporating long-range spatial dependencies in learning to predict HEVC partitions while meeting the stringent CPU latency require-ments of practical encoder pipelines by introducing HFViT, a hybrid architecture that unifies a reparameterized depthwise-separable convolutional backbone with a hierarchical attention mechanism augmented by carrier tokens for sub-quadratic global context propagation. Extensive evaluation on four res-olutions and multiple quality metrics demonstrated superior RD performance when compared against competing CNN-based architectures such as ETH-CNN [10] and H-FCN [15], while maintaining attractive speedups, with the most com-pelling speedups attained at higher resolutions which are more challenging to encode from a complexity standpoint. The inherent ability of attention mechanisms to capture long-range dependencies could be further exploited by im-plementing cross-frame hierarchical attention to predict inter mode partitions for HEVC, which constitutes the primary focus of our future work. Further, we plan to benchmark the proposed HFViT model on more advanced codecs such as AV1 and VVC, which have far more allowed partition types that compound the challenge of partition decision due to the combinatorial complexity of the search space. The ability of HFViT to model global context is likely to enable significant acceleration of the corresponding encoders by successfully learning complex partition decisions at such high dimensional 11 
+
+(a) QP 37 (b) QP 32 Fig. 7. CU partition visualization on IntraValid_1536 ×1024 : (a) QP 37 and (b) QP 32. Each panel shows from top to bottom: Ground truth from HM 16.5 RDO (red), HFViT prediction (blue), ETH-CNN [10] prediction (green), and H-FCN [15] prediction (magenta). HFViT most accurately reproduces fine-grained depth-2 and depth-3 partition boundaries, particularly in transitional texture regions. 
+
+search spaces. It is also interesting to apply the extended HFViT model with cross-frame attention to learn diverse encoding decisions such as merge candidate selection and motion vector prediction. REFERENCES [1] G. J. Sullivan, J.-R. Ohm, W.-J. Han, and T. Wiegand, “Overview of the high efficiency video coding (HEVC) standard,” IEEE Trans. Circuits Syst. Video Technol. , vol. 22, no. 12, pp. 1649–1668, 2012. [2] F. Bossen, B. Bross, K. Suhring, and D. Flynn, “HEVC complexity and 12 
+
+implementation analysis,” IEEE Trans. Circuits Syst. Video Technol. ,vol. 22, no. 12, pp. 1685–1696, 2012. [3] G. J. Sullivan and T. Wiegand, “Rate-distortion optimization for video compression,” IEEE Signal Process. Mag. , vol. 15, no. 6, pp. 74–90, 1998. [4] J. Kim, J. Yang, K. Won, and B. Jeon, “Early determination of mode decision for HEVC,” in Proc. Picture Coding Symp. IEEE, 2012, pp. 449–452. [5] J. Xiong, H. Li, Q. Wu, and F. Meng, “A fast HEVC inter CU selection method based on pyramid motion divergence,” IEEE Trans. Multimedia ,vol. 16, no. 2, pp. 559–564, 2013. [6] L. Shen, Z. Zhang, and Z. Liu, “Adaptive inter-mode decision for HEVC jointly utilizing inter-level and spatiotemporal correlations,” IEEE Trans. Circuits Syst. Video Technol. , vol. 24, no. 10, pp. 1709–1722, 2014. [7] Y. Zhang, S. Kwong, X. Wang, H. Yuan, Z. Pan, and L. Xu, “Machine learning-based coding unit depth decisions for flexible complexity allocation in high efficiency video coding,” IEEE Trans. Image Process. ,vol. 24, no. 7, pp. 2225–2238, 2015. [8] M. Grellert, B. Zatt, S. Bampi, and L. A. da Silva Cruz, “Fast coding unit partition decision for HEVC using support vector machines,” IEEE Trans. Circuits Syst. Video Technol. , vol. 29, no. 6, pp. 1741–1753, 2018. [9] Z. Liu, X. Yu, Y. Gao, S. Chen, X. Ji, and D. Wang, “CU partition mode decision for HEVC hardwired intra encoder using convolution neural network,” IEEE Trans. Image Process. , vol. 25, no. 11, pp. 5088–5103, 2016. [10] M. Xu, T. Li, Z. Wang, X. Deng, R. Yang, and Z. Guan, “Reducing complexity of HEVC: A deep learning approach,” IEEE Trans. Image Process. , vol. 27, no. 10, pp. 5044–5059, 2018. [11] T. Li, M. Xu, and X. Deng, “A deep convolutional neural network approach for complexity reduction on intra-mode HEVC,” in Proc. IEEE Int. Conf. Multimedia Expo (ICME) . IEEE, 2017, pp. 1255–1260. [12] W. Luo, Y. Li, R. Urtasun, and R. Zemel, “Understanding the effective receptive field in deep convolutional neural networks,” Adv. Neural Inf. Process. Syst. , vol. 29, 2016. [13] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly et al. ,“An image is worth 16x16 words: Transformers for image recognition at scale,” arXiv preprint arXiv:2010.11929 , 2020. [14] S. Ioffe and C. Szegedy, “Batch normalization: Accelerating deep network training by reducing internal covariate shift,” in Proc. Int. Conf. Mach. Learn. , 2015, pp. 448–456. [15] S. Paul, A. Norkin, and A. C. Bovik, “Speeding up VP9 intra encoder with hierarchical deep learning-based partition prediction,” IEEE Trans. Image Process. , vol. 29, pp. 8134–8148, 2020. [16] G. Tang, M. Jing, X. Zeng, and Y. Fan, “Adaptive CU split decision with pooling-variable CNN for VVC intra encoding,” in Proc. IEEE Vis. Commun. Image Process. (VCIP) . IEEE, 2019, pp. 1–4. [17] Z. Liu, Y. Lin, Y. Cao, H. Hu, Y. Wei, Z. Zhang, S. Lin, and B. Guo, “Swin transformer: Hierarchical vision transformer using shifted windows,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. , 2021, pp. 10 012– 10 022. [18] B. Graham, A. El-Nouby, H. Touvron, P. Stock, A. Joulin, H. J´ egou, and M. Douze, “LeViT: A vision transformer in convnet’s clothing for faster inference,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. , 2021, pp. 12 259–12 269. [19] Y. Chen, X. Dai, D. Chen, M. Liu, X. Dong, L. Yuan, and Z. Liu, “Mobile-Former: Bridging MobileNet and transformer,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. , 2022, pp. 5270–5279. [20] X. Liu, H. Peng, N. Zheng, Y. Yang, H. Hu, and Y. Yuan, “EfficientViT: Memory efficient vision transformer with cascaded group attention,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. , 2023, pp. 14 420–14 430. [21] P. K. A. Vasu, J. Gabriel, J. Zhu, O. Tuzel, and A. Ranjan, “FastViT: A fast hybrid vision transformer using structural reparameterization,” in 
+
+Proc. IEEE/CVF Int. Conf. Comput. Vis. , 2023, pp. 5785–5795. [22] A. Hatamizadeh, G. Heinrich, H. Yin, A. Tao, J. M. Alvarez, J. Kautz, and P. Molchanov, “FasterViT: Fast vision transformers with hierarchical attention,” arXiv preprint arXiv:2306.06189 , 2023. [23] Y. Li, G. Yuan, Y. Wen, J. Hu, G. Evangelidis, S. Tulyakov, Y. Wang, and J. Ren, “EfficientFormer: Vision transformers at MobileNet speed,” 
+
+Adv. Neural Inf. Process. Syst. , vol. 35, pp. 12 934–12 949, 2022. [24] A. G. Howard, M. Zhu, B. Chen, D. Kalenichenko, W. Wang, T. Weyand, M. Andreetto, and H. Adam, “Mobilenets: Efficient convo-lutional neural networks for mobile vision applications,” arXiv preprint arXiv:1704.04861 , 2017. [25] B. Bross, Y.-K. Wang, Y. Ye, S. Liu, J. Chen, G. J. Sullivan, and J.-R. Ohm, “Overview of the versatile video coding (VVC) standard and its applications,” IEEE Trans. Circuits Syst. Video Technol. , vol. 31, no. 10, pp. 3736–3764, 2021. [26] T. Li, M. Xu, Z. Liu, Y. Chen, and K. Li, “A deep transformer-based fast CU partition approach for inter-mode VVC,” IEEE Trans. Image Process. , vol. 34, pp. 1133–1148, 2025. [27] F. Chollet, “Xception: Deep learning with depthwise separable convo-lutions,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. , 2017, pp. 1251–1258. [28] D. Hendrycks and K. Gimpel, “Gaussian error linear units (GELUs),” 
+
+arXiv preprint arXiv:1606.08415 , 2016. [29] R. Xiong, Y. Yang, D. He, K. Zheng, S. Zheng, C. Xing, H. Zhang, Y. Lan, L. Wang, and T. Liu, “On layer normalization in the transformer architecture,” in Proc. Int. Conf. Mach. Learn. , 2020, pp. 10 524–10 533. [30] N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever, and R. Salakhut-dinov, “Dropout: a simple way to prevent neural networks from overfit-ting,” J. Mach. Learn. Res. , vol. 15, no. 1, pp. 1929–1958, 2014. [31] T. Li, M. Xu, and X. Deng, “CPH: A large-scale database for coding unit partition of HEVC intra-mode,” 2017, [Online]. Available: https: //github.com/tianyili2017/CPH. [32] Z. Wang, E. P. Simoncelli, and A. C. Bovik, “Multiscale structural similarity for image quality assessment,” in Proc. 37th Asilomar Conf. Signals, Syst., Comput. , vol. 2. IEEE, 2003, pp. 1398–1402. [33] Z. Li, A. Aaron, I. Katsavounidis, A. Moorthy, and M. Manohara, “Toward a practical perceptual video quality metric,” Netflix Tech. Blog, Jun. 2016, [Online]. Available: https://netflixtechblog.com/toward-a-p ractical-perceptual-video-quality-metric-653f208b9652. [34] G. Bjøntegaard, “Calculation of average PSNR differences between RD-curves,” ITU-T Video Coding Experts Group (VCEG), Tech. Rep. VCEG-M33, Apr. 2001. [35] “Subjective video quality assessment methods for multimedia applica-tions,” Recommendation P.910, 1999. [36] W. Robitza, R. R. R. Rao, S. G¨ oring, and A. Raake, “Impact of spatial and temporal information on video quality and compressibility,” in Proc. 13th Int. Conf. Qual. Multimedia Exper. (QoMEX) . IEEE, 2021, pp. 65–68. [37] F. Bossen, “Common test conditions and software reference configura-tions,” in Proc. 3rd JCT-VC Meeting , 2010.
