@@ -6,47 +6,35 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-03
-- 运行时间：2026-06-03 22:48:10 UTC
+- 最新运行日期：2026-06-04
+- 运行时间：2026-06-04 21:42:42 UTC
 - 运行状态：成功
-- 本次总论文数：9
-- 精读区：3
-- 速读区：6
+- 本次总论文数：5
+- 精读区：2
+- 速读区：3
 
 ### 今日简报（AI）
-今日聚焦9篇AI系统优化论文，精读2篇高分（9.0/10《SCOPE》质量约束下成本高效模型选择、8.0/10《Accelerating HEVC》CNN-层次注意力视频编码加速）。最值得细读《SCOPE》的复合AI系统成本控制方法，以及《MobileExplorer》的移动GUI在线探索加速。建议优先精读这两篇高分论文，再速读视频检索和视觉感知方向作为拓展。
-- 详情：[/202606/03/README](/202606/03/README)
+今日推荐5篇论文，精读聚焦ARM芯片上的Transformer推理加速与视频注入视觉语言模型。最值得关注的是《Fast Transformer Inference on ARM-HMPSoCs》（8.0分）与《Video2LoRA》（8.0分），分别面向边缘端高效部署和视频理解增强。建议优先精读这两篇高评分工作，探索推理优化与多模态融合的实用方案。
+- 详情：[/202606/04/README](/202606/04/README)
 
 ### 精读区论文标签
-1. [SCOPE: Cost-Efficient Model Selection for Compound AI Systems under Quality Constraints](/202606/03/2606.00774v1-scope-cost-efficient-model-selection-for-compound-ai-systems-under-quality-constraints)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：复合AI系统的模型选择
-2. [Accelerating HEVC Intra Partitioning via a CNN-Hierarchical Attention Transformer Hybrid](/202606/03/2605.29063v1-accelerating-hevc-intra-partitioning-via-a-cnn-hierarchical-attention-transformer-hybrid)  
+1. [Fast Transformer Inference on ARM-Based HMPSoCs](/202606/04/2606.02836v1-fast-transformer-inference-on-arm-based-hmpsocs)  
    标签：评分：8.0/10、query:mec-video
-   evidence：加速HEVC帧内划分以实现实时视频编码
-3. [Real-Time Generation of Streamable Talking Portrait Video with Reference-Guided Deep Compression VAEs](/202606/03/2606.01620v1-real-time-generation-of-streamable-talking-portrait-video-with-reference-guided-deep-compression-vaes)  
+   evidence：边缘设备上的快速Transformer推理
+2. [Video2LoRA: Parametric Video Internalization for Vision-Language Models](/202606/04/2606.04351v1-video2lora-parametric-video-internalization-for-vision-language-models)  
    标签：评分：8.0/10、query:mec-video
-   evidence：可流式说话人视频生成，因果视频VAE进行深度潜在压缩
+   evidence：参数化视频内化方法通过减少视觉token实现高效视频分析
 
 ### 速读区论文标签
-1. [MobileExplorer: Accelerating On-Device Inference for Mobile GUI Agents via Online Exploration](/202606/03/2605.26546v1-mobileexplorer-accelerating-on-device-inference-for-mobile-gui-agents-via-online-exploration)  
+1. [DSA: Dynamic Step Allocation for Fast Autoregressive Video Generation](/202606/04/2606.04432v1-dsa-dynamic-step-allocation-for-fast-autoregressive-video-generation)  
    标签：评分：7.0/10、query:mec-video
-   evidence：移动GUI智能体的设备端推理，支持移动边缘计算
-2. [Reason, Retrieve, Re-rank: A Zero-Shot Reasoning-Aware Framework for Composed Video Retrieval](/202606/03/2606.00910v1-reason-retrieve-re-rank-a-zero-shot-reasoning-aware-framework-for-composed-video-retrieval)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：零样本组合视频检索
-3. [Policy-based Foveated Imaging and Perception](/202606/03/2606.02565v1-policy-based-foveated-imaging-and-perception)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：实时注视点成像与带宽约束
-4. [Learning Global Motion with Compact Gaussians for Feed-Forward 4D Reconstruction](/202606/03/2605.31595v1-learning-global-motion-with-compact-gaussians-for-feed-forward-4d-reconstruction)  
+   evidence：实时视频生成的自适应计算
+2. [Tiny Collaborative Inference for Occlusion-Robust Object Detection](/202606/04/2606.02894v2-tiny-collaborative-inference-for-occlusion-robust-object-detection)  
    标签：评分：6.0/10、query:mec-video
-   evidence：基于单目视频的4D重建
-5. [Saliency-Aware Model Merging](/202606/03/2606.00511v1-saliency-aware-model-merging)  
+   evidence：面向视频分析的边缘端目标检测
+3. [AAD-1: Asymmetric Adversarial Distillation for One-Step Autoregressive Video Generation](/202606/04/2606.03972v1-aad-1-asymmetric-adversarial-distillation-for-one-step-autoregressive-video-generation)  
    标签：评分：6.0/10、query:mec-video
-   evidence：基于显著性的模型合并
-6. [Where Do We (Not) Need Temporal Context in Low-Resource Video Task Adaptation?](/202606/03/2606.03837v1-where-do-we-not-need-temporal-context-in-low-resource-video-task-adaptation)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：参数高效微调模型适应策略
+   evidence：单步自回归视频生成以降低延迟
 
 
 <div class="dpr-home-promo-card">
