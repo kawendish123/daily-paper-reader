@@ -1,0 +1,54 @@
+{
+  "label": "2026-06-05",
+  "date": "2026-06-05",
+  "generated_at": "2026-06-05T21:32:05",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202606/05/2606.05271v1-bident-heterogeneous-operator-level-mapping-for-efficient-edge-inference",
+      "section": "deep",
+      "title_en": "BIDENT: Heterogeneous Operator-level Mapping for Efficient Edge Inference",
+      "authors": "Hoseok Kim, Arghadip Das, Soumendu Ghosh, Arnab Raha, Vijay Raghunathan",
+      "date": "2026-06-03",
+      "pdf": "https://arxiv.org/pdf/2606.05271v1",
+      "score": "8.0",
+      "evidence": "将算子映射到最合适的处理单元以实现高效边缘推理，属于边缘场景下的模型选择",
+      "tldr": "当前边缘SoC集成多种异构处理单元，但推理栈将整个模型映射到单一单元，导致性能与能效损失，新兴SSM、KAN等多架构加剧这一问题。BIDENT提出算子级编排，将每个算子分配至最适处理单元，通过加权执行图最短路径实现延迟/能量最优调度。在Intel Core Ultra上评估10类模型家族，算子内并行加速1.60倍，多模型组合几何平均加速3.42倍，能量感知调度降低能耗48.2%。结果表明算子级编排是释放下一代边缘AI异构潜力的关键抽象。",
+      "tags": "query:mec-video",
+      "abstract_en": "Modern edge System-on-Chips (SoCs) integrate heterogeneous processing units (PUs) such as CPUs, GPUs, and NPUs, yet current inference stacks map entire models to a single PU, leaving significant performance and energy efficiency on the table. This is exacerbated by emerging architectures such as state-space models (SSMs), Kolmogorov-Arnold networks (KANs), and multi-stage vision-language-action (VLA) pipelines, whose diverse operator characteristics are not uniformly suited to any single PU. We present BIDENT, a unified operator-level orchestration framework for heterogeneous edge inference that maps individual operators to the most suitable PU based on profiled execution characteristics. BIDENT formulates operator-to-PU assignment as a shortest-path problem over a weighted execution graph, enabling efficient and optimal scheduling under the cost model for both latency- and energy-minimization objectives. Unlike prior work relying on model-specific heuristics or coarse-grained partitioning, BIDENT is model-agnostic and jointly supports sequential execution, intra-model parallelism across independent operators, and multi-model concurrent scheduling in a single formulation. We implement BIDENT on an Intel Core Ultra SoC and evaluate it across 10 model families spanning CNNs, Transformers, SSMs, KANs, spiking networks, and multi-stage pipelines. BIDENT achieves up to 1.60x speedup via intra-model parallelism and a 3.42x geometric mean speedup across 190 multi-model combinations by utilizing otherwise idle compute. Sequential heterogeneous mapping yields more modest gains (up to 1.58x, 1.09x geometric mean), while energy-aware scheduling reduces energy consumption by 48.2% on average in concurrent settings. These results show that operator-level orchestration, not model-level mapping, is the key abstraction for fully exploiting heterogeneity in next-generation edge AI.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/05/2606.05981v1-video-rate-streaming-stylization-on-a-vision-aware-mllm-conditioned-edit-diffusion-asymmetric-batched-inference-on-a-distilled-unet--mllm-text-encoder",
+      "section": "deep",
+      "title_en": "Video-Rate Streaming Stylization on a Vision-Aware MLLM-Conditioned Edit Diffusion: Asymmetric Batched Inference on a Distilled UNet + MLLM Text Encoder",
+      "authors": "Yoshiyuki Ootani",
+      "date": "2026-06-04",
+      "pdf": "https://arxiv.org/pdf/2606.05981v1",
+      "score": "8.0",
+      "evidence": "直接处理视频率流式风格化，具有实时流水线",
+      "tldr": "视频率实时风格化面临蒸馏扩散U-Net后文本编码器成为瓶颈的问题，尤其是使用多模态大语言模型（MLLM）时。本文提出一种流式管线，包括非对称侧流/主流CUDA流水线、编译友好的ControlNet-LLLite重构以及周期性条件刷新调度。在RTX 3090 Ti上512x512分辨率实现27.4 FPS（B=8），RTX 5090达74.1 FPS；释放的时间适配器在DAVIS-2017等视频上泛化良好。",
+      "tags": "query:mec-video",
+      "abstract_en": "Aggressive distillation of the diffusion U-Net inverts the per-frame bottleneck of real-time text-to-image pipelines: once the denoiser is a 4-step or 1-step distilled student, the text encoder becomes the critical path. This inversion is most acute in vision-aware edit diffusion, where the encoder is a multimodal large language model (MLLM). We study the case of a 0.39B distilled edit U-Net paired with a 2.13B MLLM text encoder (Qwen3-VL) and present a streaming pipeline targeted at this regime built around three engineering mechanisms: asymmetric side-stream / main-stream CUDA pipelining with batched text-encoder amortisation (and optional static-prompt caching), a compile-friendly ControlNet-LLLite reformulation that folds the entire U-Net + adapter stack into a single fused graph, and a periodic conditioning-refresh schedule with a hook subset that amortises the per-frame conditioning cost. On a single consumer RTX 3090 Ti at 512x512 the pipeline sustains 27.4 fps over a 480-frame run at batch size B=8 and 29.6 fps at B=16, with end-to-end p50 latency of approximately 0.5 and 1.0 seconds respectively; the same operating point measures 54.9 fps on RTX 4090 and 74.1 fps on RTX 5090. We report video-rate streaming throughput rather than interactive low latency, and locate our numbers against same-stack StreamDiffusion re-runs as systems context, not as a benchmark superiority claim. For the trained oil-painting style, the released temporal adapter generalises within in-clip noise to 19 unused DAVIS-2017 sequences and 15 non-DAVIS clips from seven sources; prompt-level generalisation to unseen style families is bounded and reported separately.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/05/2605.30349v1-adastate-self-evolving-anchors-for-streaming-video-generation",
+      "section": "quick",
+      "title_en": "AdaState: Self-Evolving Anchors for Streaming Video Generation",
+      "authors": "Yusuf Dalva, Pinar Yanardag",
+      "date": "2026-05-28",
+      "pdf": "https://arxiv.org/pdf/2605.30349v1",
+      "score": "6.0",
+      "evidence": "流式视频生成中自演化锚点技术",
+      "tldr": "自回归视频扩散模型因锚定第一帧导致视频动态受限。AdaState用自适应隐状态替换静态锚点，该状态随内容一同去噪但不渲染，通过关注前状态和当前内容生成新锚点，使参考随生成演化。时间被视为相对的，每个步骤有相同位置结构，引入递归机制。实验表明，自适应状态显著提升视频动态，产生更丰富运动和自然场景演进，无需外部模块。",
+      "tags": "query:mec-video",
+      "abstract_en": "Autoregressive video diffusion models generate streaming video by producing frames sequentially, conditioning each chunk on previously generated content. These models are structurally anchored to the first frame: its key-value representation occupies a privileged position in the attention cache and serves as the primary scene reference throughout generation. As the cleanest and most error-free position in the cache, this anchor draws disproportionate attention, suppressing video dynamics, and locking scene composition to the initial viewpoint even as the scene naturally evolves. The result is a temporally shallow video in which motion, camera movement, and scene progression are dampened in favor of static consistency. To address this, we replace the static anchor with an adaptive state, a hidden latent that the model denoises alongside content at every chunk but never renders. Rather than referencing a frozen first frame, the model generates its own scene anchor at each step by attending to both the previous state and the current content, producing a reference that evolves with the generated content. Unlike standard video generation, which encodes an absolute notion of time, our formulation treats time as relative: every generation step sees the same positional structure regardless of how far generation has progressed, and the state transition is identical at every chunk. Together, these properties introduce a recurrence into the generation process, where denoising serves as the transition function, and the KV cache serves as the carrier, requiring no external module. Experiments demonstrate that the adaptive state substantially improves video dynamics, enabling richer motion and natural scene progression within generated videos.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

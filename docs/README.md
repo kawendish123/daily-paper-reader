@@ -6,35 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-04
-- 运行时间：2026-06-04 21:42:42 UTC
+- 最新运行日期：2026-06-05
+- 运行时间：2026-06-05 21:31:59 UTC
 - 运行状态：成功
-- 本次总论文数：5
+- 本次总论文数：3
 - 精读区：2
-- 速读区：3
+- 速读区：1
 
 ### 今日简报（AI）
-今日推荐5篇论文，精读聚焦ARM芯片上的Transformer推理加速与视频注入视觉语言模型。最值得关注的是《Fast Transformer Inference on ARM-HMPSoCs》（8.0分）与《Video2LoRA》（8.0分），分别面向边缘端高效部署和视频理解增强。建议优先精读这两篇高评分工作，探索推理优化与多模态融合的实用方案。
-- 详情：[/202606/04/README](/202606/04/README)
+今天精读了两篇高效边缘推理与视频风格化论文，速读一篇流式视频生成。最值得关注异构算子级映射优化边缘推理性能，以及MLLM驱动的视频实时风格化。建议后续探索算子级优化与多模态大模型在边缘视频生成的结合。
+- 详情：[/202606/05/README](/202606/05/README)
 
 ### 精读区论文标签
-1. [Fast Transformer Inference on ARM-Based HMPSoCs](/202606/04/2606.02836v1-fast-transformer-inference-on-arm-based-hmpsocs)  
+1. [BIDENT: Heterogeneous Operator-level Mapping for Efficient Edge Inference](/202606/05/2606.05271v1-bident-heterogeneous-operator-level-mapping-for-efficient-edge-inference)  
    标签：评分：8.0/10、query:mec-video
-   evidence：边缘设备上的快速Transformer推理
-2. [Video2LoRA: Parametric Video Internalization for Vision-Language Models](/202606/04/2606.04351v1-video2lora-parametric-video-internalization-for-vision-language-models)  
+   evidence：将算子映射到最合适的处理单元以实现高效边缘推理，属于边缘场景下的模型选择
+2. [Video-Rate Streaming Stylization on a Vision-Aware MLLM-Conditioned Edit Diffusion: Asymmetric Batched Inference on a Distilled UNet + MLLM Text Encoder](/202606/05/2606.05981v1-video-rate-streaming-stylization-on-a-vision-aware-mllm-conditioned-edit-diffusion-asymmetric-batched-inference-on-a-distilled-unet--mllm-text-encoder)  
    标签：评分：8.0/10、query:mec-video
-   evidence：参数化视频内化方法通过减少视觉token实现高效视频分析
+   evidence：直接处理视频率流式风格化，具有实时流水线
 
 ### 速读区论文标签
-1. [DSA: Dynamic Step Allocation for Fast Autoregressive Video Generation](/202606/04/2606.04432v1-dsa-dynamic-step-allocation-for-fast-autoregressive-video-generation)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：实时视频生成的自适应计算
-2. [Tiny Collaborative Inference for Occlusion-Robust Object Detection](/202606/04/2606.02894v2-tiny-collaborative-inference-for-occlusion-robust-object-detection)  
+1. [AdaState: Self-Evolving Anchors for Streaming Video Generation](/202606/05/2605.30349v1-adastate-self-evolving-anchors-for-streaming-video-generation)  
    标签：评分：6.0/10、query:mec-video
-   evidence：面向视频分析的边缘端目标检测
-3. [AAD-1: Asymmetric Adversarial Distillation for One-Step Autoregressive Video Generation](/202606/04/2606.03972v1-aad-1-asymmetric-adversarial-distillation-for-one-step-autoregressive-video-generation)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：单步自回归视频生成以降低延迟
+   evidence：流式视频生成中自演化锚点技术
 
 
 <div class="dpr-home-promo-card">
