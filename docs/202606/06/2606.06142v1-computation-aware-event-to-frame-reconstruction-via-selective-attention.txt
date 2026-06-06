@@ -1,0 +1,149 @@
+Title: Computation-Aware Event-to-Frame Reconstruction via Selective Attention
+
+URL Source: https://arxiv.org/pdf/2606.06142v1
+
+Published Time: Fri, 05 Jun 2026 01:10:41 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Computation-Aware Event-to-Frame Reconstruction via Selective Attention 
+
+Jingqian Wu 
+
+The University of Hong Kong 
+
+Hong Kong, China jingqianwu@connect.hku.hk 
+
+Yunbo Jia 
+
+Beijing University of Posts and Telecommunications 
+
+Beijing, China jybconcorde@163.com 
+
+Edmund Y. Lam 
+
+The University of Hong Kong 
+
+Hong Kong, China elam@eee.hku.hk 
+
+Abstract —Event-to-frame (E2F) reconstruction bridges asyn-chronous event streams with frame-based vision pipelines, but existing methods often face a trade-off between reconstruction quality and computational efficiency. In this work, we propose an efficient E2F framework that emphasizes causal temporal modeling and computation-aware design. The architecture adopts a recurrent encoder–decoder to incrementally aggregate event information with compact hidden states. To improve robustness under fast motion and illumination variations, a selective context fusion strategy is introduced to integrate event-driven features with prior intensity cues. Within this fusion process, a lightweight hybrid attention mechanism enhances feature selectivity without relying on heavy attention operations. Experimental results on standard benchmarks demonstrate that the proposed approach achieves competitive reconstruction performance while maintain-ing a favorable balance between accuracy and model complexity. 
+
+Index Terms —Event Camera, Neuromorphic and Event-Based System, Event-To-Frame Reconstruction 
+
+I. I NTRODUCTION 
+
+Event cameras represent visual information as asynchronous streams of brightness changes, offering distinct advantages such as high temporal resolution and wide dynamic range [1]– [4]. These properties make them attractive for scenarios in-volving fast motion or challenging lighting [5]. However, the event-based sensing paradigm is inherently incompatible with conventional frame-based vision systems [6], which motivates the need for event-to-frame (E2F) reconstruction as an inter-mediate representation. [1] For many practical applications, E2F models must achieve not only high reconstruction quality but also strong computational efficiency, as excessive model complexity limits their applicability in resource-constrained settings [7]. Recent learning-based E2F approaches [1], [3], [9]–[11] have significantly advanced reconstruction fidelity by lever-aging recurrent architectures, multi-scale feature fusion, or attention-based mechanisms. While these designs improve temporal consistency and visual detail, they often introduce substantial computational overhead. In particular, transformer-style attention [12] has been shown to enhance long-range dependency modeling, but at the cost of increased parameter count and multiply–accumulate operations (MACs). As a re-sult, existing methods exhibit a clear quality–efficiency trade-off: lightweight models such as FireNet [9] and FireNet+ [10] 
+
+Fig. 1. illustrates the quality-efficiency trade-off of event-to-frame (E2F) models on the Event Camera Dataset (ECD) [8]. Each scatter point represents reconstruction quality (SSIM ↑ vs. MSE ↓), while bubble size indicates the number of model parameters. Our method achieves the highest reconstruction quality with the smallest parameter footprint, demonstrating its suitability for scenarios requiring high fidelity under tight resource constraints. 
+
+offer favorable computational characteristics but limited rep-resentational capacity, whereas high-capacity models achieve strong reconstruction accuracy with considerably higher com-putational demands. In this work, we focus on addressing this trade-off through a computation-aware E2F formulation that emphasizes compact temporal modeling and selective context integration. Our ap-proach is built around a recurrent encoder–decoder architecture that performs causal temporal aggregation using convolutional recurrent units, providing effective temporal modeling with controlled complexity. To further enhance robustness under rapid motion and illumination variation, we incorporate a selective context fusion mechanism that integrates event-driven information with prior intensity content. Within this process, a lightweight hybrid attention strategy enables adaptive feature reweighting across spatial and temporal dimensions, improving reconstruction quality while remaining consistent with the lightweight design philosophy. Experimental results demon-strate that the proposed method achieves a favorable balance between reconstruction performance and computational effi-ciency when compared with existing baseline approaches. 
+
+> arXiv:2606.06142v1 [cs.CV] 4 Jun 2026
+
+II. R ELATED WORK 
+
+A. Learning-based E2F Reconstruction. 
+
+E2VID [3] pioneered learning-based event-to-frame (E2F) reconstruction by converting event streams into voxel grids and training a recurrent U-Net on large-scale simulated data, achieving improved reconstruction quality with good general-ization to real events. A subsequent variant [1] replaced the recurrent unit with ConvLSTM to enhance temporal consis-tency across event window sizes. FireNet [9] introduced a compact recurrent architecture that significantly reduces com-putational cost and memory footprint, albeit at the expense of reconstruction fidelity under complex motion and background conditions. Stoffregen et al. [10] improved the stability of E2VID- and FireNet-based models by employing synthetic training data better matched to real event statistics. Cadena 
+
+et al. [11] incorporated SPADE layers into E2VID to enhance contrast and detail. Departing from end-to-end RNN regres-sion, Zhang et al. [13] reformulated E2F reconstruction as a linear inverse problem coupling optical flow and brightness estimation, solved with classical and deep CNN-based reg-ularizers for improved explainability. ET-Net [12] integrated Transformer blocks [14] to model long-range dependencies, improving reconstruction fidelity while substantially increas-ing parameter count, memory usage, and inference cost, which limits applicability to embedded and neuromorphic platforms. More recently, diffusion-based approaches have emerged as a promising direction, from Event-Diffusion [15], which first in-troduced denoising diffusion models to E2F reconstruction for improved edge restoration, to E2VIDiff [16] and UniE2F [17], which leverage pretrained generative priors and unified video diffusion frameworks to overcome the perceptual limitations of deterministic regression models. 
+
+B. Lightweight and Realtime Neuromorphic System 
+
+In circuit- and system-level deployments, strict latency constraints, limited on-chip SRAM, and the high energy cost of DRAM access make heavy attention-based backbones impractical, even when reconstruction quality is strong [18], [19]. As a result, E2F methods face a quality–efficiency trade-off: lightweight models [9] are more deployable but often sacrifice accuracy, whereas high-fidelity approaches such as ET-Net [12] incur prohibitive computational and memory overheads. In a similar efficiency-oriented vein, E2VIDX [20] redesigned the E2VID backbone with group and sub-pixel convolutions, reducing model size by roughly 25% while marginally improving SSIM/LPIPS, illustrating the value of architecture-level compression for bridging conventional and neuromorphic vision pipelines. Motivated by practical constraints on latency, memory, and power, we adopt a hardware-aware and parameter-efficient design that combines causal LSTM-based temporal aggrega-tion with lightweight , scene-adaptive dynamic filtering. By retaining only essential components—recurrent encoders for low-latency temporal modeling and compact conditioning mechanisms for context-dependent modulation—the proposed approach maintains strong reconstruction performance while aligning with neuromorphic deployment requirements. III. M ETHODOLOGY 
+
+A. Problem Formulation and Overview. 
+
+Given a stream of events represented as voxelized tensors 
+
+Vk ∈ RH×W ×B at time step k, the goal of event-to-frame (E2F) reconstruction is to estimate the correspond-ing intensity image ˆIk. The proposed framework follows an encoder–decoder architecture with recurrent states, enabling causal temporal aggregation across consecutive event win-dows. The overall architecture is illustrated in Figure 2. 
+
+B. Efficient Neuromorphic Vision Models. 
+
+Beyond reconstruction accuracy, practical E2F deploy-ment emphasizes computational efficiency and system-level constraints. Event-based vision systems often target plat-forms with limited memory bandwidth and power bud-gets, where model size and multiply–accumulate operations (MACs) directly affect feasibility. As a result, lightweight and computation-aware designs are central to neuromorphic and embedded vision research. In this context, dynamic filtering and context-aware mod-ulation have emerged as effective strategies for balancing performance and efficiency. These approaches suggest that se-lectively adapting features within convolutional pipelines can improve reconstruction quality while preserving a lightweight profile. Following this direction, our approach combines com-pact recurrent modeling with selective context fusion to meet the efficiency requirements of event-based vision systems. 
+
+C. Recurrent Encoder–Decoder for Causal Modeling. 
+
+Temporal consistency is achieved using a convolutional recurrent encoder–decoder that incrementally integrates event information over time. The encoder performs spatial down-sampling followed by convolutional recurrent units to aggre-gate motion cues while maintaining compact hidden states, enabling causal temporal modeling without access to future events or long temporal buffers. At the bottleneck, a shallow residual block refines the aggregated representation. The decoder then progressively re-stores spatial resolution through upsampling and convolutional refinement, with additive skip connections preserving fine-grained spatial details. 
+
+D. Convolutional Context Fusion 
+
+We introduce a convolutional context fusion mechanism that integrates features from the current event tensor and the previously reconstructed frame. Rather than uniformly fusing contextual cues, the proposed design selectively emphasizes signals most relevant to the current reconstruction step. Let Ek denote event-driven features and Rk−1 intensity-based features from the previous output. After spatial align-ment, these features are concatenated to form a compact context representation that conditions the decoder, providing a unified interface for integrating transient motion cues and stable appearance priors. Fig. 2. Overview of the proposed event-to-frame reconstruction framework. An input event voxel grid is first processed by a lightweight convolutional head and a recurrent encoder composed of strided convolutions and ConvLSTM units to perform causal temporal aggregation. A shallow residual block refines the encoded representation at the bottleneck. Context fusion is achieved by combining event-driven features with the previously reconstructed frame, which are jointly processed by a hybrid attention module to enable selective integration of dynamic and structural cues. The resulting context-aware representation conditions a dynamic decoding stage, followed by a convolutional decoder with additive skip connections that progressively restores spatial resolution. 
+
+E. Hybrid Attention for Selective Context Integration 
+
+To enhance the selectivity of context fusion, we introduce a lightweight hybrid attention mechanism that adaptively reweights fused features across modalities, spatial locations, and channels. 
+
+Cross-modal attention. Interactions between event-driven and intensity-based features are modeled via bidirectional cross-attention using pointwise convolutional projections and sig-moid gating: 
+
+Or→e = Ve(E) ⊙ σ(Qr (R) ⊙ Ke(E)) ,
+
+with a symmetric formulation for Oe→r . The two outputs are combined using normalized learnable weights to form a jointly conditioned representation. 
+
+Efficient self-attention. To capture broader spatial context with linear complexity, a self-attention branch aggregates features through normalized key–value interactions: 
+
+Osa = Q(softmax (K)⊤V),
+
+which is fused with a depthwise convolution branch to pre-serve local structure. 
+
+Channel and spatial reweighting. Finally, channel-wise and spatial attention refine the fused representation using global pooling and lightweight convolutional gating, emphasizing informative feature dimensions with minimal overhead. Overall, the hybrid attention module enables selective con-text integration within a convolutional fusion pipeline, improv-ing reconstruction robustness while maintaining computational efficiency. IV. E XPERIMENTS 
+
+A. Training Protocols 
+
+Following prior work [10], training data are synthesized by sampling natural images from MSCOCO [23] and rendering multi-object motion using the 2D renderer in ESIM [24]. MSCOCO images serve as both background and moving fore-ground content. The resulting dataset contains 280 sequences of 10 s each, with foreground objects exhibiting diverse speeds and trajectories. For each sequence, event streams, reference intensity frames, and optical flow are generated at an average rate of 51 Hz. Both event and frame sensors use a resolution of 256 ×256 , and the event contrast threshold is uniformly sampled from [0 .1, 1.5] .
+
+B. Evaluation Setup 
+
+The proposed method is evaluated on standard benchmark datasets providing synchronized event streams and ground-truth intensity frames. All experiments use a voxel-grid rep-resentation for event data and fixed evaluation configurations to ensure fair comparison. Training and testing are conducted with identical input resolutions and preprocessing pipelines across all methods. Reconstruction quality is evaluated using mean squared error (MSE), structural similarity index (SSIM), and learned perceptual image patch similarity (LPIPS), which together measure pixel-level accuracy, structural consistency, and per-ceptual similarity. Qualitative comparisons of reconstruction results across methods are presented in Figure 3. TABLE I EVALUATION RESULTS OF THE EXISTING METHODS AND OUR PROPOSED METHOD ON ECD AND MVSEC DATASETS . B EST RESULTS ARE IN BOLD ,
+
+> SECOND
+
+-BEST ARE UNDERLINED .ECD [8] MVSEC [21] Method #Params (M) MACs (G) MSE ↓ SSIM ↑ LPIPS ↓ MSE ↓ SSIM ↑ LPIPS ↓
+
+E2VID [3] 10.71 42.24 0.179 0.450 0.322 0.225 0.241 0.645 FireNet [9] 0.038 3.63 0.133 0.459 0.321 0.294 0.198 0.702 E2VID+ [10] 10.71 42.23 0.070 0.503 0.236 0.132 0.262 0.514 FireNet+ [10] 0.038 3.41 0.062 0.452 0.289 0.219 0.212 0.570 SPADE-E2VID [11] 11.46 146.58 0.091 0.461 0.337 0.138 0.266 0.591 E2VIDX [20] - - 0.060 0.450 0.324 - - -SSL-E2VID [22] 10.71 42.23 0.092 0.415 0.380 0.124 0.264 0.694 ELRP [13] - - 0.080 0.437 0.485 - - -ET-Net [12] 22.18 104.91 0.047 0.552 0.224 0.107 0.288 0.489 Ours 10.16 37.83 0.034 0.554 0.224 0.127 0.266 0.530 
+
+Fig. 3. Qualitative comparison of reconstructed intensity frames on real-world event sequences. The proposed method demonstrates improved edge clarity, texture preservation, and brightness consistency in both indoor and outdoor environments. The resulting reconstructions exhibit closer agreement with the ground-truth images, suggesting enhanced structural fidelity under varying illumination conditions. 
+
+C. Quantitative Results 
+
+Table I reports quantitative results on the ECD and MVSEC datasets, with comparisons spanning lightweight recurrent models [9], [10], high-capacity convolutional baselines [3], [10], [11], self-supervised approaches [22], inverse-problem formulations [13], and transformer-based methods [12]. 
+
+Performance on ECD. The proposed method achieves the best MSE of 0.034 and SSIM of 0.554 , while matching ET-Net [12] on LPIPS ( 0.224 ). It reduces MSE by 51% over E2VID+ [10] ( 0.070 → 0.034 ) and by 27 .7% over ET-Net (0.047 → 0.034 ), while using less than half the parameters and roughly one-third of the MACs of the latter, indicating that selective context fusion offers an effective alternative to global self-attention. 
+
+Performance on MVSEC. Under fast ego-motion and com-plex outdoor illumination, our method attains an MSE of 
+
+0.127 , SSIM of 0.266 , and LPIPS of 0.530 . Although ET-Net [12] achieves the best absolute scores, our LPIPS outperforms all non-transformer baselines (e.g., 0.514 for E2VID+ [10], 0.694 for SSL-E2VID [22]), recovering most of the transformer’s perceptual quality with substantially lower computational cost. 
+
+Cross-dataset consistency and efficiency. Unlike baselines that exhibit dataset-specific behavior—e.g., FireNet+ [10] degrades sharply from ECD (0.062 ) to MVSEC (0.219 ), and SSL-E2VID [22] suffers in perceptual quality (LPIPS 
+
+0.694 )—our method ranks first or second across all six met-ric–dataset combinations. Combined with its compact footprint (Figure 1), this places the proposed model on a favorable point of the quality–efficiency frontier, particularly relevant for resource-constrained deployment. 
+
+D. Efficiency Analysis 
+
+In addition to reconstruction quality, we evaluate model efficiency using parameter count and multiply–accumulate op-erations (MACs), which serve as hardware-agnostic indicators of computational complexity (Figure 1). The proposed model contains 10 ,156 ,254 parameters and requires 37 .8 G MACs per event voxel input, making it the most compact among methods achieving top-tier reconstruction quality. 
+
+Comparison with transformer-based methods. Against ET-Net [12], which represents the current state of the art, our model uses 54 .2% fewer parameters ( 22 .18 → 10 .16 M) and 
+
+63 .9% fewer MACs ( 104 .91 → 37 .83 G), yet achieves a lower MSE and comparable SSIM on ECD. This suggests that the proposed lightweight hybrid attention captures most of the benefits of global self-attention without its quadratic cost, which is critical for embedded and neuromorphic platforms with tight memory and energy budgets. 
+
+Comparison with convolutional baselines. Relative to back-bones of similar capacity such as E2VID [3], E2VID+ [10], and SSL-E2VID [22] ( ∼10 .71 M params, 42 .23 G MACs), our model is slightly smaller in both dimensions while deliver-ing a 51% MSE reduction over E2VID+ on ECD. SPADE-E2VID [11] further illustrates the cost of conditioning-heavy designs, requiring nearly 4× our MACs without matching our accuracy. 
+
+Source of efficiency. This balance stems from two design choices: causal recurrent temporal modeling, which bounds per-step computation by avoiding long event-window buffer-ing, and lightweight hybrid attention within a convolutional fusion pipeline, which improves feature selectivity via linear-complexity self-attention and pointwise cross-modal gating rather than dense global attention.                                        
+
+> TABLE II ABLATION STUDY OF THE FUSION STRATEGY IN THE CONVOLUTIONAL
+> CONTEXT FUSION MODULE ON ECD AND MVSEC DATASETS . B EST RESULTS ARE IN BOLD ,SECOND -BEST ARE UNDERLINED .ECD [8] MVSEC [21] Method MSE ↓SSIM ↑LPIPS ↓MSE ↓SSIM ↑LPIPS ↓
+> Addition 0.040 0.524 0.251 0.123 0.256 0.568 Concatenation 0.040 0.524 0.250 0.125 0.255 0.554 Lightweight Gating 0.035 0.538 0.243 0.127 0.265 0.552
+> Hybrid Attention (Ours) 0.034 0.554 0.224 0.127 0.266 0.530
+
+E. Ablation Study 
+
+To validate the effectiveness of the proposed hybrid atten-tion design in our Convolutional Context Fusion module, we replace it with three progressively simpler fusion alternatives while keeping all other components of the network unchanged: (i) Addition , in which the downsampled event and previous-reconstruction features are projected and element-wise added to the convolved context; (ii) Concatenation , in which the three streams are concatenated and fused by 1 ×1 convolutions; and (iii) Lightweight Gating , an SE-style channel-wise gating mechanism that adaptively reweights the projected event and reconstruction branches before summation. These three vari-ants form a complexity gradient from purely linear fusion to channel-selective fusion, allowing us to isolate the contribution of cross-modal, self, channel, and spatial attention in our full design. All variants are trained under identical settings and evaluated on the ECD and MVSEC datasets using MSE, SSIM, and LPIPS. As shown in Table II, the proposed hybrid attention consis-tently outperforms the simpler baselines on the ECD dataset across all three metrics, reducing MSE from 0.040 to 0.034, improving SSIM from 0.524 to 0.554, and lowering LPIPS from 0.251 to 0.224. The Addition and Concatenation variants yield nearly identical results, indicating that without an explicit selection mechanism the network struggles to disentangle complementary information from the event stream and the recurrent image prior. The Lightweight Gating variant narrows this gap by introducing channel-wise selectivity, but it still falls short of the proposed design, suggesting that channel reweighting alone is insufficient and that joint modeling of cross-modal, spatial, and global dependencies is essential for high-quality reconstruction. On the MVSEC dataset, the proposed method achieves the best SSIM (0.266) and acompetitive MSE (0.127), while the simpler variants attain marginally lower MSE values; however, this comes at the cost of noticeably degraded perceptual quality, as reflected by the higher LPIPS scores (0.568 and 0.554 for Addition and Concatenation, respectively, versus 0.530 for ours). This is consistent with the well-documented perception–distortion trade-off in event-based video reconstruction, and confirms that the hybrid attention module produces reconstructions that are both structurally faithful and perceptually closer to the ground truth. V. C ONCLUSION 
+
+This paper presented an efficient event-to-frame reconstruc-tion framework that combines causal recurrent modeling with selective context fusion. By embedding a lightweight hybrid attention mechanism within a convolutional fusion pipeline, the proposed approach adaptively emphasizes informative features while preserving computational efficiency. Extensive evaluations on standard benchmarks demonstrate competitive reconstruction performance and a favorable balance between accuracy and model complexity. Overall, this work highlights the effectiveness of selective, convolution-friendly attention for end-to-end event-based reconstruction under constrained computational budgets. ACKNOWLEDGMENTS 
+
+This work is supported by the Research Grants Council of Hong Kong (GRF 17201822) and the Theme-based Research Scheme (T45-701/22-R). REFERENCES [1] H. Rebecq, R. Ranftl, V. Koltun, and D. Scaramuzza, “High speed and high dynamic range video with an event camera,” IEEE transactions on pattern analysis and machine intelligence , vol. 43, no. 6, pp. 1964–1980, 2019. [2] J. Wu, S. Zhu, C. Wang, B. Shi, and E. Y. Lam, “SweepEvGS: Event-based 3d gaussian splatting for macro and micro radiance field rendering from a single sweep,” IEEE Transactions on Circuits and Systems for Video Technology , 2025. [3] H. Rebecq, R. Ranftl, V. Koltun, and D. Scaramuzza, “Events-to-video: Bringing modern computer vision to event cameras,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2019, pp. 3857–3866. [4] J. Wu, S. Zhu, C. Wang, and E. Y. Lam, “Ev-GS: Event-based gaussian splatting for efficient and accurate radiance field rendering,” in 2024 IEEE 34th International Workshop on Machine Learning for Signal Processing (MLSP) . IEEE, 2024, pp. 1–6. [5] J. Wu, P. Duan, Z. Wang, C. Wang, B. Shi, and E. Y. Lam, “Dark-EvGS: Event camera as an eye for radiance field in the dark,” IEEE Transactions on Image Processing , 2026. [6] G. Gallego, T. Delbruck, G. Orchard, C. Bartolozzi, B. Taba, A. Censi, S. Leutenegger, A. J. Davison, J. Conradt, K. Daniilidis, and D. Scaramuzza, “ Event-Based Vision: A Survey ,” 
+
+IEEE Transactions on Pattern Analysis & Machine Intelligence ,vol. 44, no. 01, pp. 154–180, Jan. 2022. [Online]. Available: https://doi.ieeecomputersociety.org/10.1109/TPAMI.2020.3008413 [7] T. Delbruck, “Neuromorophic vision sensing and processing,” in 2016 46th European Solid-State Device Research Conference (ESSDERC) ,2016, pp. 7–14. [8] E. Mueggler, H. Rebecq, G. Gallego, T. Delbruck, and D. Scaramuzza, “The event-camera dataset and simulator: Event-based data for pose estimation, visual odometry, and slam,” The International journal of robotics research , vol. 36, no. 2, pp. 142–149, 2017. [9] C. Scheerlinck, H. Rebecq, D. Gehrig, N. Barnes, R. Mahony, and D. Scaramuzza, “Fast image reconstruction with an event camera,” in 
+
+Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision , 2020, pp. 156–163. [10] T. Stoffregen, C. Scheerlinck, D. Scaramuzza, T. Drummond, N. Barnes, L. Kleeman, and R. Mahony, “Reducing the sim-to-real gap for event cameras,” in Computer Vision–ECCV 2020: 16th European Confer-ence, Glasgow, UK, August 23–28, 2020, Proceedings, Part XXVII 16 .Springer, 2020, pp. 534–549. [11] P. R. G. Cadena, Y. Qian, C. Wang, and M. Yang, “Spade-e2vid: Spatially-adaptive denormalization for event-based video reconstruc-tion,” IEEE Transactions on Image Processing , vol. 30, pp. 2488–2500, 2021. [12] W. Weng, Y. Zhang, and Z. Xiong, “Event-based video reconstruction using transformer,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2021, pp. 2563–2572. [13] Z. Zhang, A. J. Yezzi, and G. Gallego, “ Formulating Event-Based Image Reconstruction as a Linear Inverse Problem With Deep Regularization Using Optical Flow ,” IEEE Transactions on Pattern Analysis & Machine Intelligence ,vol. 45, no. 07, pp. 8372–8389, Jul. 2023. [Online]. Available: https://doi.ieeecomputersociety.org/10.1109/TPAMI.2022.3230727 [14] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” Advances in neural information processing systems , vol. 30, 2017. [15] Q. Liang, X. Zheng, K. Huang, Y. Zhang, J. Chen, and Y. Tian, “Event-diffusion: Event-based image reconstruction and restoration with diffusion models,” in Proceedings of the 31st ACM International Conference on Multimedia , ser. MM ’23. New York, NY, USA: Association for Computing Machinery, 2023, p. 3837–3846. [Online]. Available: https://doi.org/10.1145/3581783.3612462 [16] J. Liang, B. Yu, Y. Yang, Y. Han, and B. Shi, “E2vidiff: Perceptual events-to-video reconstruction using diffusion priors,” 07 2024. [17] G. Xu, Z. Zhu, and J. Hou, “Unie2f: A unified diffusion framework for event-to-frame reconstruction with video foundation models,” 2026. [Online]. Available: https://arxiv.org/abs/2602.19202 [18] M. Davies, N. Srinivasa, T.-H. Lin, G. Chinya, Y. Cao, S. H. Choday, G. Dimou, P. Joshi, N. Imam, S. Jain et al. , “Loihi: A neuromorphic manycore processor with on-chip learning,” Ieee Micro , vol. 38, no. 1, pp. 82–99, 2018. [19] P. A. Merolla, J. V. Arthur, R. Alvarez-Icaza, A. S. Cassidy, J. Sawada, F. Akopyan, B. L. Jackson, N. Imam, C. Guo, Y. Nakamura et al. , “A million spiking-neuron integrated circuit with a scalable communication network and interface,” Science , vol. 345, no. 6197, pp. 668–673, 2014. [20] X. Hou, F. Zhang, D. Gulati, T. Tan, and W. Zhang, “E2vidx: improved bridge between conventional vision and bionic vision,” Frontiers in Neurorobotics , vol. Volume 17 - 2023, 2023. [21] A. Z. Zhu, D. Thakur, T. ¨Ozaslan, B. Pfrommer, V. Kumar, and K. Daniilidis, “The multivehicle stereo event camera dataset: An event camera dataset for 3d perception,” IEEE Robotics and Automation Letters , vol. 3, no. 3, pp. 2032–2039, 2018. [22] F. Paredes-Vall´ es and G. C. de Croon, “Back to event basics: Self-supervised learning of image reconstruction for event cameras via photometric constancy,” in 2021 IEEE/CVF Conference on Computer Visionand Pattern Recognition . IEEE, 2021, pp. 3445–3454. [23] T.-Y. Lin, M. Maire, S. Belongie, J. Hays, P. Perona, D. Ramanan, P. Doll´ ar, and C. L. Zitnick, “Microsoft coco: Common objects in context,” in Computer vision–ECCV 2014: 13th European conference, zurich, Switzerland, September 6-12, 2014, proceedings, part v 13 .Springer, 2014, pp. 740–755. [24] H. Rebecq, D. Gehrig, and D. Scaramuzza, “Esim: an open event camera simulator,” in Conference on robot learning . PMLR, 2018, pp. 969– 982.

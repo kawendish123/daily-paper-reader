@@ -1,0 +1,287 @@
+Title: R^3: Composed Video Retrieval via Reasoning-Guided Recalling and Re-ranking
+
+URL Source: https://arxiv.org/pdf/2606.01113v1
+
+Published Time: Tue, 02 Jun 2026 01:20:09 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# R3: Composed Video Retrieval via Reasoning-Guided Recalling and Re-ranking 
+
+## Zixu Li 1 Yupeng Hu 1 Zhiheng Fu 1 Zhiwei Chen 1 Weili Guan 2 Liqiang Nie 21Shandong University 2Harbin Institute of Technology (Shenzhen)    
+
+> {lizixu.cs, fuzhiheng8, zivczw, honeyguan, nieliqiang }@gmail.com; huyupeng@sdu.edu.cn
+
+## Abstract 
+
+The CoVR-R challenge evaluates composed video retrieval, where a system must retrieve a target video from a large gallery given a reference video and a textual edit instruc-tion. This setting is not a standard video-text retrieval problem: the query is defined by both the visual evidence in the source video and the transformation implied by the edit. A strong embedding model can provide scalable can-didate recall, but it may under-express target-side conse-quences such as state changes, action replacement, object preservation, or temporal consistency. A pairwise multi-modal reranker can verify such details more directly, but exhaustive reranking over the full gallery is computation-ally infeasible. We present R3, a zero-shot composed video retrieval pipeline built around Reasoning -guided Recalling 
+
+and Reranking . The core idea is to turn the source-edit query into a reasoning-grounded retrieval program rather than treating the edit text as a short caption. First, the model generates a reasoning trace that describes the ex-pected target video after applying the edit. Then the trace is encoded together with the source video as a reasoning-augmented query, and its retrieval score is fused with the base composed query through an agreement-gated resid-ual rule. At last, a re-ranker verifies the recalled candi-dates with direct source-candidate comparison. Experi-ments have demonstrated the effectiveness of our method in addressing this challenge. Codes are available on https://github.com/Lee-zixu/R-3. 
+
+## 1. Introduction 
+
+Composed video retrieval [1–5] aims to retrieve a target video from a gallery given a reference video and a natu-ral language modification. Following composed image re-trieval [6–12], unlike standard video-text retrieval [13, 14], the query is not a complete caption, but a modification text that conveys the users’ more precise requirements. It is de-fined by a visual anchor and a transformation: the source video specifies the objects, actions, scene, camera view, and temporal context that should be preserved, while the edit in-struction specifies how the desired target should differ. A correct system must therefore solve both preservation and change, which makes CoVR-R a compositional retrieval benchmark rather than a conventional semantic matching task. Furthermore, as a fundamental task in multi-modal interaction, CVR supports real-world applications such as multimodal reasoning [15–17], multimodal learning [18– 20], and cross-modal retrieval [21–23]. A common solution is embedding-based retrieval [24– 27]. The reference video and edit text are encoded into a query embedding, gallery videos are encoded into target embeddings, and candidates are ranked by cosine similar-ity. This design is efficient and naturally supports large gal-leries, but it has an important limitation: the modification is often compressed into a short text condition. Many edits im-ply target-side consequences that are not explicitly named. For example, changing an action may imply a different ob-ject state, changing a scene may require preserving the ac-tor and motion, and modifying camera framing may require distinguishing foreground changes from background con-text. A single composed embedding can recall plausible candidates, but it may not explicitly represent these implied visual consequences. Pairwise multimodal reranking addresses a complemen-tary limitation [28–30]. By directly comparing the source video, a candidate target video, and the edit instruction, a reranker can verify whether the candidate satisfies the edit while preserving unchanged context. However, this ver-ification is computationally expensive because it requires processing two videos for each candidate pair. Exhaustive reranking over the full gallery is therefore infeasible. In practice, reranking can only be used after a high-recall re-trieval stage has already reduced the search space. The composed video retrieval field further suggests that useful predictions are not only ranked lists but also expla-nations of the intended target [31]. A reasoning trace can make implicit edit effects explicit, but a naive use of reason-ing has a risk. If it is used as an unconstrained replacement 
+
+> arXiv:2606.01113v1 [cs.CV] 31 May 2026
+
+query, it may over-specify details that are not visually sup-ported by the source video or instruction. Thus, reasoning must be integrated into retrieval in a controlled manner. These observations lead to two challenges. C1: im-plicit reasoning and reliability. The target video may con-tain implicit state, action, or context changes not explicitly stated in the edit text. While generating visual reasoning traces can help decode these nuances, integrating such rea-soning without proper safeguards risks introducing noise or over-specific biases that degrade retrieval. C2: con-text preservation and verification efficiency. Retrieval must strike a delicate balance between preserving source-side context and capturing target modifications. Moreover, while coarse embedding-based search scales efficiently to maintain this balance, relying solely on it lacks precision, whereas deploying accurate multimodal pairwise verifica-tion across all candidates is computationally prohibitive. To address these challenges, we propose R3, a zero-shot pipeline organized around Reasoning , Recalling , and Re-ranking . The reasoning uses Qwen3-VL-Thinking to gen-erate a target-oriented reasoning trace before candidate re-call. The recalling encodes both the base source-edit query and the reasoning-augmented query, then fuses their scores through an agreement-gated residual rule. The re-ranking applies Qwen3-VL-Reranker only to the recalled candi-dates, using pairwise verification to improve local ordering. In this way, reasoning becomes a recalling signal, while the gate and residual weight prevent it from overriding the orig-inal composed query. Our contributions are summarized as follows: • We formulate this challenge as a reasoning-guided coarse-to-fine retrieval problem, identifying the limita-tions of existing approches. • We introduce the reasoning trace before retrieval and uses it as a controlled query expansion signal. • We design an agreement-gated residual fusion rule that lets reasoning adjust embedding scores. 
+
+## 2. Methodology 
+
+R3 is a unified inference-time pipeline built on frozen Qwen3-VL components. The method is designed around the challenges discussed above. Instead of solving these issues with task-specific training, R3 turns each query into a structured Reasoning– Recalling– Re-ranking pro-gram. Qwen3-VL-Thinking first describes the expected tar-get, Qwen3-VL-Embedding performs scalable reasoning-guided recall, and Qwen3-VL-Reranker verifies the recalled candidates. In the following, we first explain the design ra-tionale, then formulate the problem and describe each mod-ule. 
+
+2.1. Design Rationale 
+
+The design follows a coarse-to-fine principle. First, the system must understand the intended edited target before searching the gallery. This motivates a reasoning stage that translates the source video and edit instruction into an ex-plicit target-side description. Second, the reasoning trace affects retrieval. We use a reasoning-augmented query en-coding. Third, the generated trace should not replace the original query, because it may contain unsupported details. This motivates the agreement gate and residual score fusion. Fourth, final candidate ordering should be decided by direct source-candidate comparison. Thus, reasoning trace generation addresses implicit tar-get transformation. Base and reasoning-augmented retrieval address the preservation-change balance. Agreement-gated residual fusion addresses reasoning reliability. Candidate reranking addresses fine-grained pairwise verification while avoiding exhaustive gallery scoring. 
+
+2.2. Problem Formulation and Overview 
+
+For each sample, the input is a source video Vs, a modifica-tion instruction m, and a gallery of candidate target videos 
+
+G = {Vi}Ni=1 . The goal is to output a ranked list of target video ids, 
+
+ˆY = Rank( Vs, m, G), (1) where high-ranked candidates should match the visual re-sult of applying m to Vs. R3 decomposes the prediction as 
+
+ˆY = Rrank ◦ R ret ◦ R think (Vs, m, G), (2) where Rthink generates a reasoning trace, Rret performs reasoning-guided embedding retrieval, and Rrank applies pairwise reranking to the recalled candidates. This decom-position is a test-time program rather than a trainable net-work. The important design choice is that reasoning is placed before retrieval. The generated trace is not only an inter-pretable output field; it is used to construct an additional query representation that can influence candidate recall. At the same time, the influence is guarded by an agreement score and a residual weight, so that the original source-edit query remains the main retrieval anchor. 
+
+2.3. Gallery Evidence Encoding 
+
+R3 first encodes the gallery with Qwen3-VL-Embedding. For each candidate video Vi, we form a video-only docu-ment item and apply the document instruction that asks the model to represent visible objects, actions, state changes, scene context, camera framing, and temporal progression. The candidate embedding is 
+
+di = Norm  femb (Vi; Idoc ), (3) Input                                        
+
+> Reference Video 𝑉 !
+> Modification Instruction 𝑚
+> “Change the action /object /
+> scene while preserving context ”
+> Target Gallery
+> ....
+> ....
+> ....
+> Millions of videos
+> 1. Target -side Reasoning
+> Qwen3 -VL -Thinking
+> Reasoning Trace
+> Infer implicit
+> target changes
+> Preserve source
+> context
+> Describe expected
+> target
+> Expected Edited target:
+> “The person is cycling
+> along the same riverside
+> path with the same
+> buildings and viewpoint. ”
+> 2. Dual Query Embedding
+> Qwen3 -VL -Embedding
+> A. Base Query
+> (𝑉 !+𝑚 )
+> B. Reasoning -Augmented Query
+> (𝑉 !+𝑚 +𝑟 )
+> Encoder
+> 𝑞 "𝑞 #
+> Gallery Embeddings (Pre -computed)
+> Similarity Scoring
+> Reasoning Score
+> 𝑠 #
+> Base Score
+> 𝑠 "
+> Top -K Reranking Pool
+> 𝐶 !!
+> Top −𝐾 !!({(𝑉 ",𝑠 #$% (𝑉 "))})
+> Rank 1
+> Rank 2
+> Rank 3
+> Rank 𝐾 !
+> 𝐾 !≪𝑁
+> Agreement -Gated
+> Residual Fusion
+> 𝑠 !"#
+> 3. Pairwise Reranking
+> Qwen3 -VL -Reranker
+> 1) Pairwise Input Packing
+> 𝑉 $𝑉 %𝑚
+> 3) CrossEncoder
+> 4) Pool -wise Min -Max Norm
+> (Within 𝐶 $!)
+> 5) Final Score Fusion
+> 𝑠 &'()* (𝑉 ")=𝛼 s1+,-(𝑉 ")+𝛽 s1., (𝑉 ")
+> 6) Merge & Truncate
+> Sort 𝐶 !!by 𝑠 "#$%& ; Keep remaining in order;
+> Truncate to required Top -K
+> 2) Qwen3 -VL -Reranker
+> Ranked Target
+> Videos
+> Rank 1
+> Rank 2
+> Rank 3
+> Rank 𝐾
+
+Figure 1. Overview of the proposed R3 framework for composed video retrieval. Given a reference video Vs, a modification instruction 
+
+m, and a target gallery, R3 generates a reasoning trace r to expose implicit edit consequences and preservation constraints, then performs dual-query retrieval using both the base query (Vs, m ) and the reasoning-augmented query (Vs, m, r ). Their scores are combined through agreement-gated residual fusion to obtain sret , from which a compact Top-Kr re-ranking pool is selected. A re-ranker further verifies each source-candidate pair, and the normalized retrieval and re-ranking scores are fused to produce the final Top-K ranked target videos. 
+
+where femb is the Qwen3-VL-Embedding encoder and 
+
+Norm denotes L2 normalization. All candidate embeddings are stored in a matrix: 
+
+D = [ d1, . . . , dN ]⊤. (4) This stage is executed once for each gallery split. At infer-ence time, retrieval is therefore reduced to query encoding and matrix multiplication, which keeps the expensive video-document encoding outside the online loop. 
+
+2.4. Reasoning Trace Generation 
+
+The edit instruction alone may not state all properties that the target video should contain. We therefore introduce an inference-time reasoning module. Given (Vs, m ), Qwen3-VL-Thinking produces a target-oriented reasoning trace 
+
+r = Π final 
+
+ fthink (Vs, m ; Preason ), (5) where Preason is the reasoning prompt and Πfinal extracts the final external answer from the thinking-model output. The trace should explain the expected visual transformation and preservation constraints. The prompt encourages a complete target-side paragraph for edits involving object replacement, action change, state transition, camera/framing shift, motion change, or contex-tual preservation. Simple edits are allowed to remain con-cise. Thus, the reasoning trace records what the target is expected to show, which visual context should remain un-changed, and which details should be checked during re-trieval and reranking. 
+
+2.5. Prompting and Interface Design 
+
+All modules are connected through lightweight prompts and structured model interfaces. The embedding document prompt asks Qwen3-VL-Embedding to represent each can-didate video by visible objects, actions, state changes, scene context, camera framing, and temporal progression. The re-trieval prompt asks the same encoder to retrieve the target video that matches the reference video after applying the edit instruction. This keeps gallery encoding and query en-coding aligned around the same composed-video objective. The reasoning prompt has a different role. It asks Qwen3-VL-Thinking to infer the expected target video and output a concise external reasoning paragraph. The final output is not a dialogue response and not an internal chain-of-thought transcript; it is a benchmark-facing description of the visual transformation and preserved context. The reranker prompt then asks Qwen3-VL-Reranker to score whether the candidate target video is a good match for the edited source video. These prompts define the interfaces between the three frozen models and make the system re-producible without training additional parameters. 
+
+2.6. Base and Reasoning-Augmented Retrieval 
+
+The base composed query uses the source video and the edit instruction: 
+
+T0(m) = “Reference video after edit instruction: m”. (6) It is encoded as: 
+
+q0 = Norm  femb (Vs, T 0(m); Iret ). (7) The base retrieval score for candidate Vi is the cosine score, as follows, 
+
+s0(Vi) = d⊤
+
+i q0. (8) To connect the reasoning trace with retrieval, we con-struct a second query view, 
+
+Tr (m, r ) = “Reference video after edit instruction: m
+
+. Reasoned target video description: r”, (9) and encode it as: 
+
+qr = Norm  femb (Vs, T r (m, r ); Iret ). (10) The corresponding reasoning retrieval score is: 
+
+sr (Vi) = d⊤ 
+
+> i
+
+qr . (11) The base query preserves the literal source-edit condi-tion, while the reasoning-augmented query exposes inferred target-side consequences. Both scores are computed against the same precomputed gallery matrix. 
+
+2.7. Agreement-Gated Residual Fusion 
+
+Reasoning should help retrieval only when it remains con-sistent with the original query. We therefore compute an embedding-space agreement score, formulated as follows, 
+
+a = q⊤ 
+
+> 0
+
+qr . (12) If a < τ , where τ is a configurable threshold, the reasoning branch is blocked and the system ranks candidates by s0
+
+only. If the gate is satisfied, the reasoning score is applied as a residual correction: 
+
+sret (Vi) = s0(Vi) + λ sr (Vi) − s0(Vi). (13) The weight λ is intentionally small. It is set to 0.5, so reasoning can adjust the candidate ordering but cannot re-place the base composed query. Source-video aliases are assigned −∞ before ranking to prevent degenerate self-retrieval. The top Kr candidates under sret are then passed to the reranking stage. This module is the main connection between reasoning and search. It gives the generated trace a concrete scoring role, while the agreement gate and residual form prevent unsupported reasoning details from dominating candidate recall. 
+
+2.8. Candidate Reranking 
+
+Embedding retrieval scores each candidate independently with respect to the query embedding. To verify fine-grained pairwise compatibility, R3 applies Qwen3-VL-Reranker to the recalled candidates. For each candidate Vi in the top-Kr
+
+set, the reranker receives the source video, candidate target video, and edit instruction. It predicts a scalar compatibility score: 
+
+sce (Vi) = grank (Vs, V i, m ), (14) where grank denotes the Qwen3-VL cross-encoder reranker. The implementation uses the SentenceTransformers CrossEncoder. More explicitly, let CKr be the reranking pool selected from embedding retrieval: 
+
+CKr = TopK Kr
+
+ {(Vi, s ret (Vi)) }Ni=1 
+
+. (15) For each Vi ∈ C Kr , we build a cross-encoder input pair and score it: 
+
+sce (Vi) = CrossEncoder  Φ( Vs, m ; Irank ), Φ( Vi; Irank ),
+
+(16) where Φ packs video and text inputs into the multimodal format expected by Qwen3-VL, and Irank is the reranker instruction. The CrossEncoder jointly encodes the source-candidate pair and produces a scalar compatibility score. A larger sce means that the candidate is more likely to be a valid target for the edited source video. For score composition, retrieval and reranking scores are min-max normalized inside the valid reranked set. Let: 
+
+mz = min  
+
+> Vj∈C Kr
+
+sz (Vj ), Mz = max  
+
+> Vj∈C Kr
+
+sz (Vj ), (17) where z ∈ { ret , ce }. The normalized score is: 
+
+ˆsz (Vi) = sz (Vi) − mz
+
+Mz − mz + ϵ . (18) The final candidate score is 
+
+sfinal (Vi) = αˆsret (Vi) + βˆsce (Vi). (19) Thus, embedding retrieval remains the coarse similarity an-chor, while re-ranking provides a pairwise verification cor-rection for local ordering. This preserves the two-stage structure: retrieval decides which candidates are plausible enough to inspect, and re-ranking adjusts their order. 
+
+## 3. Experiments 
+
+3.1. Benchmark, Splits, and Submission Format 
+
+We evaluates composed video retrieval over multiple video sources, including WebVid videos and Something-Something-V2 videos. Each query consists of a source video id and a textual modification. The system returns a ranked list of target video ids and a reasoning trace when required by testing phase. The final submission keeps the top 50 predictions per query. We report results on both val-idation and test splits, output from the official server. 
+
+3.2. Implementation Details 
+
+Figure 2 presents the prompts used across the three stages of our pipeline. No task-specific training or fine-tuning is performed. All models are frozen. Gallery videos are en-coded once with Qwen3-VL-Embedding-8B and saved as compressed NumPy stores. The reasoning trace is outputed from Qwen3-VL-32B-Thinking (temperature = 0.2, top-p = 
+
+0.9 and a maximum of 4096 tokens). The recalling process enables reasoning-guided scoring with the gated residual mode, and the main residual weight is λ = 0 .5. τ is set to Stage 1: Embedding                                                                    
+
+> Embedding instruction:
+> Retrieve the target video that matches the reference video after applying the edit instruction. The correct target should satisfy the requested visual change while preserving unchanged visual context, including objects, actions, state changes, scene, camera framing, and temporal progression.
+> Stage 2: Recalling
+> Query input:
+> Reference video after edit instruction:
+> {modification text }
+> Reasoning-augmented query:
+> Reference video after edit instruction:
+> {modification text }
+> Reasoned target video description: {reasoning }
+> Stage 3: Re-ranking
+> Reranker instruction:
+> Score how well the candidate target video matches the reference video after applying the edit instruction. A good candidate satisfies the requested visual change, preserves unchanged context, and remains temporally and visually consistent with the intended edited result.
+> Figure 2. Prompts used across the three stages of our pipeline. Template variables {modification text }and {reasoning }are filled per sample at runtime. Table 1. Ablation results of R3. All scores are evaluated at the official server. ∗Baseline is frozen Qwen3-VL-Embedding-8B. We build on this model.
+
+Setting Method Model R@1 R@5 R@10 R@50 
+
+A-0 Baseline ∗ Qwen3-VL-Embedding-8B 94.78 99.66 99.83 100.00 
+
+A-1 + Reasoning Qwen3-VL-32B-Thinking 95.12 99.66 99.83 100.00 
+
+A-2 + Re-ranking Qwen3-VL-Reranker-8B 98.82 100.00 100.00 100.00 
+
+> Table 2. Main CoVR-R retrieval performance on validation and test splits. All scores are evaluated at the official server.
+
+Split R@1 R@5 R@10 R@50 
+
+Validation 95.44 99.49 99.77 99.96 Test 98.82 100.00 100.00 100.00 
+
+0.5. And we set α = 0 .4 and β = 0 .6. The re-ranking pro-cess is performed by Qwen3-VL-Reranker-8B, with Top-K set to 50 and the internal CrossEncoder used. The re-ranking process is performed by Qwen3-VL-Reranker-8B via the SentenceTransformers CrossEncoder interface, with Top-Kr set to 50 . The re-ranker instruction asks the model to score how well the candidate target video matches the edited source video, considering both the requested visual change and preserved context. For score fusion, we use linear combination with weights α = 0 .4 (retrieval) and 
+
+β = 0 .6 (reranker). All experiments are performed on a single node of 8 RTXPRO6000 GPUs. 
+
+3.3. Ablation Studies 
+
+Table 1 summarizes the ablation protocol. The first row measures the direct embedding recall baseline. The second row isolates re-ranking. The final row corresponds to the full R3 pipeline. These results are intended to show whether reasoning improves recalling before re-ranking and whether re-ranking improves local ordering after recall. Comparing A-0 and A-1, reasoning-augmented recall-ing provides a modest improvement of + 0.34 R@1, with R@50 already saturated at 100 .00 for both settings. This suggests that the base embedding retrieval already captures most of the edit semantics, and the reasoning trace con-tributes marginal recall gains.. Comparing A-1 and A-2, re-ranking delivers a substan-tial improvement of + 3.70 R@1, confirming that local re-ordering is the primary driver of top-1 accuracy. The reranker performs direct pairwise verification between the source video and candidate, which is more precise than em-bedding cosine similarity for distinguishing visually simi-lar targets. Combined with reasoning, the full R3 pipeline achieves 98 .82 R@1 on validation and 100 .00 R@5 and above, demonstrating that the coarse-to-fine design is ef-fective. 
+
+3.4. Validation and Test Performance 
+
+Table 2 provides the main results for the official validation and test splits. On the validation split, the system achieves 
+
+95 .44 R@1 and 99 .96 R@50. On the test split, R@5 through R@50 reach 100 .00 , with R@1 at 98 .82 . These results indicate that embedding retrieval already provides strong recall and that reranking effectively reorders the top candidates. 4. Observations and Insights 
+
+The main observation is that reasoning and re-ranking ad-dress different errors. Reasoning-guided retrieval is most useful when the edit implies a target-side transformation that is not fully captured by the short modification text, such as state change, action replacement, or preservation of con-textual details. Re-ranking is most useful when the correct target is already inside the recalled set but must be distin-guished from visually similar candidates. The agreement-gated residual rule is designed for this trade-off. It lets the reasoning query influence retrieval when it remains aligned with the base composed query, but falls back to the base embedding score when the reasoning branch appears inconsistent. This keeps the method robust while still giving the reasoning trace a functional role in candidate search. 
+
+## 5. Conclusion 
+
+We presented R3, a zero-shot composed video retrieval pipeline that integrates reasoning, recalling, and re-ranking into a single inference program. The method addresses the main limitations of direct embedding search and exhaus-tive re-ranking by generating a target-side reasoning trace before retrieval, using it through agreement-gated residual query fusion, and applying a reranker only to the recalled candidates. This design gives reasoning a functional role in search while keeping the original source-edit query as the anchor. 
+
+## References 
+
+[1] Zhiwei Chen, Yupeng Hu, Zixu Li, Zhiheng Fu, Haokun Wen, and Weili Guan. Hud: Hierarchical uncertainty-aware disambiguation network for composed video retrieval. In 
+
+ACM MM , page 6143–6152, 2025. 1 [2] Lucas Ventura, Antoine Yang, Cordelia Schmid, and G¨ ul Varol. Covr: Learning composed video retrieval from web video captions. In AAAI , pages 5270–5279, 2024. [3] Yupeng Hu, Zixu Li, Zhiwei Chen, Qinlei Huang, Zhiheng Fu, Mingzhu Xu, and Liqiang Nie. Refine: Composed video retrieval via shared and differential semantics enhancement. 
+
+ACM ToMM , 2026. [4] Lucas Ventura, Antoine Yang, Cordelia Schmid, and G¨ ul Varol. Covr-2: Automatic data construction for composed video retrieval. IEEE TPAMI , 2024. [5] Zixu Li, Yupeng Hu, Zhiwei Chen, Qinlei Huang, Guozhi Qiu, Zhiheng Fu, and Meng Liu. Retrack: Evidence-driven dual-stream directional anchor calibration network for com-posed video retrieval. In AAAI , pages 23373–23381, 2026. 1[6] Zixu Li, Yupeng Hu, Zhiwei Chen, Mingyu Zhang, Zhiheng Fu, and Liqiang Nie. Conesep: Cone-based robust noise-unlearning compositional network for composed image re-trieval. arXiv preprint arXiv:2604.20358 , 2026. 1 [7] Zhiheng Fu, Yupeng Hu, Qianyun Yang, Shiqi Zhang, Zhi-wei Chen, and Zixu Li. Air-know: Arbiter-calibrated knowledge-internalizing robust network for composed image retrieval. arXiv preprint arXiv:2604.19386 , 2026. [8] Xinxing Xu, Yong Liu, Salman Khan, Fahad Khan, Wang-meng Zuo, Rick Siow Mong Goh, Chun-Mei Feng, et al. Sentence-level prompts benefit composed image retrieval. In 
+
+ICLR , 2024. [9] Zixu Li, Zhiwei Chen, Haokun Wen, Zhiheng Fu, Yupeng Hu, and Weili Guan. Encoder: Entity mining and modifica-tion relation binding for composed image retrieval. In AAAI ,pages 5101–5109, 2025. [10] Zhiwei Chen, Yupeng Hu, Zixu Li, Zhiheng Fu, Xuemeng Song, and Liqiang Nie. Offset: Segmentation-based focus shift revision for composed image retrieval. In ACM MM ,page 6113–6122, 2025. [11] Zhiheng Fu, Zixu Li, Zhiwei Chen, Chunxiao Wang, Xuemeng Song, Yupeng Hu, and Liqiang Nie. Pair: Complementarity-guided disentanglement for composed im-age retrieval. In ICASSP , pages 1–5. IEEE, 2025. [12] Qinlei Huang, Zhiwei Chen, Zixu Li, Chunxiao Wang, Xue-meng Song, Yupeng Hu, and Liqiang Nie. Median: Adaptive intermediate-grained aggregation network for composed im-age retrieval. In ICASSP , pages 1–5. IEEE, 2025. 1 [13] Leqi Shen, Tianxiang Hao, et al. Tempme: Video tempo-ral token merging for efficient text-video retrieval. In ICLR ,pages 60839–60860, 2025. 1 [14] Zixu Li, Yupeng Hu, Zhiwei Chen, Zhiheng Fu, Xiaowei Zhu, Weili Guan, and Liqiang Nie. Tempret: Tempo-ral enhancement and two-stage reranking for cvpr 2026 epic-kitchens-100 multi-instance retrieval challenge. arXiv preprint arXiv:2605.24470 , 2026. 1 [15] Jinze Bai, Shuai Bai, et al. Qwen-vl: A versatile vision-language model for understanding, localization, text reading, and beyond. arXiv preprint arXiv:2308.12966 , 2023. 1 [16] Qianyun Yang, Peizhuo Lv, Yingjiu Li, Shengzhi Zhang, Yuxuan Chen, Zhiwei Chen, Zixu Li, and Yupeng Hu. Erase: Bypassing collaborative detection of ai counterfeit via com-prehensive artifacts elimination. IEEE TDSC , pages 1–18, 2026. [17] Zhiwei Chen, Yupeng Hu, Zixu Li, Zhiheng Fu, Guozhi Qiu, Weili Guan, and Liqiang Nie. Egoadapt: A multi-scene ego-centric adaptation method for cvpr 2026 hd-epic vqa chal-lenge. arXiv preprint arXiv:2605.24500 , 2026. 1 [18] Zhiheng Fu, Zixu Li, Zhiwei Chen, Fangxu Liu, Yupeng Hu, Weili Guan, and Liqiang Nie. Egoaction: Egocentric action composition with reliability-aware temporal fusion for the epic-kitchens action detection challenge at cvpr 2026. arXiv preprint arXiv:2605.24496 , 2026. 1 [19] Shuai Bai, Keqin Chen, Xuejing Liu, et al. Qwen2.5-vl tech-nical report. arXiv preprint arXiv:2502.13923 , 2025. [20] Zixu Li, Zhiwei Chen, Zhiheng Fu, Wenbo Wang, Yupeng Hu, Weili Guan, and Liqiang Nie. Omniego-r 2: A routed reasoning framework for the 1st cross-domain egocross chal-lenge at cvpr 2026. arXiv preprint arXiv:2605.24481 , 2026. 1[21] Bo Fang, Wenhao Wu, et al. Uatvr: Uncertainty-adaptive text-video retrieval. In CVPR , pages 13723–13733, 2023. 1 [22] Qianyun Yang, Zhiwei Chen, Yupeng Hu, Zixu Li, Zhi-heng Fu, and Liqiang Nie. Stable: Efficient hybrid nearest neighbor search via magnitude-uniformity and cardinality-robustness. IEEE TKDE , 2026. [23] Shraman Pramanick, Yale Song, Sayan Nag, Kevin Qinghong Lin, Hardik Shah, Mike Zheng Shou, Rama Chellappa, and Pengchuan Zhang. Egovlpv2: Egocentric video-language pre-training with fusion in the backbone. In ICCV , pages 5285–5297, 2023. 1 [24] Zixu Li, Zhiheng Fu, Yupeng Hu, Zhiwei Chen, Haokun Wen, and Liqiang Nie. Finecir: Explicit parsing of fine-grained modification semantics for composed image re-trieval. https://arxiv.org/abs/2503.21309 , 2025. 1 [25] Zhiwei Chen, Yupeng Hu, Zhiheng Fu, Zixu Li, Jiale Huang, Qinlei Huang, and Yinwei Wei. Intent: Invariance and discrimination-aware noise mitigation for robust composed image retrieval. In AAAI , pages 20463–20471, 2026. [26] Zixu Li, Yupeng Hu, Zhiwei Chen, Shiqi Zhang, Qinlei Huang, Zhiheng Fu, and Yinwei Wei. Habit: Chrono-synergia robust progressive learning framework for com-posed image retrieval. In AAAI , pages 6762–6770, 2026. [27] Zixu Li, Yupeng Hu, Zhiheng Fu, Zhiwei Chen, Yongqi Li, and Liqiang Nie. Tema: Anchor the image, follow the text for multi-modification composed image retrieval. arXiv preprint arXiv:2604.21806 , 2026. 1 [28] Zixu Li, Yupeng Hu, Zhiwei Chen, Haokun Wen, Xuemeng Song, and Liqiang Nie. Combiner: Composed image re-trieval guided by attribute-based neighbor relations. IEEE TIP , 2026. 1 [29] Guozhi Qiu, Zhiwei Chen, Zixu Li, Qinlei Huang, Zhiheng Fu, Xuemeng Song, and Yupeng Hu. Melt: Improve com-posed image retrieval via the modification frequentation-rarity balance network. In ICASSP , pages 13007–13011. IEEE, 2026. [30] Mingyu Zhang, Zixu Li, Zhiwei Chen, Zhiheng Fu, Xiaowei Zhu, Jiajia Nie, Yinwei Wei, and Yupeng Hu. Hint: Com-posed image retrieval with dual-path compositional contex-tualized network. In ICASSP , pages 13002–13006. IEEE, 2026. 1 [31] Omkar Thawakar, Dmitry Demidov, Vaishnav Potlapalli, Sai Prasanna Teja Reddy Bogireddy, Viswanatha Reddy Gajjala, Alaa Mostafa Lasheen, Rao Muhammad Anwer, and Fa-had Khan. Covr-r: Reason-aware composed video retrieval. 
+
+arXiv preprint arXiv:2603.20190 , 2026. 1

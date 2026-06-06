@@ -6,29 +6,44 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-05
-- 运行时间：2026-06-05 21:31:59 UTC
+- 最新运行日期：2026-06-06
+- 运行时间：2026-06-06 21:14:01 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：2
-- 速读区：1
+- 本次总论文数：7
+- 精读区：0
+- 速读区：7
 
 ### 今日简报（AI）
-今天精读了两篇高效边缘推理与视频风格化论文，速读一篇流式视频生成。最值得关注异构算子级映射优化边缘推理性能，以及MLLM驱动的视频实时风格化。建议后续探索算子级优化与多模态大模型在边缘视频生成的结合。
-- 详情：[/202606/05/README](/202606/05/README)
+1) 今日速读7篇，聚焦基於推理引導與視覺表徵的組合影片檢索，以及無監督影片全景分割。
+2) 最值得關注方向：兩篇7分的組合影片檢索（《R^3》與Training-Free方法）各具特色，推薦對比閱讀其推理與視覺引導策略。
+3) 下一步可挑選這三篇7分論文深入精讀，尤其關注無監督全景分割在場景理解中的應用，並嘗試用影片檢索技術驗證自己的多模態任務。
+- 详情：[/202606/06/README](/202606/06/README)
 
 ### 精读区论文标签
-1. [BIDENT: Heterogeneous Operator-level Mapping for Efficient Edge Inference](/202606/05/2606.05271v1-bident-heterogeneous-operator-level-mapping-for-efficient-edge-inference)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：将算子映射到最合适的处理单元以实现高效边缘推理，属于边缘场景下的模型选择
-2. [Video-Rate Streaming Stylization on a Vision-Aware MLLM-Conditioned Edit Diffusion: Asymmetric Batched Inference on a Distilled UNet + MLLM Text Encoder](/202606/05/2606.05981v1-video-rate-streaming-stylization-on-a-vision-aware-mllm-conditioned-edit-diffusion-asymmetric-batched-inference-on-a-distilled-unet--mllm-text-encoder)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：直接处理视频率流式风格化，具有实时流水线
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [AdaState: Self-Evolving Anchors for Streaming Video Generation](/202606/05/2605.30349v1-adastate-self-evolving-anchors-for-streaming-video-generation)  
+1. [R^3: Composed Video Retrieval via Reasoning-Guided Recalling and Re-ranking](/202606/06/2606.01113v1-r3-composed-video-retrieval-via-reasoning-guided-recalling-and-re-ranking)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：基于推理引导重排序的组合视频检索
+2. [Training-Free Composed Video Retrieval via Visual Representation-Guided Video-LLM Reasoning](/202606/06/2606.02321v1-training-free-composed-video-retrieval-via-visual-representation-guided-video-llm-reasoning)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：基于视频-LLM推理的组合视频检索
+3. [Scene-Centric Unsupervised Video Panoptic Segmentation](/202606/06/2606.04925v1-scene-centric-unsupervised-video-panoptic-segmentation)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：无监督视频全景分割
+4. [VideoKR: Towards Knowledge- and Reasoning-Intensive Video Understanding](/202606/06/2606.05259v1-videokr-towards-knowledge--and-reasoning-intensive-video-understanding)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：知识密集型视频理解
+5. [Toward Mobile and Converged Backhaul: The Promise of Wireless Access and Backhaul](/202606/06/2606.06075v1-toward-mobile-and-converged-backhaul-the-promise-of-wireless-access-and-backhaul)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：面向移动边缘计算的无线接入与回传架构
+6. [Echo-Infinity: Learning Evolving Memory for Real-Time Infinite Video Generation](/202606/06/2606.04527v1-echo-infinity-learning-evolving-memory-for-real-time-infinite-video-generation)  
    标签：评分：6.0/10、query:mec-video
-   evidence：流式视频生成中自演化锚点技术
+   evidence：实时无限视频生成与演化记忆
+7. [Computation-Aware Event-to-Frame Reconstruction via Selective Attention](/202606/06/2606.06142v1-computation-aware-event-to-frame-reconstruction-via-selective-attention)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：计算感知的事件到帧重建，高效设计
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,300 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-06T21:10:49.415446+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 7,
+    "quick_skim_target": 11,
+    "quick_selected": 7
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2606.01113v1",
+      "source": "arxiv",
+      "title": "R^3: Composed Video Retrieval via Reasoning-Guided Recalling and Re-ranking",
+      "abstract": "The CoVR-R challenge evaluates composed video retrieval, where a system must retrieve a target video from a large gallery given a reference video and a textual edit instruction. This setting is not a standard video-text retrieval problem: the query is defined by both the visual evidence in the source video and the transformation implied by the edit. A strong embedding model can provide scalable candidate recall, but it may under-express target-side consequences such as state changes, action replacement, object preservation, or temporal consistency. A pairwise multimodal reranker can verify such details more directly, but exhaustive reranking over the full gallery is computationally infeasible. We present $\\mathbb{R}^3$, a zero-shot composed video retrieval pipeline built around Reasoning-guided Recalling and Reranking. The core idea is to turn the source-edit query into a reasoning-grounded retrieval program rather than treating the edit text as a short caption. First, the model generates a reasoning trace that describes the expected target video after applying the edit. Then the trace is encoded together with the source video as a reasoning-augmented query, and its retrieval score is fused with the base composed query through an agreement-gated residual rule. At last, a re-ranker verifies the recalled candidates with direct source-candidate comparison. Experiments have demonstrated the effectiveness of our method in addressing this challenge. Codes are available on https://github.com/Lee-zixu/R-3.",
+      "authors": [
+        "Zixu Li",
+        "Yupeng Hu",
+        "Zhiheng Fu",
+        "Zhiwei Chen",
+        "Weili Guan",
+        "Liqiang Nie"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-31T09:20:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.01113v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Composed video retrieval with reasoning-guided reranking",
+      "llm_evidence_cn": "基于推理引导重排序的组合视频检索",
+      "llm_evidence": "基于推理引导重排序的组合视频检索",
+      "canonical_evidence": "基于推理引导重排序的组合视频检索",
+      "llm_tldr_en": "Proposes R^3, a zero-shot composed video retrieval framework that uses a reasoning-guided reranking step to improve recall and precision without training.",
+      "llm_tldr_cn": "该论文针对组合视频检索任务，提出R^3零样本框架，通过推理引导的重排序机制在候选召回后对结果进行精细验证，有效处理状态变化、动作替换等复杂编辑指令，在不进行额外训练的情况下显著提升了检索准确率，为视频检索提供了高效解决方案。",
+      "llm_tldr": "该论文针对组合视频检索任务，提出R^3零样本框架，通过推理引导的重排序机制在候选召回后对结果进行精细验证，有效处理状态变化、动作替换等复杂编辑指令，在不进行额外训练的情况下显著提升了检索准确率，为视频检索提供了高效解决方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.04527v1",
+      "source": "arxiv",
+      "title": "Echo-Infinity: Learning Evolving Memory for Real-Time Infinite Video Generation",
+      "abstract": "We present Echo Infinity, an autoregressive (AR) framework towards real-time infinite video generation that employs a learnable evolving memory to dynamically filter, abstract, and compress any-length history at constant cost. Existing methods mainly curate memory with predefined KV-cache schedules, fixed-ratio heuristic compression, or inference-time RoPE adaptation. These designs inevitably lose historical information and amplify compounding errors due to their limited cache window and ignorance of autoregressive generation noise. Inspired by human memory consolidation, Echo-Infinity replaces handcrafted memory curation with learnable Memory Query, which are updated by attention and a gating mechanism when past frames are evicted from the local window. The queries are optimized end-to-end with the video diffusion transformers (DiTs), forming an evolving memory that supports arbitrary compression ratios with constant computation independent of video length. They also act as a generalizable generation prior, improving quality even when only the optimized initial state is used. We further introduce Unified Relative RoPE Recipe, which anchors the sink frames to start from id 0 and lets the newest frame id grow at most to the DiTs' pretrained maximum temporal RoPE id throughout training and inference, freeing the model from the finite RoPE constraint and closing the train-test RoPE extrapolation gap. In long and short video generation, Echo-Infinity achieves state-of-the-art performance, and, to our knowledge, demonstrates promising 24-hour (>1.3 M frames) real-time rollouts for the first time, suggesting a practical path toward infinite video generation.",
+      "authors": [
+        "Yuxuan Bian",
+        "Zeyue Xue",
+        "Songchun Zhang",
+        "Shiyi Zhang",
+        "Weiyang Jin",
+        "Yaowei Li",
+        "Junhao Zhuang",
+        "Haoran Li",
+        "Jie Huang",
+        "Haoyang Huang",
+        "Nan Duan",
+        "Qiang Xu"
+      ],
+      "primary_category": "cs.MM",
+      "categories": [
+        "cs.MM",
+        "cs.CV",
+        "cs.GR"
+      ],
+      "published": "2026-06-03T07:09:01+00:00",
+      "link": "https://arxiv.org/pdf/2606.04527v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "real-time infinite video generation with evolving memory",
+      "llm_evidence_cn": "实时无限视频生成与演化记忆",
+      "llm_evidence": "实时无限视频生成与演化记忆",
+      "canonical_evidence": "实时无限视频生成与演化记忆",
+      "llm_tldr_en": "Echo-Infinity uses learnable evolving memory for real-time infinite video generation, dynamically compressing history at constant cost while preserving long-term dependencies.",
+      "llm_tldr_cn": "针对无限视频生成中历史信息丢失和误差累积问题，本文提出Echo-Infinity框架，通过可学习演化记忆动态压缩历史帧，以恒定成本实现实时无限生成，在长视频生成中保持连贯性。",
+      "llm_tldr": "针对无限视频生成中历史信息丢失和误差累积问题，本文提出Echo-Infinity框架，通过可学习演化记忆动态压缩历史帧，以恒定成本实现实时无限生成，在长视频生成中保持连贯性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.02321v1",
+      "source": "arxiv",
+      "title": "Training-Free Composed Video Retrieval via Visual Representation-Guided Video-LLM Reasoning",
+      "abstract": "Recent advances in large vision-language models have expanded video retrieval from simple text-based search to more flexible scenarios, where users may specify the desired result through both visual examples and textual instructions. In the CVPR 2026 Reason-Aware Composed Video Retrieval Challenge, the system is required to retrieve a target video according to a reference video and a modification instruction. To address this task, we develop Visual Representation-Guided Video-LLM Reasoning for Training-Free Composed Video Retrieval. Our framework first uses frozen DINOv3 models to obtain a compact set of visually relevant candidates, and then applies large vision-language models to evaluate whether each candidate satisfies the modification instruction. A final reasoning-based refinement is further performed on the top candidates to improve the first-ranked prediction. Without training, our system achieves 48.78 Recall@1 and 51.48 Recall@5 on the test set. Future work may further improve retrieval accuracy through stronger video-LLMs and detailed integration between visual representations and language reasoning.",
+      "authors": [
+        "Yang Liu",
+        "Qianqian Xu",
+        "Peisong Wen",
+        "Siran Dai",
+        "Qingming Huang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-01T14:35:23+00:00",
+      "link": "https://arxiv.org/pdf/2606.02321v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "composed video retrieval using video-LLM reasoning",
+      "llm_evidence_cn": "基于视频-LLM推理的组合视频检索",
+      "llm_evidence": "基于视频-LLM推理的组合视频检索",
+      "canonical_evidence": "基于视频-LLM推理的组合视频检索",
+      "llm_tldr_en": "Training-free composed video retrieval framework using frozen DINOv3 for candidate selection and video-LLM reasoning for modification evaluation, enabling flexible video search.",
+      "llm_tldr_cn": "针对组合视频检索任务，提出免训练框架，首先用冻结DINOv3模型获取紧凑候选集，再使用视频-LLM评估候选是否符合修改指令。该方法无需额外训练，直接利用现有模型实现视频检索。",
+      "llm_tldr": "针对组合视频检索任务，提出免训练框架，首先用冻结DINOv3模型获取紧凑候选集，再使用视频-LLM评估候选是否符合修改指令。该方法无需额外训练，直接利用现有模型实现视频检索。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.06142v1",
+      "source": "arxiv",
+      "title": "Computation-Aware Event-to-Frame Reconstruction via Selective Attention",
+      "abstract": "Event-to-frame (E2F) reconstruction bridges asynchronous event streams with frame-based vision pipelines, but existing methods often face a trade-off between reconstruction quality and computational efficiency. In this work, we propose an efficient E2F framework that emphasizes causal temporal modeling and computation-aware design. The architecture adopts a recurrent encoder-decoder to incrementally aggregate event information with compact hidden states. To improve robustness under fast motion and illumination variations, a selective context fusion strategy is introduced to integrate event-driven features with prior intensity cues. Within this fusion process, a lightweight hybrid attention mechanism enhances feature selectivity without relying on heavy attention operations. Experimental results on standard benchmarks demonstrate that the proposed approach achieves competitive reconstruction performance while maintaining a favorable balance between accuracy and model complexity.",
+      "authors": [
+        "Jingqian Wu",
+        "Yunbo Jia",
+        "Edmund Y. Lam"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-04T13:19:59+00:00",
+      "link": "https://arxiv.org/pdf/2606.06142v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "computation-aware event-to-frame reconstruction with efficient design",
+      "llm_evidence_cn": "计算感知的事件到帧重建，高效设计",
+      "llm_evidence": "计算感知的事件到帧重建，高效设计",
+      "canonical_evidence": "计算感知的事件到帧重建，高效设计",
+      "llm_tldr_en": "A computation-aware E2F reconstruction framework using recurrent encoder-decoder and selective attention for efficient causal temporal modeling.",
+      "llm_tldr_cn": "针对事件到帧重建中质量与效率的权衡，本文提出计算感知框架，采用循环编码器-解码器与轻量级混合注意力机制，在保持因果建模的同时提升计算效率，适用于快速运动场景。",
+      "llm_tldr": "针对事件到帧重建中质量与效率的权衡，本文提出计算感知框架，采用循环编码器-解码器与轻量级混合注意力机制，在保持因果建模的同时提升计算效率，适用于快速运动场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.04925v1",
+      "source": "arxiv",
+      "title": "Scene-Centric Unsupervised Video Panoptic Segmentation",
+      "abstract": "Video panoptic segmentation (VPS) aims to jointly detect, segment, and track all objects while partitioning the video into semantically consistent regions. We introduce the task setting of unsupervised VPS, omitting any human supervision. Existing unsupervised scene understanding works mainly focused on image segmentation tasks; the video domain remains underexplored. We propose VideoCUPS, the first unsupervised VPS approach. VideoCUPS generates temporally consistent panoptic video pseudo-labels from scene-centric videos by exploiting unsupervised depth, motion, and visual cues. Training on these pseudo-labels using a novel Video DropLoss yields an accurate, unsupervised VPS model. To benchmark progress, we introduce a comprehensive evaluation protocol and four competitive baselines, extending state-of-the-art unsupervised panoptic image and instance video segmentation models to VPS. VideoCUPS outperforms all baselines and demonstrates strong label-efficient learning. With VideoCUPS, our evaluation protocol, and baselines, we provide a strong foundation for future research on unsupervised VPS.",
+      "authors": [
+        "Christoph Reich",
+        "Oliver Hahn",
+        "Nikita Araslanov",
+        "Laura Leal-Taixé",
+        "Christian Rupprecht",
+        "Daniel Cremers",
+        "Stefan Roth"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-03T14:19:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.04925v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Unsupervised video panoptic segmentation",
+      "llm_evidence_cn": "无监督视频全景分割",
+      "llm_evidence": "无监督视频全景分割",
+      "canonical_evidence": "无监督视频全景分割",
+      "llm_tldr_en": "First unsupervised video panoptic segmentation approach VideoCUPS that generates temporally consistent pseudo-labels using depth, motion, and visual cues, trained with Video DropLoss.",
+      "llm_tldr_cn": "该论文首次提出无监督视频全景分割任务及方法VideoCUPS，利用无监督深度、运动和视觉线索生成时间一致的伪标签，并设计Video DropLoss损失函数进行训练。在多个视频分割基准上取得了接近有监督方法的性能，为视频理解提供了无监督学习的新途径。",
+      "llm_tldr": "该论文首次提出无监督视频全景分割任务及方法VideoCUPS，利用无监督深度、运动和视觉线索生成时间一致的伪标签，并设计Video DropLoss损失函数进行训练。在多个视频分割基准上取得了接近有监督方法的性能，为视频理解提供了无监督学习的新途径。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.05259v1",
+      "source": "arxiv",
+      "title": "VideoKR: Towards Knowledge- and Reasoning-Intensive Video Understanding",
+      "abstract": "We introduce VideoKR, the first large-scale training corpus specifically designed to strengthen knowledge- and reasoning-intensive video understanding. It comprises 315K video reasoning examples over 145K newly collected, CC-licensed, expert-domain videos. We develop a human-in-the-loop, skill-oriented example generation pipeline that targets progressively deeper video reasoning capabilities while ensuring the difficulty, diversity, and reliability of both the examples and their CoT rationales. We also curate VideoKR-Eval, a new expert-annotated benchmark where questions require genuine video understanding and knowledge-intensive reasoning rather than textual shortcuts. Our experiments show that, under a standard SFT$\\rightarrow$GRPO pipeline, models post-trained on VideoKR outperform prior post-training approaches on knowledge-intensive video reasoning while remaining competitive on general video reasoning, highlighting data design as a key driver of progress in video reasoning. We further conduct comprehensive ablations to isolate the contributions of VideoKR, providing actionable insights for future work.",
+      "authors": [
+        "Lin Fu",
+        "Zheyuan Yang",
+        "Yang Wang",
+        "Tingyu Song",
+        "Arman Cohan",
+        "Yilun Zhao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-03T16:14:20+00:00",
+      "link": "https://arxiv.org/pdf/2606.05259v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Knowledge-intensive video understanding",
+      "llm_evidence_cn": "知识密集型视频理解",
+      "llm_evidence": "知识密集型视频理解",
+      "canonical_evidence": "知识密集型视频理解",
+      "llm_tldr_en": "Introduces VideoKR, a large-scale training corpus for knowledge-intensive video reasoning, and VideoKR-Eval benchmark, showing models trained with SFT-GRPO improve reasoning capabilities.",
+      "llm_tldr_cn": "该论文提出了VideoKR，首个面向知识和推理密集型视频理解的大规模训练语料库，包含31.5万视频推理样例。通过设计人机协同的技能导向生成流程，构建了高质量链式推理数据。实验表明，在SFT-GRPO流程下，模型在视频理解推理任务上显著提升，为视频分析提供了新的训练范式。",
+      "llm_tldr": "该论文提出了VideoKR，首个面向知识和推理密集型视频理解的大规模训练语料库，包含31.5万视频推理样例。通过设计人机协同的技能导向生成流程，构建了高质量链式推理数据。实验表明，在SFT-GRPO流程下，模型在视频理解推理任务上显著提升，为视频分析提供了新的训练范式。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.06075v1",
+      "source": "arxiv",
+      "title": "Toward Mobile and Converged Backhaul: The Promise of Wireless Access and Backhaul",
+      "abstract": "Wireless Access and Backhaul (WAB) is emerging as a key enabler for flexible and cost-efficient 5G deployments, offering a modular architecture that decouples access and backhaul while supporting multi-technology and mobile backhaul links. This article introduces the WAB framework standardized in 3GPP Release 19, outlining its architecture and operational principles. A practical implementation built with commercial hardware and open-source software demonstrates the feasibility and efficiency of WAB systems. We further explore four representative application scenarios - ranging from on-demand coverage to mobile Software-Defined Wide Area Network (SD-WAN) connectivity - and discuss the technical challenges that must be addressed for large-scale adoption. These insights highlight WAB as a promising foundation for 5G-Advanced and a stepping stone toward future 6G networks.",
+      "authors": [
+        "Chiara Rubaltelli",
+        "Marcello Morini",
+        "Eugenio Moro",
+        "Ilario Filippini",
+        "Antonio Capone"
+      ],
+      "primary_category": "cs.NI",
+      "categories": [
+        "cs.NI"
+      ],
+      "published": "2026-06-04T12:12:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.06075v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "wireless access and backhaul architecture for mobile edge computing",
+      "llm_evidence_cn": "面向移动边缘计算的无线接入与回传架构",
+      "llm_evidence": "面向移动边缘计算的无线接入与回传架构",
+      "canonical_evidence": "面向移动边缘计算的无线接入与回传架构",
+      "llm_tldr_en": "Introduces the 3GPP WAB framework for flexible 5G deployments, enabling mobile backhaul and multi-technology support relevant to edge computing infrastructure.",
+      "llm_tldr_cn": "本文介绍3GPP Release 19定义的无线接入与回传（WAB）框架，通过模块化架构解耦接入与回传，支持移动回传和多技术融合，为移动边缘计算提供灵活的基础设施，并通过商用硬件验证其可行性。",
+      "llm_tldr": "本文介绍3GPP Release 19定义的无线接入与回传（WAB）框架，通过模块化架构解耦接入与回传，支持移动回传和多技术融合，为移动边缘计算提供灵活的基础设施，并通过商用硬件验证其可行性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
