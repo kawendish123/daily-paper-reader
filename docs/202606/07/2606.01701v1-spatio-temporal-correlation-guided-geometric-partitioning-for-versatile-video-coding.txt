@@ -1,0 +1,482 @@
+Title: Spatio-Temporal Correlation Guided Geometric Partitioning for Versatile Video Coding
+
+URL Source: https://arxiv.org/pdf/2606.01701v1
+
+Published Time: Tue, 02 Jun 2026 02:40:32 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 1
+
+# Spatio-temporal Correlation Guided Geometric Partitioning for Versatile Video Coding 
+
+Xuewei Meng, Chuanmin Jia, Xinfeng Zhang, Senior Member, IEEE, Shanshe Wang, Member, IEEE, 
+
+and Siwei Ma, Senior Member, IEEE 
+
+Abstract —Geometric partitioning has attracted increasing attention by its remarkable motion field description capability in the hybrid video coding framework. However, the existing geometric partitioning (GEO) scheme in Versatile Video Coding (VVC) causes a non-negligible burden for signaling the side information. Consequently, the coding efficiency is limited. In view of this, we propose a spatio-temporal correlation guided geometric partitioning (STGEO) scheme to efficiently describe the object information in the motion field of video coding. The proposed method can economize the bits consumed for side information signaling, including the partitioning mode and motion information. We firstly analyze the characteristics of partitioning mode decision and motion vector selection in astatistically-sound way. Based on the observed spatio-temporal correlation, we design a mode prediction and coding method to reduce the overhead for representing the above mentioned side information. The main idea is to predict the STGEO modes and motion candidates that have higher selection possibilities, which can guide the entropy coding, i.e., representing the predicted high-probability modes and motion candidates with fewer bits. In particular, the high-probability STGEO modes are predicted based on the edge information and history modes of adjacent STGEO-coded blocks. The corresponding motion information is represented by the index in a merge candidate list, which is adaptively inferred based on the off-line trained merge candidate selection probability. Simulation results show that the proposed approach achieves 0.95% and 1.98% bit-rate savings on average compared to VTM-8.0 without GEO for Random Access and Low-Delay B configurations, respectively. 
+
+Index Terms —Mode coding, mode prediction, geometric partitioning, inter prediction, versatile video coding. 
+
+I. I NTRODUCTION 
+
+# THE hybrid video coding standards like Advanced Video Coding (AVC) [1] and High Efficiency Video Coding (HEVC) [2] show remarkable compression capabilities 
+
+This work was supported in part by the National Natural Science Foundation of China (62025101, 62101007, U20A20184), National Key Research and Development Project (2019YFF0302703), National Postdoctoral Program for Innovative Talents (BX2021009), China Postdoctoral Science Foundation (2020M680238), PKU-Baidu Fund (2019BD003), and also supported by High performance Computing Platform of Peking University, which are gratefully acknowledged. The associate editor coordinating the review of this manuscript and approving it for publication was Dr. S´ ergio de Faria. (Corresponding author: Chuanmin Jia.) Xuewei Meng, Chuanmin Jia, Shanshe Wang and Siwei Ma are with the Institute of Digital Media, Department of Electronics Engineering and Computer Science, Peking University, Beijing 100871, China (e-mail: 
+
+{xwmeng, cmjia, sswang, swma }@pku.edu.cn). Shanshe Wang and Siwei Ma are also with Information Technology R&D Innovation Center of Peking University, Shaoxing 312000, China, and Peng Cheng Laboratory, Shenzhen 518066, China. Xinfeng Zhang is with the School of Computer Science and Technology, University of Chinese Academy of Sciences, Beijing 100190, China (e-mail: xfzhang@ucas.ac.cn). 
+
+on digital video. To meet the increasing requirements for high-resolution videos with limited transmission and memory capacity, a new video coding standard, Versatile Video Coding (VVC) [3], was developed by the Joint Video Experts Team (JVET) [4] since October 2017. For these video coding standards, motion compensation is one of the fundamental methods of achieving high compression ratios. Generally, block-based motion compensation is widely used. In particular, the motion information is first derived by motion estimation (ME) for each non-overlapped blocks at the encoder. Then the current frame is predicted from previously coded frames by block-based motion compensation using the motion information. Rectangular block partitioning is widely used for block-based motion compensation in video coding standards, such as 16 × 16 macroblock based partitioning in AVC, quadtree-based (QT) block partitioning structure [5] and non-square QT structure [6] in HEVC, and the quadtree with a nested multi-type tree (QT-MTT) using binary tree and ternary tree partitioning structures [7] in VVC. Although the partitioning structures become more flexible and efficient, the rectangular partitioning cannot represent arbitrary shape for real objects with a uniform motion vector (MV) in a rectangular block. In particular, blocks containing object boundaries usually consist of regions moving in distinct directions. Consequently, a single MV cannot capture the real motion characteristics of each region, which may result in high prediction errors. To improve the representation capability of block partitioning, geometric partitioning schemes have been intensively studied. During the development of AVC, HEVC and VVC, geometric partitioning was initially applied as a part of the block partitioning structure [8]–[14]. Taken the geometric partitioning in VVC as an example, the leaf node coding units (CU) of the newly-adopted QT-MTT structure can be further geometrically partitioned into two subparts by a straight line, as shown in Fig. 1. Then, the encoder performs ME on each subpart to find the best-matched reference block, and each of the two resulting subparts are predicted by motion compensation with an associated MV. To reduce the encoder complexity, many optimization approaches [15]–[20] were developed. During the standardization of VVC, a triangle partitioning mode (TPM) [21], which was for merge mode only, was adopted. For the merge-mode-based TPM, the MVs of the two subparts are implicitly derived from the motion field of previously-coded CUs rather than estimated by ME. To further improve the motion modeling accuracy of block  
+
+> arXiv:2606.01701v1 [cs.CV] 1 Jun 2026 JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 2
+> Fig. 1. An example of QT-MTT based geometric partitioning scheme. All leaf node CUs of QT-MTT can be further geometrically partitioned by a straight line.
+
+partitioning, a new geometric partitioning (GEO) scheme [22] [23] only for merge mode was proposed. Compared to TPM, GEO employs more fine granularity partitioning patterns. There were up to 140 partitioning modes in the initial version of GEO. Several optimization methods [24]–[26] were investigated to improve the software and hardware friendliness. At last, GEO [27] for merge mode with 64 partitioning modes was adopted by VVC, which replaced the previously-adopted TPM. The GEO adopted in VVC splits a CU into two subparts labeled with P0 and P1 by a straight line, as shown in Fig. 2(a). The straight line is described by the angle φ and the distance offset ρ [28]. As shown in Fig. 2(b), the angle 
+
+φ is quantized into 20 discrete angles φi with the angle of 
+
+[0 , 2π) symmetrically divided. The distance offset ρ of each angle is quantized into ρj (j ∈ { 0, 1, 2, 3}) depending on the width w and height h of the CU, as depicted in Fig. 2(c). For the merge-mode-based GEO, the partitioning mode decision and the MV selection are vital for the rate-distortion performance. In particular, the partitioning mode is selected for a CU from the pre-defined 64 candidates, and an index ( 0 ∼
+
+63 ) is signaled by fixed-length binarization to indicate the selected mode. Regarding the MV, it is selected from the merge candidate list (MCL). Subsequently, two indices corresponding to the ultimate MVs in the MCL are signaled for P0 and 
+
+P1 by Truncated Unary Code, respectively. This binarization design is based on the assumption that the candidate at the beginning of the MCL is more likely to be selected as the best one. Generally, the MCL is constructed by including the motion information of previously-coded CUs. The GEO MCL construction process is inherited from the regular MCL, which is initially designed for the conventional rectangular CUs. Though the newly adopted GEO has higher flexibility to capture the motion field of regions containing moving objects, its indiscriminate coding process for all CUs limits the coding efficiency. First, the number of GEO partitioning modes increases at the expense of increased mode signaling cost, i.e., 6 bits are consumed for each GEO-coded CU. Second, GEO is designed for the CUs containing distinct motion displacement. The preferable MVs for each non-rectangular subpart might be different from each other and also different from the conventional rectangular blocks. Inheriting the MCL construction scheme designed for rectangular CUs limits the adaptability and cannot predict preferable MVs efficiently. 𝑃 0𝑃 1𝜑 𝑖 𝜌 𝑗        
+
+> (a) 𝜑 0𝜑 1𝜑 2𝜑 3𝜑 4𝜑 5... (b) 𝜌 0𝜌 1𝜌 2𝜌 3ℎ8(c) Fig. 2. (a) An example of GEO partitioning mode; (b) quantized angle φi;(c) quantized offset ρj.
+
+In this paper, we aim to further explore the principle behind GEO towards an adaptive and efficient methodology for side information coding. The main contributions are summarized as follows, 1) We study and theoretically analyze the characteristics of partitioning mode decision and motion field correlation. Through these analyses, we uncover where the coding gain for GEO comes from, i.e., better coding of object boundaries and the corresponding motion field. These characteristics and correlation also motivate us to further improve the GEO coding performance by adaptively designing the signaling approach of side information. 2) Based on the observations mentioned above, we develop a spatio-temporal correlation guided geometric partitioning scheme (STGEO) to further improve the coding efficiency of VVC. In particular, we first predict the STGEO partitioning modes by leveraging edge information and history STGEO modes of adjacent blocks, and then adaptively construct the MCL according to off-line trained selection probabilities for merge candidates. Consequently, the partitioning modes and merge candidates with higher selection probabilities can be represented by fewer bits. Statistically speaking, the bits consumed for the side information representation can be reduced. 3) Regarding the coding performance, the proposed method achieves significant improvements over GEO with 6% and 8% decoding time increment under Random Access (RA) and Low Delay B (LDB) configurations in the VVC reference software VTM-8.0 [29]. The remainder of this paper is organized as follows. Section II analyzes the characteristics of partitioning mode decision and motion field correlation, then introduces the framework of the proposed STGEO scheme. Section III and Section IV introduce the main contributions of STGEO, i.e., most probable STGEO mode prediction and probability-based merge candidate list inference. Section V shows the experimental results and discussions. Finally, Section VI concludes this paper. II. A NALYSES AND MOTIVATIONS 
+
+Although the GEO adopted by VVC has higher flexibility in describing the motion field, it causes a heavy burden in signaling the side information, including one GEO mode index and two merge candidate indices. To improve the coding performance of GEO, the key ingredient lies in how to reduce JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 3         
+
+> (a) BQMall (the 82 nd frame, RA)
+> (b) Motion field of BQMall (the 82 nd frame, RA) Fig. 3. Illustration of GEO partitioning results and motion field in VTM-8.0. The length of the lines in (b) represents the intensity of motion, and the different colors indicate the motion directions.
+
+the overhead. In view of this, we investigate the characteristics of partitioning mode decision and motion field correlation in this section. To investigate the properties of GEO in describing the motion field, an illustration of the partitioning results and its corresponding motion field is provided in Fig. 3. From Fig. 3(a), one can discern that GEO is frequently adopted around the object boundaries, especially boundaries of moving objects. Given the continuity of object boundaries, the GEO partition line also tends to be piecewise-continuous, such as the boundaries of persons in Fig. 3(a). Furthermore, the motion field of a frame is generally segmented by the boundaries of moving objects as illustrated in Fig. 3(b). The main reason is that objects generally exhibit movement relative to a static background or other moving objects. Consequently, the two subparts in a GEO-coded CU usually have different MVs. The correlation between the MV of each subpart and that of the previously-coded CUs is also distinct for different GEO modes. Hence, the current MCL construction, assuming that all the GEO-coded subparts have the same motion field correlation as rectangular CUs, is not optimal for GEO. To further validate the correlation between GEO-coded blocks and object boundaries in a statistically-sound way, we propose to investigate the effectiveness of GEO from the prediction error level. We use pr to denote the prediction error, which is computed by, 
+
+pr (x, y ) = |prec (x, y ) − ppre (x, y )|, (1) where prec and ppre denote the signals of the reconstructed and prediction luma samples, respectively. (x, y ) is the location of a sample in a frame. pr1 and pr2 are used to represent the prediction error of frames coded with and without GEO, respectively. Consequently, ∆pr (x, y ) can roughly represent the prediction error reduction introduced by GEO of the sample with location (x, y ), which is calculated by, 
+
+∆pr (x, y ) = pr2(x, y ) − pr1(x, y ). (2) As we mentioned before, GEO is designed to better describe the discontinues motion field. But the motion characteristics are difficult to capture, so we use object boundaries to represent the motion field boundaries. To derive the object boundaries, we conduct the conventional Canny detector [30] on the reconstructed luma samples prec . The two thresholds in the Canny function are empirically set to be 35 and 70. Then the dilation operation is conducted on the canny-detected edge map with the parameter set as 5. With the dilated edge map, pixels in one frame F can be divided into two subsets, edge pixel subset fE and background pixel subset 
+
+fB . Consequently, the prediction error reduction ∆pr can be classified into two types, ∆prE and ∆prB , corresponding to the edge pixel subset and background pixel subset respectively. 
+
+∆prE can represent the influence of GEO on edge pixels. We use ΩE and ΩB to represent the location of edge pixels and background pixels, respectively. ∆prE and ∆prB are calculated by, 
+
+∆prE = X
+
+> (x,y )∈ΩE
+
+∆pr (x, y ), (3) 
+
+∆prB = X
+
+> (x,y )∈ΩB
+
+∆pr (x, y ). (4) To better illustrate the effectiveness of GEO, we propose to use the average prediction error change per pixel. Assuming 
+
+NE and NB represent the number of pixels in the subset fE
+
+and fB , the average prediction error change per pixel ˆ∆prE 
+
+and ˆ∆prB for edge and background subsets are calculated by, 
+
+ˆ∆prE = ∆prE 
+
+NE
+
+, (5) 
+
+ˆ∆prB = ∆prB 
+
+NB
+
+. (6) For better visualization, ˆ∆prE and ˆ∆prB are normalized. To collect the statistics mentioned above, we conduct an experiment in VTM-8.0 using two sequences (Cactus 
+
+and BQMall ) under LDB configuration. The quantization parameters (QP) are set as {22, 27, 32, 37 }, and the duration of each test sequence is 10 sec. As shown in Fig. 4, the results exhibit that the prediction error reduction caused by GEO is mainly because of the better prediction of object boundaries. In particular, on average 77% prediction error reduction of GEO belongs to the edge area. However, the edge pixels account for no more than 40% of the whole test sequences. The normalized average prediction error change per pixel in the third column of Fig. 4 can better illustrate this observation. So we can conclude that the coding performance JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 4                       
+
+> Fig. 4. Illustration of the influence of GEO on prediction error. The figures in the first column represent the influence of GEO on the prediction error of edge area ∆prE and background area ∆prB . The second column is the percentage of pixels in edge area NEand the background area NB. The figures in the last column are the average prediction error change per pixel of edge area ˆ∆prE and background area ˆ∆prB , which are normalized for better visualization. Two rows of figures indicate the analysis of Cactus and BQMall , respectively.
+> (a)
+> (b) Fig. 5. Illustration of correlation Γbetween GEO partition lines and object boundaries. (a) the percentage of pixels in edge area NEand background area NB; (b) the percentage of pixels on GEO partition lines that belong to the edge area.
+
+introduced by GEO is mainly due to the improvement on prediction accuracy of object boundaries. However, the bits cost for representing the quantized geometric partition line is a non-negligible burden, i.e., 6 bits for each CU. This significantly limits the overall coding performance. Based on the assumed correlation between GEO partition lines and object boundaries in Fig. 3, the most probable GEO modes for a particular CU are predictable, which can guide the mode signaling design. To validate this correlation, we propose to use Γ, i.e., the percentage of pixels on GEO partition lines belonging to the edge subset fE . Let ΩL represent the location of pixels on GEO partition lines. The percentage Γ can be calculated by, 
+
+Γ = Card (Ω L ∩ ΩE )
+
+Card (Ω L) , (7) where Card (·) is the number of elements in the set. The average results of the two sequences ( Cactus and BQMall ) are shown in Fig. 5. It is obvious that most of the pixels on the GEO partition lines are the edge pixels, which indicates that partition lines have a high correlation with object boundaries. Based on the observations mentioned above, we develop a STGEO scheme to further improve the coding efficiency of VVC. The proposed STGEO is applied as a merge mode in the inter prediction on the CU level. The framework of the proposed STGEO is illustrated in Fig. 6. It includes 
+
+MCL initialization , most probable STGEO mode prediction ,
+
+probability-based MCL inference and motion compensation .First, given an STGEO-coded CU, the MCL is initialized by reusing the regular MCL construction process. Then, with the List I , the STGEO mode set is split into two subsets, high-probability subset (HPS) and low-probability subset (LPS), based on the most probable STGEO mode prediction scheme. Combining the two subsets with the decoded syntax elements in Section IV, the ModeIdx can be JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 5Most probable STGEO   
+
+> mode prediction
+> Probability -based
+> MCL inference
+> Motion
+> compensation
+> Reconstructed CU
+> MCL
+> initialization 𝐿𝑖𝑠𝑡 𝐼 𝑀𝑉 0,𝑀𝑉 1
+> ModeIdx
+> Fig. 6. Illustration of the framework of the proposed STGEO scheme at the decoder, with the dotted arrows representing the coding information and the gray boxes highlighting our contributions.
+
+derived. The ModeIdx indicates the partitioning mode index in the STGEO mode set. Subsequently, with the ModeIdx 
+
+and List I , the MCLs of the two STGEO generated subparts are adaptively inferred based on the off-line trained merge candidate selection probability. With the decoded merge candidate indices in Section IV, M V 0 and M V 1 are derived for the two subparts, respectively. Finally, motion compensation is performed. The MCL initialization is to derive the List I for the 
+
+most probable STGEO mode prediction and probability-based MCL inference . The MCL initialization includes two steps, regular MCL construction inherited from the conventional rectangular CUs and uni-directional MCL derivation. The regular MCL List R is constructed by including the following five types of Motion Vector Predictor (MVP) in order [29], i.e., Spatial MVP, Temporal MVP (TMVP), History-based MVP (HMVP) [31] [32], Pairwise average MVP (PMVP) [33] and Zero MVP. For Spatial MVP, a maximum of four merge candidates are selected among candidates located in the positions “up”, “left”, “up-right”, “down-left” and “up-left.” This inheritance method can enable the decoder to reuse the MCL construction module of rectangular CUs for STGEO, which can simplify the decoder design. Then uni-directional MCL derivation is conducted to convert bi-directional candidates in the List R to uni-directional ones for the sake of worst-case memory bandwidth reduction [28]. 
+
+Most probable STGEO mode prediction and 
+
+probability-based MCL inference are the main contributions of this paper. They are detailed in Section III and Section IV, respectively. III. M OST PROBABLE STGEO M ODE PREDICTION 
+
+Based on our observation and analysis in Section II, blocks containing moving object boundaries with discontinuous motion fields are more likely to be coded by GEO, and the GEO partition lines have a high correlation with the boundaries. Therefore, with the boundary location, the STGEO modes with high selection probabilities are predictable. Based on the predicted STGEO modes, STGEO mode set can be split into two subsets, HPS containing the partitioning modes with high preference and LPS consisting of the remaining low-preference modes. The STGEO modes in the HPS can be represented with smaller indices, and fewer bits are consumed, leading to better compression performance. Consequently, the critical ingredient lies in how to predict the high-preference STGEO modes [34]. There are some previous works [35]–[37] Reference block and template     
+
+> Reference frames Current frame
+> Reconstructed samples
+> Current CU
+> Template area
+> Not yet reconstructed
+> CU 𝐶𝑈 𝑛 𝑇 𝑛
+> CU
+> CU
+> T𝑀𝑉 𝑛
+> Fig. 7. Illustration of the reference block derivation process.
+
+aiming at predicting the GEO modes, in which the GEO partition line of the current block is predicted based on that of the block in reference frames. Different from that, our method utilizes the boundary information of the reference blocks. The main reason is that the reference block may be not exactly partitioned by geometric partitioning mode. Boundary information can overcome this shortcoming and the memory requirements for storing the partitioning modes can be avoided. In our method, as the current CU is unavailable at the decoder, reference block derivation process is conducted first. Then edge detection is applied on the reference block to locate the object boundaries. According to the detected edge information and STGEO modes of neighboring CUs, 
+
+HPS construction is performed by including the predicted high-preference STGEO modes. Details are given below. 
+
+A. Reference Block Derivation 
+
+Due to the temporal correlations of moving objects, the object boundary information can be obtained from the reference frames [38]. Herein, we derive the reference block by a template matching approach, which has been intensively studied in intra prediction [39] and inter prediction [40]. As shown in Fig. 7, we first derive the reference blocks of the current CU by motion compensation using each MV in the List I . Then the mean square error (MSE) between the template area of the current CU ( T ) and that of its reference block ( T n) is calculated. The MSE is used as the similarity evaluation criteria. Finally, the block with the smallest MSE is selected as the reference block used for the following edge detection .
+
+B. Edge Detection 
+
+To locate the object boundaries in the reference block derived above, a novel low-complexity edge detector is JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 6      
+
+> (a) (b) Fig. 8. Illustration of the relationship between parameter thand QP in edge detection process. (a) RA; (b) LDB.
+
+proposed. The main process is similar to the Canny detector. First, the Sobel operator is conducted on the reference block to derive the amplitude and angle of each sample. With the amplitude map and angle map, non-maximum suppression is applied to find the locations with the sharpest change of intensity value. Finally, a novel double threshold process is performed to get the final edge map and angle map. For a block 
+
+Ω with width w and height h, we use the one-dimensional vector E as the edge map after the non-maximum suppression process. E(s)( s ∈ Ω) represents the amplitude located at position (sx, s y ) in the edge map. In the double threshold process, the edge map ˆE is derived by, 
+
+ˆE(s) = 
+
+(
+
+0 if Condition1 or Condition2 ,E(s) otherwise . (8) 
+
+Condition1 : E(s) < T low , (9) 
+
+Condition2 : E(s) < T high and 
+
+E(s) ≥ Tlow and 
+
+E(s′
+
+) < T low ,
+
+(10) where E(s′
+
+) represents the amplitude located at (s′
+
+> x
+
+, s ′ 
+
+> y
+
+).
+
+(s′
+
+> x
+
+, s ′ 
+
+> y
+
+) is the location at the pre-defined neighboring area Ω′
+
+of the current location (sx, s y ). So the two thresholds Thigh 
+
+and Tlow are the core elements for the final edge map. In this work, Thigh is calculated by, 
+
+E′
+
+= Rank( E) = {e1, e 2, ..., e N }, (11) 
+
+Thigh = eλ, wherein λ = N × th, (12) where Rank is a sorting process in ascending order. 
+
+{e1, e 2, ..., e N } represents amplitudes after sorting process. N
+
+is the number of pixels in the block Ω. th is a parameter between 0 and 1 trained off-line. The threshold Tlow is calculated by, 
+
+Tlow = Thigh 
+
+tl
+
+, (13) where tl is the parameter trained off-line. The parameter training process is conducted using the videos and configurations defined in Table I. QPs are set as 
+
+{22, 23, 24, 25, ..., 41, 42 }. The number of coded frames is 16, corresponding to the number of pictures in the Group                                         
+
+> TABLE I ILLUSTRATION OF THE SEQUENCES AND CONFIGURATIONS FOR THE PROPOSED STGEO.
+> Sequence Resolution FrameCount Configurations
+> TrafficFlow 3840x2160 300 RA
+> pku girls 3840x2160 150 RA
+> Kimono 1920x1080 240 RA, LDB
+> ParkScene 1920x1080 240 RA, LDB
+> City 832x480 600 RA, LDB
+> Crew 832x480 600 RA, LDB
+> vidyo1 832x480 600 RA, LDB
+> vidyo3 832x480 600 RA, LDB
+> BasketballPass 416x240 500 RA, LDB
+> BQSquare 416x240 600 RA, LDB
+> BlowingBubbles 416x240 500 RA, LDB
+> RaceHorses 416x240 300 RA, LDB
+
+Of Pictures (GOP). For each B-frame, we experimentally select the optimal th corresponding to the highest PSNR of Y component. The results are plotted in Fig. 8. Because of the QP Offsets for different B-frames, there may be several QPs for each QP setting. Hence, the number of points in Fig. 8 is more than 21. It is clear that there is a positive relation between QP and the corresponding best th. So we fit a linear model to represent their correlation. The fitted lines of RA and LDB can be formulated as, 
+
+th = 0 .00586 × QP + 0 .5884 , (14) 
+
+th = 0 .00625 × QP + 0 .6288 . (15) The parameter tl is trained with th fixed by (14) or (15). As there is no obvious rule for this parameter, we set it to be 3.0. 
+
+C. High-probability Subset Construction 
+
+After the reference block derivation and edge detection , the HPS is constructed. Generally speaking, the HPS construction is an inference problem based on the available information of the previously decoded frames and reconstructed area of the current frame to infer several probable STGEO modes. According to our analyzed correlations between object boundaries and partition lines, the boundary-based high-preference STGEO modes are included first. Then history-based high-preference STGEO modes are added inspired by the observed object boundary continuity. If the HPS is not filled, default modes that show relative high selection probabilities are added. Consequently, three construction subprocesses are needed, including the boundary-based HPS construction , history-based HPS construction , and default HPS construction . The maximum number of elements in the HPS is 15 in this paper. Duplication checking is conducted when constructing the HPS, such that only unique modes are included in it. The first step, boundary-based HPS construction , is to derive high-preference STGEO modes based on the assumption that the STGEO modes with higher boundary coincidence degree are more likely to be selected as the best one. The boundary coincidence degree of a STGEO mode is represented by the average amplitude along its corresponding partition line. Details are shown in Fig. 9. For a block Ω with JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 7Angle group 𝐴 𝐺 
+
+Mode group 𝑀 𝐺 𝐿 𝐵 
+
+> ...
+
+Reference frame 
+
+Reference block  Angle map 𝐴 
+
+Edge map 𝐸 
+
+Reference Block Derivation  Edge Detection  Boundary -based HPS Construction                     
+
+> Fig. 9. Illustration of the boundary-based HPS construction process. Edge map ˆEcorresponding to the Sobel gradient amplitude is derived in the edge detection . Angle map ˆAis a quantized map corresponding to the Sobel gradient direction. The most probable angles calculated using ˆEand ˆAare added in the angle group AG. The mode group MGconsists of STGEO modes corresponding to the AG.LBis constructed using modes with largest selection probabilities in MG.
+> Fig. 10. An example of history-based HPS construction. Purple solid lines are STGEO partition lines, and blue dash lines represent the probable modes predicted based on the neighboring STGEO mode.
+
+width w and height h, let ˆE(s) and A(s) denote the edge and angle located at (sx, s y ) in the edge map ˆE and angle map A.As STGEO mode is described by the quantized angle φi and distance ρj , the angles in the angle map are firstly converted to the index of their nearest angle in the pre-defined angle candidates {φ0, φ 1, φ 2, ..., φ 19 }. The converted angle map is represented by ˆA. Then, to derive the most probable angles, each amplitude ˆE(s) in the edge map is classified into 20 categories according to its corresponding angle ˆA(s). We use 
+
+Ωi to represent the location of amplitudes corresponding to the angle φi. Then the selection probability SP i of the angle 
+
+φi is derived by, 
+
+SP i = X
+
+> s∈Ωi
+
+ˆE(s). (16) The two angles with the largest selection probabilities are added to the angle group AG, and the neighboring angles of the largest-probability angle are also included in AG. The main reason for this design is that there may be several boundaries in the reference block, and the primary angle with the largest selection probability may be not precise enough. Subsequently, the STGEO modes corresponding to AG are added in the mode group MG. Then the boundary coincidence degree Dk of each mode k in MG is expressed by the average amplitudes along the partition line area Ωl,
+
+Dk =
+
+P
+
+> s∈Ωl
+
+ˆE(s)
+
+N , (17) where N is the number of pixels in Ωl. Similar to the construction law of angle group AG, the M modes with the largest Dk are added in the boundary-based HPS LB in order. The maximum modes added in the LB is 12. The second step, history-based HPS construction , is to construct HPS based on the high spatial correlation due to the continuity of the object boundaries, as illustrated in Fig. 3. Specifically, the history-based high-preference STGEO modes are derived based on the STGEO partitioning modes of the neighboring CUs. Different from [35]–[37] in which the partition line is predicted by simply linearly extending the partition line of a neighboring block into the current block, we enable more intersected lines. The main reason is that object boundaries of natural videos rarely follow a purely straight line. As shown in Fig. 10, blue dash lines represent the probable modes predicted based on the neighboring STGEO-coded blocks split by purple solid lines. The predicted JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 8 
+
+> Fig. 11. Illustration of the percentage of STGEO index.
+
+partition lines and the neighboring partition lines intersect on the side where the two blocks overlap. In particular, the STGEO modes whose corresponding partition lines intersect with neighboring partition lines are added in the history-based HPS. If none of the neighboring CUs is coded by STGEO, the history-based HPS is null. The third step, default HPS construction , is conducted when the existing high-preference STGEO modes do not fulfill the HPS. To derive the most probable default candidates, we analyze the percentage of STGEO modes using testing conditions in Table I. For each test sequence, all frames are used for the experiment. QPs are set as {22, 23, 24, 25, ..., 41, 42 }. The results are shown in Fig. 11, which exhibit that the percentage of STGEO modes is not equal. In particular, some modes, such as mode 0, 1, 37, and 38, have a much higher percentage to be selected, and their distributions under RA and LDB configurations are slightly different. So we construct the default list using the most selected STGEO modes for RA and LDB, respectively. IV. P ROBABILITY -BASED MERGE CANDIDATE LIST 
+
+INFERENCE 
+
+Due to the Truncated Unary Code binarization approach designed for the merge index, the overhead caused by the merge index signaling largely depends on the order of merge candidates in the MCL. However, based on our observations, the correlation between motion information of the current CU and that of the previously-coded blocks is different between rectangular and STGEO-coded CUs. Hence, inheriting the MCL List I directly is not the optimal option for STGEO. Here, we propose to adaptively infer the MCL based on the off-line trained candidate selection probability for the two subparts, i.e., P0 and P1, respectively. In particular, the merge candidates with higher selection probabilities are put at the front location of the MCL, vise versa. As such, the bits consumed for representing the merge index can be economized. To measure the merge candidate preference in a quantitative manner, we propose an evaluation criterion, i.e., the signal-level difference in terms of MSE, which is calculated by, 
+
+M SE = 1
+
+N
+
+X
+
+> (x,y )∈Ω
+
+ porg (x, y ) − ppre (x, y )2, (18)                      
+
+> Fig. 12. Illustration of the mseIdx distribution. The mseIdx represents the preference of the ultimate encoder-selected MV in the sense of MSE. The smallest mseIdx means that the encoder-selected MV corresponds to the smallest MSE in the MCL, vice versa. The vertical axis represents the percentage of the encoder-selected MV corresponding to different mseIdx .
+> (a) BasketballPass (b) BQSquare
+> Fig. 13. Illustration of the MSE corresponding to different MVPs of rectangular CUs. The horizontal axis represents the nine MVP types, and the vertical axis is the average MSE between the original block and prediction block generated by motion compensation using the corresponding MVP.
+
+where Ω is the current CU with width w and height h.
+
+N (N = w × h) is the number of pixels in the current CU. 
+
+(x, y ) is the location of sample in a frame. porg represents the signals of the original luma samples. ppre denotes the luma prediction samples generated by motion compensation using MVs in the MCL. The MV corresponding to smaller MSE means that the correlation between its prediction block and the original block is higher. Hence, its selection probability is larger. Herein, we first verify the efficiency of the proposed evaluation criterion, i.e., MSE. Then the merge candidate preferences of rectangular CUs and STGEO-coded subparts are statistically analyzed in the sense of MSE. Inspired by the merge candidate preferences, the probability-based MCL inference scheme is detailed. All the statistics are collected with the experimental conditions set as Table I. For each sequence, all frames are used for the experiment. QPs are set as {22, 23, 24, 25, ..., 41, 42 }.To verify the efficiency of the proposed evaluation criterion, i.e., MSE, we utilize mseIdx to investigate the selection preference of merge candidates in the sense of MSE and RDO. mseIdx is used to represent the preference of the encoder-selected merge candidate in the sense of MSE. The smallest mseIdx indicates that the encoder-selected MV corresponds to the smallest MSE in the MCL List I , vice versa. The distribution of mseIdx is shown in Fig. 12. It is clear that on average 80% ∼ 90% ultimate MV corresponds JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 9        
+
+> (a) geoMode=0 (b) geoMode=16 (c) geoMode=32 (d) geoMode=48 Fig. 14. Illustration of the MSE corresponding to different MVPs under certain GEO indices. The horizontal axis represents the nine MVP types, and the vertical axis is the average MSE between the original block and the prediction block generated by the corresponding MVP for each partition. 𝑃 0𝑃 1
+> (a) geoMode=0 𝑃 0𝑃 1(b) geoMode=16 𝑃 0𝑃 1(c) geoMode=32 𝑃 0𝑃 1(d) geoMode=48 Fig. 15. Illustration of GEO modes selected for the analysis of MVP preference.
+
+to the lowest MSE, which indicates that the prediction block with lower MSE is more likely to be selected by the encoder. Hence, our proposed criterion is efficient for representing the merge candidate preference. Furthermore, the MSE distribution of rectangular blocks is analyzed. First, the CUs coded by regular merge mode (non-GEO mode) are selected. Then for each selected CU, prediction blocks are generated using each MVP in the MCL. Consequently, MSEs corresponding to the selection preference of each MVP can be calculated. For better illustration, MVPs are classified into nine types, i.e., B0, A0, B1, A1, B2, TMVP, HMVP, PMVP, and Zero. B0, A0, B1, A1 and B2 are corresponding to spatial MVPs with positions “up”, “left”, “up-right”, “down-left” and “up-left.”, respectively [29]. The results of four typical QPs are shown in Fig. 13. It is obvious that the distribution of MSE is consistent for different QPs and sequences. In particular, the MSEs of the five spatial MVPs show an upward trend with slight fluctuations. TMVP shows similar MSE as the spatial MVPs. An interesting phenomenon lies in that the MSE of HMVP is higher than that of PMVP. The main reason lies in that there are up to 5 HMVPs in a MCL, and the candidates in HMVPs are added to the MCL in descending order of selection probability [31]. Thus, the MSE variance of prediction blocks generated by HMVP candidates might be larger than other MVPs. Combining the observations from Fig. 12 and Fig. 13, it can be concluded that conventional rectangular CUs show consistent MVP preference and its MCL construction scheme is based on the selection preference. In view of this, we further study the relationship between GEO partitioning mode and merge candidate preference based on the MSE of each subpart. In particular, the GEO-coded CUs are collected firstly at the decoder. Then for each collected CU, prediction blocks are generated using the MVs in the           
+
+> TABLE II SYNTAX STRUCTURE OF THE PROPOSED STGEO.
+> Syntax Descriptor
+> STGEO parameter set () {
+> cu stgeo flag ae(v) ∗
+> if(cu stgeo flag) {
+> stgeo hps flag ae(v) if(stgeo hps flag)
+> stgeo hps idx ae(v) else
+> stgeo lps idx ae(v)
+> merge cand idx0 ae(v)
+> merge cand idx1 ae(v)
+> }}
+> ∗Context-adaptive arithmetic entropy-coded syntax element.
+
+MCL. Successively, MSEs corresponding to P0 and P1 are calculated, respectively. For better illustration, only four GEO modes are presented. The selected GEO modes are shown in Fig. 15, and the corresponding MSE results are depicted in Fig. 14. It is clear that the GEO-coded subparts show more diverse distribution compared to rectangular CUs and the distribution of different GEO modes is also distinct. Taken Fig. 14(a) as an example, for GEO mode with index 0, “B0”, “B1” and “TMVP” are preferred for P0. While, “A0” is more relevant to P1. The reason is that P0 is adjacent to the upper block. Hence, its MV is higher correlated with that of the upper blocks and upper-right blocks. Moreover, the MSE between the prediction block generated by TMVP and P0 is relatively lower than the MSE corresponding to TMVP and P1. The main reason might be that TMVP is derived from the collocated block of P0 in the reference frame. Furthermore, as the left boundary of P1 is longer than the upper boundary, there is no surprise that the MSE corresponding to the left adjacent block is lower than that of the upper adjacent block. For other GEO modes, the MSE distribution also shows an obvious correlation with partitioning shape. The partitioning shape is determined by the angle φi and the distance offset ρj related to the CU size and φi. Moreover, i and j can be represented by the STGEO mode index. Therefore, the STGEO partitioning shape is related to the CU size and STGEO mode index. Based on the above observations, the merge candidate preference can be predicted using CU size and STGEO mode index. This problem can be formulated as follows. For the subpart P∗ (P0 or P1) of a CU, given the features, i.e., STGEO JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 10 
+
+TABLE III EXPERIMENTAL RESULTS OF THE PROPOSED STGEO, A NCHOR : VTM-8.0 WITHOUT GEO. 
+
+Class Sequence GEO STGEO RA UR GEO LDB UR GEO RA UR STGEO LDB UR STGEO 
+
+Class A1 
+
+Tango2 -0.59% 1.54% - - -0.78% 1.98% - -
+
+FoodMarket4 -0.03% 0.61% - - -0.23% 1.07% - -
+
+Campfire -0.11% 0.97% - - -0.32% 1.42% - -Class A2 
+
+CatRobot -0.59% 0.98% - - -0.78% 1.45% - -
+
+DaylightRoad2 -0.21% 1.02% - - -0.49% 1.53% - -
+
+ParkRunning3 -0.36% 1.98% - - -0.53% 2.46% - -Class B 
+
+MarketPlace -0.31% 1.02% -1.15% 5.54% -0.51% 1.77% -1.28% 6.36% 
+
+RitualDance -0.75% 2.00% -1.24% 5.14% -0.89% 2.70% -1.68% 6.08% 
+
+Cactus -0.53% 1.88% -0.96% 4.81% -0.71% 2.72% -1.45% 6.15% 
+
+BasketballDrive -0.23% 1.49% -0.73% 4.10% -0.43% 2.25% -0.91% 5.05% 
+
+BQTerrace -0.22% 0.84% -0.13% 2.11% -0.40% 1.54% -0.38% 2.72% Class C 
+
+BasketballDrill -0.96% 5.37% -1.98% 8.05 % -1.36% 6.71% -2.74% 9.61% 
+
+BQMall -3.34% 6.56% -3.59% 10.29% -3.61% 7.69% -4.30% 12.08% 
+
+Partyscene -0.63% 3.27% -1.05% 8.29 % -0.92% 4.51% -1.49% 10.53% 
+
+RaceHorsesC -2.01% 8.45% -1.92% 11.63% -2.35% 9.74% -2.43% 13.31% Class E 
+
+FourPeople - - -1.30% 3.39% - - -2.16% 4.45% 
+
+Johnny - - -1.85% 2.92% - - -2.86% 3.67% 
+
+KristenAndSara - - -1.28% 3.46% - - -2.07% 4.52% Average Class A1 -0.24% 1.04% - - -0.44% 1.49% - -Class A2 -0.39% 1.33% - - -0.60% 1.81% - -Class B -0.41% 1.45% -0.84% 4.34% -0.59% 2.20% -1.14% 5.27% Class C -1.74% 5.91% -2.13% 9.56% -2.06% 7.16% -2.74% 11.38% Class E - - -1.48% 3.26% - - -2.36% 4.21% Average -0.72% 2.53% -1.43% 5.81% -0.95% 3.30% -1.98% 7.04% 
+
+∆ET 103% 104% 105% 107% 
+
+∆DT 100% 100% 106% 108% 
+
+mode index I and CU size S, we aim to derive the merge candidate selection probability and then infer the MCL. The selection probability can be off-line trained using the MSE. Since the S, I, and P∗ are all discrete features, the selection probability can be mapped into a look-up-table indexed by corresponding feature ( S, I, P ∗) for efficient implementation. Specifically, for a particular ( S, I, P ∗), the MVP type are stored in the look-up table in ascending order of MSE. The inference of MCL is to arrange the List I by moving the candidates with high selection probabilities to the front. More specifically, the number of S, I and P∗ are 14, 64 and 2, respectively. As “Zero” is a default mode to fulfill the MCL, only 8 types of motion candidates are considered, which can be represented by 3 bits. For each feature ( S, I, P ∗), 7 MVP types are stored. Overall, the memory overhead of the look-up table is 4704 bytes. The syntax design of the proposed scheme is illustrated in Table II. In particular, the STGEO serves as a merge mode at the CU level. The on/off flag is signaled by cu stgeo flag .If the STGEO is applied on the current CU, one syntax 
+
+stgeo hps flag is signaled to indicate whether the selected STGEO mode is in the HPS. If so, the index in the HPS, i.e., stgeo hps idx , is transmitted. Otherwise, stgeo lps idx 
+
+is signaled. cu stgeo flag is binarized with fixed-length code using one single context model. stgeo hps idx and 
+
+stgeo lps idx are binarized with truncated binary code and coded using the bypass mode of context-based adaptive binary arithmetic coding (CABAC). After that, the merge cand idx0 
+
+and merge cand idx1 , indicating the index of the selected merge candidate of P0 and P1, are binarized with 0-th order truncated Rice code and coded using one single context model. 
+
+TABLE IV EXPERIMENTAL RESULTS OF THE PROPOSED STGEO, A NCHOR :VTM-8.0. 
+
+Class BDRate-Y RA LDB 
+
+Class A1 -0.20% -Class A2 -0.21% -Class B -0.19% -0.31% Class C -0.32% -0.61% Class E - -0.88% Average -0.23% -0.55% 
+
+∆ET 102% 102% 
+
+∆DT 106% 107% 
+
+V. E XPERIMENTAL RESULTS 
+
+To evaluate the effectiveness of the proposed method, we integrate it into the VVC reference software VTM-8.0. The videos recommended by JVET are involved in the experiment. Two configurations, RA and LDB, conforming to the common test condition [41] are used in the simulation. The QPs are set as {22, 27, 32, 37 }. The coding performance is measured by Bjontegaard’s method [42] in terms of BD-rate, and negative BD-rate indicates the performance gain. JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 11                                                                                                                                                                     
+
+> TABLE V EXPERIMENTAL RESULTS OF THE PROPOSED STGEO WITHOUT T2 MODULE (A NCHOR : VTM-8.0 WITHOUT GEO).
+> Class RA LDB YUVMR UR T1 YUVMR UR T1
+> Class A1 -0.35% -0.73% -0.47% 59.5% 1.26% -----Class A2 -0.57% -0.68% -0.83% 60.2% 1.55% -----Class B -0.56% -0.88% -0.66% 60.0% 1.82% -0.98% -1.32% -0.95% 59.1% 4.70% Class C -1.96% -2.54% -2.95% 58.3% 6.79% -2.45% -3.17% -2.65% 56.6% 10.15% Class E ------1.97% -0.79% -1.13% 59.9% 3.50% Average -0.89% -1.25% -1.26% 59.5% 2.98% -1.72% -1.80% -1.56% 58.4% 6.22%
+> ∆ET 105% 107%
+> ∆DT 105% 108% TABLE VI EXPERIMENTAL RESULTS OF THE PROPOSED STGEO WITHOUT T1 MODULE (A NCHOR : VTM-8.0 WITHOUT GEO).
+> Class RA LDB YUVBS UR T2 YUVBS UR T2
+> Class A1 -0.30% -0.45% -0.50% 0.13 1.22% -----Class A2 -0.52% -0.60% -0.87% 0.09 1.50% -----Class B -0.45% -0.94% -0.76% 0.08 1.66% -1.00% -1.52% -1.15% 0.08 4.91% Class C -1.93% -2.85% -2.74% 0.09 6.53% -2.52% -3.66% -2.97% 0.11 10.80% Class E ------1.98% -1.04% -0.79% 0.07 3.95% Average -0.83% -1.28% -1.26% 0.09 2.84% -1.75% -2.11% -1.67% 0.09 6.63%
+> ∆ET 104% 105%
+> ∆DT 101% 101%
+
+Table III shows the coding performance of the proposed STGEO scheme on luma component compared to the VTM-8.0 without GEO for each sequence under RA and LDB. Meanwhile, the encoding and decoding complexity is calculated by, 
+
+∆ET = T Enc test 
+
+T Enc anchor 
+
+× 100% , (19) 
+
+∆DT = T Dec test 
+
+T Dec anchor 
+
+× 100% , (20) where T Enc test and T Enc anchor represent the consumed encoding time with the tested scheme and the anchor, respectively. Analogously, T Dec test and T Dec anchor denote the decoding time of the tested scheme and anchor, respectively. To further explore the efficiency of the proposed method, we conduct statistical experiments on all test sequences with respect to the STGEO usage ratio at the decoder. In particular, we analyze the percentage of STGEO coded area, which is formulated as follows, 
+
+U R ∗ = Ntest 
+
+Ntotal 
+
+× 100% , (21) where Ntest is the number of pixels coded by STGEO or GEO, and Ntotal represents the number of pixels in B-frames of the test sequences, as STGEO is only applied on B-frames. It is observed that the proposed STGEO scheme achieves 0.95% and 1.98% BD-rate savings under RA and LDB configurations on average, which outperforms the existing GEO. The highest coding gain is 3.61% and 4.30% for 
+
+BQMall under RA and LDB configurations, respectively. The main reason is that this sequence contains sharp and clear boundaries of moving objects. As such, the STGEO can be used predominantly for the coding of object boundaries. Compared to the existing GEO, the proposed STGEO performs relatively stable for all sequences with a minimum of 0.13% coding gain for MarketPlace and a maximum of 1.01% coding gain for Johnny under LDB configuration. The usage ratio of the proposed STGEO U R ST GEO also shows a stable increase compared to U R GEO with a minimum of 0.61% increment for BQTerrance and a maximum of 2.24% increment for 
+
+Partyscene under LDB configuration. It is noted that the coding performances of STGEO in Class E are notably better than that of GEO under LDB configuration, as shown in Table IV. The particular favorable results of these sequences are mainly attributable to the fact that the sequences of class E are conference videos with stable motion and clear boundaries, which own more predictable coding modes. In addition, coding performance is better for videos with small resolutions. The reason is that videos with smaller resolutions tend to have more abundant texture and structure information in given block size. The second column in Fig. 4 can better shows this phenomenon, in which the percentage of pixels in edge area is higher for BQMall (832 ×480) compared to 
+
+Cactus (1920 ×1080). Furthermore, the performance of STGEO for LDB is generally better than that for RA, which behaves similarly to GEO. The U R ∗ indicates that STGEO and GEO are more often selected in LDB than RA, which yields the higher JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 12 
+
+coding gain. The reason is that the more flexible reference picture structure of RA, including both forward and backward reference frames, leads to more accurate block-based motion compensation. Hence, the performance room for the STGEO mode is lower under the RA configuration. Since STGEO contains two non-overlapped modules, most probable STGEO mode prediction T1 and probability-based MCL inference T2 , the performances of the two modules are evaluated separately, as shown in Table V and Table VI. Regarding the T1 module, we use the HPS hit ratio at the decoder to validate the efficiency of mode prediction, which is formulated as follows, 
+
+M R = Nhps 
+
+NST GEO 
+
+× 100% , (22) where Nhps is the number of CUs with STGEO mode in the HPS, and NST GEO represents the number of STGEO-coded CUs. As for the T2 module, we evaluate the effectiveness by bit saving, which is calculated by, 
+
+BS = bit org − bit pro 
+
+NST GEO 
+
+, (23) where bit org and bit pro represent the number of bits consumed by the coding of STGEO merge indices using the original MCL and the proposed inferred MCL at the decoder, respectively. Combining Table III, Table V and Table VI, it can be obviously seen that the BD-rate improvements provided by the two modules individually are addable and can together form a better R-D performance. As for T1 and T2 , they both show stable coding gains under RA and LDB configurations. The M R in Table V provides useful evidence that our HPS construction scheme can efficiently predict the high-preference STGEO modes. Besides, higher M R can be observed for Class E, which is in accordance with the coding performance improvements. Moreover, the BS in Table VI shows that 0.09 and 0.09 bits per STGEO-coded CU are saved for RA and LDB, respectively. The coding gains of LDB configuration are comparable for the two modules, which are 1.72% and 1.75% on average for T1 and T2 , respectively. While, the coding performance of T1 is 0.06% higher than that of T2 
+
+under RA configuration. The two modules both show relative high coding gain for the conference videos, i.e., FourPeople ,
+
+Johnny and KristenAndSara .Concerning the computational complexity, on average 5% and 7% encoding time increment of STGEO is observed for RA and LDB configurations, respectively. The time increment is negligible compared to the conventional GEO. The decoding time is increased by 6% and 8% on average, which is mainly introduced by the module T1 which has 5% and 8% decoding time increment. VI. C ONCLUSION 
+
+In this paper, a spatio-temporal correlation guided geometric partitioning scheme was proposed to improve the coding efficiency. We first identified the problem in the existing GEO: a heavy burden of side information signaling, including the partitioning mode and motion information. Then we proposed an adaptive mode prediction and coding method to reduce the bits consumed for the representation of the above-mentioned side information. In particular, the STGEO mode set is split into two subsets, HPS and LPS. The modes in the HPS have relatively high selection probabilities and can be represented by smaller indices. As such, the STGEO mode can be represented using fewer bits on average. As for the motion information, it is represented by the index in MCL, which is adaptively inferred based on the off-line trained selection probability. Specifically, the motion candidates with higher selection probabilities are put at the front location of the MCL, vice versa. Experimental results verify that STGEO is effective for side information representation and can outperform the existing GEO in VTM-8.0. Compared to VTM-8.0 without GEO, on average 0.95% and 1.98% bit-rate savings can be achieved by the proposed method for RA and LDB configurations, respectively. The analysis and observation in this paper provide more directions for further improving the representation capability of block partitioning, such as ternary tree geometric partitioning, interweaved partitioning, and so on. The motion information for each subpart can be selected from motion candidates of extended areas, including adjacent and non-adjacent areas. For these methods, the side information representation and signaling method for partitioning mode and motion information will be more important. ACKNOWLEDGMENT 
+
+The authors would like to thank the associate editor and anonymous reviewers for their valuable comments that significantly helped them in improving the quality of the paper. REFERENCES [1] T. Wiegand, G. J. Sullivan, G. Bjøntegarrd, and A. Luthra, “Overview of the H.264/AVC video coding standard,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 13, no. 7, pp. 560–576, 2003. [2] G. J. Sullivan, J.-R. Ohm, W.-J. Han, and T. Wiegand, “Overview of the High Efficiency Video Coding (HEVC) standard,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 22, no. 12, pp. 1649–1668, 2012. [3] B. Bross, Y.-K. Wang, Y. Ye, S. Liu, J. Chen, G. J. Sullivan, and J.-R. Ohm, “Overview of the versatile video coding (VVC) standard and its applications,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 31, no. 10, pp. 3736–3764, 2021. [4] A. Segall, V. Baroncini, J. Boyce, J. Chen, and T. Suzuki, “Joint Call for Proposals on Video Compression with Capability beyond HEVC,”                                   
+
+> Joint Video Experts Team (JVET), doc. JVET-H1002 , Oct. 2017. [5] I.-K. Kim, J. Min, T. Lee, W.-J. Han, and J. Park, “Block partitioning structure in the HEVC standard,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 22, no. 12, pp. 1697–1706, 2012. [6] Y. Yuan, I.-K. Kim, X. Zheng, L. Liu, X. Cao, S. Lee et al. , “Quadtree based nonsquare block structure for inter frame coding in high efficiency video coding,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 22, no. 12, pp. 1707–1719, 2012. [7] Y.-W. Huang, J. An, H. Huang, X. Li, S.-T. Hsiang, K. Zhang, H. Gao, J. Ma, and O. Chubach, “Block partitioning structure in the vvc standard,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 31, no. 10, pp. 3818–3833, 2021. [8] S. Kondo and H. Sasai, “A motion compensation technique using sliced blocks in hybrid video coding,” in IEEE International Conference on Image Processing (ICIP) .IEEE, 2005, pp. II–305. [9] M. Karczewicz, P. Chen, R. Joshi, X. Wang, W.-J. Chien, and R. Panchal, “Video coding technology proposal by Qualcomm Inc,” Joint Collaborative Team on Video Coding (JCT-VC), doc. JCTVC-A121 , Apr. 2010. JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 13
+
+[10] P. Chen, W.-J. Chien, R. Panchal, and M. Karczewicz, “Geometry motion partition,” Joint Collaborative Team on Video Coding (JCT-VC), doc. JCTVC-B049 , Jul. 2010. [11] P. Chen and M. Karczewicz, “Geometry motion partition,” Joint Collaborative Team on Video Coding (JCT-VC), doc. JCTVC-C301 , Oct. 2010. [12] Y. Ahn and D. Sim, “CE10: Diagonal motion partitions with uni-prediction constraint (Test 10.3.3),” Joint Video Experts Team (JVET), doc. JVET-L0125 , Oct. 2018. [13] M. Bl¨ aser and J. Sauer, “CE10: Results on Geometric Partitioning,” Joint Video Experts Team (JVET), doc. JVET-L0417 , Oct. 2018. [14] B. Bross, K. Andersson, M. Bl¨ aser, V. Drugeon, S.-H. Kim, J. Lainema, J. Li, S. Liu, J.-R. Ohm, G. J. Sullivan et al. , “General video coding technology in responses to the joint call for proposals on video compression with capability beyond HEVC,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 30, no. 5, pp. 1226–1240, 2019. [15] R. U. Ferreira, E. M. Hung, R. L. De Queiroz, and D. Mukherjee, “Efficiency improvements for a geometric-partition-based video coder,” in IEEE International Conference on Image Processing (ICIP) . IEEE, 2009, pp. 1009–1012. [16] A. A. Muhit, M. R. Pickering, and M. R. Frater, “A fast approach for geometry-adaptive block partitioning,” in Picture Coding Symposium (PCS) . IEEE, 2009, pp. 1–4. [17] E. Francois, P. Bordes, L. Guo, and P. Chen, “CE2: Simplified Geometry Block Partitioning,” Joint Collaborative Team on Video Coding (JCT-VC), doc. JCTVC-D230 , Jan. 2011. [18] L. Guo, P. Yin, Y. Zheng, X. Lu, Q. Xu, and J. Sole, “Simplified geometry-adaptive block partitioning for video coding,” in IEEE International Conference on Image Processing (ICIP) . IEEE, 2010, pp. 965–968. [19] P. Bordes, E. Francois, and D. Thoreau, “Fast encoding algorithms for geometry-adaptive block partitioning,” in IEEE International Conference on Image Processing (ICIP) . IEEE, 2011, pp. 1205–1208. [20] Q. Wang, X. Ji, M.-T. Sun, G. J. Sullivan, J. Li, and Q. Dai, “Complexity reduction and performance improvement for geometry partitioning in video coding,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 23, no. 2, pp. 338–352, 2012. [21] R.-L. Liao and C. S. Lim, “CE10.3.1.b: Triangular prediction unit mode,” Joint Video Experts Team (JVET), doc. JVET-L0124 , Oct. 2018. [22] H. Gao, S. Esenlik, E. Alshina, A. M. Kotra, B. Wang, M. Bl¨ aser, and J. Sauer, “CE4: CE4-1.1, CE4-1.2 and CE4-1.14: Geometric Merge Mode (GEO),” Joint Video Experts Team (JVET), doc. JVET-P0068 , Oct. 2019. [23] M. Bl¨ aser, H. Gao, S. Esenlik, E. Alshina, Z. Zhao, C. Rohlfing et al. ,“Low-complexity geometric inter-prediction for versatile video coding,” in Picture Coding Symposium (PCS) . IEEE, 2019, pp. 1–5. [24] H. Gao, R.-L. Liao, K. Reuz´ e, S. Esenlik, E. Alshina, Y. Ye, J. Chen, J. Luo, C.-C. Chen, H. Huang et al. , “Advanced geometric-based inter prediction for versatile video coding,” in Data Compression Conference (DCC) . IEEE, 2020, pp. 93–102. [25] H. Gao, S. Esenlik, E. Alshina, A. M. Kotra, B. Wang, M. Bl¨ aser, and J. Sauer, “CE4-Related: Geometric Merge Mode (GEO) Simplifications,” 
+
+Joint Video Experts Team (JVET), doc. JVET-P0107 , Oct. 2019. [26] H. Gao, S. Esenlik, E. Alshina, A. M. Kotra, B. Wang et al. , “CE4-1: Geometric Inter Prediction with 64 Modes,” Joint Video Experts Team (JVET), doc. JVET-Q0059 , Jan. 2020. [27] H. Gao, S. Esenlik, E. Alshina, A. M. Kotra, B. Wang, R.-L. Liao 
+
+et al. , “Integrated Text for GEO,” Joint Video Experts Team (JVET), doc. JVET-Q0806 , Jan. 2020. [28] H. Gao, S. Esenlik, E. Alshina, and E. Steinbach, “Geometric partitioning mode in versatile video coding: Algorithm review and analysis,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 31, no. 9, pp. 3603–3617, 2021. [29] J. Chen, Y. Ye, and S. H. Kim, “Algorithm description for Versatile Video Coding and Test Model 8 (VTM 8),” Joint Video Experts Team (JVET), doc. JVET-Q2002 , Jan. 2020. [30] J. Canny, “A computational approach to edge detection,” IEEE Transactions on Pattern Analysis and Machine Intelligence , no. 6, pp. 679–698, 1986. [31] L. Zhang, K. Zhang, H. Liu, Y. Wang, P. Zhao, and D. Hong, “CE4: History-based Motion Vector Prediction (Test 4.4.7),” Joint Video Experts Team (JVET), doc. JVET-L0266 , Oct. 2018. [32] L. Zhang, K. Zhang, H. Liu, H. C. Chuang, Y. Wang, J. Xu, P. Zhao, and D. Hong, “History-based motion vector prediction in versatile video coding,” in Data Compression Conference (DCC) . IEEE, 2019, pp. 43–52. [33] Y.-L. Hsiao, T.-D. Chuang, C.-Y. Chen, C.-W. Hsu et al. , “CE4.4.12: Pairwise average candidates,” Joint Video Experts Team (JVET), doc. JVET-L0090 , Oct. 2018. [34] X. Meng, X. Zhang, C. Jia, X. Li, S. Wang, and S. Ma, “Edge-directed geometric partitioning for versatile video coding,” in IEEE International Conference on Multimedia and Expo (ICME) . IEEE, 2020, pp. 1–6. [35] M. Bl¨ aser, C. Heithausen, and M. Wien, “Geometry-adaptive motion partitioning using improved temporal prediction,” in IEEE Visual Communications and Image Processing (VCIP) . IEEE, 2017, pp. 1–4. [36] M. Bl¨ aser, J. Sauer, and M. Wien, “Description of SDR and 360° video coding technology proposal by RWTH Aachen University,” Joint Video Experts Team (JVET), doc. JVET-J0023 , Apr. 2018. [37] M. Bl¨ aser, J. Schneider, J. Sauer, and M. Wien, “Geometry-based partitioning for predictive video coding with transform adaptation,” in 
+
+Picture Coding Symposium (PCS) . IEEE, 2018, pp. 134–138. [38] Z. Wang, S. Wang, X. Zhang, S. Wang, and S. Ma, “Three-zone segmentation-based motion compensation for video compression,” IEEE Transactions on Image Processing , vol. 28, no. 10, pp. 5091–5104, 2019. [39] T. K. Tan, C. S. Boon, and Y. Suzuki, “Intra prediction by template matching,” in IEEE International Conference on Image Processing (ICIP) . IEEE, 2006, pp. 1693–1696. [40] K. Sugimoto, M. Kobayashi, Y. Suzuki, S. Kato, and C. S. Boon, “Inter frame coding with template matching spatio-temporal prediction,” in 
+
+IEEE International Conference on Image Processing (ICIP) , vol. 1. IEEE, 2004, pp. 465–468. [41] F. Bossen, J. Boyce, K. Suehring, X. Li, and V. Seregin, “JVET common test conditions and software reference configurations for SDR video,” 
+
+Joint Video Experts Team (JVET), doc. JVET-N1010 , Mar. 2019. [42] G. Bjøntegarrd, “Calculation of average PSNR differences between RD-curves,” ITU-T SG16/Q6 (VCEG), doc. VCEG-M33 , Apr. 2001. 
+
+Xuewei Meng received B.E. degree in communication engineering from Beijing University of Posts and Telecommunications, Beijing, China, in 2017. She is currently pursuing the Ph.D. degree with the Department of Computer Science in Peking University, Beijing, China. Her research interests include video compression and video coding standard. She is actively participating in the research of Versatile Video Coding (VVC) standard. 
+
+Chuanmin Jia received B.E. degree in computer science from Beijing University of Posts and Telecommunications, Beijing, China, in 2015 and the Ph.D. degree in computer application technology from Peking University, Beijing, China, in 2020. He was a visiting student with Video Lab, New York University, NY, USA, in 2018. He is currently working as Boya postdoc fellow with the Department of Computer Science, Peking University, Beijing, China. His research interests include image/video compression, multimedia signal processing and analysis. He is the recipient of Best Paper Award of Pacific-Rim Conference on Multimedia in 2017, Best Student Paper Award of IEEE International Conference on Multimedia Information Processing and Retrieval 2019, and also the co-recipient of Best Paper Award of IEEE Multimedia Magazine in 2018. JOURNAL OF L ATEX CLASS FILES, VOL. XX, NO. X, NOVEMBER 2021 14 
+
+Xinfeng Zhang (M’16-SM’20) received the B.S. degree in computer science from the Hebei University of Technology, Tianjin, China, in 2007, and the Ph.D. degree in computer science from the Institute of Computing Technology, Chinese Academy of Sciences, Beijing, China, in 2014. From 2014 to 2017, he was a Research Fellow with the Rapid-Rich Object Search Lab, Nanyang Technological University, Singapore. From Oct. 2017 to Oct. 2018, he was a Post-Doctoral Fellow with the School of Electrical Engineering System, University of Southern California, Los Angeles, CA, USA. From Dec. 2018 to Aug. 2019, he was a Research Fellow with the department of Computer Science, City University of Hong Kong. He currently is an Assistant Professor with the School of Computer Science and Technology, University of Chinese Academy of Sciences. He authored more than 150 refereed journal/conference papers and received the Best Paper Award of IEEE Multimedia 2018, the Best Paper Award at the 2017 Pacific-Rim Conference on Multimedia (PCM) and the Best Student Paper Award in IEEE International Conference on Image Processing 2018. His research interests include video compression and processing, image/video quality assessment, and 3D point cloud processing. 
+
+Shanshe Wang received the B.S. degree from the Department of Mathematics, Heilongjiang University, Harbin, China, in 2004, the M.S. degree in computer software and theory from Northeast Petroleum University, Daqing, China, in 2010, and the Ph.D. degree in computer science from the Harbin Institute of Technology. He held apostdoctoral position with Peking University from 2016 to 2018. He joined the School of Electronics Engineering and Computer Science, Institute of Digital Media, Peking University, Beijing, where he is currently a associated researcher. His current research interests include video compression and image and video quality assessment. 
+
+Siwei Ma (Senior Member, IEEE) received the B.S. degree from Shandong Normal University, Jinan, China, in 1999, and the Ph.D. degree in computer science from the Institute of Computing Technology, Chinese Academy of Sciences, Beijing, China, in 2005. He held a postdoctoral position with the University of Southern California, Los Angeles, CA, USA, from 2005 to 2007. He joined the School of Electronics Engineering and Computer Science, Institute of Digital Media, Peking University, Beijing, where he is currently a Professor. He has authored over 300 technical articles in refereed journals and proceedings in image and video coding, video processing, video streaming, and transmission. He served/serves as an Associate Editor for the IEEE Transactions on Circuits and Systems for Video Technology and the Journal of Visual Communication and Image Representation.
