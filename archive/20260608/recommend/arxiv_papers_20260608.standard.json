@@ -1,0 +1,334 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-08T21:19:19.171553+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2606.06991v1",
+      "source": "arxiv",
+      "title": "Don't Pause: Streaming Video-Language Synchrony for Online Video Understanding",
+      "abstract": "Online Video Large Language Models (Video-LLMs) have advanced toward seamless human-AI interaction through frame-by-frame processing and proactive responding. However, a critical challenge remains in streaming scenarios: existing models typically pause video perception while generating responses, breaking real-time video-language synchrony and causing stutters. To address this, we introduce a novel paradigm for online video understanding: Streaming Video-Language Synchrony (SVLS), and present LyraV, a live streaming assistant built upon a hierarchical control framework with two core innovations. First, the Frame-Driven Transition Controller (FDTC), a training-free verification-based finite-state machine, makes high-level semantic decisions on when to continue speaking, start a new response, or stay silent. Second, the Streaming Token Pacer (SToP), a plug-and-play lightweight predictive module, dynamically adapts the language generation rate to match the pace of the visual content. Concretely, LyraV performs \\emph{per-frame incremental, sub-budget decoding}: within each frame interval it emits only a small chunk of tokens that fits the real-time budget, so perception is never blocked for a full sentence. Together, these components enable LyraV to seamlessly interleave incoming video frames with generated word tokens, achieving a fine-grained synchrony. Extensive experiments conducted on five online and three offline benchmarks demonstrate that LyraV preserves the backbone's general understanding ability while substantially improving streaming synchrony and narrative fluency, delivering a 98.29\\% synchrony with video playback and a real-time processing speed of 3.89 FPS. Interestingly, we observe an empirical capability in LyraV: dynamic reasoning over streaming tokens, enabling continuous interpretation and \"thinking\" alongside visual input.",
+      "authors": [
+        "Zhenyu Yang",
+        "Kairui Zhang",
+        "Shengsheng Qian",
+        "Weiming Dong",
+        "Changsheng Xu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-05T07:29:20+00:00",
+      "link": "https://arxiv.org/pdf/2606.06991v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Streaming video-language synchrony for online video understanding",
+      "llm_evidence_cn": "流式视频-语言同步在线视频理解",
+      "llm_evidence": "流式视频-语言同步在线视频理解",
+      "canonical_evidence": "流式视频-语言同步在线视频理解",
+      "llm_tldr_en": "Proposes SVLS and LyraV for streaming video understanding, enabling real-time frame-by-frame processing without pausing during response generation.",
+      "llm_tldr_cn": "针对现有视频大语言模型在生成响应时暂停视频感知导致实时性差的问题，提出流式视频-语言同步（SVLS）范式，并构建LyraV助手。SVLS通过帧驱动转换控制器实现无暂停的实时视频理解，保持视频与语言同步。实验表明方法有效提升了在线视频理解的流畅度和实时性，为流式视频分析提供了新思路。",
+      "llm_tldr": "针对现有视频大语言模型在生成响应时暂停视频感知导致实时性差的问题，提出流式视频-语言同步（SVLS）范式，并构建LyraV助手。SVLS通过帧驱动转换控制器实现无暂停的实时视频理解，保持视频与语言同步。实验表明方法有效提升了在线视频理解的流畅度和实时性，为流式视频分析提供了新思路。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.07394v1",
+      "source": "arxiv",
+      "title": "Mind the Gap: Disentangling Performance Bottlenecks in Video Instance Segmentation",
+      "abstract": "In Video Instance Segmentation (VIS), classification, segmentation, and tracking objectives are jointly evaluated, but their individual contributions to performance loss remain opaque. We introduce a diagnostic framework that formulates identity and class assignment as an Integer Linear Program (ILP), yielding a model-agnostic oracle that hierarchically isolates each error source. Applied to seven VIS methods spanning online and offline paradigms across YouTube-VIS 2019/2021 and a diagnostic subset of OVIS, our analysis reveals a consistent picture. Tracking instability is a critical bottleneck for online methods, with gaps exceeding 20 AP under heavy occlusion, and grows sharply with video length and instance density. While semantic classification contributes meaningfully on standard benchmarks, its impact becomes negligible where tracking fails most. Although stronger backbones substantially lift default scores, they leave AP tracking gaps largely intact, confirming that temporal fragility is algorithmic rather than purely representational. To complement the oracle, we introduce TrackLens, a visual tool that translates gap magnitude into observable, query-level failure modes. Together, these tools provide a systematic foundation for targeting VIS's core challenge: robust long-term temporal association.",
+      "authors": [
+        "Danial Hamdi",
+        "Fardin Ayar",
+        "Mahdi Javanmardi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-05T15:32:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.07394v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "diagnostic framework for video instance segmentation performance bottlenecks",
+      "llm_evidence_cn": "视频实例分割性能瓶颈的诊断框架",
+      "llm_evidence": "视频实例分割性能瓶颈的诊断框架",
+      "canonical_evidence": "视频实例分割性能瓶颈的诊断框架",
+      "llm_tldr_en": "Introduces an ILP-based oracle to isolate classification, segmentation, and tracking errors in video instance segmentation, revealing tracking instability as key bottleneck.",
+      "llm_tldr_cn": "针对视频实例分割中分类、分割和跟踪目标的联合评估导致性能瓶颈难以分解的问题，提出基于整数线性规划的模型无关诊断框架，层次化分离各误差源。在七个VIS方法上的实验表明，跟踪不稳定性是主要瓶颈，尤其在严重遮挡下差距超过20 AP，为视频分析算法改进提供了明确方向。",
+      "llm_tldr": "针对视频实例分割中分类、分割和跟踪目标的联合评估导致性能瓶颈难以分解的问题，提出基于整数线性规划的模型无关诊断框架，层次化分离各误差源。在七个VIS方法上的实验表明，跟踪不稳定性是主要瓶颈，尤其在严重遮挡下差距超过20 AP，为视频分析算法改进提供了明确方向。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.07090v1",
+      "source": "arxiv",
+      "title": "Detecting Temporally Localized Manipulations in Authentic Video Streams",
+      "abstract": "The rapid advancement of video editing and generative artificial intelligence technologies has made realistic video manipulation increasingly accessible. Although existing datasets have significantly advanced research in deepfake detection, object removal, and video inpainting, they do not adequately model scenarios in which a short manipulated segment is inserted into an otherwise authentic video and the original video continues afterward. In this study, we review representative datasets from the literature, analyze their characteristics, and discuss their limitations with respect to temporally localized realistic manipulation detection. Based on this analysis, we motivate the need for a new dataset specifically designed for authentic videos containing short and highly realistic manipulated intervals. Finally, we evaluate two complementary approaches on our custom-curated test set to establish an initial benchmark for this challenging scenario. The first employs a linear probe on DINOv3 features, assessed under three thresholding strategies. The second leverages DINOv3 features with a consecutive frame similarity-based method to detect temporal manipulation boundaries. Together, these experiments provide an initial benchmark for partially manipulated video detection and highlight the need for content-adaptive thresholding mechanisms. The dataset, code, and supplementary materials are publicly available at https://github.com/OkanUmur/temporally-localized-video-manipulation-detection.",
+      "authors": [
+        "Okan Umur",
+        "Ali Emre Güşlü",
+        "Ibrahim Delibasoglu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-05T09:35:51+00:00",
+      "link": "https://arxiv.org/pdf/2606.07090v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "detecting temporally localized manipulations in authentic video streams",
+      "llm_evidence_cn": "检测真实视频流中的时间局部化篡改",
+      "llm_evidence": "检测真实视频流中的时间局部化篡改",
+      "canonical_evidence": "检测真实视频流中的时间局部化篡改",
+      "llm_tldr_en": "This paper reviews datasets for detecting temporally localized manipulations in authentic video streams and motivates a new dataset, highlighting key challenges for streaming video analysis.",
+      "llm_tldr_cn": "现有视频篡改检测数据集未充分建模真实视频流中插入短篡改片段后继续播放的场景，这限制了实际流式分析中的检测能力。本文系统回顾了代表性数据集，分析了它们在面对时间局部化篡改时的不足，并论证了构建专门针对真实视频流中时间局部化篡改检测数据集的重要性。该工作为流式视频分析中的安全性研究提供了重要方向，有助于开发更鲁棒的实时篡改检测方法。",
+      "llm_tldr": "现有视频篡改检测数据集未充分建模真实视频流中插入短篡改片段后继续播放的场景，这限制了实际流式分析中的检测能力。本文系统回顾了代表性数据集，分析了它们在面对时间局部化篡改时的不足，并论证了构建专门针对真实视频流中时间局部化篡改检测数据集的重要性。该工作为流式视频分析中的安全性研究提供了重要方向，有助于开发更鲁棒的实时篡改检测方法。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.07512v1",
+      "source": "arxiv",
+      "title": "MemDreamer: Decoupling Perception and Reasoning for Long Video Understanding via Hierarchical Graph Memory and Agentic Retrieval Mechanism",
+      "abstract": "Current Vision-Language Models struggle with hours-long videos because processing full-length visual sequences induces prohibitive token explosion and attention dilution. To overcome this, we introduce MemDreamer to decouple perception and reasoning, shifting long-video understanding into an agentic exploration process. As a plug-and-play framework, it incrementally streams videos to construct a Hierarchical Graph Memory, a top-down three-tier architecture for semantic abstraction, anchored by a foundational graph capturing spatiotemporal and causal relations. During inference, the reasoning model employs agentic tool-augmented retrieval, navigating hierarchies, searching nodes, and traversing logical edges via an Observation-Reason-Action loop. Experiments show MemDreamer achieves SOTA results across four mainstream benchmarks, narrowing the gap with human experts to only 3.7 points. It constrains the reasoning context window to merely 2% of full-context ingestion while delivering a 12.5 point absolute accuracy gain. Furthermore, statistical analysis uncovers a strong positive linear correlation between an VLM's performance on logic reasoning and long-video understanding benchmarks, establishing agentic capability scaling as a new paradigm for multimodal comprehension.",
+      "authors": [
+        "Cong Chen",
+        "Guo Gan",
+        "Kaixiang Ji",
+        "ChaoYang Zhang",
+        "Zhen Yang",
+        "Guangming Yao",
+        "Hao Chen",
+        "Jingdong Chen",
+        "Yi Yuan",
+        "Chunhua Shen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-05T17:59:21+00:00",
+      "link": "https://arxiv.org/pdf/2606.07512v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "incremental streaming to construct hierarchical memory for long video understanding",
+      "llm_evidence_cn": "增量流式构建层次记忆实现长视频理解",
+      "llm_evidence": "增量流式构建层次记忆实现长视频理解",
+      "canonical_evidence": "增量流式构建层次记忆实现长视频理解",
+      "llm_tldr_en": "MemDreamer decouples perception and reasoning for long video understanding by incrementally streaming video into a hierarchical graph memory, enabling agentic retrieval for efficient exploration.",
+      "llm_tldr_cn": "针对当前视觉语言模型在处理长视频时遭遇的令牌爆炸和注意力稀释问题，本文提出了MemDreamer框架。该框架通过增量流式方式构建层次图内存，将长视频理解转化为智能体探索过程，利用工具增强检索导航层次结构。实验表明，该方法有效提高了长视频理解的效率和准确性，为流式视频分析领域提供了一种新的即插即用方案。",
+      "llm_tldr": "针对当前视觉语言模型在处理长视频时遭遇的令牌爆炸和注意力稀释问题，本文提出了MemDreamer框架。该框架通过增量流式方式构建层次图内存，将长视频理解转化为智能体探索过程，利用工具增强检索导航层次结构。实验表明，该方法有效提高了长视频理解的效率和准确性，为流式视频分析领域提供了一种新的即插即用方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.06532v1",
+      "source": "arxiv",
+      "title": "GOPAgen: Motion-Aware and Efficient Agentic Long-Video Understanding with Structural Memory and Hierarchical Reasoning",
+      "abstract": "Despite significant progress in agentic long video understanding, existing methods still lack detailed motion comprehension coupled with an efficient memory architecture. In this paper, we propose GOPAgen, a novel approach that first integrates video codec into the video understanding framework via a meticulously designed motion agent trained on Groups of Pictures (GOPs) from video codec. We further develop a GOP tree reasoning algorithm, which is naturally aligned with video codec and enhances the model's ability to understand local detailed motions in videos. Additionally, we carefully design a structural memory mechanism that integrates local motion information with detailed captions in structural pages, and propose an efficient coarse-to-fine zoom-in algorithm to fully exploit the structural memory. Furthermore, we incorporate a motion vector database into the framework to enable efficient retrieval of motion vectors at different granularities. Overall, our method achieves superior Video Question Answering (VQA) performance on various video understanding benchmarks, including MotionBench and Egoschema, thereby demonstrating the superiority of our proposed framework.",
+      "authors": [
+        "Haozhe Chi",
+        "Yang Jin",
+        "Yadong Mu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-03T17:47:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.06532v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "efficient long-video understanding with motion awareness, directly applicable to video analytics",
+      "llm_evidence_cn": "高效长视频理解与运动感知，直接适用于视频分析",
+      "llm_evidence": "高效长视频理解与运动感知，直接适用于视频分析",
+      "canonical_evidence": "高效长视频理解与运动感知，直接适用于视频分析",
+      "llm_tldr_en": "Proposes GOPAgen for agentic long-video understanding with motion-aware structural memory and hierarchical reasoning, improving efficiency for video analytics tasks.",
+      "llm_tldr_cn": "针对现有长视频理解方法缺乏细致运动理解和高效内存架构的问题，提出GOPAgen，创新地将视频编码器集成到理解框架中，通过运动智能体和GOP树推理算法增强局部运动理解，并设计结构化内存机制，显著提升了长视频分析的效率和准确性，为视频分析提供了高效且运动感知的方案。",
+      "llm_tldr": "针对现有长视频理解方法缺乏细致运动理解和高效内存架构的问题，提出GOPAgen，创新地将视频编码器集成到理解框架中，通过运动智能体和GOP树推理算法增强局部运动理解，并设计结构化内存机制，显著提升了长视频分析的效率和准确性，为视频分析提供了高效且运动感知的方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.04410v1",
+      "source": "arxiv",
+      "title": "Ultra-Fast Neural Video Compression",
+      "abstract": "While neural video codecs (NVCs) have demonstrated superior compression ratio, their prohibitive computational complexity remains a critical barrier to real-world deployment. This paper introduces a chunk-based coding framework designed to significantly improve the rate-distortion-complexity trade-off. Instead of processing frames sequentially, our approach encodes a chunk of multiple frames into a single compact latent representation and decodes them simultaneously. This is enabled by cross-frame interaction modules for joint spatial-temporal modeling and frame-specific decoders for parallel reconstruction. This paradigm not only dramatically enhances coding throughput but also facilitates more effective modeling of long-term temporal correlations. To further boost speed, we propose a streamlined entropy coding mechanism that consolidates bit-stream interactions into a single step, substantially reducing decoding overhead. Building on these innovations, we present DCVC-UF (Ultra-Fast), a new NVC that sets a new SOTA in performance. Our experiments show that DCVC-UF can achieve ultra-fast encoding and decoding speeds, significantly outperforming previous leading codecs. DCVC-UF serves as a notable landmark in the journey of NVC evolution. The code is at https://github.com/microsoft/DCVC.",
+      "authors": [
+        "Jiahao Li",
+        "Wenxuan Xie",
+        "Zhaoyang Jia",
+        "Bin Li",
+        "Zongyu Guo",
+        "Xiaoyi Zhang",
+        "Yan Lu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-03T03:38:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.04410v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "ultra-fast neural video compression enabling real-time video processing",
+      "llm_evidence_cn": "超快神经视频压缩，支持实时视频处理",
+      "llm_evidence": "超快神经视频压缩，支持实时视频处理",
+      "canonical_evidence": "超快神经视频压缩，支持实时视频处理",
+      "llm_tldr_en": "Proposes chunk-based neural video compression for ultra-fast coding, enabling real-time processing; relevant to streaming video analysis as efficient compression is critical.",
+      "llm_tldr_cn": "针对神经视频编码器计算复杂度高的问题，提出基于块组的编码框架，将多个帧同时编码为紧凑潜表示并并行解码，通过跨帧交互模块和帧特定解码器，大幅提高编码吞吐量，支持实时视频处理和传输，为流式视频分析提供了高效的压缩基础。",
+      "llm_tldr": "针对神经视频编码器计算复杂度高的问题，提出基于块组的编码框架，将多个帧同时编码为紧凑潜表示并并行解码，通过跨帧交互模块和帧特定解码器，大幅提高编码吞吐量，支持实时视频处理和传输，为流式视频分析提供了高效的压缩基础。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.06762v1",
+      "source": "arxiv",
+      "title": "Multi-Robot Planning and Control from CCTV Camera Networks in a Real Warehouse",
+      "abstract": "Off-board control of mobile robots from cameras embedded in the environment offers a practical path to scalable autonomy, moving sensing and compute off the robots. We extend this idea from the single-robot case to coordinated fleets in a real warehouse, driving multiple robots with only a distributed CCTV network and edge compute. The system operates entirely in image space over an uncalibrated, pixel-wise topological camera graph, enabling wide-area operation with flexible camera placement. A hierarchical planner selects a camera sequence per robot and plans its image-space motion through each view, coordinating robots with a prioritised-then-joint strategy and treating overlapping camera regions as shared resources held by one robot at a time to prevent collisions and deadlocks. We validate the approach in a real warehouse with four robots and 30 cameras across six 27 m aisles, reporting mission times and coordination statistics. To our knowledge, this is the first field demonstration of multi-robot planning and coordination using only an external camera network and off-board compute, with robots carrying no task-specific navigation hardware.",
+      "authors": [
+        "Luke Robinson",
+        "Benjamin Ramtoula",
+        "Anas Izaaryene",
+        "Paul Newman",
+        "Daniele De Martini"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-04T22:58:08+00:00",
+      "link": "https://arxiv.org/pdf/2606.06762v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "edge compute for multi-robot control from CCTV camera networks",
+      "llm_evidence_cn": "利用CCTV网络和边缘计算进行多机器人控制",
+      "llm_evidence": "利用CCTV网络和边缘计算进行多机器人控制",
+      "canonical_evidence": "利用CCTV网络和边缘计算进行多机器人控制",
+      "llm_tldr_en": "Demonstrates off-board multi-robot control using only CCTV camera network and edge compute in a real warehouse, operating fully in image space.",
+      "llm_tldr_cn": "针对仓库环境中多机器人协同控制问题，提出仅依赖分布式CCTV网络和边缘计算的离车控制方案，系统在未校准的像素拓扑相机图上运行，通过分层规划器协调机器人，展示了边缘计算在实时视频驱动机器人系统中的有效性。",
+      "llm_tldr": "针对仓库环境中多机器人协同控制问题，提出仅依赖分布式CCTV网络和边缘计算的离车控制方案，系统在未校准的像素拓扑相机图上运行，通过分层规划器协调机器人，展示了边缘计算在实时视频驱动机器人系统中的有效性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.05915v1",
+      "source": "arxiv",
+      "title": "CamFlow+: Hybrid Motion Bases for 2D Camera Motion Estimation with Stabilization Applications",
+      "abstract": "Estimating 2D camera motion is fundamental to computer vision and computational photography. Existing homography-based methods work well for planar scenes or pure rotation, but struggle with camera translation, depth variation, and local parallax; local homography and mesh-based models improve flexibility but still rely on piecewise planar assumptions. We introduce CamFlow+, a hybrid-basis framework that represents 2D camera motion directly in dense-flow space. CamFlow+ combines homography-derived physical bases, stochastic bases sampled from homography flows, and depth-translational bases derived from depth and camera intrinsics, relaxing the single-plane constraint while preserving camera-motion regularity. A depth-aware smoothness term further regularizes translation-induced parallax in continuous-depth regions while preserving motion changes near depth boundaries. We evaluate CamFlow+ on GHOF-Cam, a camera-motion benchmark that masks out dynamic objects and ill-posed occlusion regions in an optical-flow benchmark to isolate camera-induced motion. Experiments show that CamFlow+ improves sparse and dense camera-motion estimation. In digital video stabilization, CamFlow+ also improves global and local stability, achieving the best top-1 preference rate in a blind user study. Code and datasets will be available on the project page: https://lhaippp.github.io/CamFlow+.",
+      "authors": [
+        "Haipeng Li",
+        "Zhen Liu",
+        "Zhanglei Yang",
+        "Hai Jiang",
+        "Tianhao Zhou",
+        "Zhengzhe Liu",
+        "Ping Tan",
+        "Bing Zeng",
+        "Shuaicheng Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-04T09:22:07+00:00",
+      "link": "https://arxiv.org/pdf/2606.05915v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "2D camera motion estimation, fundamental to video analysis and stabilization",
+      "llm_evidence_cn": "二维相机运动估计，是视频分析和稳像的基础技术",
+      "llm_evidence": "二维相机运动估计，是视频分析和稳像的基础技术",
+      "canonical_evidence": "二维相机运动估计，是视频分析和稳像的基础技术",
+      "llm_tldr_en": "Proposes hybrid motion bases for 2D camera motion estimation in dense-flow space; provides a method useful for video analysis pipelines, though not specifically for edge.",
+      "llm_tldr_cn": "针对现有相机运动估计方法在非平面场景中的局限，提出CamFlow+混合运动基框架，在密集光流空间直接表示相机运动，融合物理基、随机基和深度平移基，有效处理深度变化和局部视差，可用于视频稳像和分析，为视频分析中的运动估计提供了一种改进方法。",
+      "llm_tldr": "针对现有相机运动估计方法在非平面场景中的局限，提出CamFlow+混合运动基框架，在密集光流空间直接表示相机运动，融合物理基、随机基和深度平移基，有效处理深度变化和局部视差，可用于视频稳像和分析，为视频分析中的运动估计提供了一种改进方法。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

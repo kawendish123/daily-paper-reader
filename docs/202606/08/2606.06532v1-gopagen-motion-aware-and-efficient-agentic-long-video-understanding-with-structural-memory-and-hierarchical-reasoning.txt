@@ -1,0 +1,264 @@
+Title: GOPAgen: Motion-Aware and Efficient Agentic Long-Video Understanding with Structural Memory and Hierarchical Reasoning
+
+URL Source: https://arxiv.org/pdf/2606.06532v1
+
+Published Time: Mon, 08 Jun 2026 00:01:26 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# GOPAgen: Motion-Aware and Efficient Agentic Long-Video Understanding with Structural Memory and Hierarchical Reasoning 
+
+Haozhe Chi Yang Jin Yadong Mu ∗
+
+Peking University 
+
+# Abstract 
+
+Despite significant progress in agentic long video understanding, existing methods still lack detailed motion comprehension coupled with an efficient memory archi-tecture. In this paper, we propose GOPAgen, a novel approach that first integrates video codec into the video understanding framework via a meticulously designed motion agent trained on Groups of Pictures (GOPs) from video codec. We further develop a GOP tree reasoning algorithm, which is naturally aligned with video codec and enhances the model’s ability to understand local detailed motions in videos. Additionally, we carefully design a structural memory mechanism that integrates local motion information with detailed captions in structural pages, and propose an efficient coarse-to-fine zoom-in algorithm to fully exploit the structural memory. Furthermore, we incorporate a motion vector database into the framework to enable efficient retrieval of motion vectors at different granularities. Overall, our method achieves superior Video Question Answering (VQA) performance on various video understanding benchmarks, including MotionBench and Egoschema, thereby demonstrating the superiority of our proposed framework. 
+
+# 1 Introduction 
+
+Long-form video understanding [ 1, 2, 3 , 4, 5, 6 , 7, 8] is a fundamental yet challenging core task in multimodal intelligence. Unlike short clips, it features densely structured, temporally extended semantics, with visual content, narratives, and events evolving over time. Robust comprehension requires fine-grained local spatiotemporal modeling and reliable reasoning over long-range de-pendencies, global coherence, and cross-temporal associations. Recent advances in MLLMs and VLMs [ 1 , 9, 10 , 11 , 12 , 13 ] enable strong long-range reasoning and cross-modal alignment, with architecture optimizations expanding context windows to over one million tokens [ 14 , 1, 15 , 16 , 17 ]. However, these windows remain insufficient for super long videos’ extreme density and complexity, leading to severe performance degradation as video duration and complexity increase [ 18 , 19 , 1, 20 ], hindering stable reasoning and accurate comprehension. Recently, multi-agent systems have emerged as a promising paradigm for long-form video understand-ing [ 21 , 22 , 23 , 24 , 25 ]. In contrast to traditional video MLLMs [ 1 , 2, 26 , 27 ], which struggle with the computational and contextual burdens of extremely long visual inputs, agent-based frameworks leverage LLMs’ reasoning, planning, and memory capabilities [ 21 ] to iteratively locate, extract, and aggregate question-relevant information from extended videos. By decomposing full-length video understanding into manageable sub-tasks, such approaches enable more scalable and adaptive compre-hension. However, inadequate memory modeling and suboptimal visual representations impose two critical limitations on existing video agents. First, most video agents reason over individual frames via frame-wise captioning [ 22 ] and iterative key frame search [ 28 ] rather than coherent temporal 
+
+> ∗Corresponding author. Preprint.
+> arXiv:2606.06532v1 [cs.CV] 3 Jun 2026
+
+Figure 1: Illustration of our GOPAgen framework. Previous video understanding methods (e.g., VideoTree, VideoLucy) use a coarse-to-fine retrieval strategy for local video details but suffer from excessive iterative looping, causing time and memory inefficiency. In contrast, our pipeline adopts a simple tree-search structure (avoiding over-querying relevant time periods) and integrates structural local memories. We further develop a motion agent for better video-codec utilization, resulting in a time/memory-efficient and video-codec-friendly architecture. segments, thereby weakening their capacity to capture temporal dynamics, sequential dependencies, and event coherence, which are essential for complex video queries. Second, to mitigate dense frame captioning costs, these methods rely on sparse frame sampling, thereby incurring unavoidable information loss. For instance, VideoTree [ 28 ] employs 0.125 FPS sampling on Video-MME [ 4], inevitably compromising the capture of short-lived critical events and fine-grained visual details. Building on LLM-based reasoning and agentic systems, such as Deep Research [ 29 , 24 , 30 , 31 ] and Deep Search [ 32 , 33 ], which decompose complex tasks into modular sub-tasks, Deep Video Discovery (DVD) reconceptualizes long-form video understanding as a multi-step process of information discovery. DVD conceptualizes full videos as interactive environments, leveraging short, manageable clips as reasoning units to construct its framework. However, while existing video agent pipelines [ 28 ,34 , 22 , 24 ] incorporate search mechanisms, they depend on manually designed, rigid workflows constrained by human prior knowledge. For example, VideoTree [ 28 ] and VCA [ 35 ] employ root-to-leaf tree-structured search, which mitigates VLM context limitations but proves inefficient for fine-grained, direct retrieval. Furthermore, non-contiguous semantically related content diminishes backtracking efficiency in tree-based search. Most importantly, these approaches rely on fixed pipelines for all query types, lacking the adaptability required to address the diverse information needs of different query categories (e.g., descriptive, causal, predictive). To overcome the aforementioned limitations, namely the underutilization of motion information and inefficient memory management in existing video agent systems, we propose a video primitive-oriented framework for long-form video understanding. Specifically, we design a dedicated motion agent trained to efficiently leverage Group of Pictures (GOP) blocks, a fundamental video primitive, for motion information extraction and processing. Furthermore, we develop a structured memory system integrated with a vector database to facilitate efficient storage and retrieval of video content, alongside an optimized reasoning algorithm tailored for long-context memory traversal and infor-mation aggregation. The overall architecture of our framework systematically incorporates video primitives and adopts a hierarchical approach to effectively utilize motion information, addressing the core challenges of long-form video understanding. Our key contributions are summarized as follows: • We integrate the GOP video primitive into the agentic video understanding framework and propose a structured local memory module to effectively incorporate motion information. 2• We design a specialized motion agent training strategy that leverages the sparsity of motion vectors in video codecs, enabling more flexible and fine-grained motion understanding. • We develop a GOP tree reasoning algorithm that aligns seamlessly with GOP structures, achieving superior token efficiency, reduced inference latency, and improved VQA accuracy. • Extensive experiments demonstrate that our motion agent exhibits significantly enhanced motion understanding capabilities, while our agentic framework achieves state-of-the-art performance in motion-aware long video understanding. 
+
+# 2 Related work 
+
+MLLMs for Video Understanding. Recent advances in multimodal large language models (MLLMs) [ 36 , 37 , 38 , 39 , 40 , 41 , 42 , 29 , 43 , 15 , 44 ] have advanced video understanding, focusing on three core aspects: context extension, token compression, and audio integration. Context extension methods [ 30 , 45 , 25 ] expand context windows for long videos but suffer from redundant frames and high computation. Token compression approaches [ 46 , 47 , 48 ] reduce redundant visual tokens but may lose fine-grained details. Audio integration methods [ 49 , 50 , 51 ] enhance reasoning but increase model complexity. Long video understanding remains challenging due to spatiotemporal reasoning demands and information retrieval complexity. Most video MLLMs build on image-based VLM frameworks [ 51 , 6, 2, 5], converting frames to tokens for LLM processing. Two key trends address long-video challenges: frame sampling and token compression. Frame sampling [ 52 , 53 , 54 ] selects query-relevant key frames (e.g., Moviechat+ [ 52 ]) to reduce computation. Token compression [ 1, 55 ]mitigates token overload (e.g., VideoChat-Flash [ 27 ]); methods like AdaRETAKE [ 56 ] use adaptive compression to expand effective input frames. However, compression introduces information loss, hindering complex query responses. Agentic systems [ 22 , 24 ] address key information sparsity but rely on manual guidance or simplex frame search, limiting LLM reasoning. Memory-augmented methods (e.g., LangRepo [ 57 ]) compress frames into memory tokens but conventional video MLLMs still struggle with ultra-long videos due to sparse sampling-induced information loss. 
+
+Agentic systems for Video Understanding. Agentic systems [ 22 , 34 , 21 ] are promising for long videos, using LLMs for reasoning and decomposing videos into subtasks (e.g., VideoAgent [ 58 ], DrVideo [ 59 ], VideoTree [ 28 ]). However, they often overlook temporal context and use sparse sampling, risking information loss. More recent agent-based methods [ 22 , 58 , 34 , 60 , 61 , 23 ]leverage MLLM multimodal capabilities for cross-modal reasoning. They split into two categories: manual strategy-dependent methods [ 62 , 28 , 35 ] (constraining adaptability) and clip-level search methods (e.g., DVD [ 24 ]) [ 24 , 63 , 64 , 60 ] (token-intensive, database-reliant). VideoARM [ 65 ]uses adaptive reasoning and dynamic memory, differing from VideoLucy [ 22 ] by maintaining raw multimodal evidence in a loop. LLM advancements in reasoning and tool use [ 66 , 34 ] accelerate autonomous agents. Our work extends this paradigm to long video understanding by introducing search-centric and video-codec compatible tools for the construction and utilization of structural memory. This design effectively enhances the model’s capability to respond to complex queries, thereby addressing the core challenges of long video understanding. 
+
+# 3 Method 
+
+Our pipeline comprises three essential components: training and setting up a motion agent, construct-ing detailed structural memory via a zoom-in strategy, and performing long-context reasoning over the paths on the GOP-Tree. 
+
+3.1 Motion Agent Training Strategy 
+
+We first train a motion agent to facilitate its subsequent integration into our GOPAgen framework. The training process is divided into three sequential stages: a pretraining stage using only image-text pairs, a mid-training stage incorporating a mixture of image-text and video-text pairs, and a fine-tuning stage leveraging more curated motion description datasets. Specifically, motion vectors are not included in the training process during the pretraining and mid-training stages. In contrast, during the final fine-tuning stage, both key frames and motion vectors extracted from GOP blocks are incorporated, 3Figure 2: Overall illustration of our GOPAgen pipeline. Unlike methods (e.g., VideoLaVIT, EMA) that tokenize motion vectors with key frames for a single agent, we integrate GOP blocks into our agentic framework to flexibly utilize motion vectors via a database. Specifically, we store motion vectors of key video segments in the database, process video key frames progressively (coarse-to-super-fine), use a global agent to extract coarse segments and guide super-fine periods, employ motion and detailed captioning agents to build structural local memory (with the motion agent fetching motion vectors from the database), and finally use a reasoning agent to scan the memory and generate the answer. and a motion tokenizer is added to train the entire model end-to-end. 
+
+O = LLM  cat  Enc (frame 1), Enc (frame 2), . . . , 
+
+Enc (frame N ), TextEmbed  (1) 
+
+O = LLM  cat  Enc (frame 1), Tok (MV 1), . . . , 
+
+Enc (frame N ), Tok (MV N ), TextEmbed  (2) Loss pre,mid = −
+
+> L
+
+X
+
+> i=1
+> i∈Xcap/instruct
+
+log Pθ (xi | XV , Xcap/instruct ,<i ) (3) Loss finetune = −
+
+> L
+
+X
+
+> i=1
+> i∈Xans
+
+log Pθ (xi | XV , Xmotion instruct ,<i , Xans ,<i ) (4) As shown in Eq. (1) and Eq. (3), during the pretraining and mid-training stages, we adopt the traditional LLaVA pipeline to develop the model’s basic understanding capability. This process primarily leverages autoregressive negative log-likelihood loss on captioning data to facilitate effective model pretraining. As illustrated in Eq. (2) and Eq. (4), during the fine-tuning stage, we integrate motion vectors to enhance the model’s detailed motion understanding ability. Specifically, we apply autoregressive loss on more refined and curated datasets, including motion description data and instruction-following data. This design ensures that our agent acquires comprehensive and detailed motion understanding capabilities. 
+
+3.2 Coarse-to-fine Structural Memory Construction 
+
+To further integrate video primitives into the agentic video understanding framework, we construct a coarse-to-fine structural memory via a progressive zoom-in strategy, as shown in Eq. (5) and Eq. (6). Specifically, we first deploy a global agent to inspect all input key frames, leveraging auxiliary tools (i.e., segment localization and visual analysis) to select the most informative Top-k video segments. For practical implementation, this selection process is repeated once more to extract finer-grained 4Algorithm 1 GOP-Tree Long Context Reasoning 
+
+Require: Global Memory G, Structured Hierarchical Memory M, Query Q, Small LM Ranker S,LLM Reasoning Agent R, Embedding Model E
+
+Ensure: Final Response O 
+
+> 1:
+
+Initialize S (local small LM agent) and R (LLM judger & reasoning agent)  
+
+> 2:
+
+Gcmp = LLM_Compress (G) 
+
+> 3:
+
+J = R(Q, Gcmp ) Judger evaluates context sufficiency  
+
+> 4:
+
+if J == False then  
+
+> 5:
+
+Membed = E (caption (Mi)) , ∀M i ∈ M  
+
+> 6:
+
+Mrel = StepwiseRetrieval (Membed , Q) 
+
+> 7:
+
+Mcmp = LLM_Compress (Mrel ) 
+
+> 8:
+
+else  
+
+> 9:
+
+Mcmp = ∅ 
+
+> 10:
+
+end if  
+
+> 11:
+
+Mrank = S(Mcmp , Q) Rank memory by query relevance  
+
+> 12:
+
+FinalPrompt = TemplateIntegrate (Gcmp , Mrank , Q) 
+
+> 13:
+
+O = R(FinalPrompt )
+
+video segments. Subsequently, we employ the pre-trained motion agent in conjunction with a detailed captioning agent to construct local structural memory. Specifically, we adopt a paging strategy for memory construction: each page incorporates visual features, corresponding detailed captions, and motion analysis, thereby providing a comprehensive analysis of an ultra-fine video segment. To effectively incorporate motion vectors into our design, we utilize a vector database. First, we store the motion vectors of the entire video in the database on a block-by-block basis. Following each round of agent interaction, we update the database by slicing the motion vectors, then integrate the updated motion vectors into the structural memory to support subsequent reasoning. This design not only enables efficient handling of ultra-long videos but also significantly reduces the complexity associated with storing and retrieving video primitives. After the structural memory is constructed, a reasoning agent is employed to traverse the entire memory and perform long-context reasoning to generate the final answer. ToolPrompt = AgentTemplate.plugin (TaskPrompt ),
+
+TaskPrompt ∈ { Seg location , Visual analysis , Detailed caption },O = agent (ToolPrompt , Visual_frames )
+
+(5) ToolPrompt = AgentTemplate.plugin (TaskPrompt ),
+
+TaskPrompt ∈ { Motion analysis },
+
+Selected_MV = motionDB .fetchGOP (Visual_frames ),O = agent (Toolprompt , Visual_frames , Selected_MV ),
+
+motionDB .integrate (Selected_MV )
+
+(6) 
+
+3.3 GOP-Tree Reasoning 
+
+To effectively reason over the long-term memory constructed above, we integrate the GOP-tree rea-soning algorithm into the reasoning agent to efficiently handle long-context processing. Specifically, our pipeline first employs a large language model (LLM) to compress the global context generated by the global agent. Subsequently, if the LLM-based judge (i.e., the reasoning agent) determines that the current information is insufficient for reasoning, a text embedding model will embed the detailed caption of each page in the structural memory and sequentially search for relevant pages, as shown in Algorithm 1. Finally, all compressed relevant pages, together with the compressed global information, are fed into the reasoning agent to generate the final response. Specifically, a small-scale language model (LM) agent ranks the importance of each selected memory segment based on its relevance to the query and integrates all memory segments into the instruction template. We deploy this small-scale LM agent locally to reduce time consumption and enhance reasoning efficiency, after which the reasoning agent generates the corresponding response. 54 Experiments 
+
+4.1 Experiments Setup 
+
+This section details the configuration of our framework, encompassing the setup of various agents, the training process for the motion agent, and the initialization of the vector database. As outlined in the preceding section, our framework integrates four agents (i.e., the motion agent, caption agent, global agent, and reasoning agent) that collaboratively implement a coarse-to-fine zoom-in strategy. Specifically, we employ Qwen-2.5 VL [ 67 ] as the global agent, Auroracap [ 68 ] as the caption agent, and a locally self-trained motion agent. For the reasoning agent, we utilize Deepseek-V3 [ 69 ], leveraging its API to facilitate long-context inference. The motion agent is trained using the Llava-Next Video [ 5 ] training pipeline, with both pre-training and mid-training datasets remaining consistent. The Qwen2 [ 51 ] model serves as the LLM backbone, while SigLip-2 [ 70 ] is adopted as the vision encoder. Furthermore, the final fine-tuning phase incorporates 20,000 motion caption entries sourced from the LLaVA-Hound [ 5 ] dataset, which were generated by GPT-4o [ 42 ]. Detailed training losses are discussed in the preceding section. For the vector database, we utilize ChromaDB [ 71 ] to enable efficient retrieval and caching of relevant video segments. The video is initially divided into short segments, with the motion vectors of each segment cached. During subsequent interaction rounds, the corresponding vector segments are dynamically retrieved and updated in the database. This process adheres to a coarse-to-fine strategy to optimize efficiency. 
+
+4.2 Evaluation Benchmarks and Metrics 
+
+To comprehensively evaluate the effectiveness of our framework, we utilize seven benchmarks to assess the performance of our agentic framework in motion analysis and long-form video understand-ing, alongside five benchmarks to evaluate the performance of our self-trained motion agent. The seven benchmarks include VideoMME [4], MotionBench [72], NextQA [73], LongVideoBench [3], LVBench [ 74 ], Egoschema [ 75 ] and MLVU [ 76 ]. VideoMME provides a comprehensive video question answering (VQA) evaluation spanning both short and long videos, while MotionBench, Egoschema and NextQA emphasize temporal event understanding and motion analysis. In contrast, LongVideoBench, LVBench, and MLVU focus specifically on long video understanding. Additionally, we evaluate our motion agent on MSVD [ 77 ], MSRVTT [ 78 ], ActivityNet QA [ 79 ], MotionBench, and NextQA to highlight its superior single-agent motion understanding capabilities. For each benchmark, we report the VQA accuracy. 
+
+4.3 Quantitative Results 4.3.1 Agentic framework results 
+
+In this section, we present a comprehensive analysis to evaluate various agentic video understanding frameworks. To assess the performance of these frameworks in temporal motion understanding, we compare video question answering (VQA) accuracy results, as summarized in Table 1. The evaluations are conducted on the Video-MME, NextQA, and MotionBench datasets. Video-MME encompasses the analysis of short, medium, and long videos; NextQA provides a more focused evaluation of temporal reasoning; and MotionBench offers an in-depth analysis of motion under-standing. As shown in Table 1, our method achieves superior performance across nearly all three temporal understanding VQA benchmarks, with the exception of Video-MME long. Additionally, our framework outperforms most closed-source models and achieves the highest performance among all agentic video understanding frameworks. Table 2 further highlights the effectiveness of our framework in long video understanding, where it demonstrates state-of-the-art VQA performance on the LongVideoBench and MLVU benchmarks, while achieving competitive results on LVBench and Video-MME long. Collectively, the results in Table 1 and Table 2 validate the robustness and effectiveness of our video understanding framework. 
+
+4.3.2 Single agent results 
+
+To further evaluate the effectiveness of our pipeline for developing the motion agent, we conducted additional experiments to assess the temporal and motion understanding capabilities of various vision-language models (VLMs). As presented in Table 3, our method achieves superior video question answering (VQA) performance on the MSVD, MSRVTT, MotionBench, and ActivityNetQA 6Table 1: Comparison on VideoMME, EgoSchema and MotionBench. VideoMME provides a compre-hensive evaluation of the VQA performance, while EgoSchema gives a detailed temporal understand-ing analysis and MotionBench gives a detailed motion understanding evaluation. 
+
+Methods Video-MME (w/o sub) MotionBench EgoSchema 
+
+Short Medium Long Overall Dev Test Closed-Source Models 
+
+Gemini-2.0-Flash [30] - - 63.0 - - - 71.2 Gemini-1.5-Pro [30] 81.7 74.3 67.4 75.0 51.0 50.0 71.1 OpenAI o3 [41] - - 63.2 - - - 63.2 GPT-4o [42] 80.0 70.3 65.3 71.9 - - 72.2 
+
+Open-Source Models 
+
+Qwen2.5-VL-72B [43] - - - 73.3 56.14 56.1 76.2 mPLUG-Owl3 [37] 70.0 57.7 50.1 59.3 - - -InternVL2.5-72B [44] 82.8 70.9 62.6 72.1 60.9 61.0 -AdaReTaKe [56] 80.6 74.9 65.0 73.5 - - -
+
+Agentic video understanding framework 
+
+VideoAgent [58] - - - - - - 60.2 VideoAgent [34] - - - - - - 63.2 VideoTree [28] - - 54.2 - 52.9 53.1 54.2 VCA [35] - - - - 52.5 51.3 73.6 Logic-in-Frames [80] 71.9 61.9 55.2 63.0 - - -MR. Video [63] - - 61.8 - - - 73.0 VideoLucy [22] 78.6 72.1 66.8 72.5 58.7 59.1 -Deep Video Discovery [24] - - 67.3 - 62.7 63.4 76.6 
+
+GOPAgen(Ours) 84.5 75.1 66.7 75.4 64.5 65.3 78.7 
+
+benchmarks, while delivering competitive results on NextQA. Furthermore, our training protocol, based on the Llava-Next-Video model, demonstrates significantly enhanced performance across all motion understanding benchmarks. Notably, while our model achieves competitive VQA performance relative to ReMoRA, our motion agent surpasses ReMoRA on the MSVD and ActivityNetQA benchmarks. These findings underscore the effectiveness of our training pipeline. 
+
+4.4 Qualitative Comparison 
+
+In this section, we visualize the reasoning process of our framework and provide concrete examples that highlight the superior understanding capabilities of our method. As illustrated in Fig. 3, our framework begins by extracting a high-level summary of coarse video segments through two rounds of summarization, constructing a hierarchical global memory. Subsequently, through agentic reasoning and analysis, relevant memory segments are selected for further refinement. Following this, the captioning agent and motion agent collaboratively construct local structural memory pages. Each memory page corresponds to a super-fine local video segment, comprising a detailed caption, a motion description, and the associated GOP blocks retrieved from the motion vector database. After processing and reasoning over the local memory pages, all coarse-to-fine memory information is integrated and passed to the reasoning agent for final memory consolidation and long-context reasoning. As depicted in Fig. 4, compared to the previous state-of-the-art agentic video understanding framework, Video-Lucy, our framework demonstrates superior performance in long video counting, action recognition, and motion and temporal understanding. These results further validate the effectiveness and superior performance of our proposed pipeline for agentic video understanding. 
+
+4.5 Ablation Analysis 
+
+To further investigate the contribution of our trained motion agent to the overall performance of the framework, we conduct a comprehensive ablation analysis. Specifically, we replace the motion agent with different alternatives while keeping all other components of the framework unchanged. As shown in Table 4, we integrate various open-sourced VLM models as the motion agent into our agentic framework and evaluate the overall VQA performance. Our proposed motion agent, 7Table 2: Comparison across long video benchmarks, including LVBench, LongVideoBench, VideoMME-long, and MLVU, highlights the strong performance of our framework. 
+
+Methods LVBench LongVideoBench (Val) Video MME MLVU Overall Overall Long Long (w/o sub) Overall 
+
+Closed-Source Models 
+
+Gemini-1.5-Pro [30] 33.1 64.0 58.6 67.4 -Gemini-2.0-Flash [30] 48.3 - 45.7 63.0 -GPT-4o [42] 48.9 66.7 60.9 65.3 64.6 OpenAI o3 [41] 57.1 67.5 60.6 63.2 -
+
+Open-Source Models 
+
+mPLUG-Owl3 [37] 43.5 59.8 - 50.1 -InternVL2.5-78B [44] 43.6 63.6 - 62.6 75.7 Qwen2.5-VL-72B [43] 47.7 60.7 - - 74.6 AdaReTaKe [56] 53.3 67.0 - 65.0 -
+
+Agentic video understanding framework 
+
+VideoTree [28] 28.8 - - 54.2 60.4 VideoAgent [58] 29.3 - - - -VideoRAG [21] - - - - 72.4 VCA [35] 41.3 - - - -MR. Video [63] 60.8 - 61.6 61.8 -VideoLucy [22] 58.8 70.2 - 66.8 76.1 Deep Video Discovery [24] 74.2 71.6 68.6 67.3 -
+
+GOPAgen(Ours) 73.5 73.2 69.7 66.7 77.3 
+
+Table 3: Performance comparison across mainstream video question answering benchmarks, including MSVD, MSRVTT, NexTQA, MotionBench and ActivityNetQA. SOTA video VLMs and codec-based video models are included for comprehensive comparison.                                                             
+
+> Methods MSVD MSRVTT NexTQA MotionBench ActivityNetQA
+> (Dev/Test)
+> Open-sourced Video VLM
+> LLaVA-NeXT-Video [2] 71.3 56.5 77.3 48/40 47.6 Video-LLava (EMNLP 2024) [20] 70.7 59.2 ––45.3 LLama-VID (ECCV 2024) [26] 69.7 57.7 ––47.4 MovieChat (CVPR 2024) [1] 75.2 52.7 ––45.7 VideoChat2 (CVPR 2024) [81] 70.0 54.1 61.7 –49.1 PLLaVA [82] 76.6 62.0 –52/51 56.3 Video-LLAMA2 [83] 70.5 –––50.3
+> Video codec-based VLM
+> VideoLaVIT (ICML 2024) [84] 73.2 59.3 –40.1/40.8 50.1 EMA (CVPR 2025) [85] 75.8 58.5 ––52.1 ReMoRa (CVPR 2026) [9] 73.1 –84.2 –60.5
+> Ours (Motion Agent) 77.5 65.1 83.1 55.7/55.5 61.7
+
+trained with more detailed motion captioning data, achieves superior VQA results on NextQA and LVBench, highlighting its effectiveness in enhancing agentic temporal reasoning and long-term video understanding capabilities. 
+
+4.6 Time and Token Efficiency 
+
+To comprehensively evaluate the practicability and efficiency of different agentic video understanding frameworks, we further analyze their time and token efficiency. Regarding time efficiency, our framework achieves approximately 52% of the average time consumption of Video-Lucy and 28.6% of that of DVD, highlighting its high efficiency in handling VQA tasks (see Appendix for further details). Furthermore, we calculate the average number of visual tokens using Eq. (7), where Ds 
+
+denote the total video duration (in seconds), Rs the frame sampling rate, and N f the average tokens 8Figure 3: Case study of detail motion perception and long-form video understanding. Table 4: Ablation analysis for different motion agent choices. The metric represents accuracy when different motion agent is plugged into our framework.               
+
+> Methods NextQA LVBench
+> Open-Source VLM as motion agent
+> InternVL2.5-78B [44] 78.7 70.2 VideoLLaMA3-7B [15] 79.8 70.7 Qwen2.5-VL-72B [43] 81.5 71.8 VideoChat-Flash [27] 80.2 69.8 LLaVA-NeXT-Video [2] 80.7 71.3
+> Motion Agent(Ours) 83.1 73.5
+
+Figure 4: Visualization and comparison of concrete cases for detailed understanding of long-form videos. Our framework employs a zoom-in strategy, transitioning from global coarse memory to local structural memory, to enable the comprehensive extraction of query-relevant information. per frame. DVD pre-segments each video into 10-second clips and performs exhaustive captioning and embedding extraction for all segments before reasoning. The total visual token cost of DVD can be expressed as: 
+
+N um DVD = Ds × Rs × N f. (7) For a 15-minute ( Ds =900 s) video, with Rs =4 FPS and N f =1 ,200 , DVD consumes at least 4.32M visual tokens , excluding additional tokens for captioning and retrieval, which represents a conservative lower bound. In comparison, GOPAgen consumes approximately 0.061M visual tokens , amounting to ≤1/70 of the tokens required by DVD for a 15-minute video with a single query, underscoring the efficiency of our framework. 
+
+# 5 Conclusion 
+
+In this paper, we propose GOPAgen, an agentic video understanding framework leveraging GOP blocks from video codecs. By efficiently utilizing motion vectors and incorporating codec-friendly primitives into agentic reasoning, our method achieves superior video understanding through a 9tailored motion agent, structural memory, and reasoning algorithm. The results highlight the potential of video-codec-friendly agentic frameworks for future advancements. 
+
+# References 
+
+[1] Song, Enxin, Chai, Wenhao, Wang, Guanhong, Zhang, Yucheng, Zhou, Haoyang, Wu, Feiyang, and others. Moviechat: From dense token to sparse memory for long video understanding. 
+
+CVPR , pages 18221–18232, 2024. [2] Li, Feng, Zhang, Renrui, Zhang, Hao, Zhang, Yuanhan, Li, Bo, Li, Wei, and others. Llava-next-interleave: Tackling multi-image, video, and 3d in large multimodal models. arXiv preprint arXiv:2407.07895 , 2024. [3] Wu, Haoning, Li, Dongxu, Chen, Bei, and Li, Junnan. Longvideobench: A benchmark for long-context interleaved video-language understanding. Advances in Neural Information Processing Systems (NeurIPS) , 2024. [4] Fu, Chaoyou, Dai, Yuhan, Luo, Yongdong, Li, Lei, Ren, Shuhuai, Zhang, Renrui, and others. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR) ,pages 24108–24118, 2025. [5] Li, Bo, Zhang, Yuanhan, Guo, Dong, Zhang, Renrui, Li, Feng, Zhang, Hao, and others. Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326 , 2024. [6] Wang, Peng, Bai, Shuai, Tan, Sinan, Wang, Shijie, Fan, Zhihao, Bai, Jinze, and others. Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 , 2024. [7] Chen, Shimin, Lan, Xiaohan, Yuan, Yitian, Jie, Zequn, and Ma, Lin. Timemarker: A versatile video-llm for long and short video understanding with superior temporal localization ability. 
+
+arXiv preprint arXiv:2411.18211 , 2024. [8] Chen, Yukang, Xue, Fuzhao, Li, Dacheng, Hu, Qinghao, Zhu, Ligeng, Li, Xiuyu, and oth-ers. Longvila: Scaling long-context visual language models for long videos. arXiv preprint arXiv:2408.10188 , 2024. [9] Yashima, Daichi, Kurita, Shuhei, Oda, Yusuke, and Sugiura, Komei. ReMoRa: Multimodal Large Language Model based on Refined Motion Representation for Long-Video Understanding. 
+
+arXiv preprint arXiv:2602.16412 , 2026. [10] Chen, Zhe, Wang, Weiyun, Cao, Yue, Liu, Yangzhou, Gao, Zhangwei, Cui, Erfei, and others. Expanding performance boundaries of open-source multimodal models with model, data, and test-time scaling. arXiv preprint arXiv:2412.05271 , 2024. [11] Fei, Jiajun, Li, Dian, Deng, Zhidong, Wang, Zekun, Liu, Gang, and Wang, Hui. Video-ccam: Enhancing video-language understanding with causal cross-attention masks for short and long videos. arXiv preprint arXiv:2408.14023 , 2024. [12] Gao, Lishuai, Zhong, Yujie, Zeng, Yingsen, Tan, Haoxian, Li, Dengjie, and Zhao, Zheng. Linvt: Empower your image-level large language model to understand videos. arXiv preprint arXiv:2412.05185 , 2024. [13] Team GLM, Zeng, Aohan, Xu, Bin, Wang, Bowen, Zhang, Chenhui, Yin, Da, and others. Chatglm: A family of large language models from glm-130b to glm-4 all tools. arXiv preprint arXiv:2406.12793 , 2024. [14] Cheng, Chuanqi, Guan, Jian, Wu, Wei, and Yan, Rui. Scaling video-language models to 10k frames via hierarchical differential distillation. ICML , 2025. [15] Zhang, Boqiang, Li, Kehan, Cheng, Zesen, Hu, Zhiqiang, Yuan, Yuqian, Chen, Guanzheng, and others. Videollama 3: Frontier multimodal foundation models for image and video understand-ing. arXiv preprint arXiv:2501.13106 , 2025. 10 [16] Liu, Zuyan, Dong, Yuhao, Liu, Ziwei, Hu, Winston, Lu, Jiwen, and Rao, Yongming. Videomind: A chain-of-lora agent for long video reasoning. arXiv preprint arXiv:2503.13444 , 2025. [17] Liu, Zuyan, Dong, Yuhao, Liu, Ziwei, Hu, Winston, Lu, Jiwen, and Rao, Yongming. Oryx mllm: On-demand spatial-temporal understanding at arbitrary resolution. ICLR , 2025. [18] Park, Jongwoo, Ranasinghe, Kanchana, Kahatapitiya, Kumara, Ryu, Wonjeong, Kim, Donghyun, and Ryoo, Michael S. Too many frames, not all useful: Efficient strategies for long-form video qa. arXiv preprint arXiv:2406.09396 , 2024. [19] Shu, Yan, Liu, Zheng, Zhang, Peitian, Qin, Minghao, Zhou, Junjie, Liang, Zhengyang, and others. Video-xl: Extra-long vision language model for hour-scale video understanding. arXiv preprint arXiv:2409.14485 , 2024. [20] Lin, Bin, Ye, Yang, Zhu, Bin, Cui, Jiaxi, Ning, Munan, Jin, Peng, and others. Video-llava: Learning united visual representation by alignment before projection. Proceedings of the 2024 conference on empirical methods in natural language processing , pages 5971–5984, 2024. [21] Luo, Yongdong, Zheng, Xiawu, Yang, Xiao, Li, Guilin, Lin, Haojia, Huang, Jinfa, and others. Video-rag: Visually-aligned retrieval-augmented long video comprehension. arXiv preprint arXiv:2411.13093 , 2024. [22] Zuo, Jialong, Deng, Yongtai, Kong, Lingdong, Yang, Jingkang, Jin, Rui, Zhang, Yiwei, and others. Videolucy: Deep memory backtracking for long video understanding. arXiv preprint arXiv:2510.12422 , 2025. [23] Zhao, Jun, Zu, Can, Xu, Hao, Lu, Yi, He, Wei, Ding, Yiwen, and others. Longagent: scaling language models to 128k context through multi-agent collaboration. arXiv preprint arXiv:2402.11550 , 2024. [24] Zhang, Xiaoyi, Jia, Zhaoyang, Guo, Zongyu, Li, Jiahao, Li, Bin, Li, Houqiang, and others. Deep video discovery: Agentic search with tool use for long-form video understanding. arXiv preprint arXiv:2505.18079 , 2025. [25] Zhang, Peiyuan, Zhang, Kaichen, Li, Bo, Zeng, Guangtao, Yang, Jingkang, Zhang, Yuanhan, and others. Long context transfer from language to vision. arXiv preprint arXiv:2406.16852 ,2024. [26] Li, Yanwei, Wang, Chengyao, and Jia, Jiaya. Llama-vid: An image is worth 2 tokens in large language models. European Conference on Computer Vision , pages 323–340, 2024. [27] Li, Xinhao, Wang, Yi, Yu, Jiashuo, Zeng, Xiangyu, Zhu, Yuhan, Huang, Haian, and others. VideoChat-Flash: Hierarchical compression for long-context video modeling. arXiv preprint arXiv:2501.00574 , 2024. [28] Wang, Ziyang, Yu, Shoubin, Stengel-Eskin, Elias, Yoon, Jaehong, Cheng, Feng, Bertasius, Gedas, and others. Videotree: Adaptive tree-based video representation for llm reasoning on long videos. Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR) ,pages 3272–3283, 2025. [29] OpenAI. Introducing GPT-4.1 in the API. 2025. [30] Team, Gemini, Anil, Rohan, Borgeaud, Sebastian, Alayrac, Jean-Baptiste, Yu, Jiahui, Soricut, Radu, and others. Gemini: a family of highly capable multimodal models. arXiv preprint arXiv:2312.11805 , 2023. [31] OpenAI. Introducing Deep Research. 2025. [32] Jina AI. DeepSearch. 2025. [33] xAI. Grok 3 Beta — The Age of Reasoning Agents. 2025. [34] Fan, Yue, Ma, Xiaojian, Wu, Rujie, Du, Yuntao, Li, Jiaqi, Gao, Zhi, and others. Videoagent: A memory-augmented multimodal agent for video understanding. European Conference on Computer Vision (ECCV) , pages 75–92, 2024. 11 [35] Yang, Zeyuan, Chen, Delin, Yu, Xueyang, Shen, Maohao, and Gan, Chuang. Vca: Video curious agent for long video understanding. Proceedings of the IEEE International Conference on Computer Vision (ICCV) , pages 20168–20179, 2025. [36] Liu, Haotian, Li, Chunyuan, Wu, Qingyang, and Lee, Yong Jae. Visual instruction tuning. 
+
+Advances in neural information processing systems (NeurIPS) , volume 36, pages 34892–34916, 2023. [37] Ye, Jiabo, Xu, Haiyang, Liu, Haowei, Hu, Anwen, Yan, Ming, Qian, Qi, and others. mPLUG-OWL3: Towards long image-sequence understanding in multi-modal large language models. 
+
+International Conference on Learning Representations (ICLR) , 2025. [38] Shao, Zhenwei, Wang, Mingyang, Yu, Zhou, Pan, Wenwen, Yang, Yan, Wei, Tao, and others. Growing a twig to accelerate large vision-language models. Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pages 20064–20074, 2025. [39] Yu, Zhou, Ouyang, Xuecheng, Shao, Zhenwei, Wang, Meng, and Yu, Jun. Prophet: Prompting large language models with complementary answer heuristics for knowledge-based visual question answering. IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI) ,2025. [40] Shao, Zhenwei, Yu, Zhou, Yu, Jun, Ouyang, Xuecheng, Zheng, Lihao, Gai, Zhenbiao, and others. Imp: Highly capable large multimodal models for mobile devices. IEEE Transactions on Multimedia (TMM) , 2025. [41] OpenAI. Introducing OpenAI o3 and o4-mini. 2025. [42] Achiam, Josh, Adler, Steven, Agarwal, Sandhini, Ahmad, Lama, Akkaya, Ilge, Aleman, Floren-cia Leoni, and others. GPT-4 technical report. arXiv preprint arXiv:2303.08774 , 2023. [43] Bai, Shuai, Chen, Keqin, Liu, Xuejing, Wang, Jialin, Ge, Wenbin, Song, Sibo, and others. Qwen2.5-VL technical report. arXiv preprint arXiv:2502.13923 , 2025. [44] Wang, Yi, Li, Xinhao, Yan, Ziang, He, Yinan, Yu, Jiashuo, Zeng, Xiangyu, and others. Intern-Video2.5: Empowering video MLLMs with long and rich context modeling. arXiv preprint arXiv:2501.12386 , 2025. [45] Wei, Hongchen, and Chen, Zhenzhong. Visual context window extension: A new perspective for long video understanding. Proceedings of the 33rd ACM International Conference on Multimedia (ACM MM) , pages 4281–4289, 2025. [46] Yang, Chenyu, Dong, Xuan, Zhu, Xizhou, Su, Weijie, Wang, Jiahao, Tian, Hao, and others. Pvc: Progressive visual token compression for unified image and video processing in large vision-language models. Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR) , pages 24939–24949, 2025. [47] Tao, Keda, Qin, Can, You, Haoxuan, Sui, Yang, and Wang, Huan. Dycoke: Dynamic compres-sion of tokens for fast video large language models. Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR) , pages 18992–19001, 2025. [48] Shen, Xiaoqian, Xiong, Yunyang, Zhao, Changsheng, Wu, Lemeng, Chen, Jun, Zhu, Chenchen, and others. Longvu: Spatiotemporal adaptive compression for long video-language understand-ing. arXiv preprint arXiv:2410.17434 , 2024. [49] Cappellazzo, Umberto, Kim, Minsu, Chen, Honglie, Ma, Pingchuan, Petridis, Stavros, Falavigna, Daniele, and others. Large language models are strong audio-visual speech recognition learners. 
+
+ICASSP 2025-2025 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 1–5, 2025. [50] Shu, Fangxun, Zhang, Lei, Jiang, Hao, and Xie, Cihang. Audio-visual llm for video under-standing. Proceedings of the IEEE International Conference on Computer Vision (ICCV) , pages 4246–4255, 2025. 12 [51] Xu, Jin, Guo, Zhifang, He, Jinzheng, Hu, Hangrui, He, Ting, Bai, Shuai, and others. Qwen2.5-omni technical report. arXiv preprint arXiv:2503.20215 , 2025. [52] Song, Enxin, Chai, Wenhao, Ye, Tian, Hwang, Jenq-Neng, Li, Xi, and Wang, Gaoang. Moviechat+: Question-aware sparse memory for long video question answering. IEEE Transac-tions on Pattern Analysis and Machine Intelligence , 2025. [53] Yao, Linli, Wu, Haoning, Ouyang, Kun, Zhang, Yuanxing, Xiong, Caiming, Chen, Bei, and others. Generative frame sampler for long video understanding. Findings of the Association for Computational Linguistics: ACL 2025 , pages 17900–17917, 2025. [54] Tang, Xi, Qiu, Jihao, Xie, Lingxi, Tian, Yunjie, Jiao, Jianbin, and Ye, Qixiang. Adaptive keyframe sampling for long video understanding. Proceedings of the Computer Vision and Pattern Recognition Conference , pages 29118–29128, 2025. [55] Bolya, Daniel, Fu, Cheng-Yang, Dai, Xiaoliang, Zhang, Peizhao, Feichtenhofer, Christoph, and Hoffman, Judy. Token merging: Your vit but faster. arXiv preprint arXiv:2210.09461 , 2022. [56] Wang, Xiao, Si, Qingyi, Zhu, Shiyu, Wu, Jianlong, Cao, Li, and Nie, Liqiang. Adaretake: Adaptive redundancy reduction to perceive longer for video-language understanding. Findings of the Association for Computational Linguistics (ACL) , pages 5417–5432, 2025. [57] Kahatapitiya, Kumara, Ranasinghe, Kanchana, Park, Jongwoo, and Ryoo, Michael S. Lan-guage repository for long video understanding. Findings of the Association for Computational Linguistics: ACL 2025 , pages 5627–5646, 2025. [58] Wang, Xiaohan, Zhang, Yuhui, Zohar, Orr, and Yeung-Levy, Serena. VideoAgent: Long-form video understanding with large language model as agent. European Conference on Computer Vision (ECCV) , 2024. [59] Ma, Ziyu, Gou, Chenhui, Shi, Hengcan, Sun, Bin, Li, Shutao, Rezatofighi, Hamid, and others. Drvideo: Document retrieval based long video understanding. CVPR , 2025. [60] Chen, Boyu, Yue, Zhengrong, Chen, Siran, Wang, Zikang, Liu, Yang, Li, Peng, and others. Lvagent: Long video understanding by multi-round dynamical collaboration of mllm agents. 
+
+arXiv preprint arXiv:2503.10200 , 2025. [61] Li, Chuanhao, Li, Zhen, Jing, Chenchen, Liu, Shuo, Shao, Wenqi, Wu, Yuwei, and others. Searchlvlms: A plug-and-play framework for augmenting large vision-language models by searching up-to-date internet knowledge. Advances in Neural Information Processing Systems (NeurIPS) , volume 37, pages 64582–64603, 2024. [62] He, Bo, Li, Hengduo, Jang, Young Kyun, Jia, Menglin, Cao, Xuefei, Shah, Ashish, and others. Ma-lmm: Memory-augmented large multimodal model for long-term video understanding. 
+
+Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) ,pages 13504–13514, 2024. [63] Pang, Ziqi, and Wang, Yu-Xiong. Mr. video: "mapreduce" is the principle for long video understanding. arXiv preprint arXiv:2504.16082 , 2025. [64] Jeong, Soyeong, Kim, Kangsan, Baek, Jinheon, and Hwang, Sung Ju. Videorag: Retrieval-augmented generation over video corpus. arXiv preprint arXiv:2501.05874 , 2025. [65] Yin, Yufei, Meng, Qianke, Chen, Minghao, Ding, Jiajun, Shao, Zhenwei, and Yu, Zhou. VideoARM: Agentic Reasoning over Hierarchical Memory for Long-Form Video Understanding. 
+
+arXiv preprint arXiv:2512.12360 , 2025. [66] Yao, Shunyu, Zhao, Jeffrey, Yu, Dian, Du, Nan, Shafran, Izhak, Narasimhan, Karthik, and others. ReAct: Synergizing reasoning and acting in language models. International Conference on Learning Representations (ICLR) , 2023. [67] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, and others. Qwen2.5-VL Technical Report. ArXiv , volume abs/2502.13923, 2025. 13 [68] Chai, Wenhao, Song, Enxin, Du, Yilun, Meng, Chenlin, Madhavan, Vashisht, Bar-Tal, Omer, and others. Auroracap: Efficient, performant video detailed captioning and a new benchmark. 
+
+arXiv preprint arXiv:2410.03051 , 2024. [69] Liu, Aixin, Feng, Bei, Xue, Bing, Wang, Bingxuan, Wu, Bochao, Lu, Chengda, and others. Deepseek-v3 technical report. arXiv preprint arXiv:2412.19437 , 2024. [70] Tschannen, Michael, Gritsenko, Alexey, Wang, Xiao, Naeem, Muhammad Ferjad, Alabdul-mohsin, Ibrahim, Parthasarathy, Nikhil, and others. Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786 , 2025. [71] Vijay, M, Bhavana, T, Pranavi, C, Sethu, N Hasika, and Prashsanth, K. Automating Personalized Email Outreach: A LangChain–LLaMA Framework with ChromaDB and Groq Cloud. 2025 5th International Conference on Ubiquitous Computing and Intelligent Information Systems (ICUIS) , pages 243–250, 2025. [72] Hong, Wenyi, Cheng, Yean, Yang, Zhuoyi, Wang, Weihan, Wang, Lefan, Gu, Xiaotao, and others. Motionbench: Benchmarking and improving fine-grained video motion understanding for vision language models. Proceedings of the Computer Vision and Pattern Recognition Conference , pages 8450–8460, 2025. [73] Xiao, Junbin, Shang, Xindi, Yao, Angela, and Chua, Tat-Seng. Next-qa: Next phase of question-answering to explaining temporal actions. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 9777–9786, 2021. [74] Wang, Weihan, He, Zehai, Hong, Wenyi, Cheng, Yean, Zhang, Xiaohan, Qi, Ji, and others. Lvbench: An extreme long video understanding benchmark. Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 22958–22967, 2025. [75] Mangalam, Karttikeya, Akshulakov, Raiymbek, and Malik, Jitendra. Egoschema: A diagnostic benchmark for very long-form video language understanding. Advances in Neural Information Processing Systems , volume 36, pages 46212–46244, 2023. [76] Zhou, Junjie, Shu, Yan, Zhao, Bo, Wu, Boya, Liang, Zhengyang, Xiao, Shitao, and others. Mlvu: Benchmarking multi-task long video understanding. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 13691–13701, 2025. [77] Chen, David, and Dolan, William B. Collecting highly parallel data for paraphrase evaluation. 
+
+Proceedings of the 49th annual meeting of the association for computational linguistics: human language technologies , pages 190–200, 2011. [78] Xu, Jun, Mei, Tao, Yao, Ting, and Rui, Yong. Msr-vtt: A large video description dataset for bridging video and language. Proceedings of the IEEE conference on computer vision and pattern recognition , pages 5288–5296, 2016. [79] Yu, Zhou, Xu, Dejing, Yu, Jun, Yu, Ting, Zhao, Zhou, Zhuang, Yueting, and others. Activitynet-qa: A dataset for understanding complex web videos via question answering. Proceedings of the AAAI conference on artificial intelligence , volume 33, pages 9127–9134, 2019. [80] Guo, Weiyu, Chen, Ziyang, Wang, Shaoguang, He, Jianxiang, Xu, Yijie, Ye, Jinhui, and others. Logic-in-frames: Dynamic keyframe search via visual semantic-logical verification for long video understanding. arXiv preprint arXiv:2503.13139 , 2025. [81] Li, Kunchang, Wang, Yali, He, Yinan, Li, Yizhuo, Wang, Yi, Liu, Yi, and others. Mvbench: A comprehensive multi-modal video understanding benchmark. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 22195–22206, 2024. [82] Xu, Lin, Zhao, Yilin, Zhou, Daquan, Lin, Zhijie, Ng, See Kiong, and Feng, Jiashi. Pllava: Parameter-free llava extension from images to videos for video dense captioning. arXiv preprint arXiv:2404.16994 , 2024. 14 [83] Cheng, Zesen, Leng, Sicong, Zhang, Hang, Xin, Yifei, Li, Xin, Chen, Guanzheng, and others. Videollama 2: Advancing spatial-temporal modeling and audio understanding in video-llms. 
+
+arXiv preprint arXiv:2406.07476 , 2024. [84] Jin, Yang, Sun, Zhicheng, Xu, Kun, Chen, Liwei, Jiang, Hao, Huang, Quzhe, and others. Video-lavit: Unified video-language pre-training with decoupled visual-motional tokenization. 
+
+arXiv preprint arXiv:2402.03161 , 2024. [85] Zhao, Zijia, Huo, Yuqi, Yue, Tongtian, Guo, Longteng, Lu, Haoyu, Wang, Bingning, and others. Efficient motion-aware video mllm. Proceedings of the Computer Vision and Pattern Recognition Conference , pages 24159–24168, 2025. 15
