@@ -1,0 +1,262 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-09T21:38:29.248276+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2606.07669v1",
+      "source": "arxiv",
+      "title": "MemoVAD: Resource-Efficient Video Anomaly Detection via Dynamic Semantic Memory in Edge Computing Scenarios",
+      "abstract": "Deploying Video Anomaly Detection (VAD) in real-world surveillance faces a fundamental tension between the demand for high-level semantics to ensure effectiveness and the limited computational resources of edge devices. Vision-Language Models (VLMs) provide rich open-vocabulary semantics, but their latency and computational cost preclude on-device deployment. To address the challenge, we propose MemoVAD, an edge-cloud collaborative framework that selectively incorporates VLM semantics into streaming VAD. MemoVAD runs most inference on the edge with a lightweight detector and a causal Temporal Context Encoder (TCE) to model temporal dependencies. Specifically, we introduce an Uncertainty-Aware Gating (UAG) policy grounded in Subjective Logic to model perceived uncertainty and query the cloud-based VLM only for high-uncertainty and semantically novel clips. Besides, a Dynamic Semantic Memory (DSM) is designed to cache VLM-verified prototypes for efficient retrieval, enabling the edge model to progressively incorporate VLM-level semantics via a semantic adapter. Experiments on UCF-Crime and XD-Violence datasets via a real edge device show that MemoVAD substantially reduces communication overhead while surpassing state-of-the-art performance.",
+      "authors": [
+        "Guo Li",
+        "Jiandian Zeng",
+        "Yang Li",
+        "Zihao Peng",
+        "Ke Chen",
+        "Tian Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-04T06:57:28+00:00",
+      "link": "https://arxiv.org/pdf/2606.07669v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "edge-cloud collaborative framework for streaming video anomaly detection on edge",
+      "llm_evidence_cn": "边缘-云协作的流式视频异常检测框架",
+      "llm_evidence": "边缘-云协作的流式视频异常检测框架",
+      "canonical_evidence": "边缘-云协作的流式视频异常检测框架",
+      "llm_tldr_en": "MemoVAD is an edge-cloud collaborative framework for streaming video anomaly detection, directly addressing mobile edge computing in video analytics.",
+      "llm_tldr_cn": "该论文提出MemoVAD，一种边缘-云协同框架，专门针对边缘设备资源有限与高层语义需求之间的矛盾。其核心是轻量级边缘检测器结合因果时序编码器，并设计不确定性感知门控策略动态引入视觉语言模型语义，以在不超边缘计算负载的情况下提升异常检测性能。该方法直接应用于移动边缘计算场景中的流式视频分析，实现了资源高效的视频分析。",
+      "llm_tldr": "该论文提出MemoVAD，一种边缘-云协同框架，专门针对边缘设备资源有限与高层语义需求之间的矛盾。其核心是轻量级边缘检测器结合因果时序编码器，并设计不确定性感知门控策略动态引入视觉语言模型语义，以在不超边缘计算负载的情况下提升异常检测性能。该方法直接应用于移动边缘计算场景中的流式视频分析，实现了资源高效的视频分析。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing applications in video analytics",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.08615v1",
+      "source": "arxiv",
+      "title": "Harnessing Streaming Video in the Wild",
+      "abstract": "Vision-Language Models (VLMs) are increasingly required to process unbounded video streams in applications such as video-call assistants, live commentary, and embodied robots. An ideal streaming system should support proactive interaction, long-horizon memory, and real-time processing, while resting on a VLM backbone capable of handling diverse in-the-wild streaming tasks. However, existing VLMs excel at offline video understanding but fall short in streaming capabilities and lack dedicated infrastructure for streaming deployment. We address this gap on three fronts. (i) For backbone capability, we construct \\textbf{Streaming-Train-248K}, a streaming dataset paired with a novel training objective for adapting VLMs to streaming interaction and understanding. (ii) For real-world deployment, we introduce \\textbf{Streaming Harness}, a plug-and-play system that endows any VLM with three core abilities: proactive interaction (per-second response decisions), long-term memory (12-hour context retention), and real-time processing (sub-second latency). (iii) To drive continued community progress on streaming capabilities, we design \\textbf{Streaming-Eval}, a benchmark that reflects models' capabilities across diverse in-the-wild scenarios. Extensive experiments demonstrate consistent gains from our approach across all core capabilities required for streaming video understanding. We will open-source our data, code, and benchmark to advance the community's shift from offline video understanding to deployable streaming intelligence.",
+      "authors": [
+        "Dingyu Yao",
+        "Shuhuan Gu",
+        "Qingyi Si",
+        "Junhao Zhou",
+        "Chenxu Yang",
+        "Chuanyu Qin",
+        "Naibin Gu",
+        "Zheng Lin",
+        "Weiping Wang",
+        "Nan Duan",
+        "Jiaqi Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.CL"
+      ],
+      "published": "2026-06-07T13:00:19+00:00",
+      "link": "https://arxiv.org/pdf/2606.08615v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "streaming video dataset and training for real-time VLM",
+      "llm_evidence_cn": "流式视频数据集与实时VLM训练",
+      "llm_evidence": "流式视频数据集与实时VLM训练",
+      "canonical_evidence": "流式视频数据集与实时VLM训练",
+      "llm_tldr_en": "Proposes Streaming-Train-248K dataset and training objective to adapt VLMs for streaming video with real-time processing and proactive interaction.",
+      "llm_tldr_cn": "该论文针对现有视觉语言模型在流式视频场景下能力不足的问题，构建了一个流式视频数据集Streaming-Train-248K，并设计新的训练目标，使模型能够支持实时处理、长程记忆和主动交互。实验表明该方法显著提升了模型在多样化流式任务上的表现，为实际部署流式视频分析系统提供了基础设施。",
+      "llm_tldr": "该论文针对现有视觉语言模型在流式视频场景下能力不足的问题，构建了一个流式视频数据集Streaming-Train-248K，并设计新的训练目标，使模型能够支持实时处理、长程记忆和主动交互。实验表明该方法显著提升了模型在多样化流式任务上的表现，为实际部署流式视频分析系统提供了基础设施。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09175v1",
+      "source": "arxiv",
+      "title": "CANS: Accelerating Multiuser Collaborative Edge Inference via Cooperative Autodidactic NeuroSurgeon",
+      "abstract": "Recently, mobile edge computing (MEC)-enabled collaborative deep neural network (DNN) inference has emerged as a promising approach for delivering intelligent services to resource-constrained mobile devices. A representative scenario is multi-user collaborative edge inference, where distinct devices independently partition their DNN models and offload backend computation to a common edge server over wireless networks. However, determining the optimal DNN partition for each device is challenging due to unknown and time-varying system conditions, including fluctuating wireless links and diverse device capabilities. To address this problem, we propose Cooperative Autodidactic NeuroSurgeon (CANS), a collaborative edge inference framework that enables devices to adaptively learn optimal DNN partitions by sharing informative feedback during online inference. To handle the challenge of device heterogeneity and better leverage offline inference experience, we integrate a novel FedLinUCB-DW algorithm that groups devices of the same type and warm-starts online exploration using local offline early-exit inference experience. Furthermore, we provide theoretical guarantees for FedLinUCB-DW by deriving the regret upper bound. We also validate our method on both a simulated environment and a hardware prototype system. Empirical evaluations demonstrate that CANS achieves lower inference latency compared to state-of-the-art baselines. Especially, in prototype experiments on two edge devices, the proposed CANS reduced average inference latency by up to 50% compared to the non-cooperative baseline.",
+      "authors": [
+        "Zheshun Wu",
+        "Ziyang Zhang",
+        "Changyao Lin",
+        "Zenglin Xu",
+        "Jie Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.DC"
+      ],
+      "published": "2026-06-08T08:14:22+00:00",
+      "link": "https://arxiv.org/pdf/2606.09175v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multi-user collaborative edge inference with DNN partitioning",
+      "llm_evidence_cn": "多用户协作边缘推理中的DNN分区优化",
+      "llm_evidence": "多用户协作边缘推理中的DNN分区优化",
+      "canonical_evidence": "多用户协作边缘推理中的DNN分区优化",
+      "llm_tldr_en": "CANS optimizes DNN partition for multiuser collaborative edge inference under time-varying conditions, targeting mobile edge computing.",
+      "llm_tldr_cn": "该论文提出CANS，一种协作式边缘推理框架，针对多用户场景下无线链路波动和设备能力差异导致的DNN分区难题。通过自主神经外科手段，每个设备独立学习最优分区策略，无需全局信息。该方法直接面向移动边缘计算环境，优化推理效率，但未专门针对视频分析。",
+      "llm_tldr": "该论文提出CANS，一种协作式边缘推理框架，针对多用户场景下无线链路波动和设备能力差异导致的DNN分区难题。通过自主神经外科手段，每个设备独立学习最优分区策略，无需全局信息。该方法直接面向移动边缘计算环境，优化推理效率，但未专门针对视频分析。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09516v1",
+      "source": "arxiv",
+      "title": "SwiftVR: Real-Time One-Step Generative Video Restoration",
+      "abstract": "Real-time video restoration (VR) for live streams requires high-resolution outputs under strict per-frame latency constraints. Existing one-step diffusion-based VR models remain difficult to deploy on consumer-grade GPUs due to two main bottlenecks: quadratic spatial attention at high resolutions and the latency-memory overhead of large video autoencoders. We present SwiftVR, a streaming one-step generative VR framework that reduces both bottlenecks under a causal chunk-wise protocol. For attention, mask-free shifted-window self-attention gathers each spatial window into a dense tensor via deterministic indexing, keeping all attention calls on the dense scaled dot-product attention path without masks, cyclic shifts, padding, or hardware-specific sparse kernels. Because SwiftVR uses only standard dense SDPA calls, the trained model transfers to consumer GPUs without retraining or custom kernels. For autoencoding, a lightweight Restoration-aware Autoencoder enables fast chunk-wise decoding while preserving reconstruction quality. On a single H100, SwiftVR sustains 31~FPS at 2560x1440 and 14~FPS at 3840x2160, whereas all compared diffusion-based VR baselines exceed the memory limit at 4K. On a consumer RTX~5090, SwiftVR reaches 26~FPS at 1920x1080. To our knowledge, SwiftVR is the first generative VR model to achieve real-time 1080p streaming on a consumer-grade GPU, while attaining strong no-reference perceptual quality with lower inference cost. Project is available at https://h-oliday.github.io/SwiftVR.",
+      "authors": [
+        "Jiaqi Yan",
+        "Xiangyu Chen",
+        "Xinlin Zhong",
+        "Haibin Huang",
+        "Chi Zhang",
+        "Jie Liu",
+        "Jiantao Zhou",
+        "Xuelong Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-08T14:07:29+00:00",
+      "link": "https://arxiv.org/pdf/2606.09516v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "real-time video restoration for live streams",
+      "llm_evidence_cn": "直播流实时视频恢复",
+      "llm_evidence": "直播流实时视频恢复",
+      "canonical_evidence": "直播流实时视频恢复",
+      "llm_tldr_en": "SwiftVR is a real-time one-step generative video restoration framework designed for live streams, achieving high-resolution output under strict latency constraints.",
+      "llm_tldr_cn": "针对直播流实时视频恢复中高分辨率和高延迟约束的挑战，本文提出SwiftVR流式单步生成框架。它采用因果块协议、无掩码移位窗口自注意力及高效视频自编码器，在消费级GPU上实现高帧率恢复，显著降低每帧延迟和显存占用，为实时视频处理提供了可行的生成式方案。",
+      "llm_tldr": "针对直播流实时视频恢复中高分辨率和高延迟约束的挑战，本文提出SwiftVR流式单步生成框架。它采用因果块协议、无掩码移位窗口自注意力及高效视频自编码器，在消费级GPU上实现高帧率恢复，显著降低每帧延迟和显存占用，为实时视频处理提供了可行的生成式方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.08197v1",
+      "source": "arxiv",
+      "title": "AlignFed: Alignment-Aware Asynchronous Federated Fine-Tuning for Large Language Models in Heterogeneous Edge Environments",
+      "abstract": "Large Language Models (LLMs) have significantly propelled the advancement of edge intelligence and have been widely deployed across various scenarios, including autonomous driving, industrial inspection, and personalized IoT services. However, the collaborative adaptation of LLMs on edge devices continues to face formidable challenges due to strict data privacy constraints, highly heterogeneous computing and communication resources, and the non-independent and identically distributed (non-IID) nature of local data. Federated Fine-Tuning (FFT) enables the collaborative optimization of distributed models without exposing raw data. Yet, traditional synchronous aggregation suffers from a severe straggler effect, resulting in high system latency and low resource utilization. Existing asynchronous federated learning methods are predominantly designed for small-to-medium-scale models and struggle to address the specific challenges inherent in LLM fine-tuning namely, model drift caused by stale updates, aggravated client drift stemming from data heterogeneity, and aggregation fairness imbalance resulting from the dominance of fast clients. To address these issues, this paper proposes AlignFed, an asynchronous federated fine-tuning framework for LLMs tailored to heterogeneous edge environments. AlignFed employs a lightweight multi-stage semantic alignment mechanism comprising three core modules: version-aware update grouping, cross-version semantic alignment based on a mini-batch calibration set, and fairness-aware aggregation that integrates both update freshness and client participation frequency. This framework effectively mitigates cross-version model drift and client drift while enhancing aggregation fairness, thereby achieving stable and efficient asynchronous federated optimization in scenarios characterized by high heterogeneity and significant update staleness.",
+      "authors": [
+        "Yan Wang",
+        "Ziyi Gao",
+        "Rui Wang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.DC"
+      ],
+      "published": "2026-06-06T14:28:36+00:00",
+      "link": "https://arxiv.org/pdf/2606.08197v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "federated fine-tuning in heterogeneous edge environments",
+      "llm_evidence_cn": "异构边缘环境中的联邦微调",
+      "llm_evidence": "异构边缘环境中的联邦微调",
+      "canonical_evidence": "异构边缘环境中的联邦微调",
+      "llm_tldr_en": "Proposes AlignFed, an asynchronous federated fine-tuning framework for LLMs on heterogeneous edge devices with alignment-aware aggregation.",
+      "llm_tldr_cn": "该论文针对边缘环境中大语言模型协同微调面临的数据隐私、资源异构和非独立同分布数据等挑战，提出对齐感知的异步联邦微调框架AlignFed。通过客户端分组和异步聚合策略，有效缓解了边缘设备之间的异构性问题，在多个边缘场景下提升了模型收敛速度和精度，为边缘智能中的模型适应提供了通用方法。",
+      "llm_tldr": "该论文针对边缘环境中大语言模型协同微调面临的数据隐私、资源异构和非独立同分布数据等挑战，提出对齐感知的异步联邦微调框架AlignFed。通过客户端分组和异步聚合策略，有效缓解了边缘设备之间的异构性问题，在多个边缘场景下提升了模型收敛速度和精度，为边缘智能中的模型适应提供了通用方法。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.09250v1",
+      "source": "arxiv",
+      "title": "LiteVSR: Lightweight Adaptation of Frozen Diffusion Transformers for Video Super-Resolution",
+      "abstract": "Adapting large-scale pre-trained video generators for Video Super-Resolution (VSR) in novel domains remains computationally prohibitive. Methods that reformulate generation as direct Low-Quality to High-Quality mappings deviate from the original generative formulation, demanding extensive fine-tuning. ControlNet-style adapters lose their efficiency under modern Diffusion Transformers since the absence of encoder-decoder hierarchy forces duplication of the entire backbone. We observe that flow matching offers a principled alternative for cross-domain VSR adaptation. By predicting a constant velocity field across all timesteps, the adaptation task reduces to learning a fixed injection pattern rather than time-varying transformations. Building on this insight, we propose LiteVSR, a minimalist framework that performs VSR using a completely frozen Diffusion Transformer with a lightweight State-Aware Adapter. The adapter employs a dual-stream architecture that extracts static structural cues from the LQ input and dynamic cues from intermediate denoising states, aligning them through time-dependent cross-attention to enable adaptive transition from structural alignment to texture refinement as denoising proceeds. LiteVSR achieves competitive restoration quality with only 11.25% trainable parameters and 12 GPU-hours of training on a single A100, while maintaining fast sampling (down to a single step) compatibility.",
+      "authors": [
+        "Yu Cao",
+        "Ziquan Liu",
+        "Zhensong Zhang",
+        "Jiankang Deng",
+        "Shaogang Gong",
+        "Jifei Song"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-08T09:23:42+00:00",
+      "link": "https://arxiv.org/pdf/2606.09250v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "lightweight adaptation for video super-resolution using flow matching",
+      "llm_evidence_cn": "使用流匹配的轻量级视频超分辨率适应",
+      "llm_evidence": "使用流匹配的轻量级视频超分辨率适应",
+      "canonical_evidence": "使用流匹配的轻量级视频超分辨率适应",
+      "llm_tldr_en": "LiteVSR uses flow matching to efficiently adapt frozen diffusion transformers for video super-resolution with lightweight injection.",
+      "llm_tldr_cn": "LiteVSR针对大规模视频生成模型适应超分辨率的计算瓶颈，提出基于流匹配的轻量级适应方法，通过预测恒定速度场将适应简化为固定注入模式，无需复制整个骨干网络。实验表明在目标域上显著降低微调成本且保持高质量。",
+      "llm_tldr": "LiteVSR针对大规模视频生成模型适应超分辨率的计算瓶颈，提出基于流匹配的轻量级适应方法，通过预测恒定速度场将适应简化为固定注入模式，无需复制整个骨干网络。实验表明在目标域上显著降低微调成本且保持高质量。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

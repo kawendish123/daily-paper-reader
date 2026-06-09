@@ -6,46 +6,38 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-08
-- 运行时间：2026-06-08 21:24:38 UTC
+- 最新运行日期：2026-06-09
+- 运行时间：2026-06-09 21:42:25 UTC
 - 运行状态：成功
-- 本次总论文数：8
+- 本次总论文数：6
 - 精读区：4
-- 速读区：4
+- 速读区：2
 
 ### 今日简报（AI）
-今日推荐8篇论文，精读4篇，聚焦在线视频理解中的流式视频-语言同步和视频实例分割性能瓶颈。  
-精读两篇均获9.0高分：一篇剖析在线视频的流式同步，另一篇解耦实例分割的瓶颈，最值得关注。  
-建议优先精读这两篇，再翻阅速读中7分的智能体长视频理解和仓库多机器人规划。
-- 详情：[/202606/08/README](/202606/08/README)
+今日精选6篇论文，精读4篇，聚焦于边缘视频异常检测与视频流处理两大方向。最值得关注的是《MemoVAD》提出的动态语义内存方案（满分10.0）和《Harnessing Streaming Video in the Wild》的实用方法（9.0分）。建议普通读者优先精读这两篇高分论文，再结合速读中的联邦学习微调与视频超分工作拓宽视野。
+- 详情：[/202606/09/README](/202606/09/README)
 
 ### 精读区论文标签
-1. [Don't Pause: Streaming Video-Language Synchrony for Online Video Understanding](/202606/08/2606.06991v1-dont-pause-streaming-video-language-synchrony-for-online-video-understanding)  
+1. [MemoVAD: Resource-Efficient Video Anomaly Detection via Dynamic Semantic Memory in Edge Computing Scenarios](/202606/09/2606.07669v1-memovad-resource-efficient-video-anomaly-detection-via-dynamic-semantic-memory-in-edge-computing-scenarios)  
+   标签：评分：10.0/10、query:mec-video
+   evidence：边缘-云协作的流式视频异常检测框架
+2. [Harnessing Streaming Video in the Wild](/202606/09/2606.08615v1-harnessing-streaming-video-in-the-wild)  
    标签：评分：9.0/10、query:mec-video
-   evidence：流式视频-语言同步在线视频理解
-2. [Mind the Gap: Disentangling Performance Bottlenecks in Video Instance Segmentation](/202606/08/2606.07394v1-mind-the-gap-disentangling-performance-bottlenecks-in-video-instance-segmentation)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：视频实例分割性能瓶颈的诊断框架
-3. [Detecting Temporally Localized Manipulations in Authentic Video Streams](/202606/08/2606.07090v1-detecting-temporally-localized-manipulations-in-authentic-video-streams)  
+   evidence：流式视频数据集与实时VLM训练
+3. [CANS: Accelerating Multiuser Collaborative Edge Inference via Cooperative Autodidactic NeuroSurgeon](/202606/09/2606.09175v1-cans-accelerating-multiuser-collaborative-edge-inference-via-cooperative-autodidactic-neurosurgeon)  
    标签：评分：8.0/10、query:mec-video
-   evidence：检测真实视频流中的时间局部化篡改
-4. [MemDreamer: Decoupling Perception and Reasoning for Long Video Understanding via Hierarchical Graph Memory and Agentic Retrieval Mechanism](/202606/08/2606.07512v1-memdreamer-decoupling-perception-and-reasoning-for-long-video-understanding-via-hierarchical-graph-memory-and-agentic-retrieval-mechanism)  
+   evidence：多用户协作边缘推理中的DNN分区优化
+4. [SwiftVR: Real-Time One-Step Generative Video Restoration](/202606/09/2606.09516v1-swiftvr-real-time-one-step-generative-video-restoration)  
    标签：评分：8.0/10、query:mec-video
-   evidence：增量流式构建层次记忆实现长视频理解
+   evidence：直播流实时视频恢复
 
 ### 速读区论文标签
-1. [GOPAgen: Motion-Aware and Efficient Agentic Long-Video Understanding with Structural Memory and Hierarchical Reasoning](/202606/08/2606.06532v1-gopagen-motion-aware-and-efficient-agentic-long-video-understanding-with-structural-memory-and-hierarchical-reasoning)  
+1. [AlignFed: Alignment-Aware Asynchronous Federated Fine-Tuning for Large Language Models in Heterogeneous Edge Environments](/202606/09/2606.08197v1-alignfed-alignment-aware-asynchronous-federated-fine-tuning-for-large-language-models-in-heterogeneous-edge-environments)  
    标签：评分：7.0/10、query:mec-video
-   evidence：高效长视频理解与运动感知，直接适用于视频分析
-2. [Multi-Robot Planning and Control from CCTV Camera Networks in a Real Warehouse](/202606/08/2606.06762v1-multi-robot-planning-and-control-from-cctv-camera-networks-in-a-real-warehouse)  
+   evidence：异构边缘环境中的联邦微调
+2. [LiteVSR: Lightweight Adaptation of Frozen Diffusion Transformers for Video Super-Resolution](/202606/09/2606.09250v1-litevsr-lightweight-adaptation-of-frozen-diffusion-transformers-for-video-super-resolution)  
    标签：评分：7.0/10、query:mec-video
-   evidence：利用CCTV网络和边缘计算进行多机器人控制
-3. [Ultra-Fast Neural Video Compression](/202606/08/2606.04410v1-ultra-fast-neural-video-compression)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：超快神经视频压缩，支持实时视频处理
-4. [CamFlow+: Hybrid Motion Bases for 2D Camera Motion Estimation with Stabilization Applications](/202606/08/2606.05915v1-camflow-hybrid-motion-bases-for-2d-camera-motion-estimation-with-stabilization-applications)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：二维相机运动估计，是视频分析和稳像的基础技术
+   evidence：使用流匹配的轻量级视频超分辨率适应
 
 
 <div class="dpr-home-promo-card">
