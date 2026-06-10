@@ -1,0 +1,100 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-10T22:39:44.115869+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2606.09330v1",
+      "source": "arxiv",
+      "title": "Dynamic XR Rendering Offloading Based on Feature-Based Quality Assessment",
+      "abstract": "Extended Reality (XR) applications demand intensive computation and low latency, especially for real-time rendering tasks. In this letter, we present an edge-aided XR rendering testbed that dynamically offloads rendering workloads between the XR client and the edge server built upon network conditions and latency constraints. The testbed integrates a Microsoft HoloLens 2 headset, a GPU-enabled edge server, and a customized remote rendering toolkit based on the HOLO Stream SDK, enabling seamless switching between local and edge rendering modes in real time. To overcome the limitations of pixel-level quality metrics under head movements and asynchronous frame arrivals, we propose a perceptual evaluation metric based on deep feature embeddings and cosine similarity, which remains robust to spatial and temporal misalignments. Furthermore, we design a contextual bandit learning controller to adapt rendering placement decisions in real time by jointly optimizing perceptual quality and latency. Experimental results demonstrate the feasibility and performance of our testbed, validating its effectiveness in delivering high-quality and interactive XR experiences.",
+      "authors": [
+        "Sige Liu",
+        "Zhe Wang",
+        "Lavish Kamal Kumar",
+        "Yansha Deng"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV"
+      ],
+      "published": "2026-06-08T10:54:10+00:00",
+      "link": "https://arxiv.org/pdf/2606.09330v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "edge computing for real-time XR rendering offloading",
+      "llm_evidence_cn": "边缘计算用于XR实时渲染卸载",
+      "llm_evidence": "边缘计算用于XR实时渲染卸载",
+      "canonical_evidence": "边缘计算用于XR实时渲染卸载",
+      "llm_tldr_en": "Presents an edge-aided XR rendering testbed that dynamically offloads between client and edge server. Directly addresses edge computing for real-time video-like rendering tasks.",
+      "llm_tldr_cn": "针对XR应用对低延迟和密集计算的需求，提出边缘辅助的动态渲染卸载测试平台。系统在HoloLens 2端和GPU边缘服务器之间实时切换本地与边缘渲染模式。提出基于深度特征嵌入的感知质量评估指标。为边缘计算下实时视频处理提供参考架构。",
+      "llm_tldr": "针对XR应用对低延迟和密集计算的需求，提出边缘辅助的动态渲染卸载测试平台。系统在HoloLens 2端和GPU边缘服务器之间实时切换本地与边缘渲染模式。提出基于深度特征嵌入的感知质量评估指标。为边缘计算下实时视频处理提供参考架构。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.03920v1",
+      "source": "arxiv",
+      "title": "Benchmarking Visual State Tracking in Multimodal Video Understanding",
+      "abstract": "Understanding a video requires more than recognizing isolated moments, as humans continuously track entities, states, and events over time. This capacity for visual state tracking is fundamental to video understanding, yet remains underexplored in current evaluations of Multimodal Large Language Models (MLLMs). We introduce Visual STAte Tracking benchmark (VSTAT), a video-based benchmark designed to diagnose visual state tracking in MLLMs. VSTAT consists of 834 clips drawn from both synthetic and real-world videos, paired with 1,500 questions that cannot be answered from any single frame or short segment, requiring continuous perception and integration of events across the entire video stream. Despite their strong performance on existing video benchmarks, we find that state-of-the-art MLLMs perform far below humans and only modestly above answer-prior baselines. To analyze this gap, we compare MLLMs' thinking traces with the underlying video stream to understand why and when MLLMs fail on VSTAT. We find that MLLMs reason and track correctly in text, but fail at visually perceiving the events they need to track. Finally, our preliminary evaluation suggests that recent agentic approaches, including MLLM-based video agents and coding agents, do not readily resolve these failures, still falling short on VSTAT.",
+      "authors": [
+        "Sihyun Yu",
+        "Nanye Ma",
+        "Pinzhi Huang",
+        "Hyunseok Lee",
+        "Shusheng Yang",
+        "June Suk Choi",
+        "Ellis Brown",
+        "Oscar Michel",
+        "Boyang Zheng",
+        "Jinwoo Shin",
+        "Saining Xie"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-02T17:12:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.03920v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "benchmark for continuous video understanding",
+      "llm_evidence_cn": "持续视频理解基准",
+      "llm_evidence": "持续视频理解基准",
+      "canonical_evidence": "持续视频理解基准",
+      "llm_tldr_en": "VSTAT benchmark evaluates visual state tracking in MLLMs using 834 clips requiring continuous perception across video stream.",
+      "llm_tldr_cn": "现有视频基准无法评估模型对事件的持续跟踪能力，本文提出VSTAT基准，包含834个合成和真实视频片段及1500个问题，要求模型在整个视频流中连续感知和整合信息，测试发现当前多模态大模型在此任务上表现不佳，揭示了视觉状态跟踪的关键挑战。",
+      "llm_tldr": "现有视频基准无法评估模型对事件的持续跟踪能力，本文提出VSTAT基准，包含834个合成和真实视频片段及1500个问题，要求模型在整个视频流中连续感知和整合信息，测试发现当前多模态大模型在此任务上表现不佳，揭示了视觉状态跟踪的关键挑战。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

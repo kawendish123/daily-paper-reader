@@ -1,0 +1,396 @@
+Title: Dynamic XR Rendering Offloading Based on Feature-Based Quality Assessment
+
+URL Source: https://arxiv.org/pdf/2606.09330v1
+
+Published Time: Tue, 09 Jun 2026 02:05:04 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> 1
+
+# Dynamic XR Rendering Offloading Based on Feature-Based Quality Assessment 
+
+Sige Liu, Member, IEEE, Zhe Wang, Lavish Kamal Kumar, and Yansha Deng, Senior Member, IEEE 
+
+Abstract —Extended Reality (XR) applications demand inten-sive computation and low latency, especially for real-time render-ing tasks. In this letter, we present an edge-aided XR rendering testbed that dynamically offloads rendering workloads between the XR client and the edge server built upon network condi-tions and latency constraints. The testbed integrates a Microsoft HoloLens 2 headset, a GPU-enabled edge server, and a customized remote rendering toolkit based on the HOLO Stream SDK, en-abling seamless switching between local and edge rendering modes in real time. To overcome the limitations of pixel-level quality metrics under head movements and asynchronous frame arrivals, we propose a perceptual evaluation metric based on deep feature embeddings and cosine similarity, which remains robust to spatial and temporal misalignments. Furthermore, we design a contextual bandit learning controller to adapt rendering placement decisions in real time by jointly optimizing perceptual quality and latency. Experimental results demonstrate the feasibility and performance of our testbed, validating its effectiveness in delivering high-quality and interactive XR experiences. 
+
+Index Terms —XR, dynamic offloading, bandit learning, deep feature similarity. 
+
+I. I NTRODUCTION 
+
+Extended Reality (XR), encompassing Augmented Reality (AR), Virtual Reality (VR), and Mixed Reality (MR), is rapidly transforming various verticals such as remote maintenance, immersive healthcare, smart manufacturing, and collaborative digital twins [1]. These applications demand real-time in-teraction, low-latency communication, and high-fidelity 3D rendering, especially in mobile environments [2]. However, the limited onboard computational capacity and energy constraints of these lightweight devices make it challenging to meet the rendering requirements of modern XR computation workloads [3]. To overcome these limitations, a promising solution lies in offloading computationally intensive rendering tasks to nearby edge servers. In such architectures, the camera at the XR side sends the captured 2D video to the edge server, which pro-cesses and returns rendered 3D content. While this paradigm can significantly enhance rendering quality and reduce on-device computation, it also introduces a real-time control dilemma: where and when should rendering be executed to balance latency, quality, and system reliability [4]? Offloading decision becomes non-trivial under dynamic wireless condi-tions. Local rendering ensures low-latency response but is constrained by limited graphics processing power of XR de-vices, often resulting in poor visual fidelity and incomplete scene reconstruction [5]. In contrast, edge rendering delivers              
+
+> S. Liu, Z. Wang, L. K. Kumar, and Y. Deng are with the Depart-ment of Engineering, King’s College London, London WC2R 2L, U.K. (e-mail: sige.liu@kcl.ac.uk; tylor.wang@kcl.ac.uk; lavishkk08@gmail.com; yan-sha.deng@kcl.ac.uk) (Corresponding auther: Yansha Deng). Demonstration is available online at https://www.youtube.com/watch?v=iv w i8LXmi8.
+
+high-quality output but is sensitive to fluctuating network bandwidth and latency, which can result in perceptible lag, degraded immersion, or even failures [6]. Therefore, a robust and adaptive offloading mechanism is required to dynamically balance latency constraints and perceptual quality. A further challenge is to assess and control XR rendering quality when head motion and network jitter break pixel-level alignment and temporal coherence [7]. Pixel-wise metrics (e.g., PSNR/SSIM) and sequence-coherent scores (e.g., FVD) become unreliable under such misalignments, which under-mines any offloading policy that depends on quality feedback [8]. Meanwhile, most existing research assumes stable links or remains simulation-only [9] [10], lacking a deployable framework that 1) measures perceptual quality robustly online, 2) adapts rendering offloading to the latency–quality trade-off, and 3) runs edge-aided on real devices and networks. To address this gap, we expose the real-time video quality metric as feedback from the XR user to the edge server, and propose a learning-based dynamic rendering offloading based on the feedback metric, taking into account the latency constraints, and a practical testbed to execute and validate decisions in real networks. We build an edge-aided XR offloading testbed with aHoloLens-2 client and a GPU edge server connected via HOLO Stream 1 and containerised orchestration, enabling seamless migration between local and edge rendering. To better quantify visual quality robustly in asynchronous rendering, we leverage the Visual Geometry Group (VGG) network as a pre-trained convolutional feature extractor and compute cosine similarity between its clip-level embeddings [11]. That is because these high-level features exhibit greater robustness to spatial and temporal misalignments compared with pixel-based metrics. For the stream part, we integrate HOLO Stream into a custom control and data plane that exposes a binary flag for mode switching and continuously measures end-to-end latency and throughput. The edge monitors these indicators and updates the flag, while the client periodically polls it to switch ren-dering modes dynamically. Building on this feedback loop, a contextual bandit learning controller utilizes the VGG quality signal together with the latency to select the rendering location (client vs. edge), and the testbed executes the decision in real time. Compared to all-edge or all-client rendering, our approach demonstrates better adaptability to changing network conditions and latency requirements, improving user-perceived quality and reducing end-to-end latency in a practical edge-aided XR testbed. Our contributions are summarized as:  
+
+> •
+
+We develop an edge-aided testbed for dynamic offloading XR/edge switching and real-network validation, integrat-  
+
+> 1HOLO Stream: https://github.com/Holo-Light-GmbH/Hololight-Stream-SDK-Trial.
+> arXiv:2606.09330v1 [eess.IV] 8 Jun 2026 2
+
+ing HoloLens-2, HOLO Stream, and a GPU edge with containerised orchestration.  
+
+> •
+
+We introduce an online perceptual quality measure based on VGG feature embeddings with cosine similarity, pro-viding robustness to spatial and temporal frame misalign-ments in XR video evaluation.  
+
+> •
+
+We propose a contextual-bandit offloading policy that optimises visual quality under latency constraints, offering a lightweight and deployable solution for XR devices The rest of this letter is organised as follows. Section II presents the system overview. Section III describes the architecture and implementation. Section IV introduces the offloading for-mulation and learning-based controller. Section V reports the experimental results. Finally, Section VI concludes the letter. II. S YSTEM OVERVIEW 
+
+We develop an edge-aided testbed to support dynamic XR rendering task offloading between XR and edge. The testbed integrates real-time video collection, wireless transmission, rendering orchestration, and perceptual quality evaluation. This section outlines both the hardware setup and software archi-tecture. 
+
+A. Hardware 
+
+As shown in Fig. 1, our XR testbed provides an edge-aided framework that supports both client-side and edge-side rendering, and it consists of three primary components:  
+
+> •
+
+Client Device: A Microsoft HoloLens 2 headset functions as the XR client, capable of switching between local rendering and edge streaming via the HOLO stream.  
+
+> •
+
+Edge Server: A GPU-enabled workstation equipped with Unity and HOLO Stream, deployed in Docker containers to support scalable rendering tasks.  
+
+> •
+
+Video Source: 2D video feed (e.g., from a drone camera or pre-recorded source) providing the scene content that is rendered either locally at the XR or remotely at the edge server. 
+
+B. Software 
+
+At a high level, the software stack follows Fig. 1 and decou-ples streaming, rendering, and control. HOLO Stream provides the remote-rendering SDK used for bidirectional streaming between client and edge, including frame encoding, transport, decoding, and forwarding. We integrate it with a control plane for seamless mode switching. A high-level overview of the software is as follows.  
+
+> •
+
+Unity Rendering: the XR scene runs in Unity on both ends: the HoloLens 2 executes the scene at the local side, whereas the GPU server renders the scene at the edge side.  
+
+> •
+
+HOLO Stream: the HOLO Stream client/server pair han-dles remote-rendering streaming, i.e., delivering frames from the active renderer (client or edge) to the XR and forwarding user inputs back to the renderer, which enables the two rendering modes.  
+
+> •
+
+Dynamic Offloading: it coordinates client and edge ren-dering and ensures seamless switching during the XR  
+
+> Fig. 1. The framework of the dynamic XR rendering testbed.
+
+session without interrupting the pipeline. The detailed design and our modifications are presented in Section III. III. D YNAMIC XR O FFLOADING ARCHITECTURE 
+
+This section details our modifications to the HOLO Stream and the runtime control that enable seamless migration between client-side and edge-side rendering. We first describe how we integrate and extend HOLO Stream, and then present the dynamic rendering process at the server and client. 
+
+A. Integrating and Modifying HOLO Stream 
+
+HOLO Stream provides the SDK for remote rendering, and we integrate it into our pipeline and extend it with a control plane that exposes mode control and runtime telemetry to the decision module. The reference implementation and scripts are available on our repository. 2
+
+As shown in Fig. 2, we introduce an interface at the edge that maintains a binary RenderFlag indicating the target rendering location ( 0=edge, 1=client). The XR client dynamically polls this flag over HTTPS at a fixed interval and switches modes without interrupting the session. This indirection decouples decision logic from the rendering pipeline and allows us to plug in either threshold rules or learning-based policies with no changes to streaming. We add a profiling hook that continuously collects end-to-end latency and throughput. These measurements are made available to the controller and also logged for offline analy-sis. Safeguard thresholds (τL, τ B ) can be applied to enforce fallbacks when latency is excessive or bitrate is insufficient. At the edge, Unity renderers are launched and supervised as services; on mode changes, the streaming channel is re-bound to the active renderer while keeping the XR session alive at the client. 
+
+B. XR-Side Control 
+
+The XR runs a lightweight controller that periodically polls the RenderFlag from the edge server. If the flag is 0, the  
+
+> 2The Docker API: https://github.com/GetupOscar/Poll-API 3
+> Fig. 2. Workflow of the dynamic offloading and control mechanism.
+
+client connects to the edge HOLO Stream server and displays remotely rendered frames; if the flag is 1, it switches to local Unity rendering. The polling is non-blocking and includes time-out handling to avoid user-perceived glitches. This client-side state machine performs transparent switching during an active session and corresponds to Algorithm 1 .
+
+C. Edge-Side Orchestration 
+
+The edge server hosts the Unity renderer and the HOLO Stream service and orchestrates remote rendering on a GPU workstation. Its responsibilities are to expose runtime latency and mange switch mode to ensure seamless migration between client and edge. At runtime, the edge continuously monitors end-to-end la-tency Lt and throughput Bt from the active session and makes them available to the controller. The controller’s output is realised through a binary mode indicator RenderFlag ∈ { 0, 1}.In addition, safeguard thresholds (τL, τ B ) are enforced to guarantee responsiveness: if Lt > τ L or Bt < τ B , the edge im-mediately issues a fallback to client mode. When switching into edge mode, the orchestration layer ensures the Unity renderer is available before rebinding the HOLO Stream channel, thereby avoiding visible glitches. When leaving edge mode, remote rendering is suspended and session state remains consistent for an instantaneous return to client rendering. The renderer runs as a managed service, enabling clean start/stop operations and recovery on failure. The general logic is summarized in 
+
+Algorithm 2 .
+
+D. Problem Formulation 
+
+The core objective of our dynamic XR offloading system is to maximize perceptual rendering quality while meeting strict end-to-end latency constraints imposed by the user experience. Given a set of rendering modes A = {0 : local , 1 : edge } and a sequence of rendering decisions over time steps t = 1 , . . . , T ,we aim to select an action At ∈ A that balances the trade-off between visual quality and latency. We denote the perceptual similarity between the rendered clip and the reference clip at time t by V t, computed via VGG feature cosine similarity. Let Lt denote the observed latency, 
+
+Algorithm 1 Client-Side Rendering Control  
+
+> 1:
+
+Initialize XR session on HoloLens.  
+
+> 2:
+
+Set polling interval Tpoll . 
+
+> 3:
+
+while XR session is active do  
+
+> 4:
+
+Send HTTPS GET request to RenderFlag.  
+
+> 5:
+
+Receive flag F ∈ { 0, 1} (1= Client, 0= Serve).  
+
+> 6:
+
+if F = 0 then  
+
+> 7:
+
+Switch to Server Rendering Mode.  
+
+> 8:
+
+Connect to edge server via HOLO Stream.  
+
+> 9:
+
+Stream videos for display.  
+
+> 10:
+
+else  
+
+> 11:
+
+Switch to Client Rendering Mode.  
+
+> 12:
+
+Launch Unity scene on-device.  
+
+> 13:
+
+end if  
+
+> 14:
+
+end while Algorithm 2 Edge-Side Orchestration  
+
+> 1:
+
+Initialise Docker environment..  
+
+> 2:
+
+Set safeguard thresholds τL, τ B . 
+
+> 3:
+
+while server is active do  
+
+> 4:
+
+if latency > τ L or bitrate < τ B then  
+
+> 5:
+
+Set RenderFlag ← 1 ▷ Client rendering  
+
+> 6:
+
+if container is running then  
+
+> 7:
+
+Stop the container and release resources..  
+
+> 8:
+
+end if  
+
+> 9:
+
+else  
+
+> 10:
+
+Set RenderFlag ← 0 ▷ Edge rendering  
+
+> 11:
+
+if container not running then  
+
+> 12:
+
+Launch Unity rendering container.  
+
+> 13:
+
+end if  
+
+> 14:
+
+Receive camera stream and render in Unity.  
+
+> 15:
+
+Stream output to HoloLens 2.  
+
+> 16:
+
+end if  
+
+> 17:
+
+end while 
+
+which includes rendering time, network transmission delay, and any feature extraction overhead. The system’s objective is to find a policy π that maps context information to actions, such that the expected cumulative utility over time is maximized: 
+
+P : max  
+
+> π
+
+E
+
+" TX
+
+> t=1
+
+Vt
+
+#
+
+, s.t. Lt ≤ Lreq  
+
+> t
+
+∀t (1) where Lreq  
+
+> t
+
+denotes the latency requirement specified by the user at time step t, and this formulation captures the trade-off between perceptual quality and responsiveness, ensuring that the selected rendering policy remains aligned with user experience constraints. IV. L EARNING -B ASED OFFLOADING DECISION 
+
+This optimization is challenging due to the dynamic wireless conditions and the absence of a priori statistical models. To address these constraints, we adopt a contextual bandit learning method, where the decision at each time step is based on observable context features such as latency budget, throughput, and historical reward. This approach provides a lightweight, explainable, and data-efficient mechanism for adaptive offload-ing in heterogeneous network environments. To enhance the 4
+
+system’s flexibility and intelligence, we implement a contextual bandit learning strategy that selects the rendering location based on both quality and latency metrics. 
+
+A. Context Representation and Quality Metric 
+
+In contextual bandit learning, each decision is made with respect to an observable context [12]. In our formulation, the context is defined as the user-specified latency requirement Lreq 
+
+> t
+
+at time step t, which reflects the upper bound on tolerable end-to-end delay. This latency constraint implicitly encodes the user’s preference between quality and responsiveness, and pro-vides a compact yet informative representation of environment dynamics. To measure perceptual quality, we employ a feature-based similarity metric robust to alignment and motion artifacts. Let 
+
+ft,i denote the VGG-extracted feature vector of frame i in clip 
+
+t, and let T denote the number of frames per clip. The average clip-level feature embedding is computed as 
+
+f t = 1
+
+T
+
+> T
+
+X
+
+> i=1
+
+ft,i (2) The cosine similarity between the rendered clip and the reference clip is given by Vt = f (rendered ) 
+
+> t
+
+· f (ref )
+
+> t
+
+∥f (rendered ) 
+
+> t
+
+∥ · ∥ f (ref ) 
+
+> t
+
+∥
+
+, (3) which is defined as the reward function. 
+
+B. Contextual Bandit Strategy 
+
+We model the offloading decision process as a two-armed contextual Bandit problem with action space A = {0 :
+
+Edge , 1 : Client }. At each round t, the agent receives a context 
+
+xt = Lreq  
+
+> t
+
+, selects an action At, observes the reward Rt,and updates its value estimates accordingly. We implement an ε-greedy learning strategy with online reward averaging in 
+
+Algorithm 3 .
+
+Algorithm 3 Contextual Bandit Learning Offloading Policy  
+
+> 1:
+
+Initialize Q0(x), Q 1(x) ← 0, N0, N 1 ← 0 for all contexts 
+
+xt. 
+
+> 2:
+
+Set exploration rate ε. 
+
+> 3:
+
+for each decision round t do  
+
+> 4:
+
+Observe context xt = Lreq  
+
+> t
+
+. 
+
+> 5:
+
+With prob. 1 − ε, select At ← arg max a∈A Qa(xt). 
+
+> 6:
+
+With prob. ε, choose At randomly.  
+
+> 7:
+
+Execute rendering using mode At. 
+
+> 8:
+
+Compute cosine similarity Vt via Eq. (3).  
+
+> 9:
+
+Update: 
+
+NAt (xt) ← NAt (xt) + 1 .QAt (xt) ← QAt (xt) + 1
+
+NAt (xt) (Rt − QAt (xt)) . 
+
+> 10:
+
+end for 
+
+This approach allows the agent to gradually learn the best action for each latency requirement while balancing exploration and exploitation. Unlike full RL methods, contextual Bandits require minimal computation and are better suited for resource-constrained XR platforms. Future extensions may consider richer contextual features or model-based Bandit variants. V. S IMULATION RESULTS 
+
+In this section, we evaluate our proposed XR rendering offloading framework via simulation. The primary objective is to investigate how the dynamic bandit-based offloading mecha-nism adapts to different latency requirements and balances the trade-off between rendering quality and latency. 
+
+A. Experimental Settings 
+
+To validate the effectiveness of our offloading testbed, we conduct a series of experiments using the deployed system under dynamic 5G network conditions. The XR client is a Microsoft HoloLens 2 headset running Unity, and the edge server is equipped with two NVIDIA A4000 GPUs. The exper-iments aim to evaluate the trade-off between rendering quality and latency constraints under different offloading strategies. We simulate 1,000 consecutive decision rounds. The system must decide, at each step, whether to offload the rendering task to the client or to the edge server. The video quality is quantified by cosine similarity between VGG-extracted features of the rendered clip and the reference ground truth. Higher similarity indicates better perceptual quality. The agent employs an ϵ-greedy multi-armed bandit algorithm with ϵ = 0 .05 , selecting the rendering mode based on estimated expected rewards. The simulation is repeated under four latency constraints: 20 ms, 40 ms, 60 ms, and 80 ms. We compare the performance of the following policies: 1) Dynamic Offloading: our proposed method; 2) All local: All tasks are rendered locally; 3) All edge: All tasks are rendered at the edge. 
+
+B. Performance Evaluation 
+
+Fig. 3(a) compares the average rewards achieved by the three strategies under a latency constraint of 40 ms. The dynamic offloading strategy consistently outperforms both baselines. The “All Local” method satisfies latency constraints but suffers from lower rendering quality. The “All Edge” approach provides higher quality but frequently violates the latency threshold, leading to penalized rewards. The proposed strategy balances these factors and achieves the highest stable reward across all rounds. Fig. 3(b) illustrates the dynamic strategy’s performance under different latency requirements. As the constraint becomes looser (from 20 ms to 80 ms), the average reward increases steadily. This trend demonstrates that our proposed method effectively adapts to the available latency budget, shifting its preference toward higher-quality edge rendering when the latency tolerance allows. The curves are stable, highlighting the robustness of the bandit agent in changing conditions. Fig. 3(c) presents the total number of local and edge rendering actions selected under different latency requirements. Under tight constraints (e.g., 20 ms), local rendering is heavily favored to avoid latency violations. As the latency budget increases, the agent gradually shifts toward edge rendering to improve video quality. This clearly 5
+
+(a) Reward Comparison (b) Dynamic offloading under different constraints. (c) Action counts under different latency constraints Fig. 3. The performance of the proposed dynamic offloading strategy. 
+
+(a) Selected frame (b) VGG extracted features (first 8 channels) Fig. 4. An example of a frame and its VGG extracted features. 
+
+(a) Rendering at local device (b) Rendering at the edge server Fig. 5. An example frame of comparison of rendering. 
+
+reflects the algorithm’s adaptive behavior and aligns with human-understandable offloading logic, contributing to the explainability of AI-driven decisions. To provide intuitive insight into the perceptual difference be-tween rendering options, we present two qualitative examples in Fig. 4 and Fig. 5. Fig. 4 presents a selected frame from the ground truth video (Fig. 4(a)) alongside the correspond-ing VGG feature maps (Fig. 4(b)) extracted from its first 8 channels. These features are used as semantic representations in the reward calculation pipeline, capturing global appearance patterns while remaining robust to pixel-level noise or temporal misalignment. Fig. 5 compares visual outputs rendered at the local device and edge server for the same frame. The locally rendered result (Fig. 5(a) shows visible distortions, low-fidelity textures, and incomplete geometry, which degrade the immer-sive experience. In contrast, the edge-rendered frame (Fig. 5(b)) preserves significantly more detail, showing sharp textures and a complete architectural structure. This highlights the benefit of edge rendering in scenarios where latency constraints permit higher computation latency in exchange for enhanced quality. VI. C ONCLUSION 
+
+In this letter, we developed an edge-aided XR offloading testbed that enables dynamic switching between XR and edge server rendering via a modified HOLO Stream stack and a lightweight control plane. A Visual Geometry Group (VGG)-embedding cosine-similarity metric provides alignment-robust feedback, and a contextual bandit learning uses this feedback together with latency to select the rendering location online. Experimental results and qualitative comparisons validate the effectiveness and adaptability of our framework under realistic conditions. Future work includes multi-user coordination and predictive rendering control. REFERENCES [1] H. Cao, H. S¨ oderlund, M. Derspeisse, and B. Johansson, “Exploring the current applications and potential of extended reality for environmental sustainability in manufacturing,” arXiv preprint arXiv:2312.17595 , Dec. 2023. [2] F. Malandrino, O. Chukhno, A. Catania, A. Molinaro, and C. F. Chi-asserini, “Xr offloading across multiple time scales: the roles of power, temperature, and energy,” arXiv preprint arXiv:2506.18584 , Jun. 2025. [3] A. Nagy, G. Amponis, K. Kyranou, T. Lagkas, A. A. Boulogeorgos, P. Sarigiannidis, and V. Argyriou, “Ai-powered interfaces for extended reality to support remote maintenance,” in Proc. IEEE/ACM 23rd Int. Symp. Cluster, Cloud and Internet Computing Workshops (CCGridW ’23), Bangalore, India, May 1–4, 2023 , May. 2023, p. 214–222. [4] G. Pan, S. Xu, S. Zhang, X. Chen, and Y. Sun, “Quality-of-experience-oriented cross-layer optimization for real-time xr video transmission,” 
+
+IEEE Trans. Circuits Syst. Video Technol. , vol. 34, no. 8, p. 7742–7755, Aug. 2024. [5] B. W. Nyamtiga, D. K. P. Asiedu, A. A. Hermawan, Y. F. Luckyarno, and J.-H. Yun, “Adaptive foveated rendering and offloading in an edge-assisted virtual reality system,” IEEE Access , vol. 12, p. 17308–17327, Jan. 2024. [6] O. Chukhno, N. Chukhno, A. Ometov, S. Pizzi, G. Araniti, and A. Moli-naro, “Application-driven offloading of xr mission critical via integrated tn/ntn,” IEEE Netw. , May 2025. [7] R. K. Mantiuk, P. Hanji, M. Ashraf, Y. Asano, and A. Chapiro, “Col-orvideovdp: a visual difference predictor for image, video and display distortions,” arXiv preprint arXiv:2401.11485 , Jan. 2024. [8] T. Wu, S. Shi, H. Cai, M. Cao, J. Xiao, Y. Zheng, and Y. Yang, “Assessor360: multi-sequence network for blind omnidirectional image quality assessment,” Adv. Neural Inf. Process. Syst. (NeurIPS) , vol. 36, p. 64957–64970, Dec. 2023. [9] J. Heo, K. Bhardwaj, and A. Gavrilovska, “Flexr: a system enabling flexibly distributed extended reality,” in Proc. 14th ACM Multimedia Syst. Conf. (MMSys ’23), Vancouver, BC, Canada, June 7–10, 2023 , Jun. 2023, p. 1–13. [10] D. G. Mor´ ın, D. Medda, A. Iossifides, P. Chatzimisios, A. G. Armada, A. Villegas, and P. Per´ ez, “An extended reality offloading ip traffic dataset and models,” IEEE Trans. Mob. Comput. , vol. 23, no. 6, p. 6820–6834, Jun. 2024. [11] A. Jindal, N. Sadaka, M. M. Thomas, A. Sochenov, and A. Kaplanyan, “Cgvqm+ d: computer graphics video quality metric and dataset,” arXiv preprint arXiv:2506.11546 , Jun. 2025. [12] R. ˇ Svihrov´ a, A. Dei Rossi, D. Marzorati, A. Tzovara, and F. D. Faraci, “Designing digital health interventions with causal inference and multi-armed bandits: a review,” Front. Digit. Health , vol. 7, p. 1435917, Jun. 2025.
