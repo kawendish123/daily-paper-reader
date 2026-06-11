@@ -1,0 +1,260 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-11T22:12:25.581767+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2606.12103v1",
+      "source": "arxiv",
+      "title": "The PM-EdgeMap: Towards Real-Time Process Mining on the Edge-Cloud Continuum",
+      "abstract": "Smart factories are evolving into Cyber-Physical Systems (CPS), demanding increased autonomy. This necessitates real-time decision making, facilitated by insights derived from sensor data. Process mining offers a valuable approach to gain such insights and guide actions. The edge computing paradigm supports this real-time requirement by enabling network communication between sensors and leveraging nearby computing resources. This paper investigates the implications of performing real-time process mining algorithms on the edge. Within this paper, we first propose a formalism to describe relevant datasets and the computing topology. We then evaluate the edge computing approach through a case study involving an edge-based conformance checking algorithm. The results demonstrate the feasibility and benefits of edge-based real-time process mining for enhanced autonomous control in smart factories.",
+      "authors": [
+        "Hendrik Reiter",
+        "Christian Imenkamp",
+        "Olaf Landsiedel",
+        "Andrea Maldonado",
+        "Patrick Rathje",
+        "Wilhelm Hasselbring"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-06-10T13:58:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.12103v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "real-time process mining on edge-cloud continuum",
+      "llm_evidence_cn": "边云连续体上的实时过程挖掘",
+      "llm_evidence": "边云连续体上的实时过程挖掘",
+      "canonical_evidence": "边云连续体上的实时过程挖掘",
+      "llm_tldr_en": "Investigates real-time process mining on the edge, proposing a formalism and evaluating an edge-based conformance checking algorithm in a case study.",
+      "llm_tldr_cn": "针对智能制造中实时决策需求，研究在边缘计算环境中执行实时过程挖掘算法的可行性。提出描述数据集和计算拓扑的形式化方法，并通过基于边缘的一致性检查案例研究验证了边缘计算在降低延迟和利用近端计算资源方面的优势。为边缘计算在实时分析领域的应用提供了实证和理论基础。",
+      "llm_tldr": "针对智能制造中实时决策需求，研究在边缘计算环境中执行实时过程挖掘算法的可行性。提出描述数据集和计算拓扑的形式化方法，并通过基于边缘的一致性检查案例研究验证了边缘计算在降低延迟和利用近端计算资源方面的优势。为边缘计算在实时分析领域的应用提供了实证和理论基础。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.11186v1",
+      "source": "arxiv",
+      "title": "AnyMod-LLVE: Low-Light Video Enhancement with Modality-Agnostic Inference",
+      "abstract": "Low-light video enhancement (LLVE) remains a challenging task due to severe information degradation under low-illumination conditions. Recent multimodal approaches have significantly improved enhancement performance by incorporating auxiliary modalities, such as event streams and infrared images. However, these methods typically assume the availability of these modalities at inference, which is often not feasible in real-world scenarios. To solve this problem, in this work, we propose AMNet, a unified multimodal framework for LLVE, to support flexible modality-agnostic inference, where auxiliary modalities may be unavailable. To address the issue of modality absence, we introduce a Spatial-Spectral Dual-Gated Translator that learns the correspondence between auxiliary modalities and RGB inputs, producing implicit auxiliary representations to support the robust enhancement. Additionally, to fully facilitate the learning of cross-modal correspondence, we conduct large-scale multimodal pretraining based on the RGB-only dataset with synthetic auxiliary modalities. Extensive experiments demonstrate that AMNet could handle arbitrary inference-time modality combinations and exhibits superior performance for LLVE under modality absence conditions. Code and models are available on the project page.",
+      "authors": [
+        "Hangfeng Liang",
+        "Yutao Hu",
+        "Yanhan Hu",
+        "Xiaohan Wu",
+        "Wenqi Shao",
+        "Ying Fu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-09T17:59:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.11186v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "low-light video enhancement method",
+      "llm_evidence_cn": "低光视频增强方法",
+      "llm_evidence": "低光视频增强方法",
+      "canonical_evidence": "低光视频增强方法",
+      "llm_tldr_en": "AnyMod-LLVE proposes a unified multimodal framework for low-light video enhancement that supports modality-agnostic inference, improving video quality for downstream analytics.",
+      "llm_tldr_cn": "低光视频增强（LLVE）因信息退化而困难，现有多模态方法在推理时假设辅助模态可用，但实际场景中常缺失。该论文提出AMNet，一个统一多模态框架，支持灵活模态无关推理。通过空间-光谱双门控转换器学习对应关系，在缺失模态时仍能有效增强。实验表明，在多种模态缺失情况下该方法仍能保持增强质量，从而提升后续视频分析任务的输入质量。",
+      "llm_tldr": "低光视频增强（LLVE）因信息退化而困难，现有多模态方法在推理时假设辅助模态可用，但实际场景中常缺失。该论文提出AMNet，一个统一多模态框架，支持灵活模态无关推理。通过空间-光谱双门控转换器学习对应关系，在缺失模态时仍能有效增强。实验表明，在多种模态缺失情况下该方法仍能保持增强质量，从而提升后续视频分析任务的输入质量。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.04351v2",
+      "source": "arxiv",
+      "title": "Frames2LoRA: Parametric Video Internalization for Vision-Language Models",
+      "abstract": "Processing video in vision-language models is expensive: each frame occupies hundreds of tokens, and inference cost scales with every frame and every repeated query. We introduce Frames2LoRA, a method for parametric video internalization. A perceiver hypernetwork reads the intermediate representations produced layer-by-layer as a frozen VLM encodes a video, and generates a Low-Rank Adaptation (LoRA) adapter in a single forward pass. Unlike standard LoRA fine-tuning, which requires iterative gradient updates, Frames2LoRA predicts these weights directly from the video. Trained for SmolVLM2 500M and 2.2B on video summarization and captioning, Frames2LoRA enables the same frozen VLM to answer queries from the adapter alone, with zero visual tokens in its context at query time. Frames2LoRA is statistically non-inferior and equivalent to direct video-in-context inference across all five captioning benchmarks at both model scales, and across seven of eight video question answering benchmark-scale pairings. Although trained only on 12 frames at 384px, it remains stable up to 1,024 frames and 1024px, where direct video-in-context inference often degenerates. Across this sweep, it reduces answer-time visual-token load by up to 1,500x and query TTFT by 6-80x, while preserving video-faithful outputs. We also find that independently generated adapters for non-overlapping video segments can compose in rank space, suggesting a path toward chunked long-video internalization.",
+      "authors": [
+        "Manan Suri",
+        "Sarvesh Baskar",
+        "Dinesh Manocha"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.CL"
+      ],
+      "published": "2026-06-03T02:07:35+00:00",
+      "link": "https://arxiv.org/pdf/2606.04351v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "proposes parametric video internalization for vision-language models, enabling efficient video analysis",
+      "llm_evidence_cn": "提出参数化视频内化方法，用于视觉-语言模型的高效视频分析",
+      "llm_evidence": "提出参数化视频内化方法，用于视觉-语言模型的高效视频分析",
+      "canonical_evidence": "提出参数化视频内化方法，用于视觉-语言模型的高效视频分析",
+      "llm_tldr_en": "Frames2LoRA compresses video frames into LoRA adapters via a perceiver hypernetwork, enabling VLMs to answer queries without visual tokens, improving efficiency for video analytics tasks.",
+      "llm_tldr_cn": "针对视频处理中每个帧占用大量token导致推理成本高昂的问题，本文提出Frames2LoRA方法，通过感知器超网络逐层读取冻结VLM对视频编码的中间表示，直接生成LoRA适配器权重，替代标准LoRA微调。在SmolVLM2模型上的视频摘要和描述任务中，该方法使模型仅从适配器回答查询，无需输入视觉token，显著降低推理开销，为高效视频分析提供了新范式。",
+      "llm_tldr": "针对视频处理中每个帧占用大量token导致推理成本高昂的问题，本文提出Frames2LoRA方法，通过感知器超网络逐层读取冻结VLM对视频编码的中间表示，直接生成LoRA适配器权重，替代标准LoRA微调。在SmolVLM2模型上的视频摘要和描述任务中，该方法使模型仅从适配器回答查询，无需输入视觉token，显著降低推理开销，为高效视频分析提供了新范式。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.08891v1",
+      "source": "arxiv",
+      "title": "PALUTE: Processing-In-Memory Acceleration via Lookup Table for Edge LLM Inference",
+      "abstract": "Large language models are increasingly deployed on edge devices with tight power and area budgets. While mixed-precision GEMM reduces arithmetic complexity, quantized inference is often dominated by dequantization and nonlinear operators. Lookup Table (LUT)-based method mitigates these costs by precomputing outputs and replacing repeated arithmetic with table lookups, but existing designs incur significant capacity and lookup-latency overheads. This paper presents PALUTE, a LUT-based Processing-In-Memory accelerator built on Monolithic 3D DRAM for efficient edge LLM inference. PALUTE enables in-DRAM LUT queries that exploit the vertical organization of M3D DRAM memory array tiles to achieve high parallelism with low area overhead. A near-memory LUT generator supports low-latency LUT generation for both GEMM and element-wise unary nonlinear operators, while a system-level tiering and scheduling strategy minimizes data movement across memory tiers. Evaluation using cycle-accurate simulation and RTL synthesis shows that PALUTE achieves 1,264 TPS end-to-end throughput at 0.16 W, improving energy efficiency by 12.8$\\times$ over CHIME and 1.6$\\times$ over FIGLUT, improving area efficiency by 2.0$\\times$ over PIMPAL under W4A4 across Qwen3-4B models.",
+      "authors": [
+        "Runyang Tian",
+        "Yanru Chen",
+        "Weihong Xu",
+        "Tajana Šimunić Rosing"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR",
+        "cs.ET"
+      ],
+      "published": "2026-06-08T00:33:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.08891v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "edge LLM inference acceleration using processing-in-memory",
+      "llm_evidence_cn": "使用内存内处理加速边缘大模型推理",
+      "llm_evidence": "使用内存内处理加速边缘大模型推理",
+      "canonical_evidence": "使用内存内处理加速边缘大模型推理",
+      "llm_tldr_en": "Presents PALUTE, a LUT-based processing-in-memory accelerator on M3D DRAM for efficient edge LLM inference, reducing latency and area overhead.",
+      "llm_tldr_cn": "针对边缘设备上大语言模型推理的功耗和面积约束，提出PALUTE加速器，基于查找表和单晶3D DRAM内存内处理架构，实现高并行度低面积开销的推理加速。实验表明在边缘场景下能显著降低推理延迟和能耗。为边缘计算中模型推理的硬件加速提供了新方案，但未直接涉及视频分析。",
+      "llm_tldr": "针对边缘设备上大语言模型推理的功耗和面积约束，提出PALUTE加速器，基于查找表和单晶3D DRAM内存内处理架构，实现高并行度低面积开销的推理加速。实验表明在边缘场景下能显著降低推理延迟和能耗。为边缘计算中模型推理的硬件加速提供了新方案，但未直接涉及视频分析。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.10536v1",
+      "source": "arxiv",
+      "title": "A Hybrid Edge-Cloud Architecture for Low-Latency Entitlement Verification in Resource-Constrained Devices",
+      "abstract": "As digital media consumption shifts toward large-scale Over-the-Top (OTT) platforms, the efficiency of the control plane, specifically entitlement and identity verification, has become a critical factor in user experience. Current architectures often rely on synchronous cloud-tethered validation flows that introduce significant latency, especially on resource-constrained consumer electronics. This paper proposes a Hybrid Edge-Cloud Entitlement Framework designed to minimize user-perceived friction. By implementing a secure, local caching layer within device middleware and utilizing an Adaptive Entitlement Cache with Proactive Refresh (AEC-PR) algorithm, we decouple the user interaction from backend network variability. We evaluate the performance on ARM Cortex-A series hardware, demonstrating that localized cryptographic verification reduces authorization latency from a mean of 422.8ms to 18.4ms (a 95.6% reduction) while mitigating implementation-level side-channel risks through deterministic Ed25519 arithmetic and TEE isolation.",
+      "authors": [
+        "Pravin Nagare",
+        "Aditya Sabbineni",
+        "Devendra Dahiphale",
+        "Faiz Gouri",
+        "Pratik Thantharate"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AR",
+        "cs.DC"
+      ],
+      "published": "2026-06-09T08:04:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.10536v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "hybrid edge-cloud architecture for low-latency verification",
+      "llm_evidence_cn": "低延迟验证的混合边缘云架构",
+      "llm_evidence": "低延迟验证的混合边缘云架构",
+      "canonical_evidence": "低延迟验证的混合边缘云架构",
+      "llm_tldr_en": "This paper proposes a hybrid edge-cloud architecture with adaptive caching to reduce latency for entitlement verification on resource-constrained devices.",
+      "llm_tldr_cn": "本文提出一种混合边缘云授权框架，通过在设备中间件中实现安全本地缓存层和自适应缓存预刷新算法，降低用户感知延迟。该架构解耦了用户交互与后端网络延迟，适用于资源受限设备，为边缘计算应用提供了低延迟验证方案。",
+      "llm_tldr": "本文提出一种混合边缘云授权框架，通过在设备中间件中实现安全本地缓存层和自适应缓存预刷新算法，降低用户感知延迟。该架构解耦了用户交互与后端网络延迟，适用于资源受限设备，为边缘计算应用提供了低延迟验证方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-06-05-730486-v1",
+      "source": "biorxiv",
+      "title": "Top Model Decision Tree: Selecting Segmentation Models for Reliable Quantitative Analysis in Low- and Ultralow-Dose CryoEM",
+      "abstract": "Deep learning neural networks provide a powerful approach for segmenting low-contrast cryogenic electron microscopy (cryoEM) images. However, model performance can vary significantly across imaging conditions and may hinder downstream quantitative analyses. Here, we present a structured evaluation workflow to systematically screen segmentation models based on performance, inference speed, robustness across imaging conditions, and reliability of downstream quantitative measurements. Using the Bacterial Cell Envelope Thickness Tool (BCET) as a test case, we evaluate multiple architectures (YOLOv11, YOLO26, U-Net, Detectron2, and SAM3) under low-dose and ultralow-dose cryoEM conditions. While several models achieve high metrics, model choice strongly influences downstream measurements of envelope thickness. Models optimized for high F1-scores may produce unreliable segmentation masks from object crowding, interpolation artifacts or imaging conditions. Our results reveal distinct trade-offs between performance, speed, and robustness amongst models. YOLOv11 provides the highest fidelity membrane segmentation for quantitative measurements and the Meta-based model SAM3 offers improved robustness under ultralow-dose conditions with competitive inference performance. This work provides practical guidance for model selection in cryoEM workflows, emphasizing that optimal choice depends on experimental priorities and downstream analysis requirements rather than metrics alone. These findings are broadly relevant to cryoEM workflows as AI-based analysis expands beyond the biological sciences.\n\nGraphical Abstract\n\nO_FIG O_LINKSMALLFIG WIDTH=200 HEIGHT=142 SRC=\"FIGDIR/small/730486v1_ufig1.gif\" ALT=\"Figure 1\">\nView larger version (33K):\norg.highwire.dtl.DTLVardef@f29df4org.highwire.dtl.DTLVardef@601d6eorg.highwire.dtl.DTLVardef@2c5023org.highwire.dtl.DTLVardef@1413f76_HPS_FORMAT_FIGEXP  M_FIG C_FIG",
+      "authors": [
+        "Massenburg, L. N.",
+        "Madugula, S. S.",
+        "Brown, S. R.",
+        "Bible, A. N.",
+        "Harris, C. R.",
+        "Zhang, L. X.",
+        "Parker, K.",
+        "Retterer, S. T.",
+        "Morrell-Falvey, J. L.",
+        "Vasudevan, R. K.",
+        "Williams, A. N."
+      ],
+      "primary_category": "microbiology",
+      "categories": [
+        "microbiology"
+      ],
+      "published": "2026-06-06T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.06.05.730486v1.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "model selection workflow for segmentation models",
+      "llm_evidence_cn": "基于分割模型的模型选择工作流",
+      "llm_evidence": "基于分割模型的模型选择工作流",
+      "canonical_evidence": "基于分割模型的模型选择工作流",
+      "llm_tldr_en": "Top Model Decision Tree presents a systematic evaluation workflow for selecting segmentation models based on performance, speed, robustness, and reliability of downstream analysis.",
+      "llm_tldr_cn": "该论文针对低剂量冷冻电镜图像分割中模型性能因成像条件而变化的问题，提出了结构化评估工作流（Top Model Decision Tree）。该工作流系统筛选多个分割架构（如YOLOv11、U-Net等）的性能、推理速度、鲁棒性和下游定量分析的可靠性。实验以细菌细胞包膜厚度工具为测试案例，验证了该方法的有效性。该模型选择框架原则上可迁移至其他领域的模型选择问题。",
+      "llm_tldr": "该论文针对低剂量冷冻电镜图像分割中模型性能因成像条件而变化的问题，提出了结构化评估工作流（Top Model Decision Tree）。该工作流系统筛选多个分割架构（如YOLOv11、U-Net等）的性能、推理速度、鲁棒性和下游定量分析的可靠性。实验以细菌细胞包膜厚度工具为测试案例，验证了该方法的有效性。该模型选择框架原则上可迁移至其他领域的模型选择问题。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,303 @@
+Title: A Hybrid Edge-Cloud Architecture for Low-Latency Entitlement Verification in Resource-Constrained Devices
+
+URL Source: https://arxiv.org/pdf/2606.10536v1
+
+Published Time: Wed, 10 Jun 2026 00:42:22 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# A Hybrid Edge-Cloud Architecture for Low-Latency Entitlement Verification in Resource-Constrained Devices 
+
+Pravin Nagare 1, Aditya Sabbineni 1, Devendra Dahiphale 2, Faiz Gouri 3, Pratik Thantharate 4
+
+> 1
+
+Independent Researcher, CA, 2IEEE Senior Member, CA 
+
+> 3
+
+IEEE Senior Member, WA, 4Independent Researcher, NJ 
+
+{pnagare1@binghamton.edu, sabbineni.aditya@gmail.com, devendra@ieee.org, faizgouri@ieee.org, pthanth2@ieee.org }
+
+Abstract —As digital media consumption shifts toward large-scale Over-the-Top (OTT) platforms, the efficiency of the con-trol plane, specifically entitlement and identity verification, has become a critical factor in user experience. Current archi-tectures often rely on synchronous cloud-tethered validation flows that introduce significant latency, especially on resource-constrained consumer electronics. This paper proposes a Hybrid Edge-Cloud Entitlement Framework designed to minimize user-perceived friction. By implementing a secure, local caching layer within device middleware and utilizing an Adaptive Entitlement Cache with Proactive Refresh (AEC-PR) algorithm, we decouple the user interaction from backend network variability. We evaluate the performance on ARM Cortex-A series hardware, demonstrating that localized cryptographic verification reduces authorization latency from a mean of 422.8ms to 18.4ms (a 95.6% reduction) while mitigating implementation-level side-channel risks through deterministic Ed25519 arithmetic and TEE isolation. 
+
+Index Terms —Edge Computing, Digital Rights Management, Low-Latency, Trusted Execution Environment, Ed25519, Con-sumer Electronics. 
+
+I. I NTRODUCTION 
+
+The transition from linear broadcast television to application-based Over-the-Top (OTT) ecosystems has fundamentally changed how digital rights and transactions are managed. Modern streaming platforms must handle millions of concurrent identity, subscription, and purchase requests, often referred to as ”control-plane” traffic. The primary challenge in these systems is maintaining sub-second ”Time-to-Play” (TTP) while ensuring robust security. Unlike traditional Content Delivery Network (CDN) edge-caching or Digital Rights Management (DRM) systems (e.g., Widevine [1], PlayReady [2]) that manage heavyweight decryption licenses, AEC-PR focuses on the asynchronous orchestration of transactional state . Existing DRM pre-fetching is often non-contextual relative to User Interface (UI) interaction cycles, leading to redundant cloud that increases both latency and device energy consumption [3], [4]. Our contribution differentiates itself by moving beyond simple caching to an adaptive threshold-based lifecycle management 
+
+D. Dahiphale is also with Google LLC, USA. 
+
+model. By anchoring logic within device’s Trusted Execution Environment (TEE), we achieve a hardware-verified security profile without network Round-Trip Time (RTT) penalty. The key contributions of this research are: 1) a novel ar-chitectural integration of TEE-based verification and adaptive caching for OTT devices; 2) a stochastic expectation model to quantify ”Time-to-Authorization” (TTA) reduction; and 3) an empirical hardware-in-the-loop evaluation on ARM hardware demonstrating a 95.6% latency reduction and 42% decrease in cloud-side signaling overhead. II. R ELATED WORK 
+
+The challenge of minimizing latency in digital rights man-agement and service authorization has been a focal point of recent systems research, particularly as Over-the-Top (OTT) platforms scale to millions of heterogeneous devices. Existing literature generally bifurcates into two categories: protocol optimization and middleware pre-fetching. 
+
+A. Edge Caching and DRM Foundations 
+
+Traditional edge caching optimizes the ”Data Plane” by mirroring content geographically but lacks the logic for individualized ”Control Plane” entitlements. Modern DRM frameworks, specifically those utilizing the Widevine Content Decryption Module (CDM) [1] and Microsoft PlayReady [2], manage heavyweight content decryption licenses; however, these are strictly coupled to media decryption and incur signif-icant IPC overhead on resource-constrained SoCs. While dis-tributed state management has been explored in cloud-native environments [5], and recent work in the ACM Symposium on Cloud Computing (SoCC) has addressed low-latency state orchestration in hybrid environments [6], our approach specifi-cally targets control-plane latency through TEE-anchored state verification [7]. Unlike prior edge-computing systems that focus primarily on data-plane optimization, AEC-PR utilizes hardware-isolated security to maintain transactional integrity without cloud-tethered round-trip penalty. Additionally, unlike standard JSON Web Token (JWT) flows that lack hardware-anchored anti-rollback, AEC-PR provides Silicon-ID binding 
+
+> arXiv:2606.10536v1 [cs.CR] 9 Jun 2026
+
+to prevent credential cloning without synchronous validation penalty of short-lived tokens. 
+
+B. Cryptographic Primitive Performance 
+
+Recent empirical studies on ARM Cortex-A series proces-sors highlight the transition to the Ed25519 parameter set [8]. While benchmarks on high-performance ARM Cortex-A72 cores show an 11.34% cycle reduction compared to NIST P-256, performance characteristics on power-efficient in-order cores like Cortex-A53 differ due to pipeline depth and SIMD unit constraints. Our work specifically targets Cortex-A53 platform, leveraging its hardware-level cycle savings to perform TEE-based verification without starving UI resources. III. S YSTEM MODEL 
+
+We define a four-layer architectural model that generalizes the interaction between media applications and the device firmware, ensuring a vendor-neutral design applicable to var-ious streaming operating systems.  
+
+> Fig. 1. The 4-tier Hybrid Edge-Cloud Architecture. The model depicts the interaction between unprivileged Application space and the Hardware-Isolated Trusted Execution Environment (TEE), where the Secure State Blob (SSB) acts as the local source of truth to bypass network RTT.
+
+A. Application Layer (OTT Apps) 
+
+The Application Layer consists of third-party streaming services that utilize platform-provided SDK APIs. These applications perform high-level workflows including catalog browsing and entitlement verification. 
+
+B. Middleware Layer (Device SDK) 
+
+The Middleware serves as the intelligent orchestrator, man-aging the ”Secure State Blob” (SSB)—a local, cryptograph-ically signed representation of the user’s current entitlement status. 
+
+C. Trusted Execution Layer (TEE) 
+
+As shown in Fig. 1, TEE provides a hardware-isolated environment (e.g., ARM TrustZone [9], [10]) where sensitive cryptographic operations occur, shielding the SSB from com-promised applications in the Normal World. 
+
+D. Service Layer (Cloud) 
+
+The Cloud remains the authoritative source of truth, peri-odically issuing short-lived, signed entitlements to the device to maintain long-term consistency. IV. L ATENCY MODEL AND PERFORMANCE ANALYSIS 
+
+To quantify the impact of cloud-tethered architectures, we first define the latency of a standard synchronous flow ( Lsync )as the sum of its discrete components: 
+
+Lsync = Tipc + Tcrypto + Tnet + Tback (1) Where Tipc is the inter-process communication overhead, 
+
+Tcrypto is the on-device cryptographic verification time, Tnet 
+
+is the network round-trip time, and Tback represents backend service processing. In the AEC-PR framework, we define the Expected Latency ( E[L]) as: 
+
+E[L] = Ph · Llocal + (1 − Ph) · Lsync (2) Where Ph is the probability of a local cache hit and Llocal is the latency of the hardware-isolated verification path ( Llocal =
+
+Tipc + Tcrypto tee ). Because Llocal ≪ Lsync , the optimization objective is to maximize Ph.
+
+A. Cache Hit Probability Model 
+
+To model the hit probability Ph, we treat user requests as a Poisson process with arrival rate λ. A ”Cache Hit” occurs if at least one request arrives before the token enters the final τ
+
+threshold of its lifecycle. We define Ph as the probability that the inter-arrival time of requests is shorter than the proactive refresh window: 
+
+Ph = 1 − e−λ·(1 −τ )·Ttotal (3) For example, we define λ = 0.5 requests/hour as the background synchronization rate required to maintain SSB freshness. This represents the proactive polling frequency used to ensure the local cache remains valid even during periods of user inactivity. Given our design parameters ( Ttotal =24 h, τ = 0 .25 ), the theoretical probability of maintaining a valid local state is Ph = 1 −e−0.5·18 ≈ 0.999 . In our hardware evaluation, we observed an empirical Ph = 0 .956 under vari-able jitter. This confirms that even during the sparse interaction cycles common in OTT standby modes, the proactive refresh effectively shields 95 .6% of all user interactions from network critical path. V. P ROPOSED SOLUTION : AEC-PR 
+
+A. Predictive Entitlement Engine 
+
+The architecture utilizes a predictive synchronization model as illustrated in Fig. 2. Instead of a linear, blocking request-response cycle, the SDK queries TEE locally. If a valid SSB exists, the status is returned immediately to the App, while a background thread handles the cloud handshake.    
+
+> Fig. 2. AEC-PR Sequence Flow. The diagram illustrates the asynchronous decoupling of the UI thread from Cloud Layer. Local TEE verification completes in <20 ms , while the background refresh thread handles network signaling independently.
+
+B. Adaptive Refresh Threshold 
+
+We define a refresh threshold τ (0 < τ < 1). Let 
+
+Trem be the remaining time-to-live of a local entitlement. The background refresh trigger is defined as T rigger = 1 
+
+if Trem /T total < τ . By utilizing this threshold (typically 
+
+τ = 0 .25 ), the system ensures the cloud is only contacted when the credential is near expiry. 
+
+C. Operational Parameters 
+
+The design specifications for the AEC-PR framework are summarized in Table I. These represent the optimized values for maintaining the balance between offline safety and signal-ing efficiency.                
+
+> TABLE I AEC-PR O PERATIONAL PARAMETERS (D ESIGN SPECS )
+> Parameter Value Definition
+> TTL ( Ttotal )24 h Max. cryptographic validity of the SSB. Threshold ( τ)0.25 Trigger ratio for proactive cloud sync. Safety ( Wof f )120 m Min. guaranteed offline session duration. Min. Sync ( Imin )15 m Rate-limit for redundant backend calls.
+
+VI. A LGORITHM DESIGN 
+
+To formalize the AEC-PR model, we define the logic exe-cuted within device middleware in Algorithm 1. This algorithm handles the decision-making process for both local verification and background synchronization. Algorithm 1 formalizes the core decision logic of the AEC-PR framework, encoding the local-first verification policy and the adaptive background synchronization trigger. The primary advantage of this logic is its efficiency in the ”Hit” state. While a standard cloud-sync may require 400 ms –1200 ms , the local TEE lookup and verification typically complete in under 
+
+20 ms . This provides a 95 .6% reduction in TTA compared to synchronous cloud-sync flows, ensuring the verification process remains transparent to the end-user. 
+
+Algorithm 1 AEC-PR Local-First Verification  
+
+> 1:
+
+Input: ServiceID, U serT oken, SecurityContext  
+
+> 2:
+
+Output: AuthStatus, LatencyM etric  
+
+> 3:
+
+Tstart ← CurrentTimestamp ()  
+
+> 4:
+
+LocalBlob ← TEE.ReadSecureStorage (”SSB ” +
+
+ServiceID ) 
+
+> 5:
+
+if LocalBlob ̸ = Null and LocalBlob.Expiry > T start 
+
+then  
+
+> 6:
+
+AuthStatus ← GRANTED LOCAL  
+
+> 7:
+
+Compute Ratio = (LocalBlob.Expiry −
+
+Tstart )/LocalBlob.T otalT T L  
+
+> 8:
+
+if Ratio < τ then  
+
+> 9:
+
+SpawnThread: BackgroundCloudSync ( 
+
+> 10:
+
+ServiceID, U serT oken ) 
+
+> 11:
+
+end if  
+
+> 12:
+
+else  
+
+> 13:
+
+AuthStatus ← ExecuteBlockingCloudSync ( 
+
+> 14:
+
+ServiceID, U serT oken ) 
+
+> 15:
+
+end if  
+
+> 16:
+
+Tend ← CurrentTimestamp ()  
+
+> 17:
+
+return AuthStatus, (Tend − Tstart )
+
+A. Complexity and Performance Analysis 
+
+The AEC-PR verification logic (Algorithm 1) is designed for constant-time O(1) execution relative to the number of stored entitlements. The primary computational cost is local-ized to the cryptographic verification of the SSB signature within TEE. Unlike cloud-tethered models where complexity scales with network congestion and backend database latency (O(N )), the local path is deterministic. The worst-case scenario (Cache Miss) occurs when the SSB is null or expired, forcing a fallback to the Lsync 
+
+path. However, the use of the τ threshold ensures that 
+
+95 .6% of requests follow the average-case O(1) path, as derived in Section IV and empirically validated in Section VIII. Furthermore, the background synchronization thread is assigned a low priority to prevent resource contention with the primary media rendering pipeline. VII. S ECURITY ANALYSIS 
+
+The transition to edge-based verification necessitates a rigor-ous security model that maintains parity with centralized cloud validation. We define the security of AEC-PR through three core properties: Integrity , Freshness , and Hardware Binding .
+
+A. Threat Model and Assumptions 
+
+We adopt the Dolev-Yao adversary model, assuming the attacker has root-level access to the untrusted Rich Execution Environment (REE/Linux). The attacker can intercept IPC calls, manipulate the system clock, and attempt to replay captured Secure State Blobs (SSBs). We assume the Trusted Execution Environment (TEE) [9] and its associated hardware primitives (Monotonic Counters and Physically Unclonable Function (PUF)-backed keys) remain uncompromised, forming our Hardware Root of Trust (RoT). B. Formal Security Guarantees 
+
+To ensure the system is resilient against adversarial manip-ulation, we implement the cryptographic safeguards illustrated in Fig. 3:  
+
+> •
+
+Integrity and Authenticity: Each SSB is signed us-ing the Ed25519 algorithm. Unlike ECDSA, Ed25519 is deterministic; it does not rely on a random number generator (RNG) for signature creation, which mitigates a common class of side-channel vulnerabilities related to nonce-reuse and RNG bias. However, we acknowledge that microarchitectural power analysis still poses a risk, which we mitigate through TEE-level constant-time im-plementation.  
+
+> •
+
+State Freshness (Anti-Rollback): To prevent ”Replay Attacks” where an attacker injects a revoked SSB, TEE maintains a hardware-backed Monotonic Counter. Each SSB contains a sequence number Sn. Upon verification, TEE enforces the condition Sn > S local . If an attacker attempts to ”roll back” the state, the mismatch between the SSB sequence and the hardware counter triggers an immediate invalidation.  
+
+> •
+
+Hardware Binding: To prevent ”Cloning Attacks” (mov-ing an SSB from one device to another), TEE binds the SSB to the device’s Physically Unclonable Function (PUF). The verification logic ensures that the SSB was signed specifically for the unique Silicon ID of the local SoC.  
+
+> Fig. 3. Security Logic Flow. The verification process enforces three-point integrity: Ed25519 signature validation, hardware-backed monotonic counter checks to prevent state-rollback, and Silicon-ID binding (PUF) to prevent cross-device credential cloning.
+
+Hardware Heterogeneity and Fallbacks: While we assume high-assurance primitives (PUF, hardware counters) found in SoCs like the NXP i.MX8, AEC-PR maintains a ”Fail-Secure” posture for legacy ARM Cortex-A53 variants. In the absence of a PUF, we derive device-bound keys via HMAC-based extraction from One-Time Programmable (OTP) fuses ( Kdev = HMAC (Kroot , Serial ID )). Similarly, systems lacking on-die monotonic counters utilize a TEE-managed software counter persisted to the Replay Protected Memory Block (RPMB), ensuring anti-rollback integrity at a minor performance cost ( < 2ms ). 
+
+C. Adversarial Resistance Analysis 
+
+In a simulated adversarial environment, we subjected the AEC-PR framework to 1,000 automated replay and clock-skew attacks. The hardware-anchored freshness check (Monotonic Counter) resulted in a 100% detection rate for replay attempts. While a compromised REE can deny service by blocking IPC calls to TEE, it cannot forge a valid authorization state, ensuring that the service provider’s revenue integrity remains protected even on a compromised device. VIII. E VALUATION 
+
+To validate the AEC-PR framework, we established aHardware-in-the-Loop (HIL) testbed designed to isolate secure operations from variable network conditions. 
+
+A. Experimental Setup and Methodology 
+
+The testbed utilizes a Raspberry Pi 3 Model B+ (quad-core ARM Cortex-A53, 1.4 GHz) running Linux v5.15 and OP-TEE v4.0.0. All TEE-related operations ( Tcrypto tee and secure storage I/O) are measured directly on-silicon. To ensure reproducibility, the cloud path ( 422 .8ms baseline) is defined as a Modeled Reference Scenario (μ = 150 ms, σ = 50 ms ), representing a congested transcontinental API call to isolate architectural gains from transient ISP noise. We performed 10 independent runs of 10,000 requests each, totaling 100 , 000 
+
+entitlement cycles. 
+
+B. Latency and Throughput Results 
+
+The AEC-PR model achieved a mean TTA of 18 .4ms ±
+
+0.3ms (95% CI), as shown in Fig. 4. Ed25519 verification on the A53 required only 479,000 cycles, a 51.6% reduction compared to ECDSA P-256 [8]. This efficiency shielded user from 95.6% of total simulated cloud latency. Statistical analysis using Mann-Whitney U test ( U = 0 , p < 0.001 )rejects the null hypothesis that AEC-PR latency distribution is stochastically identical to Pure Cloud baseline. The large effect size (Cliff’s δ = 1 .0) confirms the absolute stochastic separation of the two paths. This result indicates that AEC-PR architecture renders transaction latency effectively independent of network-induced stochasticity, replacing a high-variance cloud dependency with a deterministic hardware execution profile. 
+
+C. Statistical Distribution Analysis 
+
+We calculated the Cumulative Distribution Function (CDF) for the 100 , 000 requests. While the baseline cloud model showed a wide variance ( σ = 112 ms ), the AEC-PR local hit distribution was extremely tight (σ = 1.2ms ). This consistency is critical for maintaining deterministic UI refresh rates in 60fps streaming environments. Fig. 4. Time-to-Authorization (TTA) Performance. Comparison of mean latencies across 100,000 requests. The AEC-PR model (18.4ms) exhibits high stability, whereas the Pure Cloud model suffers from significant tail-latency due to network jitter. 
+
+D. Ablation Study 
+
+Table II summarizes contribution of individual components. Cloud load is normalized against Pure Cloud baseline (100%). The results confirm that while removing TEE isolation (W/O TEE) reduces latency by 6.3ms, it violates the core principles of Zero Trust Architecture (ZTA) as defined in NIST SP 800-207 [11], which mandates hardware-anchored isolation for sensitive identity state. The proactive threshold τ is the primary driver of signaling efficiency, reducing cloud load to 58.0%.                 
+
+> TABLE II ABLATION STUDY OF AEC-PR C OMPONENTS
+> Configuration Mean TTA P99 Latency Cloud Load*
+> Full AEC-PR 18.4 ms 24.1 ms 58.0% W/O τ(Basic Cache) 82.3 ms 418.6 ms 85.0% W/O TEE (User-Space) 12.1 ms 15.6 ms 58.0%
+> *Normalized against the Pure Cloud baseline (100% signaling).
+
+E. IPC Overhead Characterization 
+
+On Cortex-A53, the overhead of context-switching between the Application and TEE was optimized using zero-copy memory mapping for SSB transfers. This reduced total IPC overhead from 4ms to under 0.8ms, ensuring the 20ms total TTA target was consistently met. IX. S USTAINABILITY AND CLOUD RESOURCE EFFICIENCY 
+
+Modern cloud infrastructures face escalating energy de-mands due to the exponential growth of control-plane traffic. By shifting authorization logic to the edge, the AEC-PR framework contributes to ”Green Cloud” objectives through two primary vectors: signaling reduction and computational offloading. 
+
+A. Energy Impact of Signaling Reduction 
+
+Data center energy consumption is heavily driven by the ingress/egress processing of control-plane traffic. We adopt per-request energy values from [12]: Enet ≈ 0.12 J (backbone network traversal), Ecloud ≈ 0.18 J (authentication compute and cooling PUE), and Eedge ≈ 0.005 J (local TEE veri-fication measured on Cortex-A53). For a platform handling 
+
+N = 10 6 requests per day, the total energy saved is: 
+
+Esave = 10 6 · Ph · (0 .12 + 0 .18) − 10 6 · 0.005 (4) With the measured Ph = 0 .956 , Esave ≈ 281 .8 kJ. To contex-tualize this for global-scale deployments handling billions of transactions, our model indicates an architectural saving of 80 –
+
+90 kWh per day per million concurrent users. Using the IEA 2024 global average carbon intensity of 0.233 kg CO 2/kWh, this translates to a reduction of approximately 19 .8 kg CO 2
+
+per day. 
+
+Sensitivity Analysis: The efficiency of the framework is strongly coupled to the hit rate. A sensitivity analysis reveals that as Ph varies from 0.85 to 0.99 , the net energy savings range from 72 .1 to 84 .2 kWh. This confirms that even under sub-optimal network conditions ( τ triggers failing), the AEC-PR framework maintains a significant sustainability advantage over synchronous cloud-tethered alternatives. While Enet and 
+
+Ecloud are representative constants, we acknowledge regional variability in PUE and grid intensity; these figures serve as directional performance indicators rather than absolute geographic audits. 
+
+B. Operational Expenditure (OpEx) and Scalability 
+
+Beyond energy, the reduction in cloud signaling directly impacts the operational scalability of the Service Layer. By filtering out 95 .6% of network-induced latency spikes at the edge, the backend clusters can be provisioned for average load rather than peak ”thundering herd” spikes. This ”Traffic Smoothing” effect allows for a more efficient allocation of cloud resources, reducing the carbon footprint associated with over-provisioned server standby capacity. X. D ISCUSSION AND LIMITATIONS 
+
+While the AEC-PR framework significantly optimizes the latency-security trade-off, its deployment in global-scale streaming ecosystems introduces specific boundary conditions that necessitate careful implementation. 
+
+A. Secure Clock Drift and Synchronization 
+
+The local-first verification model relies heavily on the reliability of the device’s internal hardware timer. In low-cost consumer electronics, system clock often drifts or resets during extended power-off states. If the hardware clock ”rolls back,” a local entitlement could appear valid beyond its intended duration. To mitigate this, our architecture defaults to a ”Fail-Secure” mode; if a significant clock delta is detected at boot, the system bypasses the local cache and forces a synchronous cloud synchronization to re-establish the temporal baseline. B. Scalability and the ”Thundering Herd” 
+
+A potential risk of proactive refreshing is the synchroniza-tion of backend requests across millions of devices. If a high-concurrency event occurs, such as a global series premiere, the τ threshold logic could trigger millions of simultaneous ”Proactive Refreshes.” To ensure backend stability, we propose an Exponential Jitter Algorithm within background thread, which introduces a randomized offset ( ±15% ) to the refresh trigger. This ensures that the Service Layer load is distributed across a wider temporal window. 
+
+C. First-Boot and Cold-Start Latency 
+
+The AEC-PR model is inherently historical and cannot optimize the initial ”First-Time-to-Play” after a factory reset or new user login. We formally define this cold-start latency as: 
+
+Ltotal = Tipc +Tauth +Tnet +Tback +Tcrypto +Tssb write (5) where Tssb write represents TEE secure storage write time. On our ARM Cortex-A53 testbed, Ltotal was measured at 1, 142 ms . While this is higher than 422 .8ms baseline for subsequent synchronous requests—due to overhead of initial authentication and SSB persistence—it remains well within industry-standard < 3s UX threshold for application first-launch. This initialization penalty is a one-time trade-off necessary to establish hardware root of trust that enables all subsequent 18 .4ms verifications. While critical, this initialization occurs only during rare events (e.g., factory reset), ensuring the system prioritizes the ’instant-on’ performance required for 99% of daily user interactions. 
+
+D. Implementation Insights: Handling Secure Clock Reset 
+
+A significant challenge encountered during deployment was the behavior of TEE secure clock on devices lacking battery-backed Real-Time Clock (RTC). In scenarios where the device suffered a cold power cycle, the secure clock would occasionally reset to a factory epoch, potentially validating an expired SSB. We resolved this by implementing a ”Temporal Anchor” logic: at every successful cloud synchronization, the device persists a ”Last Known Good Time” to secure storage. If the current clock is found to be earlier than anchor at boot, the system enforces a mandatory network time sync, ensuring the integrity of TTL-based verification. Cross-Platform Scalability: While our evaluation is grounded on Cortex-A53, the deterministic nature of Ed25519 arithmetic and the constant-time IPC optimizations are architecturally portable. We anticipate comparable or improved performance on newer ARMv8/v9-A cores (e.g., Cortex-A55, A73) and specialized media SoCs (e.g., MediaTek MT8195), where deeper pipelines and improved SIMD units would further reduce Tcrypto tee .XI. C ONCLUSION AND FUTURE WORK 
+
+This paper presented a rigorous systems engineering ap-proach to the challenge of low-latency entitlement verifica-tion. By synthesizing hardware-isolated security with adap-tive proactive refresh logic, we successfully decoupled the user interaction path from inherent unpredictability of cloud-tethered flows. Rather than proposing a fundamental crypto-graphic shift, our work demonstrates how strategic architec-tural orchestration can yield measurable gains in both user experience and cloud resource efficiency. Our evaluation of ARM Cortex-A series hardware demonstrates that localized cryptographic verification using Ed25519 primitives provides a 95.6% reduction in perceived authorization latency while maintaining the integrity required for high-value transactions. By reducing cloud signaling by 42%, the architecture not only improves UX but also significantly reduces operational expenditure (OpEx) for global media infrastructure [13]. By bridging the gap between high-concurrency cloud scaling and hardware-anchored security, the AEC-PR framework provides a performance baseline for local-first verification in OTT ecosystems within global media landscape. Looking ahead, the paradigm of local verification must adapt to the emerging threat of quantum computing. Classical ECC algorithms such as ECDSA and Ed25519 are theoretically vulnerable to Shor’s algorithm. Our future research will focus on the integration of Post-Quantum Cryptography (PQC) , specifically evaluating the memory footprint and cycle efficiency of lattice-based schemes like ML-KEM [14] and ML-DSA [15], [16] within limited secure RAM of standard TEE implementations. By evolving toward ”Hardware-Anchored Decentralization,” streaming platforms can ensure a future-proof balance of instantaneous performance and robust security. REFERENCES [1] Google LLC, “Widevine DRM architecture overview,” whitepaper, Google LLC, 2024. [2] Microsoft Corporation, “Introduction to playready technology and con-tent protection,” microsoft technical documentation, Microsoft Corpora-tion, 2024. [3] V. Nguyen et al. , “On-device or remote? on the energy efficiency of fetching LLM-generated content,” in Proc. IEEE/ACM 4th Int. Conf. AI Eng. (CAIN) , 2025. [4] Y. Mao, C. You, J. Zhang, K. Huang, and K. B. Letaief, “A survey on mobile edge computing: The communication perspective,” IEEE Commun. Surveys Tuts. , vol. 19, no. 4, pp. 2322–2358, 2017. [5] M. Satyanarayanan, “The emergence of edge computing,” IEEE Com-put. , vol. 50, pp. 30–39, Jan 2017. [6] L. Zeno et al. , “Swishmem: Distributed shared state abstractions for programmable switches,” in Proc. ACM HotNets , pp. 160–167, 2020. [7] Z. Zhang, “Enhancing IoT security through trusted execution environ-ments,” Advances in Computer Science Research , vol. 115, pp. 580–589, 2024. [8] D. J. Bernstein, N. Duif, T. Lange, P. Schwabe, and B.-Y. Yang, “High-speed high-security signatures,” J. Cryptogr. Eng. , vol. 2, no. 2, pp. 77– 89, 2012. [9] B. Ngabonziza, D. Martin, A. Bailey, H. Cho, and S. Martin, “TrustZone explained: Architectural features and use cases,” in Proc. IEEE 2nd Int. Conf. Collab. Internet Comput. (CIC) , pp. 445–451, 2016. [10] M. Sabt, M. Achemlal, and A. Bouabdallah, “Trusted execution environ-ment: What it is, and what it is not,” in Proc. 14th IEEE Int. Conf. Trust, Security and Privacy in Comput. and Commun. (TrustCom) , pp. 57–64, 2015. [11] S. Rose, O. Borchert, S. Mitchell, and S. Connelly, “Zero trust architec-ture,” Tech. Rep. NIST Special Publication 800-207, National Institute of Standards and Technology, Aug 2020. [12] M. Shojafar et al. , “An energy-efficient adaptive resource management policy in cloud computing,” IEEE Transactions on Cloud Computing ,2020. [13] F. E. Subhan, A. Yaqoob, C. H. Muntean, and G.-M. Muntean, “A survey on artificial intelligence techniques for improved rich media content delivery in a 5G and beyond network slicing context,” IEEE Communications Surveys & Tutorials , vol. 27, no. 2, pp. 1427–1487, 2024. [14] National Institute of Standards and Technology, “Module-lattice-based key-encapsulation mechanism standard,” federal information processing standard (fips) 203, NIST, Aug 2024. [15] National Institute of Standards and Technology, “Module-lattice-based digital signature standard,” federal information processing standard (fips) 204, NIST, Aug 2024. [16] M. J. Kannwischer, J. Rijneveld, P. Schwabe, and K. Stoffelen, “pqm4: Testing and benchmarking NIST PQC on ARM Cortex-M4,” in Proc. 2nd PQC Standardization Conference , 2019. Available: https://eprint. iacr.org/2019/844, Accessed: May 2026.
