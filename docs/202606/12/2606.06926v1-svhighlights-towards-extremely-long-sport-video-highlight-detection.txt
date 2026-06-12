@@ -1,0 +1,435 @@
+Title: SVHighlights: Towards Extremely Long Sport Video Highlight Detection
+
+URL Source: https://arxiv.org/pdf/2606.06926v1
+
+Published Time: Mon, 08 Jun 2026 00:34:49 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# SVHighlights: Towards Extremely Long Sport Video Highlight Detection 
+
+# Donggyu Lee ∗
+
+# Youngbin Ki ∗
+
+leedongkyu2019@unist.ac.kr youngbinki@unist.ac.kr Ulsan National Institute of Science and Technology Ulsan, Republic of Korea 
+
+# Jeonghun Kang 
+
+jhkang@unist.ac.kr Ulsan National Institute of Science and Technology Ulsan, Republic of Korea 
+
+# Taehwan Kim 
+
+taehwankim@unist.ac.kr Ulsan National Institute of Science and Technology Ulsan, Republic of Korea 
+
+## Abstract 
+
+While highlight detection for long-form videos is of great prac-tical importance, most existing methods remain limited to short-form content, largely due to the absence of a suitable benchmark. To bridge this gap, we introduce SVHighlights, to the best of our knowledge, the first benchmark for highlight detection in extremely long sports videos, each exceeding one hour in duration, across multiple sports categories. SVHighlights is constructed from pairs of full-length sports videos and their corresponding official high-light videos using a dataset generation pipeline, enabling scalable and cost-effective label generation without conventional per-clip saliency annotation. The benchmark comprises 320 videos span-ning a wide range of sports, with an average duration of 2.00 hours and a total of 640.18 hours, substantially exceeding previous high-light detection datasets. Beyond the lack of benchmarks, existing methods also face fundamental challenges on long videos: models trained on short clips of only a few minutes fail to generalize to hour-long content, and their clip-level scoring lacks the broader context needed to identify highlights in long-form videos. To ad-dress these challenges and provide a strong baseline for SVHigh-lights, we present TF-SELECTOR, a training-free segment-based approach that divides each video into context-aware segments by merging adjacent shots sharing the same semantic content, and predicts segment-level saliency scores using a large language model (LLM) with multimodal inputs including visual captions, transcripts, and audio volume. Extensive experiments demonstrate that TF-SELECTOR achieves superior performance across most evaluation metrics compared to Video Temporal Grounding (VTG)-tuned baselines, with improvements of +3.12 in HIT@1, +4.06 in HIT@K, and +2.95 in IoU. These results establish SVHighlights as a challenging testbed for long-form highlight detection and demonstrate that a simple segment-based strategy can effectively scale to hour-long videos. The dataset and code are available at https://leedongkyu2019.github.io/SVHighlights/.      
+
+> ∗Both authors contributed equally to this research.
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+> KDD 2026, Jeju Island, Republic of Korea.
+> ©2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2259-2/2026/08 https://doi.org/10.1145/3770855.3817564 YouTube HL TVSum QVHighlights Mr.HiSum SVHighlights
+> (Ours)
+
+0
+
+25 
+
+50 
+
+75 
+
+100 
+
+125 
+
+> Average Video Duration (min)
+
+2.0 4.2 2.5 3.4 
+
+120.0 
+
+Average Video Duration per Benchmark 
+
+Figure 1: Average video duration (in minutes) for each video highlight detection benchmark dataset. Our SVHighlights dataset contains significantly longer videos on average com-pared to existing benchmarks, providing a unique testbed for long-form video understanding. 
+
+## CCS Concepts 
+
+• Computing methodologies → Video summarization ; Activity recognition and understanding ; Natural language processing .
+
+## Keywords 
+
+Video highlight detection, Long-form video understanding, Sports video analysis, Benchmark dataset, Large language models 
+
+ACM Reference Format: 
+
+Donggyu Lee, Youngbin Ki, Jeonghun Kang, and Taehwan Kim. 2026. SVHighlights: Towards Extremely Long Sport Video Highlight Detection. In 
+
+Proceedings of the 32nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining V.2 (KDD 2026), August 9–13, 2026, Jeju Island, Republic of Korea. 
+
+ACM, New York, NY, USA, 12 pages. https://doi.org/10.1145/3770855.3817564 
+
+## 1 Introduction 
+
+Across major video platforms, viewers increasingly prefer con-cise, engaging content—such as sports highlights, YouTube Shorts, or recaps of movies and TV shows—over watching full-length videos [ 7, 32 ]. However, manually extracting highlight-worthy mo-ments from long videos is both time-consuming and costly, ren-dering large-scale highlight production impractical. Consequently, there has been a growing demand for automatic highlight detection systems [14, 29, 33].  
+
+> arXiv:2606.06926v1 [cs.CV] 5 Jun 2026 KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. Lee et al.
+
+Although many promising methods have been proposed [ 12 , 15 –18 ], existing research has predominantly focused on short-form videos. A primary reason for this limitation is the absence of a suitable benchmark for highlight detection in long-form content. Constructing such a benchmark is particularly challenging, as most existing datasets depend on manual annotations [ 15 , 27 , 31 ], which are difficult to scale to videos spanning several hours; to annotate highlights, annotators must watch the entire video, making the process prohibitively time-consuming and labor-intensive. To address these limitations and foster further research, we in-troduce SVHighlights, to the best of our knowledge, the first bench-mark for highlight detection in extremely long sports videos, each exceeding one hour in duration, across multiple sports categories. We focus on the sports domain for two main reasons. First, sports events contain clearly defined exciting moments (e.g., goals, scores), which provide unambiguous ground truth for highlights. Second, official sports channels on platforms such as YouTube regularly upload full-length match recordings alongside professionally edited highlight videos, making large-scale data collection both practical and reliable. Our benchmark is constructed from pairs of full-length sports videos and their corresponding highlight videos collected from official YouTube channels. Instead of relying on costly manual annotations, we use the official highlight videos as ground truth. Specifically, we employ a highlight alignment algorithm to auto-matically identify which segments of a full-length video appear in its corresponding highlight video, enabling scalable label gen-eration across a large corpus of long videos. In total, we collected 320 videos from YouTube spanning a diverse range of sports cate-gories. The benchmark contains videos with an average duration of 2.00 hours, summing up to a total of 640.18 hours. As illustrated in Figure 1, SVHighlights features average video durations that are substantially longer than those in previous highlight detection benchmarks. Beyond the benchmark gap, existing highlight detection methods face fundamental challenges when applied to long-form content. Most Video Temporal Grounding (VTG) models are trained on short-video benchmarks such as QVHighlights [ 15 ], where videos average only 2.5 minutes. When applied to hour-long videos, these models struggle to generalize due to the drastically different tempo-ral dynamics and highlight distributions. Moreover, their clip-level scoring approach lacks the broader context needed to determine whether a given moment constitutes a highlight within a lengthy video. Recently, there has been increasing interest in leveraging the reasoning capabilities of large language models (LLMs) for video highlight detection in a zero-shot setting [ 8, 9, 24 ]. However, LLM-based approaches necessitate strict constraints on the number of input frames, leading to substantial information loss for long videos. For instance, if an LLM-based model is limited to processing 96 frames, uniformly sampling a two-hour video would result in a frame every 75 seconds—missing key highlight events entirely. To address these challenges and provide a strong baseline for SVHighlights, we present TF-SELECTOR (Training-Free Segment-based Extremely Long video highlight detECTOR), a training-free framework that combines off-the-shelf foundation models with a simple segment-based processing strategy. TF-SELECTOR forms context-aware segments by detecting shot boundaries and merging adjacent shots that share semantic content via transcript cues, then predicts a saliency score per segment and assigns it to all of its clips. This segment-level design yields consistent scores across clips depicting the same scene and lets the LLM process each segment with enough frames, addressing the context and frame-sampling limitations of clip-level LLM-based approaches. We evaluate the effectiveness of TF-SELECTOR on SVHighlights. Experimental results show that our method achieves superior per-formance across most metrics compared to VTG-tuned baselines, demonstrating that our training-free approach can not only process long videos effectively but also predict saliency scores accurately. In summary, our main contributions are as follows: 
+
+• We introduce SVHighlights, the first benchmark for highlight detection in extremely long sports videos, comprising 320 videos with an average duration of 2.00 hours—approximately 30 to 60 times longer than existing datasets. This benchmark addresses a critical gap in evaluating highlight detection methods at scale. 
+
+• We develop a dataset generation pipeline that aligns official highlight videos with full-length broadcasts, enabling scal-able dataset construction that requires only lightweight man-ual verification instead of labor-intensive per-clip saliency annotation. 
+
+• We establish TF-SELECTOR as a strong baseline for SVHigh-lights. This training-free approach demonstrates that com-bining off-the-shelf vision-language models with segment-based processing can outperform existing VTG-tuned meth-ods on hour-long videos, while also revealing significant room for future improvement. 
+
+## 2 Related Work 2.1 Video Highlight Detection 
+
+Many existing video highlight detection methods [ 1 , 5 , 10 , 13 , 25 , 31 ,35 , 37 ] are trained on datasets with frame-level annotations, where each frame is manually labeled by human annotators to indicate whether it constitutes a highlight. A few methods such as Jiao et al. [13] and SL-Module [35] instead predict highlight scores at the segment level. Recently, there has been growing interest in combin-ing moment retrieval and highlight detection, where the goal is to extract highlights that are semantically aligned with a given textual query [ 15 – 18 , 21 , 30 , 36 ]. In addition to these supervised methods, recent studies such as TimeChat [ 24 ], VTG-LLM [ 8], and TRACE [ 9 ]explore using LLMs for highlight detection and demonstrate strong zero-shot performance on the QVHighlights benchmark. However, all of these methods are designed for and evaluated on short-form videos, and it remains unclear how well they generalize to long-form content where temporal dynamics and highlight distributions differ substantially. In contrast, TF-SELECTOR forms context-aware, variable-length segments by merging semantically related shots, extending segment-level processing to long-form content. 
+
+## 2.2 Long Video Highlight Detection 
+
+Manually annotating highlights in long videos is costly and time-consuming, which is why most existing research on long video highlight detection has been limited to the sports domain—where SVHighlights: Towards Extremely Long Sport Video Highlight Detection KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. 
+
+Table 1: List of existing video highlight detection datasets and their statistics.                         
+
+> Benchmark #Vids Dur. (h) Avg. (min) Labels YouTube HL [31] 712 23.8 2.0 Auto/Human TVSum [27] 50 3.5 4.2 Human QVHighlights [15] 10,148 422.8 2.5 Human Mr.HiSum [29] 31,892 1,788 3.4 Auto
+> SVHighlights (Ours) 320 640.18 120.0 Auto(Human) 1
+
+official highlight videos produced by broadcasters are readily avail-able. Shukla et al . [26] proposed a model for cricket highlight gener-ation by combining event-driven and excitement-based approaches. H5 [ 19 ] detects highlights in golf and tennis by estimating excite-ment based on player actions, facial expressions, crowd reactions, and commentator speech. Della Santa and Lalli [4] segment full-length soccer videos into 5-second clips and classify each clip as a highlight or not based on audio and video features. While these works demonstrate the feasibility of long video highlight detection, each targets a single sport and relies on ad-hoc evaluation protocols such as user studies or manually constructed test sets, making it dif-ficult for other researchers to reproduce or compare results across methods. This lack of a standardized benchmark for long-form highlight detection motivates the construction of SVHighlights. 
+
+## 2.3 Video Highlight Detection Benchmarks 
+
+Many existing benchmarks rely on human annotators to assign importance scores, which makes it difficult to scale to long videos. Consequently, prior benchmark studies have primarily focused on short-form videos. The YouTube Highlights dataset [ 31 ] is a widely used benchmark for highlight detection, created by collecting raw and edited videos from YouTube across six domains. For evaluation, the test split is annotated by five human annotators. TVSum [ 27 ]contains 50 YouTube videos across 10 categories, with five videos per category, and each video is approximately 4 minutes long. Each video is annotated by 20 human annotators who assign importance scores to 2-second shots. A representative benchmark for video moment retrieval combined with highlight detection is QVHigh-lights [ 15 ], which comprises over 10,000 YouTube videos with an average duration of 2.5 minutes. In this dataset, human annotators were instructed to select 2-second clips relevant to a query, and 3 annotators subsequently assigned a saliency score to each clip. More recently, Mr.HiSum [ 29 ] introduced a large-scale highlight detection dataset of 31,892 videos with automatically generated labels, yet its average video duration remains only 3.4 minutes. As summarized in Table 1, all existing datasets focus on short-form videos, leaving no standardized benchmark for evaluating highlight detection in long-form content. 
+
+## 3 SVHighlights 
+
+We introduce SVHighlights , a benchmark specifically designed for highlight detection in extremely long sports videos. This section           
+
+> 1Auto(Human): automatic labels with lightweight human trimming and filtering steps (Section 3), not per-clip saliency annotation. American
+> Football
+> Baseball Basketball Ice
+> Hockey
+> Racing Rugby Soccer Volleyball
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> Video length (minutes)
+> Full Video Length Distribution Across Categories
+> Min Max Range
+> Average American
+> Football
+> Baseball Basketball Ice
+> Hockey
+> Racing Rugby Soccer Volleyball
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> Video length (minutes)
+> Highlight Video Length Distribution Across Categories
+> Min Max Range
+> Average
+
+Figure 2: Video length distribution across categories. (Top) Full video length. (Bottom) Highlight video length. 
+
+describes the dataset construction process, including data collection, video trimming, highlight alignment, and label generation. 
+
+## 3.1 Dataset Collection 
+
+We collected a total of 320 full-length videos from official YouTube channels, with an average duration of 2.00 hours and a cumula-tive duration of 640.18 hours. As shown in Table 1, our dataset comprises significantly longer videos compared to existing video highlight detection datasets. This makes it particularly well-suited for evaluating methods designed for long-form highlight detection. As shown in Figure 2, the videos in our dataset span eight different sports—American football, baseball, basketball, ice hockey, racing, rugby, soccer, and volleyball. Each sport is designed to have an equal number of videos, with 40 videos per category. This diver-sity in both video length and subject matter enhances the richness and versatility of our dataset compared to existing benchmarks. Moreover, the analysis of full-length and highlight duration dis-tributions reveals that highlight length is not simply proportional to the full video duration but rather depends on the underlying content, indicating that our dataset effectively reflects the nature of real-world highlights. To ensure reliable highlights, we selected only video pairs where the highlight video is sourced from the same broadcast as the full-length video, ensuring consistent visual and audio content. Additionally, we included only those with more than 10,000 views that were produced by neutral sports associations or leagues, rather than by specific teams. 
+
+## 3.2 Video Trimming 
+
+Full-length videos often include segments unrelated to the target game, such as introductions, footage from previous matches, and KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. Lee et al. 
+
+Figure 3: Overview of the highlight alignment pipeline. (a) Each highlight frame is aligned to the most similar full-video frame using PSNR. (b) Temporal consistency is enforced by comparing PSNR differences with a threshold 𝜏 . (c) Auto-matic PSNR-based filtering followed by manual refinement removes mismatched frames. 
+
+post-game interviews. To ensure accurate evaluation, we manu-ally trimmed the full-length videos to retain only the actual game footage, removing unrelated segments at the beginning and end. The same rule applies to every sport—only the cues marking the game start and end differ, as listed in Appendix Table 11—and requires only one boundary judgment per video, not per-clip an-notation. All content within the target game—including timeouts, halftime breaks, and replays—is fully preserved. We did not trim the highlight videos, as subsequent filtering steps remove any highlight segments not present in the full video. 
+
+## 3.3 Highlight Alignment Algorithm 
+
+In previous works, benchmarks were built by hiring annotators to assign saliency scores to video clips or shots. However, this method has two major drawbacks: (1) It is both time-consuming and expen-sive to score every part of long videos. (2) The annotators may not have sufficient domain expertise for the diverse range of content. By contrast, our approach uses official highlight videos produced by professional broadcasters as ground truth, which naturally ad-dresses both issues. We propose a highlight alignment algorithm that identifies and marks segments in full-length videos that appear in the highlight videos. An overview of this highlight alignment algorithm is illustrated in Figure 3. 
+
+3.3.1 Finding the Most Similar Frame. Comparing every frame between the full video and the highlight video is extremely time-consuming. Therefore, we first downsample the resolution of the videos to 144p. For alignment, we use all frames from the full video, but only the middle frame of each 1-second clip from the highlight video. To compare frames at the pixel level, we use the PSNR score, which is inversely related to the mean squared error—so the higher the PSNR score, the more similar the two images are. For each middle frame in the highlight video, we compute the PSNR scores against all frames in the full video and select the frame with the highest score. We chose PSNR over learned feature-based approaches (e.g., CLIP [ 23 ], ResNet [ 11 ]) because long-form sports videos contain many visually similar scenes—repeated plays, recurring camera angles, similar field views—which cause feature-based methods to produce false matches, whereas pixel-level PSNR reliably distin-guishes near-identical frames. 
+
+3.3.2 Post-processing Step. While the above matching works well in most cases, we observed two types of errors: (1) the same full-video frame is repeatedly selected for consecutive highlight frames when they are visually similar, and (2) a replay segment in the full video is matched instead of the actual gameplay moment, since replays are visually identical to the original scenes. Both issues arise because purely PSNR-based matching ignores the temporal order of the video. To address this, we introduce a post-processing rule based on the following intuition: each highlight clip is a continuous excerpt from the broadcast, so consecutive highlight frames within a clip correspond to temporally adjacent frames in the full video. We therefore prefer the temporally expected frame—located one second after the previous match—unless a significantly better match exists elsewhere. Formally, suppose we have already aligned the first 𝑖 −1 highlight frames, and let 𝑝 denote the position of the most recently aligned frame in the full video. For the 𝑖 -th highlight frame ℎ𝑖 , we compare two candidates: 
+
+• Best match 𝑓 ∗: the frame with the highest PSNR across the entire full video, i.e., 𝑓 ∗ = arg max 𝑡 PSNR (ℎ𝑖 , 𝑓 𝑡 )• Expected next 𝑓 +: the frame one second after the previous alignment, i.e., 𝑓 + = 𝑓 𝑝 +𝑟 , where 𝑟 is the frame rate The aligned frame is then selected as: 
+
+align (ℎ𝑖 ) =
+
+(
+
+𝑓 +, if PSNR (ℎ𝑖 , 𝑓 ∗) − PSNR (ℎ𝑖 , 𝑓 +) ≤ 𝜏 𝑓 ∗, otherwise (1) In other words, we default to the temporally expected frame 𝑓 +
+
+and only switch to the global best match 𝑓 ∗ when its PSNR score exceeds that of 𝑓 + by more than a threshold 𝜏 . This encourages temporally smooth alignments while still allowing jumps when a clearly better match is found at a different position in the full video. 
+
+3.3.3 Filtering. Highlight videos occasionally contain frames that do not appear in the corresponding full videos—for example, spon-sor logos, intro/outro sequences, or graphical overlays inserted dur-ing scene transitions. As illustrated in Figure 4, such mismatched SVHighlights: Towards Extremely Long Sport Video Highlight Detection KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. 
+
+Figure 4: Example of highlight alignment and filtering results on a baseball video. Each column shows a ground-truth highlight frame (GT, top) and its aligned full-video frame (Ours, bottom). Green boxes indicate successful alignments; red boxes indicate frames filtered out during the filtering step, with a black frame shown in place of the aligned frame for visualization. Table 2: Breakdown of changes made by manual filtering to the automatically aligned frames. Change type after manual filtering Ratio 
+
+Correct frame index (no change) 88.8% Both null (no change) 7.5% null → frame index (recovery) 3.5% frame index → null (error) 0.1% frame index changed (error) 0.1% frames are indicated by red boxes, where no valid alignment exists and the frame is replaced by a black frame. Since these frames can introduce incorrect alignments and undermine the reliability of the benchmark, we introduce a filtering step to remove them. 
+
+Automatic filtering. Manually inspecting every aligned frame pair would be prohibitively time-consuming, so we first apply an automatic filtering stage. A PSNR score below 20 is commonly regarded as indicating significant perceptual dissimilarity between two images; we therefore remove all aligned pairs whose PSNR falls below this threshold. This step successfully eliminates the majority of mismatched frames. 
+
+Manual filtering. Although automatic filtering handles most cases, it can produce two types of errors. False negatives : some correctly aligned frames are erroneously removed because editing effects (e.g., fade transitions or overlaid scoreboards) lower their PSNR scores despite depicting the same scene. False positives : in rare cases, frames with high PSNR scores are retained even though they do not correspond to the same scene—for instance, when vi-sually similar but temporally unrelated frames happen to yield high scores. To correct these errors, two annotators independently inspect aligned pairs in 16-pair grid images (Appendix Fig. 7)—a binary visual check rather than saliency scoring—restoring falsely removed frames and discarding falsely retained ones. As shown in Table 2, manual filtering changes only 3.7% of automatically aligned frames, 95% of which merely recover false negatives; genuine er-rors account for just 0.18% of all frames (99.82% precision for the automatic stage). 
+
+Table 3: Per-sport alignment quality after filtering, measured by PSNR, SSIM, and CLIP similarity. The remaining rate is the proportion of frames retained after filtering. Category PSNR SSIM CLIP Sim. Remain. Rate (%)                                     
+
+> Amer. Football 26.64 0.872 0.969 93.7 Baseball 26.28 0.835 0.943 85.8 Basketball 26.31 0.868 0.957 94.7 Ice Hockey 26.63 0.856 0.973 94.6 Racing 27.99 0.873 0.939 92.4 Rugby 27.43 0.865 0.941 87.2 Soccer 26.43 0.877 0.953 90.0 Volleyball 26.23 0.874 0.961 95.3 All 26.74 0.865 0.955 91.7
+
+## 3.4 Labeling Stage 
+
+After highlight alignment, we generate the final highlight labels for the full video. Many existing VTG models [ 15 –18 , 21 , 30 , 36 ] assign saliency scores to every 2-second clip. Following prior approaches, we generate labels at 2-second intervals. Specifically, we first obtain the aligned frame indices from the highlight alignment stage and compute the corresponding timestamps in the full video. For each timestamp, we designate a 1-second interval centered on the frame (i.e., 0.5 seconds before and after) as the highlight segment. With this approach, even in the worst case—such as when the middle frame lies on a shot boundary—the maximum alignment error is limited to 0.5 seconds. Next, we divide the full video into non-overlapping 2-second clips and assign a label of 1 to each clip if at least 50% of its duration overlaps with any highlighted segment; otherwise, the label is set to 0. 
+
+## 3.5 Dataset Quality Validation 
+
+3.5.1 Alignment Quality Evaluation. We report the alignment qual-ity after filtering in Table 3. We measure the similarity between each highlight frame and its aligned full-video frame using three complementary metrics: PSNR, SSIM [ 34 ], and CLIP similarity [ 23 ]. The average scores of 26.74, 0.865, and 0.955, respectively, confirm that the retained alignments are highly accurate. Moreover, only 8.3% of frames are removed during filtering, indicating that the preceding alignment algorithm already produces reliable matches KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. Lee et al. 
+
+Table 4: Per-sport distribution of frame-index gaps between the global best match 𝑓 ∗ and the temporally expected frame 
+
+𝑓 +. Most matches fall within ≈1 s ( <30 frames), confirming that 𝑓 + closely agrees with 𝑓 ∗.Sport <30 frames 30–999 frames ≥1000 frames 
+
+Amer. Football 90.5% 2.3% 7.2% Baseball 79.3% 9.7% 11.0% Basketball 89.4% 3.9% 6.6% Ice Hockey 91.9% 2.5% 5.5% Racing 93.7% 0.8% 5.5% Rugby 88.5% 4.3% 7.3% Soccer 93.2% 2.8% 3.8% Volleyball 92.0% 3.0% 5.1% 
+
+Total 90.0% 3.4% 6.5% Table 5: Ablation of the post-processing threshold 𝜏 . Remain-ing Rate is the proportion of frames retained after filtering; 
+
+𝑓 ∗/𝑓 + Ratio denotes the fraction of frames for which each candidate is selected. 
+
+𝜏 Remaining Rate (%) 𝑓 ∗ Ratio 𝑓 + Ratio 
+
+1 89.78 72.3% 27.7% 5 88.16 51.7% 48.3% 10 80.36 27.4% 72.6% and the filtering step serves primarily as a safeguard against a small number of edge cases. 
+
+3.5.2 Agreement between 𝑓 ∗ and 𝑓 +. Although the post-processing step prefers the temporally expected frame 𝑓 +, this choice rarely departs from the global best match 𝑓 ∗: the frame-index gap between 
+
+𝑓 + and 𝑓 ∗ is below 30 frames ( ≈1 s) for 90.0% of frames, and for at least 79.3% in every sport (Table 4). That is, the temporally expected frame is almost always nearly identical to the global best match. When 𝑓 ∗ and 𝑓 + do disagree, 𝑓 ∗ is still chosen 51.7% of the time, so the algorithm does not blindly follow temporal order. 
+
+3.5.3 Threshold 𝜏 . We ablate 𝜏 (Table 5). A small 𝜏 = 1 almost always picks 𝑓 ∗ (72.3%), ignoring temporal cues, while a large 𝜏 =
+
+10 over-relies on 𝑓 + (72.6%) and drops the remaining-frame rate to 80.36%. We adopt 𝜏 = 5 as a balanced choice (51.7% vs. 48.3% selection, 88.16% remaining rate). 
+
+3.5.4 Label Quality User Study. To validate the quality of our au-tomatically generated labels, we conducted a user study. Ten par-ticipants rated 120 clips (15 per sport) on a 1–5 Likert scale, drawn equally from three groups: positive clips from ground-truth high-lights, near-boundary negatives within 30 s of a highlight boundary, and far negatives beyond 30 s. Positive clips averaged 3.42 versus 1.94 and 1.97 for near- and far-boundary negatives, showing that the labels agree well with human judgment; the nearly identical near- and far-negative scores further indicate minimal label noise around highlight boundaries. Agreement also varies by sport (Ta-ble 6): those with clear cues (e.g., Soccer, Basketball) show large 
+
+Table 6: Per-sport user study results for label quality val-idation. Diff is the positive −negative mean-score gap; 𝛼 is Krippendorff’s inter-rater agreement. Sport Pos. Mean Neg. Mean Diff Krippendorff’s 𝛼                                 
+
+> Soccer 4.00 1.40 2.60 0.702 Basketball 3.98 1.73 2.25 0.654 Amer. Football 3.84 2.14 1.70 0.530 Ice Hockey 3.36 1.92 1.44 0.459 Baseball 3.08 1.66 1.42 0.644 Volleyball 3.38 2.13 1.25 0.717 Racing 2.58 2.05 0.53 0.221 Rugby 3.10 2.58 0.52 0.527
+
+positive–negative gaps and high inter-rater agreement (Krippen-dorff’s 𝛼 = 0.65 –0.72 ), whereas sports requiring domain knowledge (e.g., Racing, Rugby) show small gaps and low agreement ( 𝛼 = 0.22 
+
+for Racing), supporting our use of professionally edited highlights as ground truth. 
+
+## 4 TF-SELECTOR 
+
+In this section, we introduce our training-free framework for long-form video highlight detection, which consists of three stages, as shown in Figure 5. In Stage 1, the video is divided into contextually coherent segments. In Stage 2, a VLM generates textual descriptions for each segment, and in Stage 3, an LLM predicts segment-level saliency scores, which are assigned to individual clips. Since TF-SELECTOR requires no task-specific training, it can be readily applied to long-form videos in a zero-shot manner. Its modular design also allows different VLMs and LLMs to be flexi-bly substituted, enabling the framework to directly benefit from advances in foundation models. 
+
+## 4.1 Context-aware Video Segmentation 
+
+Since it is impractical to process an entire long video at once due to computational cost and context length limitations, the goal of Stage 1 is to divide videos into contextually coherent segments to enable efficient processing using an LLM. To achieve this, we divide the video into shots and then merge adjacent shots based on semantic consistency to generate segments, which serve as the basic units for highlight detection in our approach. To identify individual shots, we apply a shot-boundary detec-tor that groups visually similar consecutive frames. However, this method relies solely on visual similarity and may split semantically continuous content. For example, a camera angle change may trig-ger a new shot even when the same scene is still being depicted. As a result, individual shots are often insufficient as semantic units. To merge shots into semantically complete segments, we use transcript information from an ASR model, which provides word-level timestamps. If the time gap between consecutive words is less than one second, we consider them part of the same sentence. When such a sentence spans two adjacent shots, we treat it as evidence that both shots share the same content and merge them into one segment. To prevent segments from becoming too long, we impose a maximum segment length constraint: if merging two shots would exceed this limit, we do not merge them. SVHighlights: Towards Extremely Long Sport Video Highlight Detection KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. Video  Audio     
+
+> Shot-Boundary Detector ASR Model VLM VLM
+> Segment 1 Segment N
+
+...  
+
+> Caption: The video captures ...
+> it's the first quarter with 15:00 ...
+> they prepare for the next play.
+> Caption: The video captures ...
+> both teams are seen interacting ...
+> with the outcome still in play.
+
+...      
+
+> Segmentation
+> LLM LLM
+> Segment 1
+> Stage 1 Stage 2 Stage 3
+> Volume Transcript
+> Caption
+> Segment N
+> Volume Transcript
+> Caption
+
+... 
+
+... 
+
+> The segment timestamp
+> are 0.000s ~ 30.931s.
+> Its saliency score is 4.4.
+> The segment timestamp
+> are 7651.577s ~ 7658.718s.
+> Its saliency score is 4.5
+
+Figure 5: Overview of the TF-SELECTOR framework. Stage 1 (Context-aware segmentation): Shots are detected by a shot-boundary detector, and adjacent shots that share the same content are merged into context-aware segments using transcript information from an ASR model. Stage 2 (Segment captioning): A vision-language model (VLM) generates a caption for each segment. Stage 3 (Segment-level scoring): The LLM predicts a saliency score for each segment using the segment caption, audio volume, and transcript. The predicted score is then assigned to all clips within the corresponding segment. 
+
+## 4.2 Segment Captioning 
+
+Since LLMs are unable to understand visual information, we in-troduce Stage 2 to convert visual content into textual descriptions using a VLM. We first divide the entire video into 2-second clips and sample one frame from each clip. Since each segment from Stage 1 spans multiple such clips, we group the sampled frames by their corresponding segment based on timestamps. These frames are then provided as visual inputs to the VLM, which is prompted with 
+
+"Please describe this segment" to generate a caption for each segment. The resulting caption is used as input to the LLM in Stage 3. 
+
+## 4.3 Segment-Level Score Prediction 
+
+In Stage 3, we leverage an LLM to predict a saliency score for each segment. Since all clips within a segment share the same context (as ensured by Stage 1), segment-level prediction naturally yields consistent scores across clips depicting the same scene. The LLM utilizes segment-level information from three modal-ities: (1) the transcript obtained using an ASR model in Stage 1, (2) the segment caption generated in Stage 2, and (3) the audio volume extracted from the corresponding segment interval. These modalities provide complementary information for score prediction. The caption reflects visual content, the volume captures auditory cues such as crowd reactions or emphasis in commentary, and the transcript conveys linguistic information describing the game and ongoing events. Once the saliency score is predicted for each segment, it is used to assign scores to each clip. Since each clip has a fixed duration of 2 seconds, while segment boundaries are not aligned with clip boundaries, a clip may overlap with multiple segments. In such cases, we compute the clip-level score using a weighted sum of the scores of overlapping segments, where the weight for each segment is defined as the ratio of its temporal overlap with the clip. The clip-level score 𝑠 𝐶 is given by: 
+
+𝑠 𝐶 =∑︁ 
+
+> 𝑖
+
+ overlap (𝐶, 𝑆 𝑖 )
+
+𝐿 𝐶 
+
+× 𝑠 𝑆 𝑖 
+
+
+
+(2) where overlap (𝐶, 𝑆 𝑖 ) denotes the temporal overlap between clip 
+
+𝐶 and the 𝑖 -th overlapping segment 𝑆 𝑖 , and 𝐿 𝐶 is the length of clip 𝐶 .This weighted-sum-based approach allows each clip to be assigned a score that appropriately integrates the saliency of all overlapping segments. 
+
+## 5 Experiments 5.1 Experimental Setup 
+
+5.1.1 Implementation Details. We set the predefined alignment threshold 𝜏 to 5 in our alignment algorithm, and the maximum segment length to 2 minutes. For shot-boundary detection, we use TransNet V2 [ 28 ], and WhisperX-large-v2 [ 2 ] is employed as the ASR model. For segment captioning, we use InternVL2.5-8B [ 3 ] as the VLM, and Llama-3-8B [ 6] serves as the LLM for segment-level saliency prediction. All experiments were conducted using a single NVIDIA A6000 GPU. 
+
+5.1.2 Baselines. We compare our method with three types of base-lines: (1) VTG-Tuned Non-LLMs , including Moment-DETR [15], UMT [ 18 ], QD-DETR [ 21 ], MH-DETR [ 36 ], UniVTG [ 16 ], TR-DETR [ 30 ], and CG-DETR [ 20 ], which are transformer-based models fine-tuned on QVHighlights [ 15 ], with some variants ad-ditionally pre-trained. (2) Segment-based Non-LLM , namely SL-Module [ 35 ], which we include as the only segment-based highlight detection method with publicly available code. (3) VTG-Tuned Vid-LLMs , including VTG-LLM [ 8], TimeChat [ 24 ], and TRACE [ 9] with 7B LLMs, all of which are fine-tuned on a video-centric instruction-tuning dataset. In contrast, our TF-SELECTOR requires no task-specific training on any highlight detection dataset; it operates in a fully zero-shot manner by leveraging off-the-shelf foundation models. Since both VTG-tuned categories are designed KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. Lee et al. 
+
+Table 7: Zero-shot performance on SVHighlights. V: Video, A: Audio. The best results are highlighted in bold, and the second best are underlined. Method Input Scoring mAP HIT@1 HIT@K IoU 
+
+VTG-tuned Non-LLMs 
+
+Moment-DETR V Clip 9.16 6.25 7.61 4.05 UMT V+A Clip 10.97 13.44 11.76 6.39 QD-DETR V Clip 10.87 7.50 10.70 6.00 MH-DETR V Clip 8.49 3.44 4.52 2.42 UniVTG V Clip 8.76 2.19 5.68 2.97 TR-DETR V Clip 12.29 23.44 12.84 7.05 CG-DETR V Clip 10.43 9.38 9.95 5.52 
+
+VTG-tuned Non-LLMs with pre-training 
+
+Moment-DETR V Clip 9.34 4.06 7.86 4.20 UMT V+A Clip 9.82 8.44 8.27 4.45 UniVTG V Clip 9.38 7.81 8.27 4.40 CG-DETR V Clip 11.67 21.25 8.27 4.73 
+
+Segment-based Non-LLM 
+
+SL-Module V Segment 8.82 5.62 5.99 3.14 
+
+VTG-tuned Vid-LLMs 
+
+VTG-LLM V Clip 11.64 23.44 9.40 7.63 TimeChat V Clip 12.40 14.69 9.42 7.63 TRACE V Clip 23.14 23.12 9.38 7.63 
+
+Training-free Approach 
+
+TF-SELECTOR (Ours) V+A Segment 12.81 26.56 16.90 10.58 
+
+for Video Temporal Grounding (VTG), we provide the following query as input: "Highlight of this {video_type} video" .
+
+5.1.3 Evaluation Metrics. Following [ 31 ], we use mean average pre-cision (mAP) and HIT@1. However, as shown in Figure 2, the num-ber of highlight clips in SVHighlights varies substantially not only across sports but also across videos within the same sport, reflect-ing the inherent diversity of real-world highlights. Ranking-based metrics such as mAP and HIT@1 evaluate the quality of ranked predictions, with an emphasis on whether relevant segments are ranked highly, but they do not capture how well a model covers the full extent of highlights whose length differs significantly from video to video. To address this, we additionally introduce HIT@K and IoU, leveraging the clear ground truth provided by official highlight videos. HIT@K measures the proportion of ground-truth clips captured in the top-K predictions, where K equals the number of ground-truth highlight clips for each video, thereby adapting to the variable highlight length. IoU quantifies the temporal over-lap between predicted and ground-truth clips, providing a holistic measure of detection quality regardless of highlight duration. 
+
+## 5.2 Results 
+
+Table 7 presents the results of existing VTG baselines and our TF-SELECTOR on SVHighlights. Experimental results show that TF-SELECTOR outperforms the second-best models by significant margins: +3.12 in HIT@1, +4.06 in HIT@K, and +2.95 in IoU. This demonstrates the effectiveness of our approach, which predicts segment-level saliency scores using segment captions, transcripts, and audio volume as inputs. Although TF-SELECTOR ranks second in mAP, this is mainly because TRACE tends to assign scores to only a small subset of clips while assigning zero to the rest, achiev-ing high accuracy on those few predicted clips. As a result, TRACE attains a high mAP but much lower HIT@K and IoU scores. In addition, SL-Module, the only other segment-based baseline, per-forms poorly across all metrics: its fixed-length segments, designed for short videos, fail to capture the temporal dynamics of hour-long broadcasts, whereas TF-SELECTOR’s context-aware, variable-length segments scale effectively to long-form highlight detection. 
+
+## 5.3 Ablation Study 
+
+5.3.1 Effect of VLM. Table 8 reports an ablation study on different segment captioners. Among the evaluated captioners, LLaVA-OV-7B exhibits the lowest performance across all metrics. Qwen2.5-VL-7B achieves higher scores than InternVL2.5-8B in mAP and HIT@1, indicating stronger precision on the top-ranked clips. By contrast, InternVL2.5-8B demonstrates superior performance in HIT@K and IoU, which evaluate the overall coverage and consistency of high-light localization. As mentioned earlier, mAP and HIT@1 mainly reflect ranking precision rather than overall highlight coverage. Since our goal is to ensure consistent and comprehensive coverage of highlights with varying durations across long videos, rather than focusing solely on ranking precision, we adopt InternVL2.5-8B as SVHighlights: Towards Extremely Long Sport Video Highlight Detection KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. 
+
+Table 8: Ablation study on the effect of different captioners (VLMs). The best results are highlighted in bold, and the second best are underlined. Captioner mAP HIT@1 HIT@K IoU 
+
+LLaVA-OV-7B 12.42 25.31 15.28 9.86 Qwen2.5-VL-7B 13.54 28.12 16.72 10.09 InternVL2.5-8B 12.81 26.56 16.90 10.58 Table 9: Ablation study on the effect of different LLMs. The best results are highlighted in bold, and the second best are underlined. LLM mAP HIT@1 HIT@K IoU 
+
+## Llama2-7B 9.59 13.75 11.34 7.68 Qwen2.5-7B 9.90 21.88 13.80 9.53 Mistral-7B 11.05 21.25 15.14 10.02 Llama3-8B 12.81 26.56 16.90 10.58 Table 10: Ablation study on the effect of different input modalities. C: Caption, A: Audio Volume, T: Transcript, S: Score. The best results are highlighted in bold, and the second best are underlined. Modality mAP HIT@1 HIT@K IoU 
+
+(C) → S 10.54 15.00 12.54 8.64 (C, A) → S 10.29 16.25 12.38 9.23 (C, T) → S 12.18 21.25 16.21 11.11 
+
+(C, T, A) → S 12.81 26.56 16.90 10.58 
+
+the main VLM for TF-SELECTOR. The performance gap across dif-ferent captioners remains relatively small, indicating that the choice of captioner has only a minor impact on the overall performance. 
+
+5.3.2 Effect of LLM. Table 9 compares four open-source LLMs for segment-level saliency prediction. Llama3-8B consistently outper-forms the other models across all metrics, achieving improvements of +3.22 in mAP, +12.81 in HIT@1, +5.56 in HIT@K, and +2.90 in IoU over Llama2-7B. This suggests that more recent LLMs with improved instruction-following capabilities are better at predict-ing saliency from multimodal segment descriptions. These results demonstrate that the choice of LLM plays a significant role in saliency estimation within our framework. 
+
+5.3.3 Effect of Input Modality. Table 10 presents an ablation study on input modalities. We evaluated four variants: using only cap-tions; captions with audio volume; captions with transcripts; and all three modalities combined. The results show that using only captions and captions plus audio volume yield similar performance, suggesting that audio volume alone does not provide much addi-tional information beyond the captions. However, when transcripts are added instead of audio volume, performance improves across all metrics compared to using captions alone—with HIT@1 in-creasing by +6.25. This underscores the significant contribution of transcripts for highlight prediction. Finally, the best overall perfor-mance is achieved when all three modalities are combined, with the highest mAP, HIT@1, and HIT@K, although (C, T) achieves a slightly higher IoU. Audio volume alone provides limited informa-tion beyond captions, but when paired with transcripts, it serves as a reinforcing signal that helps the model more confidently identify highlights. 
+
+## 6 Conclusion 
+
+In this paper, we introduced SVHighlights, the first highlight de-tection benchmark for extremely long sports videos exceeding one hour, constructed via a dataset generation pipeline that pairs full-length videos with official highlights. We also proposed TF-SELECTOR, a training-free framework that predicts segment-level highlight scores by integrating visual, textual, and audio modalities, achieving scalability and semantic consistency over long videos. Ex-periments on SVHighlights show that TF-SELECTOR consistently outperforms state-of-the-art baselines across HIT@1, HIT@K, and IoU, while ablation studies confirm the benefit of multimodal in-puts, particularly transcripts. We believe SVHighlights and TF-SELECTOR will foster further research on scalable highlight detec-tion and multimodal reasoning in long-form videos. 
+
+## 7 Limitations and Future Work 
+
+The dataset generation pipeline of SVHighlights requires paired full-length and highlight videos, limiting its extension beyond sports. Additionally, preprocessing steps such as frame alignment and captioning are time-consuming, and the training-free reliance on VLMs and LLMs may constrain flexibility. Future work will focus on expanding the dataset to broader long-form domains, optimizing preprocessing for scalability, and integrating more robust reasoning mechanisms. 
+
+## Acknowledgments 
+
+This work was supported by Institute of Information & Communi-cations Technology Planning & Evaluation (IITP) grant funded by the Korea government (MSIT) (No. RS-2022-II220608/2022-0-00608, Artificial Intelligence research about multimodal interactions for empathetic conversations with humans, No. IITP-2026-RS-2024-00360227, Leading Generative AI Human Resources Development, No. RS-2025-25442824, AI Star Fellowship Program (Ulsan National Institute of Science and Technology), & No. RS-2020-II201336, Arti-ficial Intelligence graduate school support (UNIST)). 
+
+## References           
+
+> [1] Taivanbat Badamdorj, Mrigank Rochan, Yang Wang, and Li Cheng. 2021. Joint Visual and Audio Learning for Video Highlight Detection. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 8107–8117. [2] Max Bain, Jaesung Huh, Tengda Han, and Andrew Zisserman. 2023. WhisperX: Time-Accurate Speech Transcription of Long-Form Audio. In Interspeech 2023 .4489–4493. [3] Zhe Chen, Weiyun Wang, Yue Cao, Yangzhou Liu, Zhangwei Gao, Erfei Cui, Jinguo Zhu, Shenglong Ye, Hao Tian, Zhaoyang Liu, et al .2024. Expanding Performance Boundaries of Open-Source Multimodal Models with Model, Data, and Test-Time Scaling. arXiv preprint arXiv:2412.05271 (2024).
+
+KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. Lee et al. 
+
+[4] Francesco Della Santa and Morgana Lalli. 2025. Automated Detection of Sport Highlights from Audio and Video Sources. arXiv preprint arXiv:2501.16100 (2025). [5] Ana Garcia del Molino and Michael Gygli. 2018. PHD-GIFs: Personalized High-light Detection for Automatic GIF Creation. In Proceedings of the 26th ACM International Conference on Multimedia . 600–608. [6] Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, et al . 2024. The Llama 3 Herd of Models. arXiv preprint arXiv:2407.21783 
+
+(2024). [7] Qihao Guan. 2024. The Impact of Short Videos on Long Video Engagement: A Comparative Analysis of Promotional and Non-Promotional Content on YouTube. 
+
+Available at SSRN 4979201 (2024). [8] Yongxin Guo, Jingyu Liu, Mingda Li, Dingxin Cheng, Xiaoying Tang, Dianbo Sui, Qingbin Liu, Xi Chen, and Kevin Zhao. 2025. VTG-LLM: Integrating Times-tamp Knowledge into Video LLMs for Enhanced Video Temporal Grounding. In 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 39. 3302–3310. [9] Yongxin Guo, Jingyu Liu, Mingda Li, Qingbin Liu, Xi Chen, and Xiaoying Tang. 2025. TRACE: Temporal Grounding Video LLM via Causal Event Modeling. In 
+
+The Thirteenth International Conference on Learning Representations, ICLR 2025, Singapore, April 24-28, 2025 . OpenReview.net. [10] Michael Gygli, Yale Song, and Liangliang Cao. 2016. Video2GIF: Automatic Gen-eration of Animated GIFs from Video. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 1001–1009. [11] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. 2016. Deep Residual Learning for Image Recognition. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 770–778. [12] Zahidul Islam, Sujoy Paul, and Mrigank Rochan. 2025. Unsupervised Video Highlight Detection by Learning from Audio and Visual Recurrence. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) . IEEE, 8702–8711. [13] Yifan Jiao, Xiaoshan Yang, Tianzhu Zhang, Shucheng Huang, and Changsheng Xu. 2017. Video Highlight Detection via Deep Ranking Modeling. In Image and Video Technology: 8th Pacific-Rim Symposium, PSIVT 2017, Wuhan, China, November 20-24, 2017, Revised Selected Papers 8 . Springer, 28–39. [14] Sungshin Kwak, Jaedong Lee, and Sohyun Park. 2025. The Effective Highlight-Detection Model for Video Clips Using Spatial—Perceptual. Electronics 14, 18 (2025), 3640. [15] Jie Lei, Tamara L Berg, and Mohit Bansal. 2021. Detecting Moments and High-lights in Videos via Natural Language Queries. In Advances in Neural Information Processing Systems , Vol. 34. 11846–11858. [16] Kevin Qinghong Lin, Pengchuan Zhang, Joya Chen, Shraman Pramanick, Difei Gao, Alex Jinpeng Wang, Rui Yan, and Mike Zheng Shou. 2023. UniVTG: Towards Unified Video-Language Temporal Grounding. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 2782–2792. [17] Ye Liu, Jixuan He, Wanhua Li, Junsik Kim, Donglai Wei, Hanspeter Pfister, and Chang Wen Chen. 2024. R 2-Tuning: Efficient Image-to-Video Transfer Learning for Video Temporal Grounding. In European Conference on Computer Vision .Springer, 421–438. [18] Ye Liu, Siyuan Li, Yang Wu, Chang Wen Chen, Ying Shan, and Xiaohu Qie. 2022. UMT: Unified Multi-modal Transformers for Joint Video Moment Retrieval and Highlight Detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 3032–3041. [19] Michele Merler, Khoi-Nguyen C Mac, Dhiraj Joshi, Quoc-Bao Nguyen, Stephen Hammer, John Kent, Jinjun Xiong, Minh N Do, John R Smith, and Rogério Schmidt Feris. 2019. Automatic Curation of Sports Highlights Using Multimodal Excite-ment Features. IEEE Transactions on Multimedia 21, 5 (2019), 1147–1160. [20] WonJun Moon, Sangeek Hyun, SuBeen Lee, and Jae-Pil Heo. 2023. Correlation-guided query-dependency calibration for video temporal grounding. arXiv preprint arXiv:2311.08835 (2023). [21] WonJun Moon, Sangeek Hyun, Sanguk Park, Dongchan Park, and Jae-Pil Heo. 2023. Query-Dependent Video Representation for Moment Retrieval and High-light Detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 23023–23033. [22] John Paparrizos, Paul Boniol, Themis Palpanas, Ruey S Tsay, Aaron J Elmore, and Michael J Franklin. 2022. Volume Under the Surface: A New Accuracy Evaluation Measure for Time-Series Anomaly Detection. Proc. VLDB Endow. 15, 11 (2022), 2774–2787. [23] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. 2021. Learning Transferable Visual Models From Natural Language Supervision. In International Conference on Machine Learning . PMLR, 8748–8763. [24] Shuhuai Ren, Linli Yao, Shicheng Li, Xu Sun, and Lu Hou. 2024. TimeChat: A Time-sensitive Multimodal Large Language Model for Long Video Understanding. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition .14313–14323. [25] Mrigank Rochan, Mahesh Kumar Krishna Reddy, Linwei Ye, and Yang Wang. 2020. Adaptive Video Highlight Detection by Learning from User History. In 
+
+European Conference on Computer Vision . Springer, 261–278. [26] Pushkar Shukla, Hemant Sadana, Apaar Bansal, Deepak Verma, Carlos E. L. Elmadjian, Balasubramanian Raman, and Matthew Turk. 2018. Automatic Cricket Highlight Generation Using Event-Driven and Excitement-Based Features. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops . 1800–1808. [27] Yale Song, Jordi Vallmitjana, Amanda Stent, and Alejandro Jaimes. 2015. TVSum: Summarizing web videos using titles. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 5179–5187. [28] Tomáš Souček and Jakub Lokoč. 2024. TransNet V2: An Effective Deep Network Architecture for Fast Shot Transition Detection. In Proceedings of the 32nd ACM International Conference on Multimedia . 11218–11221. [29] Jinhwan Sul, Jihoon Han, and Joonseok Lee. 2023. Mr. HiSum: A Large-scale Dataset for Video Highlight Detection and Summarization. In Advances in Neural Information Processing Systems , Vol. 36. 40542–40555. [30] Hao Sun, Mingyao Zhou, Wenjing Chen, and Wei Xie. 2024. TR-DETR: Task-Reciprocal Transformer for Joint Moment Retrieval and Highlight Detection. In 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 38. 4998–5007. [31] Min Sun, Ali Farhadi, and Steven M. Seitz. 2014. Ranking Domain-Specific Highlights by Analyzing Edited Videos. In Computer Vision–ECCV 2014: 13th European Conference, Zurich, Switzerland, September 6-12, 2014, Proceedings, Part I 13 . Springer, 787–802. [32] Caroline Violot, Tuğrulcan Elmas, Igor Bilogrevic, and Mathias Humbert. 2024. Shorts vs. Regular Videos on YouTube: A Comparative Analysis of User Engage-ment and Content Creation Trends. In Proceedings of the 16th ACM Web Science Conference . 213–223. [33] Xiangfeng Wang, Xiao Li, Yadong Wei, Xueyu Song, Yang Song, Xiaoqiang Xia, Fangrui Zeng, Zaiyi Chen, Liu Liu, Gu Xu, and Tong Xu. 2025. From Long Videos to Engaging Clips: A Human-Inspired Video Editing Framework with Multimodal Narrative Understanding. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing: Industry Track . 2764–2781. [34] Zhou Wang, Alan C Bovik, Hamid R Sheikh, and Eero P Simoncelli. 2004. Image quality assessment: from error visibility to structural similarity. IEEE transactions on image processing 13, 4 (2004), 600–612. [35] Minghao Xu, Hang Wang, Bingbing Ni, Riheng Zhu, Zhenbang Sun, and Changhu Wang. 2021. Cross-category Video Highlight Detection via Set-based Learning. In Proceedings of the IEEE/CVF International Conference on Computer Vision . 7950– 7959. [36] Yifang Xu, Yunzhuo Sun, Benxiang Zhai, Youyao Jia, and Sidan Du. 2024. MH-DETR: Video Moment and Highlight Detection with Cross-modal Transformer. In 2024 International Joint Conference on Neural Networks (IJCNN) . IEEE, 1–8. [37] Youngjae Yu, Sangho Lee, Joonil Na, Jaeyun Kang, and Gunhee Kim. 2018. A Deep Ranking Model for Spatio-Temporal Highlight Detection From a 360 ◦ Video. In 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 32. 7525–7533. 
+
+## A Prompt Details 
+
+We provide the detailed prompts for segment-level score prediction in Figure 6. 
+
+## B Video Trimming Details 
+
+Without trimming, non-game segments such as pre-game analy-ses, half-time interviews, commercials, and post-game ceremonies would introduce spurious negatives during alignment, since they have no highlight counterpart yet share the broadcast’s visual style. Trimming was performed manually by the authors using the per-sport game start and end cues listed in Table 11. Each cue was chosen to coincide with an unambiguous, visually or aurally salient event (e.g., the opening whistle, the kickoff, or the first pitch) so that boundaries can be located reliably from a quick scan of the broadcast. 
+
+## C Manual Filtering Details 
+
+To correct false negatives from the automatic PSNR filtering stage, we performed an additional manual verification step. For each batch of aligned pairs, we display a 16-pair grid image (Figure 7) show-ing the middle frame of each 1-second highlight clip alongside its aligned full-video frame, and the annotator simply judges whether each displayed alignment is correct. This is a binary visual check on SVHighlights: Towards Extremely Long Sport Video Highlight Detection KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. Prompt 
+
+This is a segment corresponding to  start s ~  end s from a video with a total length of  full_duration  seconds. You are given the captions, volumes, and transcripts for this segment. The volume values range from 0 to 1, where 1 indicates loud and 0 means quiet or silent. Please assign a saliency score to this segment on a scale from 0 to 5, where a higher score means the segment is more likely to be a highlight. The output format should be like: 'The segment timestamps are x.xxxs ~ x.xxxs. Its saliency score is x.x.'. You must not provide any other response or explanation, and the saliency score must be between 0 to 5. 
+
+Captions:  Captions 
+
+Volumes:  Volumes 
+
+Transcript:  Transcript 
+
+Figure 6: Prompt used for segment-level score prediction. Table 11: Per-sport game start and end cues used for video trimming. Sport Game Start Game End 
+
+Amer. Football Opening whistle Final whistle Baseball Just before first pitch Just after last out Basketball Opening whistle Final buzzer Ice Hockey Opening faceoff Final buzzer Racing Starting signal Winner’s checkered flag Rugby Kickoff whistle Final whistle Soccer Kickoff whistle Final whistle Volleyball Opening whistle Final set match point 
+
+existing matches, not a new annotation: annotators do not assign per-clip saliency scores and do not need to watch the original full-length videos. The procedure was carried out by two annotators (the authors), at a cost far lower than the tens to hundreds of hours of per-clip saliency labeling required by existing highlight detection benchmarks. This lightweight verification ensures the precise tem-poral alignment and overall integrity of the SVHighlights dataset. 
+
+## D Window-based F1 Evaluation 
+
+Beyond the ranking- and overlap-based metrics used in the main paper, it is also informative to evaluate highlight detection from the perspective of temporal event detection, where a prediction close to a ground-truth boundary is still practically useful. Inspired by window-based evaluation in the time-series anomaly detection literature [ 22 ], we report an event-level F1: consecutive highlight clips form events, predictions are binarized by top-𝑘 selection ( 𝑘 is the number of ground-truth highlight clips), and a predicted event matches a ground-truth event when they overlap within a tolerance window of 𝑤 = 3 clips ( ±6 s). 
+
+Table 12: Comparison including window-based F1, shown for the strongest baseline on each metric. The best result per column is in bold and the second best is underlined. Method mAP HIT@1 HIT@K IoU Window F1                     
+
+> UMT 10.97 13.44 11.76 6.39 29.91
+> TR-DETR 12.29 23.44 12.84 7.05 23.84 TRACE 23.14 23.12 9.38 7.63 17.61 TF-SELECTOR (Ours) 12.81 26.56 16.90 10.58 27.38
+
+Precision, recall, and F1 are then aggregated over all videos. Table 12 reports this metric alongside the others for the strongest baseline on each metric. TF-SELECTOR attains the second-highest window-based F1 overall (27.38), behind only UMT, and—unlike baselines that excel on only a single metric—remains consistently strong across all metrics, confirming the robustness of its segment-level predictions. 
+
+## E Ethical Considerations 
+
+All videos in SVHighlights were collected from publicly available official YouTube channels operated by professional sports leagues and associations, restricted to videos with over 10,000 views from neutral organizations rather than specific teams. To respect intel-lectual property, we do not redistribute the original video files and release only video URLs, extracted features, and annotation labels. As the videos are publicly broadcast sports content, they contain no sensitive personal information beyond what is already public, and all annotation was performed by the authors without external crowdworkers. We therefore believe SVHighlights poses minimal ethical risk and is intended solely for advancing research in video understanding. KDD 2026, August 9–13, 2026, Jeju Island, Republic of Korea. Lee et al. 
+
+Figure 7: An example of the manual filtering process. We visualized the alignment results as grid images to manually inspect the samples discarded by the automatic filtering. This figure demonstrates a case where a highlight frame was erroneously filtered out due to a low PSNR score caused by frame overlapping during a scene transition. To address such false negatives, we retrieved and verified the original aligned frames. We conducted this manual filtering on the entire SVHighlights dataset to ensure the integrity of the data.

@@ -1,0 +1,251 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-12T21:34:15.942941+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2606.09150v1",
+      "source": "arxiv",
+      "title": "Ultra Flash: Scaling Real-Time Streaming Video Generation to High Resolutions",
+      "abstract": "While recent autoregressive video diffusion models achieve remarkable streaming quality, they remain confined to low resolutions (e.g., 480P), leaving efficient, scalable, real-time high-resolution video generation a fundamental open challenge. To bridge this gap, we present Ultra Flash, a cascaded streaming framework capable of real-time high-resolution video generation. Ultra Flash achieves ~30 FPS at 1K resolution and ~18 FPS at 2K resolution on a single GPU through three key contributions: (1) an architecture-preserving T2V-to-TV2V super-resolution training paradigm coupled with an AIGC-oriented data degradation pipeline that effectively preserves the generative capability of the base model, enabling enhanced high-resolution detail when cascaded after mainstream low-resolution generative models; (2) a causal streaming latent upsampler paired with a high-resolution decoder, which enhances spatiotemporal coherence while enabling efficient latent spatial scaling and precise high-resolution decoding with negligible computational overhead; and (3) a cascade high-resolution streaming video generation optimization scheme that first performs hybrid-reward-enhanced sparse causalization and single-step distillation of the super-resolution model, then introduces cascaded streaming self-forcing preference optimization with dynamic cache management, jointly enhancing overall coherence, improving quality, and enabling real-time high-resolution streaming video generation. Extensive experiments demonstrate that Ultra Flash reliably produces ultra-high-resolution streaming video while maintaining state-of-the-art visual quality and superior efficiency.",
+      "authors": [
+        "Luxury",
+        "Jie Huang",
+        "Zihao Fan",
+        "Xiaoxiao Ma",
+        "Yuming Li",
+        "Jun-hao Zhuang",
+        "Zeyue Xue",
+        "Siming Fu",
+        "Haoran Li",
+        "Mingchen Zhong",
+        "Guohui Zhang",
+        "Shichen Ma",
+        "Yijun Liu",
+        "Jiaqi Shi",
+        "Yanwen Ma",
+        "Yaofeng Su",
+        "Haoyu Wang",
+        "Yaowei Li",
+        "Songchun Zhang",
+        "Weiyang Jin",
+        "Yuxuan Bian",
+        "Shiyi Zhang",
+        "Haojun Xu",
+        "Shuai Lu",
+        "Xin Han",
+        "Wei Tang",
+        "Haoyang Huang",
+        "Nan Duan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-08T07:45:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.09150v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "real-time streaming video generation at high resolutions",
+      "llm_evidence_cn": "高分辨率实时流式视频生成",
+      "llm_evidence": "高分辨率实时流式视频生成",
+      "canonical_evidence": "高分辨率实时流式视频生成",
+      "llm_tldr_en": "Ultra Flash proposes a cascaded streaming framework for real-time high-resolution video generation achieving ~30 FPS at 1K and ~18 FPS at 2K on a single GPU.",
+      "llm_tldr_cn": "现有自回归视频扩散模型在流式生成中局限于低分辨率，无法满足高分辨率实时需求。为此，本文提出Ultra Flash，一个级联流式框架，通过架构保持的超分辨率训练范式、AIGC数据退化流水线和轻量级插值网络，在单GPU上实现了1K分辨率30 FPS、2K分辨率18 FPS的实时高分辨率视频生成，显著提升了流式视频生成的质量和效率。",
+      "llm_tldr": "现有自回归视频扩散模型在流式生成中局限于低分辨率，无法满足高分辨率实时需求。为此，本文提出Ultra Flash，一个级联流式框架，通过架构保持的超分辨率训练范式、AIGC数据退化流水线和轻量级插值网络，在单GPU上实现了1K分辨率30 FPS、2K分辨率18 FPS的实时高分辨率视频生成，显著提升了流式视频生成的质量和效率。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.09162v1",
+      "source": "arxiv",
+      "title": "Zero-Parameter Geometric Gating for Temporally Stable Low-Altitude UAV Video Semantic Segmentation",
+      "abstract": "Video semantic segmentation for low-altitude UAVs requires temporal consistency, yet dense optical flow introduces spatially structured noise in the planar regions that dominate aerial imagery. We propose a zero-parameter geometric gate that uses RANSAC homography inlier ratios on a $16\\times16$ spatial grid to route each region to either homography or optical flow warp before fusion via Semantic Similarity Propagation. The gate requires no learned parameters -- only a median-threshold binary decision on RANSAC statistics -- adding only 211K trainable parameters (the SSP fusion layer) to a frozen backbone. On synthetic UAVid, the method achieves +4.24--4.91\\% mIoU improvement over base models across two architectures (SegFormer-b2 and Hiera-S+UPerNet). Mechanism diagnostics reveal that flow residuals in planar regions are spatially autocorrelated (Moran's I = 0.32, $p < 0.001$), predict boundary instability (Spearman $ρ= 0.66$), and that rigidification recovers temporal consistency from 62\\% to 92\\% (+29.5pp) in homography-valid regions.",
+      "authors": [
+        "Jingpu Yang",
+        "Fengxian Ji",
+        "Zhengzhao Lai",
+        "Juanfan Wu",
+        "Mingxuan Cui",
+        "Yufeng Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-08T07:55:31+00:00",
+      "link": "https://arxiv.org/pdf/2606.09162v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video semantic segmentation for UAVs",
+      "llm_evidence_cn": "无人机视频语义分割",
+      "llm_evidence": "无人机视频语义分割",
+      "canonical_evidence": "无人机视频语义分割",
+      "llm_tldr_en": "A zero-parameter geometric gate using RANSAC homography inlier ratios improves temporal consistency in low-altitude UAV video semantic segmentation without learned parameters.",
+      "llm_tldr_cn": "针对低空无人机视频语义分割中的时间一致性问题，提出一种零参数几何门控方法，通过RANSAC单应性内点比率为每个空间区域选择单应性或光流扭曲，再经语义相似性传播融合。在合成UAVid数据集上，该方法在两种架构下均获得超过4%的mIoU提升，无需学习参数即可有效抑制时域噪声。",
+      "llm_tldr": "针对低空无人机视频语义分割中的时间一致性问题，提出一种零参数几何门控方法，通过RANSAC单应性内点比率为每个空间区域选择单应性或光流扭曲，再经语义相似性传播融合。在合成UAVid数据集上，该方法在两种架构下均获得超过4%的mIoU提升，无需学习参数即可有效抑制时域噪声。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.06853v1",
+      "source": "arxiv",
+      "title": "MotionEnhancer: Leveraging Video Diffusion for Motion-Enhanced Vision-Language Models",
+      "abstract": "The new era has witnessed a remarkable capability to extend Vision-Language Models (VLMs) for tackling tasks of video understanding. While current VLMs excel at event- or story-level understanding, their ability to capture fine-grained motion details remains limited, primarily due to their focus on high-level static semantic structures and macro-event logic. In contrast, Video Diffusion Models (VDMs) are adept at modeling dynamic motion patterns, benefiting from large-scale video data and the intrinsic requirement of temporal generation. In this paper, we introduce MotionEnhancer, a novel approach that leverages motion priors distilled from a powerful video diffusion model as auxiliary supervision to enhance the motion understanding capability of a VLM via attention alignment. MotionEnhancer comprises two simple parameter-free modules, Motion-sensitive Head Selection (MHS) and Motion-salient Text Token Identification (MTTI), to directly extract and optimize motion-related attentions from the VDM in a computation-only manner. MotionEnhancer provides a scalable solution for motion understanding without additional training parameters, modifications to existing architectures, or tool calling. Extensive experiments demonstrate that MotionEnhancer can achieve consistent improvements over state-of-the-art VLMs on two motion-level video understanding benchmarks, especially on motion-related metrics.",
+      "authors": [
+        "Yifan Xu",
+        "Chao Zhang",
+        "Ruifei Ma",
+        "Fei Gao",
+        "Zhifei Yang",
+        "Jiaxing Qi",
+        "Zhipeng Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-05T02:56:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.06853v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "motion enhancement for video understanding",
+      "llm_evidence_cn": "视频理解中的运动增强",
+      "llm_evidence": "视频理解中的运动增强",
+      "canonical_evidence": "视频理解中的运动增强",
+      "llm_tldr_en": "MotionEnhancer leverages motion priors from video diffusion models to enhance fine-grained motion understanding in Vision-Language Models for video tasks.",
+      "llm_tldr_cn": "当前视觉语言模型在视频理解中擅长高层语义但缺失细微运动细节，MotionEnhancer利用视频扩散模型的运动先验作为辅助监督，通过蒸馏方式增强VLM对精细运动的捕捉能力。该方法在不增加推理开销的情况下提升了模型在动作识别等任务上的性能，为视频分析中的运动建模提供了新思路。",
+      "llm_tldr": "当前视觉语言模型在视频理解中擅长高层语义但缺失细微运动细节，MotionEnhancer利用视频扩散模型的运动先验作为辅助监督，通过蒸馏方式增强VLM对精细运动的捕捉能力。该方法在不增加推理开销的情况下提升了模型在动作识别等任务上的性能，为视频分析中的运动建模提供了新思路。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.06926v1",
+      "source": "arxiv",
+      "title": "SVHighlights: Towards Extremely Long Sport Video Highlight Detection",
+      "abstract": "While highlight detection for long-form videos is of great practical importance, most existing methods remain limited to short-form content, largely due to the absence of a suitable benchmark. To bridge this gap, we introduce SVHighlights, to the best of our knowledge, the first benchmark for highlight detection in extremely long sports videos, each exceeding one hour in duration, across multiple sports categories. SVHighlights is constructed from pairs of full-length sports videos and their corresponding official highlight videos using a dataset generation pipeline, enabling scalable label generation without conventional per-clip saliency annotation. The benchmark comprises 320 videos with an average duration of 2.00 hours and a total of 640.18 hours, substantially exceeding previous datasets. Existing methods also face fundamental challenges on long videos: models trained on short clips fail to generalize to hour-long content, and their clip-level scoring lacks the broader context needed to identify highlights. To address this and provide a strong baseline, we present TF-SELECTOR, a training-free segment-based approach that divides each video into context-aware segments by merging adjacent shots sharing the same semantic content, and predicts segment-level saliency scores using a large language model with multimodal inputs including visual captions, transcripts, and audio volume. Experiments demonstrate that TF-SELECTOR achieves superior performance across most metrics compared to Video Temporal Grounding (VTG)-tuned baselines, with improvements of +3.12 in HIT@1, +4.06 in HIT@K, and +2.95 in IoU. These results establish SVHighlights as a challenging testbed for long-form highlight detection and demonstrate that a simple segment-based strategy can effectively scale to hour-long videos.",
+      "authors": [
+        "Donggyu Lee",
+        "Youngbin Ki",
+        "Jeonghun Kang",
+        "Taehwan Kim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.MM"
+      ],
+      "published": "2026-06-05T05:42:19+00:00",
+      "link": "https://arxiv.org/pdf/2606.06926v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "benchmark for highlight detection in extremely long sports videos, related to video analytics",
+      "llm_evidence_cn": "超长体育视频高亮检测基准，与视频分析相关",
+      "llm_evidence": "超长体育视频高亮检测基准，与视频分析相关",
+      "canonical_evidence": "超长体育视频高亮检测基准，与视频分析相关",
+      "llm_tldr_en": "Introduces SVHighlights, the first benchmark for highlight detection in extremely long sports videos (over 1 hour each), enabling scalable label generation without per-clip saliency annotation.",
+      "llm_tldr_cn": "针对长视频高亮检测缺乏基准的问题，提出SVHighlights，首个专为超长体育视频（时长超过1小时）设计的高亮检测基准。通过从完整视频与官方高亮视频对中自动生成标签，避免了逐片段显著性标注，包含320个视频总计640小时。该基准填补了长视频分析领域的空白，为视频分析技术向长视频延伸提供了标准化评估平台。",
+      "llm_tldr": "针对长视频高亮检测缺乏基准的问题，提出SVHighlights，首个专为超长体育视频（时长超过1小时）设计的高亮检测基准。通过从完整视频与官方高亮视频对中自动生成标签，避免了逐片段显著性标注，包含320个视频总计640小时。该基准填补了长视频分析领域的空白，为视频分析技术向长视频延伸提供了标准化评估平台。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.07433v1",
+      "source": "arxiv",
+      "title": "Watch, Remember, Reason: Human-View Video Understanding with MLLMs",
+      "abstract": "Video understanding is being rapidly transformed by multimodal large language models (MLLMs), as research moves from short clips to long, multimodal, and knowledge-intensive video scenarios. These scenarios require models to handle sparse evidence, long-range dependencies, multimodal alignment, and reliable inference under limited computational budgets. This work presents a human-view perspective on LLM-based video understanding, organized around three functional abilities: watching, remembering, and reasoning. Rather than treating video tasks as isolated benchmarks, this view provides a unified structure for analyzing how video MLLMs acquire evidence, preserve context, and produce grounded outputs. We introduce a formulation that characterizes video understanding systems by their perceptual representations, memory states, reasoning traces, and final predictions. Based on this formulation, we identify challenges in spatio-temporal perception, efficient long-video processing, memory modeling, streaming understanding, and faithful reasoning. Representative methods are organized by their roles in video MLLM systems. Watching covers fine-grained, comprehensive, audio-visual, and efficient perception. Remembering includes offline and streaming memory, while reasoning covers text-only reasoning and thinking with videos. We further examine application domains such as egocentric, sports, instructional, medical, and narrative videos, and cover training datasets and evaluation benchmarks across task types, supervision formats, modalities, and capability dimensions. Finally, we outline open problems and future directions for scalable, memory-aware, and evidence-grounded video intelligence. Related works will be continuously traced at https://github.com/marinero4972/Awesome-HumanView-VideoUnderstanding.",
+      "authors": [
+        "Jiahao Meng",
+        "Yue Tan",
+        "Qi Xu",
+        "Kuan Gao",
+        "Weisong Liu",
+        "Yanwei Li",
+        "Jason Li",
+        "Lingdong Kong",
+        "Haochen Wang",
+        "Qianyu Zhou",
+        "Jiangning Zhang",
+        "Guangliang Cheng",
+        "Yunhai Tong",
+        "Lu Qi",
+        "Minghsuan Yang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.MM"
+      ],
+      "published": "2026-06-05T16:29:13+00:00",
+      "link": "https://arxiv.org/pdf/2606.07433v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video understanding with MLLMs",
+      "llm_evidence_cn": "多模态大语言模型进行视频理解",
+      "llm_evidence": "多模态大语言模型进行视频理解",
+      "canonical_evidence": "多模态大语言模型进行视频理解",
+      "llm_tldr_en": "This work presents a human-view perspective on LLM-based video understanding, organizing capabilities into watching, remembering, and reasoning, providing a unified structure for analyzing video MLLMs.",
+      "llm_tldr_cn": "随着视频理解从短视频向长视频和多模态场景发展，该论文从人类视角出发，将基于LLM的视频理解能力划分为观看、记忆和推理三个功能，为分析视频MLLM如何获取证据、保持上下文和产生接地输出提供了统一框架。该工作有助于理解视频分析技术的演进。",
+      "llm_tldr": "随着视频理解从短视频向长视频和多模态场景发展，该论文从人类视角出发，将基于LLM的视频理解能力划分为观看、记忆和推理三个功能，为分析视频MLLM如何获取证据、保持上下文和产生接地输出提供了统一框架。该工作有助于理解视频分析技术的演进。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -6,40 +6,35 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-11
-- 运行时间：2026-06-11 22:16:11 UTC
+- 最新运行日期：2026-06-12
+- 运行时间：2026-06-12 21:38:40 UTC
 - 运行状态：成功
-- 本次总论文数：6
+- 本次总论文数：5
 - 精读区：1
-- 速读区：5
+- 速读区：4
 
 ### 今日简报（AI）
-1) 今日共6篇论文，1篇精读聚焦边缘-云连续体实时过程挖掘，5篇速读覆盖低光视频增强、视频内化与边缘LLM推理加速。  
-2) 最值得关注方向：边缘计算与云协同的实时过程挖掘（《PM-EdgeMap》评分8.0），以及无需模态对齐的低光视频增强（《AnyMod-LLVE》7.0）。  
-3) 建议优先精读《PM-EdgeMap》了解边缘智能新范式，速读论文可作为边缘AI与视频处理的补充参考。
-- 详情：[/202606/11/README](/202606/11/README)
+今日精读高分论文《Ultra Flash》探索实时高清视频生成新方法；速读覆盖无人机视频语义分割、运动增强视觉语言模型及超长体育视频高光检测。建议重点关注实时视频生成与运动增强方向的突破，对视频分析应用有直接参考价值。
+- 详情：[/202606/12/README](/202606/12/README)
 
 ### 精读区论文标签
-1. [The PM-EdgeMap: Towards Real-Time Process Mining on the Edge-Cloud Continuum](/202606/11/2606.12103v1-the-pm-edgemap-towards-real-time-process-mining-on-the-edge-cloud-continuum)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：边云连续体上的实时过程挖掘
+1. [Ultra Flash: Scaling Real-Time Streaming Video Generation to High Resolutions](/202606/12/2606.09150v1-ultra-flash-scaling-real-time-streaming-video-generation-to-high-resolutions)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：高分辨率实时流式视频生成
 
 ### 速读区论文标签
-1. [AnyMod-LLVE: Low-Light Video Enhancement with Modality-Agnostic Inference](/202606/11/2606.11186v1-anymod-llve-low-light-video-enhancement-with-modality-agnostic-inference)  
+1. [Zero-Parameter Geometric Gating for Temporally Stable Low-Altitude UAV Video Semantic Segmentation](/202606/12/2606.09162v1-zero-parameter-geometric-gating-for-temporally-stable-low-altitude-uav-video-semantic-segmentation)  
    标签：评分：7.0/10、query:mec-video
-   evidence：低光视频增强方法
-2. [Frames2LoRA: Parametric Video Internalization for Vision-Language Models](/202606/11/2606.04351v2-frames2lora-parametric-video-internalization-for-vision-language-models)  
+   evidence：无人机视频语义分割
+2. [MotionEnhancer: Leveraging Video Diffusion for Motion-Enhanced Vision-Language Models](/202606/12/2606.06853v1-motionenhancer-leveraging-video-diffusion-for-motion-enhanced-vision-language-models)  
    标签：评分：6.0/10、query:mec-video
-   evidence：提出参数化视频内化方法，用于视觉-语言模型的高效视频分析
-3. [PALUTE: Processing-In-Memory Acceleration via Lookup Table for Edge LLM Inference](/202606/11/2606.08891v1-palute-processing-in-memory-acceleration-via-lookup-table-for-edge-llm-inference)  
+   evidence：视频理解中的运动增强
+3. [SVHighlights: Towards Extremely Long Sport Video Highlight Detection](/202606/12/2606.06926v1-svhighlights-towards-extremely-long-sport-video-highlight-detection)  
    标签：评分：6.0/10、query:mec-video
-   evidence：使用内存内处理加速边缘大模型推理
-4. [A Hybrid Edge-Cloud Architecture for Low-Latency Entitlement Verification in Resource-Constrained Devices](/202606/11/2606.10536v1-a-hybrid-edge-cloud-architecture-for-low-latency-entitlement-verification-in-resource-constrained-devices)  
+   evidence：超长体育视频高亮检测基准，与视频分析相关
+4. [Watch, Remember, Reason: Human-View Video Understanding with MLLMs](/202606/12/2606.07433v1-watch-remember-reason-human-view-video-understanding-with-mllms)  
    标签：评分：6.0/10、query:mec-video
-   evidence：低延迟验证的混合边缘云架构
-5. [Top Model Decision Tree: Selecting Segmentation Models for Reliable Quantitative Analysis in Low- and Ultralow-Dose CryoEM](/202606/11/biorxiv-10-64898-2026-06-05-730486-v1-top-model-decision-tree-selecting-segmentation-models-for-reliable-quantitative-analysis-in-low--and-ultralow-dose-cryoem)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：基于分割模型的模型选择工作流
+   evidence：多模态大语言模型进行视频理解
 
 
 <div class="dpr-home-promo-card">
