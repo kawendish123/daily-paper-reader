@@ -6,35 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-12
-- 运行时间：2026-06-12 21:38:40 UTC
+- 最新运行日期：2026-06-13
+- 运行时间：2026-06-13 20:31:53 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：1
-- 速读区：4
+- 本次总论文数：6
+- 精读区：4
+- 速读区：2
 
 ### 今日简报（AI）
-今日精读高分论文《Ultra Flash》探索实时高清视频生成新方法；速读覆盖无人机视频语义分割、运动增强视觉语言模型及超长体育视频高光检测。建议重点关注实时视频生成与运动增强方向的突破，对视频分析应用有直接参考价值。
-- 详情：[/202606/12/README](/202606/12/README)
+1. 今日精选6篇论文，聚焦微手势在线识别与LLM驱动边缘AI调度两大高评分方向。
+2. 最值得关注：时空解耦适配器实现微手势在线识别、语义合约调度提升LLM边缘AI服务效率。
+3. 建议优先精读两篇8.0分论文，兼顾长视频时间定位与知识表征的速读方法。
+- 详情：[/202606/13/README](/202606/13/README)
 
 ### 精读区论文标签
-1. [Ultra Flash: Scaling Real-Time Streaming Video Generation to High Resolutions](/202606/12/2606.09150v1-ultra-flash-scaling-real-time-streaming-video-generation-to-high-resolutions)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：高分辨率实时流式视频生成
+1. [Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition](/202606/13/2606.07355v1-spatial-temporal-decoupled-adapter-for-micro-gesture-online-recognition)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：实时视频微手势识别
+2. [STEPS: Semantic-Contract-Guided Scheduling for LLM-Assisted Natural-Language-Driven Edge AI Services](/202606/13/2606.09537v1-steps-semantic-contract-guided-scheduling-for-llm-assisted-natural-language-driven-edge-ai-services)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：边缘计算调度AI服务
+3. [Metadata-Aware Multi-Prompt Reasoning for Zero-Shot Accident Understanding](/202606/13/2606.12047v1-metadata-aware-multi-prompt-reasoning-for-zero-shot-accident-understanding)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：从监控视频中零样本理解事故
+4. [Shared Infrastructure Investment and Pricing: Stackelberg Equilibria in Risk-Aware Take-or-Pay Contracts](/202606/13/2606.12167v1-shared-infrastructure-investment-and-pricing-stackelberg-equilibria-in-risk-aware-take-or-pay-contracts)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：移动边缘计算基础设施投资的斯坦克尔伯格博弈模型
 
 ### 速读区论文标签
-1. [Zero-Parameter Geometric Gating for Temporally Stable Low-Altitude UAV Video Semantic Segmentation](/202606/12/2606.09162v1-zero-parameter-geometric-gating-for-temporally-stable-low-altitude-uav-video-semantic-segmentation)  
+1. [Natural-Language Temporal Grounding in Hour-Long Videos is a Search Problem: A Benchmark and Empirical Decomposition](/202606/13/2606.12300v1-natural-language-temporal-grounding-in-hour-long-videos-is-a-search-problem-a-benchmark-and-empirical-decomposition)  
    标签：评分：7.0/10、query:mec-video
-   evidence：无人机视频语义分割
-2. [MotionEnhancer: Leveraging Video Diffusion for Motion-Enhanced Vision-Language Models](/202606/12/2606.06853v1-motionenhancer-leveraging-video-diffusion-for-motion-enhanced-vision-language-models)  
+   evidence：长视频时间定位基准与分析，直接相关视频分析
+2. [From Content to Knowledge: Lightning Fast Long-Video Understanding with Neural Knowledge Representations](/202606/13/2606.11913v1-from-content-to-knowledge-lightning-fast-long-video-understanding-with-neural-knowledge-representations)  
    标签：评分：6.0/10、query:mec-video
-   evidence：视频理解中的运动增强
-3. [SVHighlights: Towards Extremely Long Sport Video Highlight Detection](/202606/12/2606.06926v1-svhighlights-towards-extremely-long-sport-video-highlight-detection)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：超长体育视频高亮检测基准，与视频分析相关
-4. [Watch, Remember, Reason: Human-View Video Understanding with MLLMs](/202606/12/2606.07433v1-watch-remember-reason-human-view-video-understanding-with-mllms)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：多模态大语言模型进行视频理解
+   evidence：快速长视频理解与神经知识表示
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,424 @@
+Title: Metadata-Aware Multi-Prompt Reasoning for Zero-Shot Accident Understanding
+
+URL Source: https://arxiv.org/pdf/2606.12047v1
+
+Published Time: Thu, 11 Jun 2026 01:03:06 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Metadata-Aware Multi-Prompt Reasoning for Zero-Shot Accident Understanding 
+
+## Tarandeep Singh * Soumyanetra Pal * Soham Biswas Nishanth Chandran Netradyne 
+
+> {firstname.lastname }@netradyne.com
+
+## Abstract 
+
+In this paper, we address the problem of zero-shot under-standing of accidents from surveillance videos by identi-fying when an impact event occurs, what type of impact it is, and where in the frame it occurs using natural lan-guage. We propose a three-stage pipeline that decomposes the accident understanding into when, what, and where. The first stage extracts a short temporal window around the impact using vision-language similarity. In the sec-ond stage, we perform metadata-driven multi-prompt rea-soning with five complementary views (baseline, motion, geometry, contrast, and tiebreaker) and resolve disagree-ment via an entropy-gated pairwise adjudicator. Finally, we localise the impact of an open-vocabulary detector queried on the predicted accident type and scene layout, and aggregate detections across keyframes using a score-weighted centroid. Our pipeline achieves a substantial improvement in the harmonic-mean score over a centre-of-frame baseline on the zero-shot ACCIDENT @ CVPR benchmark. We show that decomposing zero-shot video understanding into temporal localisation, semantic classi-fication, and spatial grounding enable more reliable rea-soning with vision-language models than direct prompting alone. 
+
+## 1. Introduction 
+
+Accident understanding in surveillance video is an impor-tant problem for emergency response, insurance assess-ment, fleet safety, and autonomous driving. In these set-tings, it is not enough to determine whether an accident has occurred. It must also identify the time of the incident, recognise the accident category, and localise the physical point of impact. Although this may appear straightforward for short video clips, it remains difficult in real-world CCTV footage. Accident categories can be visually similar, and the decisive impact often occurs within only a few frames. As a result, models may attend to contextual cues or 
+
+> *Equal contribution.
+
+prominent objects rather than the actual interaction be-tween road agents. These challenges are amplified in zero-shot scenarios such as the ACCIDENT@CVPR 2026 chal-lenge [17], where models must generalize to unconstrained real surveillance videos without labelled real-world train-ing examples. Vision-language models (VLMs) offer a natural way to approach this problem because they can interpret visual evidence through textual queries. However, formulating accident analysis as a single end-to-end query requires the model to make multiple complex decisions at once, and the prediction is often unstable and prone to shortcuts. Prior work has shown that decomposing visual understanding into targeted questions [1, 14] and aggregating over multi-ple predictions [21, 22] improves robustness. In this work, we propose a three-stage zero-shot pipeline organised around the questions when , what , and 
+
+where (Fig. 1). First, the when stage selects a compact tem-poral window likely to contain the collision by combining vision-language similarity with motion-based cues. Sec-ond, the what stage predicts the accident type using sev-eral structured prompts that emphasise complementary as-pects of the scene; inconsistent outputs are resolved using a lightweight adjudication step. Finally, the where stage lo-calises the impact region with an open-vocabulary detector conditioned on the predicted accident type and scene con-text, followed by aggregation across frames. The proposed system only uses open-weight models, re-quires no fine-tuning, and runs on a single 24 GB GPU. Experiments show that explicitly decomposing accident understanding into temporal detection, type recognition and spatial grounding yield more reliable zero-shot per-formance than asking a model to solve the full task in one step. Our main contributions are: • A three-stage when /what /where framework for zero-shot accident understanding from CCTV video, with each stage independently upgradable. • A five-prompt classification scheme with entropy-gated pairwise adjudication that resolves ambiguous votes without labelled calibration data. • A type and scene conditioned localization strategy that 
+
+> arXiv:2606.12047v1 [cs.CV] 10 Jun 2026
+
+improves harmonic-mean score, highlighting a fore-ground bias in existing pointing models. 
+
+## 2. Related Work 
+
+Accident detection and anticipation. Traffic accident analysis has traditionally focused on detecting whether an accident occurred or anticipating whether one is about to happen. Early work such as DSAR-NN [5] used spa-tial attention and recurrent modeling for accident antici-pation from dashcam videos. CADP [20], DoTA [26], and TAD [24] expanded this direction with datasets for traf-fic anomaly and accident detection, while Fang et al . [8] survey the broader field. These works primarily empha-size event detection and temporal localization; accident type is often treated as an auxiliary label. In contrast, we explicitly separate the three outputs required by ACCI-DENT@CVPR 2026 [17]: accident time, collision type, and impact location. 
+
+Driving scene understanding with language. Lan-guage has been used to improve interpretability in driv-ing videos, including explanations of ego-vehicle behavior in BDD-X [10], object-level action explanations in BDD-OIA [23], and causal reasoning over driver behavior in HAD/HDD [11, 19]. Most relevant to our formulation is DRAMA [14], which uses structured questions about risky objects — what they are, where they are, and why they matter — to improve localization and explanation. We adopt a similar decomposition principle, but for zero-shot accident understanding: when the impact occurs, what 
+
+type of collision it is, and where the impact is localized. 
+
+Vision-language models and prompting. Recent VLM-based approaches use natural language prompts for traffic scene reasoning, accident description, and safety-critical understanding [12, 13, 27]. Concurrent work by Thakur and Talele [9] studies zero-shot accident classification using multi-prompt textual descriptions with CLIP-style retrieval. Our approach instead uses structured prompts as complementary reasoning views for a generative VLM, followed by vote aggregation and pairwise adjudication. This is motivated by chain-of-thought prompting [22], self-consistency [21], Tree of Thoughts [25], and Ask Me Anything [2], which show that intermediate reasoning and multiple prompt formu-lations can improve robustness. We place this prompting strategy inside a perception-first pipeline: frames are first temporally selected, then classified, then spatially grounded. 
+
+## 3. Methodology 
+
+3.1. Temporal Detection 
+
+Accident detection in surveillance videos is sparse in time, making most frames non-informative for a VLM. We therefore first localize the relevant temporal segment using Meta’s Perception Encoder (PE) [4], a contrastive vision-language model similar to CLIP [18]. PE scores each sam-pled frame by its semantic alignment with the text query 
+
+traffic accident , allowing us to select the frames most likely to contain the impact. Given a video V , we uniformly sample frames {fi}Ni=1 
+
+at 8 FPS. Each frame fi is encoded into a visual embedding 
+
+vi ∈ Rd, and the query text traffic accident is encoded into t ∈ Rd. We compute the cosine similarity 
+
+si = v⊤ 
+
+> i
+
+t
+
+∥vi∥ ∥ t∥ . (1) Frames are ranked by si in descending order, with ties broken by earlier timestamp, and the top-KPE frames are selected as accident candidates. Let τj denote the times-tamps of these selected frames. We define the temporal window directly as 
+
+
+
+min  
+
+> j
+
+τj − δ, max  
+
+> j
+
+τj + δ
+
+
+
+,
+
+with δ = 2 s. This produces a short accident-centric win-dow that preserves context around the impact while dis-carding most irrelevant frames. The selected key frames 
+
+Fkey and the expanded window are then passed to the clas-sification and localization stages. The final accident time is the midpoint of the expanded window, 
+
+ˆt = (min j τj − δ) + (max j τj + δ)2 = min j τj + max j τj
+
+2 .
+
+Thus only the earliest and latest selected peak timestamps affect ˆt.
+
+3.2. Structured Multi-Prompt Classification 
+
+After temporal localization, Stage 2 predicts the accident type from the selected key frames Fkey . A single prompt is often insufficient because accident categories depend on different cues — vehicle motion, contact geometry, impact angle, and whether one or multiple vehicles are involved. We therefore query Qwen-3.5-VL 9B [3] with five struc-tured prompts over the same key frames and metadata con-text M (scene layout, weather, time of day, and video qual-ity). The prompts cover five complementary views: direct classification, temporal motion, geometric contact reason-ing, contrastive elimination, and tiebreaking. Let P = {p1, . . . , p 5} denote the prompt set. Each prompt maps the key frames and metadata to a class label, 
+
+yi = pi(Fkey , M ), i ∈ { 1, . . . , 5}. (2) The outputs are aggregated by the uncertainty-aware vot-ing procedure described below. Full prompt templates are provided in the supplementary material. Figure 1. Three-stage When–What–Where pipeline for accident understanding: temporal localization, metadata-conditioned multi-perspective classification, and type-guided spatial impact localization for accurate, interpretable predictions. 
+
+Aggregation and adjudication. Let Y = {y1, . . . , y 5}
+
+denote the predictions of the five prompts and nc =P 
+
+> i
+
+⊮[yi = c] their vote counts. We summarize the vote distribution by the top-two margin m = n(1) − n(2) and the normalized entropy ˜H = − 1log 2 K
+
+P 
+
+> c
+
+ˆpc log 2 ˆpc with 
+
+ˆpc = nc/|Y| , where K is the number of distinct predicted classes. If m > τ m or ˜H ≤ τH (default τm=2 , τH =0 .75 ), the plurality class arg max c nc is returned. Otherwise we es-calate in two cheap stages, both operating on a reduced subset of at most six evenly spaced key frames: (i) a struc-tured tiebreaker prompt that emits an additional vote, after which the majority is re-taken; and, if the vote remains am-biguous, (ii) a focused pairwise adjudication restricted to the top-two classes (c1, c 2), conditioned on impact geom-etry and contact point. The pairwise output overrides the plurality whenever it lies in {c1, c 2}.
+
+3.3. Spatial Impact Localization 
+
+Given the key frames Fkey from Stage 1 and the predicted accident type ˆc from Stage 2, this stage localizes the im-pact in pixel coordinates using OWL-v2 [15], an open-vocabulary detector. 
+
+Type- and scene-conditioned prompting. Rather than querying the detector with a generic “car crash”, we con-struct a prompt set conditioned on both ˆc and the scene layout ℓ (e.g., highway , signalized intersection ) recovered from dataset metadata. Each base phrase (e.g., “car crash-ing into back of another car” for REAR -END , “side impact crash” for T-BONE ) is suffixed with a scene phrase such as “on a highway”. This steers the detector toward the contact region rather than every vehicle in the scene. 
+
+Multi-frame detection and aggregation. For each key frame, OWL-v2 [15] returns detections {(sℓ, b ℓ)} with confidence sℓ and box bℓ = ( xmin  
+
+> ℓ
+
+, y min  
+
+> ℓ
+
+, x max  
+
+> ℓ
+
+, y max  
+
+> ℓ
+
+), re-tained above a score threshold θ = 0 .05 . Detections from all key frames are pooled and the top-K entries by score are kept ( K=5 ); denote this set T .The impact point (ˆ x, ˆy) is the score-weighted centroid of the top-K box centers: 
+
+ˆx =
+
+P 
+
+> ℓ∈T
+
+sℓ cxℓ
+
+P 
+
+> ℓ∈T
+
+sℓ
+
+, ˆy =
+
+P 
+
+> ℓ∈T
+
+sℓ cyℓ
+
+P 
+
+> ℓ∈T
+
+sℓ
+
+, (3) where cxℓ = ( xmin  
+
+> ℓ
+
++ xmax  
+
+> ℓ
+
+)/2 and cyℓ = ( ymin  
+
+> ℓ
+
++ ymax  
+
+> ℓ
+
+)/2.The impact region is the axis-aligned union of the top-K
+
+boxes, clamped to the frame. This score-weighted aggre-gation implicitly enforces temporal consistency: regions detected confidently across multiple key frames domi-nate the centroid, while transient false positives are down-weighted. 
+
+## 4. Experiments 
+
+4.1. Dataset and Evaluation Protocol 
+
+We evaluate our method on the zero-shot ACCI-DENT@CVPR 2026 benchmark [17]. The benchmark provides no labeled real-world training data. Instead, par-ticipants are given a synthetic CARLA [7] development set with full annotations, including collision time, impact co-ordinates, accident type, and per-frame bounding boxes. Final evaluation is performed on real fixed-view CCTV clips. The test videos are challenging due to low resolution, compression artifacts, partial occlusions, and shallow cam-era angles. For each clip, the system must predict three outputs: accident time in seconds, impact location (x, y )
+
+in normalized frame coordinates, and accident type from 
+
+{rear-end, T-bone, head-on, sideswipe, single }. Coarse scene metadata, such as layout, weather, and time of day, is provided with the videos but is not used directly by the scorer. 
+
+Evaluation Metric. The challenge reports three task scores in [0 , 1] . The temporal score T and spatial score 
+
+S are computed using Gaussian-style similarities based on time error and Euclidean distance to the ground-truth im-pact location, respectively. The classification score C is top-1 accuracy. The final leaderboard score is the harmonic mean: ACCIDENT score = 3 
+
+> 1
+> T
+
++ 1 
+
+> S
+
++ 1
+
+> C
+
+(4) While the official Kaggle leaderboard reports public and private overall scores, we report the per-component scores T , S, and C, which we obtained from the updated leaderboard [17]. 
+
+4.2. Implementation Details 
+
+All experiments are conducted on a single NVIDIA L4 GPU with 24 GB of memory. Stage 1 uses the Percep-tion Encoder [4] (PE-Core-G14-448) in half precision to embed frames sampled at 8 FPS. The top-5 similarity peaks define the candidate temporal window, which is ex-panded by δ=2 s. Stage 2 uses Qwen-3.5-VL 9B [3], served locally via Ollama [16] ( qwen3.5vl:9b ) with 4-bit quantisation, num ctx =12 ,288 , and temperature 
+
+0.2. Each clip is classified using up to 8 motion-scored key frames and 5 structured prompts. The adjudication step applies the entropy/margin gate from Sec. 3.2, with 
+
+τm=2 and τH =0 .75 , over at most 6 evenly spaced frames. 
+
+Stage 3 uses owlv2-base-patch16-ensemble [15] with score threshold θ=0 .05 and top-K=5 aggregation. 
+
+4.3. Main Results 
+
+Table 1 reports the final ACCIDENT@CVPR 2026 [17] test score of our pipeline, compared with two simple base-lines that predict a fixed time offset and the frame centre for every clip. 
+
+4.4. Ablation Studies 
+
+We analyze the contribution of each stage in the pipeline by varying one component at a time, while maintaining the other two components at their full-pipeline settings. Since the leaderboard only provides the final harmonic mean score, all our analyses report this single metric. The δ-expanded temporal window improves the score by 0.039 over PE Top-1, suggesting that the highest-
+
+Table 1. Results on the ACCIDENT@CVPR 2026 [17] test set. The overall score is the harmonic mean of T , S, and C. †Rule-based, mid-clip time, frame center. ‡Rule-based, quarter-clip time, frame center.                     
+
+> Method Public LB Private LB CTS
+> Baseline A †0.2714 0.2734 0.5807 0.1896 0.2505 Baseline B ‡0.3107 0.3188 0.5807 0.2664 0.2505
+> Ours 0.3852 0.4015 0.5057 0.3689 0.3498
+
+Table 2. Ablation studies. For each group, the other two stages are held fixed at their full-pipeline settings.                              
+
+> Stage Variant Public Private Temporal Uniform midpoint 0.3444 0.3592 PE Top-1 frame 0.3435 0.3627
+> PE δ-window midpoint (Ours) 0.3852 0.4015
+> Classification 1-prompt structured 0.3801 0.3961 3-prompt majority vote 0.3809 0.3978 5-prompt + tiebreaker 0.3849 0.4001
+> + entropy-gated pairwise (Ours) 0.3852 0.4015
+> Spatial Molmo2 pointing [6] 0.2589 0.2647 Centre-of-frame (0 .5,0.5) 0.3358 0.3487
+> OWL-v2 [15] type+scene conditioned (Ours) 0.3852 0.4015
+
+similarity frame alone is a noisy temporal estimate. Ad-ditional prompts and adjudication steps provide consistent classification gains, improving the final score by 0.0054 
+
+over the single-prompt setting. OWL-v2 [15] provides the largest stage-wise improvement, increasing the score by 0.053 over the center-of-frame baseline. Across the ablation studies, the three stages contribute unevenly to the final score. Spatial localisation provides the largest gain, followed by temporal localisation, while the classification ensemble contributes a smaller but con-sistent improvement. Most residual errors fall into distant collisions where OWL-v2 [15] either misses or selects a foreground vehicle, and adverse capture conditions such as rain, night, or occlusion. 
+
+## 5. Conclusion 
+
+In this paper, we presented a pipeline for zero-shot ac-cident understanding in surveillance video that decom-poses the task into when , what , and where . The method combines temporal windowing, multi-prompt classifica-tion, and type-conditioned spatial grounding. On the ACCIDENT@CVPR 2026 benchmark, it outperforms a centre-of-frame baseline without any fine-tuning. Type-conditioned grounding in particular improves spatial local-isation, indicating that grounding around the predicted ac-cident type reduces foreground-object bias. Overall, task decomposition appears to be a useful design choice for zero-shot accident understanding in challenging surveil-lance footage. References 
+
+[1] Stanislaw Antol, Aishwarya Agrawal, Jiasen Lu, Margaret Mitchell, Dhruv Batra, C. Lawrence Zitnick, and Devi Parikh. Vqa: Visual question answering. In Proceedings of the IEEE International Conference on Computer Vision (ICCV) , 2015. 1 [2] Simran Arora, Avanika Narayan, Mayee F. Chen, Laurel Orr, Neel Guha, Kush Bhatia, Ines Chami, Frederic Sala, and Christopher R´ e. Ask me anything: A simple strategy for prompting language models, 2022. 2 [3] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qi-dong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shu-tong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yu-chong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tian-bao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. Qwen3-vl technical report, 2025. 2, 4 [4] Daniel Bolya, Po-Yao Huang, Peize Sun, Jang Hyun Cho, Andrea Madotto, Chen Wei, Tengyu Ma, Jiale Zhi, Jathushan Rajasegaran, Hanoona Rasheed, Junke Wang, Marco Monteiro, Hu Xu, Shiyu Dong, Nikhila Ravi, Daniel Li, Piotr Doll´ ar, and Christoph Feichtenhofer. Perception encoder: The best visual embeddings are not at the output of the network, 2025. 2, 4 [5] Fu-Hsiang Chan, Yu-Ting Chen, Yu Xiang, and Min Sun. Anticipating accidents in dashcam videos. In Asian Confer-ence on Computer Vision , pages 136–153. Springer, 2016. 2[6] Christopher Clark, Jieyu Zhang, Zixian Ma, Jae Sung Park, Mohammadreza Salehi, Rohun Tripathi, Sangho Lee, Zhongzheng Ren, Chris Dongjoo Kim, Yinuo Yang, Vin-cent Shao, Yue Yang, Weikai Huang, Ziqi Gao, Taira An-derson, Jianrui Zhang, Jitesh Jain, George Stoica, Winson Han, Ali Farhadi, and Ranjay Krishna. Molmo2: Open weights and data for vision-language models with video un-derstanding and grounding, 2026. 4 [7] Jean-Emmanuel Deschaud. Kitti-carla: a kitti-like dataset generated by carla simulator, 2021. 3 [8] Jianwu Fang, iahuan Qiao, Jianru Xue, and Zhengguo Li. Vision-based traffic accident detection and anticipation: A survey, 2023. 2 [9] Wenbin Gan, Minh Dao, and Koji Zettsu. Drive-CLIP: Cross-Modal Contrastive Safety-Critical Driving Scenario Representation Learning and Zero-Shot Driving Risk Anal-ysis , pages 82–97. Springer Nature Switzerland, 2024. 2 [10] Jinkyu Kim, Anna Rohrbach, Trevor Darrell, John Canny, and Zeynep Akata. Textual explanations for self-driving vehicles, 2018. 2 [11] Jinkyu Kim, Teruhisa Misu, Yi-Ting Chen, Ashish Tawari, and John Canny. Grounding human-to-vehicle advice for self-driving vehicles, 2019. 2 [12] Younggun Kim, Ahmed S. Abdelrahman, and Mohamed Abdel-Aty. Vru-accident: A vision-language benchmark for video question answering and dense captioning for ac-cident scene understanding, 2025. 2 [13] Aaron Lohner, Francesco Compagno, Jonathan Francis, and Alessandro Oltramari. Enhancing vision-language mod-els with scene graphs for traffic accident understanding. In 2024 IEEE International Automated Vehicle Validation Conference (IAVVC) , pages 1–7, 2024. 2 [14] Srikanth Malla, Chiho Choi, Isht Dwivedi, Joon Hee Choi, and Jiachen Li. Drama: Joint risk localization and cap-tioning in driving. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) ,pages 1043–1052, 2023. 1, 2 [15] Matthias Minderer, Alexey Gritsenko, and Neil Houlsby. Scaling open-vocabulary object detection, 2024. 3, 4 [16] Ollama. Ollama: Run large language models locally, 2024. 4[17] Lukas Picek, Michal ˇ Cerm´ ak, Marek Hanzl, and Vojtˇ ech ˇCerm´ ak. Accident: A benchmark dataset for vehicle acci-dent detection from traffic surveillance videos, 2026. 1, 2, 3, 4 [18] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In International Conference on Machine Learning , 2021. 2 [19] Vasili Ramanishka, Yi-Ting Chen, Teruhisa Misu, and Kate Saenko. Toward driving scene understanding: A dataset for learning driver behavior and causal reasoning. 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 7699–7707, 2018. 2 [20] Ankit Shah, Jean-Bapstite Lamare, and Tuan Nguyen-Anh. Cadp: A novel dataset for cctv traffic camera based accident analysis. In Proceedings of the 15th IEEE International Conference on Advanced Video and Signal Based Surveil-lance (AVSS) , pages 1–9, 2018. 2 [21] Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, Sharan Narang, Aakanksha Chowdhery, and Denny Zhou. Self-consistency improves chain of thought reason-ing in language models, 2023. 1, 2 [22] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed H. Chi, Quoc V. Le, and Denny Zhou. Chain-of-thought prompting elicits reason-ing in large language models. In Proceedings of the 36th International Conference on Neural Information Process-ing Systems , Red Hook, NY, USA, 2022. Curran Associates Inc. 1, 2 [23] Yiran Xu, Xiaoyin Yang, Lihang Gong, Hsuan-Chu Lin, Tz-Ying Wu, Yunsheng Li, and Nuno Vasconcelos. Ex-plainable object-induced action decision for autonomous vehicles. In CVPR , pages 9520–9529, 2020. 2 [24] Yajun Xu, Chuwen Huang, Yibing Nan, and Shiguo Lian. Tad: A large-scale benchmark for traffic accidents detection from video surveillance. 2022. 2 [25] Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Thomas L. Griffiths, Yuan Cao, and Karthik R Narasimhan. Tree of thoughts: Deliberate problem solving with large language models. In Thirty-seventh Conference on Neural Information Processing Systems , 2023. 2 [26] Yu Yao, Xizi Wang, Mingze Xu, Zelin Pu, Ella Atkins, and David Crandall. When, where, and what? a new dataset for anomaly detection in driving videos. 2020. 2 [27] Ruixuan Zhang, Beichen Wang, Juexiao Zhang, Zilin Bian, Chen Feng, and Kaan Ozbay. When language and vision meet road safety: Leveraging multimodal large language models for video-based traffic accident analysis. Accident Analysis & Prevention , 219:108077, 2025. 2 Metadata-Aware Multi-Prompt Reasoning for Zero-Shot Accident Understanding 
+
+# Supplementary Material 
+
+## Overview 
+
+This supplementary material includes: • Full text of the classification prompts, conditional tiebreaker, and pairwise adjudicator (Sec. 5). • Type- and scene-conditioned phrase templates used by the OWL-v2 spatial localizer (Sec. 5). • Implementation hyperparameters and runtime details (Sec. 5). • Per-stage decision statistics (Sec. 5). • Qualitative failure modes (Sec. 5). 
+
+## Classification Prompts 
+
+All prompts share a common structured-output constraint and a common metadata prefix. The metadata prefix is constructed per clip from the four available metadata fields: scene layout, weather, time of day, and video qual-ity. 
+
+Shared output constraint. 
+
+REQUIRED format — follow this EXACTLY: 1. Vehicles : List every distinct vehicle you see. If only one vehicle is visible, write “Vehicle 1: [description]. No second vehicle visible.” 2. Contact : Describe the contact point, or write “None — single vehicle incident” if only one vehicle is visible. 3. Answer : <letter >
+
+p1: Baseline. 
+
+You are given frames from a traffic accident video. 
+
+{metadata context }
+
+Analyze the frames and classify the accident type. Classification categories: 
+
+{categories }
+
+Rules: 
+
+• Classify based ONLY on vehicle direction and angle at the moment of impact. 
+
+• Ignore motion before or after the collision. 
+
+• Use the metadata as supporting context, but rely primarily on visual evidence. 
+
+{constraint }
+
+p2: Temporal motion. 
+
+You are given frames from a traffic accident video. 
+
+{metadata context }
+
+Watch how vehicles move from the beginning to the moment of collision. Pay attention to each vehicle’s direction of travel at the exact moment of impact. 
+
+Classification categories: 
+
+{categories }
+
+Rules: 
+
+• Track vehicle motion over time but classify based on the collision moment only. 
+
+• Use the metadata as supporting context, but rely primarily on visual evidence. 
+
+{constraint }
+
+p3: Contact geometry. 
+
+You are given frames from a traffic accident video. 
+
+{metadata context }
+
+Focus on the spatial geometry at the moment of collision: 
+
+• What angle do the vehicles meet at? 
+
+• Which part of each vehicle makes contact? 
+
+• Are vehicles moving in the same, opposite, or perpendicu-lar directions? Classification categories: 
+
+{categories }
+
+Rules: 
+
+• Use ONLY the angle and contact point at impact to classify. 
+
+• Use the metadata as supporting context, but rely primarily on visual evidence. 
+
+{constraint }
+
+p4: Contrastive elimination. 
+
+You are given frames from a traffic accident video. 
+
+{metadata context }
+
+Classify the accident by eliminating wrong categories: 
+
+• Same direction and one vehicle hits the other’s rear → A
+
+• Vehicles meet at ∼ 90 ◦ and one hits the other’s side → B
+
+• Only one vehicle is involved → C
+
+• Opposite directions and front-to-front collision → D
+
+• Parallel side-to-side glancing contact → EFull categories: 
+
+{categories }
+
+Rules: 
+
+• Classify based ONLY on the moment of impact. 
+
+• Use the metadata as supporting context, but rely primarily on visual evidence. 
+
+{constraint }
+
+p5: Tiebreaker. This prompt is invoked only when the first four prompts produce a high-uncertainty vote distri-bution. 
+
+You are given a traffic accident video. 
+
+{metadata context }Two expert classifiers disagree on this accident. Watch very carefully. Focus on ONLY the moment of collision: 1. Count the vehicles involved. 2. Determine each vehicle’s direction of travel at impact. 3. Identify the exact contact point. 4. Estimate the angle between the vehicles at impact. Classification categories: 
+
+{categories }
+
+Rules: 
+
+• If only one vehicle is involved → C
+
+• If two vehicles travel the same direction and one hits the rear → A
+
+• If two vehicles meet at ∼ 90 ◦ and one hits the side → B
+
+• If two vehicles travel opposite directions, front-to-front →
+
+D
+
+• If two vehicles are parallel with side-to-side glancing con-tact → E
+
+{constraint }
+
+Pairwise adjudicator (final stage). Invoked only if the vote remains ambiguous after the tiebreaker. 
+
+You are given a traffic accident video. 
+
+{metadata context }
+
+Final adjudication: choose ONLY between c1 (name 1) and 
+
+c2 (name 2). Decide using only impact-moment geometry and contact point. Do not choose any other class. Allowed classes: 
+
+• c1: name 1
+
+• c2: name 2
+
+{constraint }
+
+## Spatial Localization Prompts 
+
+OWL-v2 receives phrases constructed by combining a type-conditioned base phrase with a scene-conditioned suffix. Table 3 lists the templates. 
+
+## Implementation Hyperparameters 
+
+Table 4 consolidates the numeric settings used across all three stages. All values were fixed on a small CARLA development subset and held constant for all test submis-sions. 
+
+## Decision-Stage Statistics 
+
+Table 5 reports the proportion of test clips resolved at each stage of the classification cascade. The entropy/margin gate dispatches the majority of clips with the cheap base ensemble, and the more expensive escalation stages are in-voked only for ambiguous cases. 
+
+## Qualitative Failure Modes 
+
+Most residual errors fall into three main categories. First, distant collisions on long-perspective cameras can cause 
+
+Table 3. Type- and scene-conditioned prompt templates for OWL-v2. Predicted type ˆc Type-conditioned base phrase Rear-end “car crashing into back of another car” T-bone “side impact crash between two cars” Head-on “two cars colliding head-on” Sideswipe “two cars in side-to-side glancing contact” Single “single vehicle crash” Scene layout ℓ Scene suffix Highway “on a highway” Signalized intersection “at a signalized intersection” Simple intersection “at an intersection” Grade-separated inter-section “on an overpass or interchange” City street “on a city street” Parking lot “in a parking lot” Tunnel “inside a tunnel” Table 4. Pipeline hyperparameters. Stage Parameter Value Stage 1 Encoder PE-Core-G14-448, fp16 Frame sampling rate 8 FPS PE peaks KPE 5Window expansion δ 2 s Stage 2 Backbone Qwen-3.5-VL 9B Quantization 4-bit, Ollama Context window 12,288 Temperature 0.2 Max keyframes 8, motion-scored Adjudication frames ≤ 6
+
+Margin threshold τm 2Entropy threshold τH 0.75 Stage 3 Detector OWL-v2 base patch16 ensemble Score threshold θ 0.05 Top-K aggregation 5Aggregation rule score-weighted cen-troid System GPU 1× NVIDIA L4, 24 GB Fine-tuning none Proprietary APIs none 
+
+OWL-v2 to return a low-confidence detection on a fore-ground vehicle. Second, adverse weather or lighting can degrade PE similarity and shift the selected temporal win-dow. Third, shallow-angle rear-end and sideswipe crashes can remain ambiguous even after pairwise adjudication. Table 5. Decision-stage distribution on the ACCIDENT@CVPR 2026 test set ( n=2027 ). Stage # clips Share Base, no escalation 988 48.7% Tiebreaker p5 305 15.0% Pairwise adjudication 734 36.2% Total 2027 100% 
+
+## Reproducibility 
+
+All prompts, hyperparameters, and implementation details are provided to ensure reproducibility. The code will be made publicly available on request. The system uses no fine-tuned weights or proprietary APIs, and all compo-nents are based on publicly accessible models and tools.

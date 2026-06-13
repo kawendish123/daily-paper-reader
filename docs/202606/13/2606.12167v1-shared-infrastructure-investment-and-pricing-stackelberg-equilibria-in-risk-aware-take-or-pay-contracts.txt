@@ -1,0 +1,5500 @@
+Title: Shared Infrastructure Investment and Pricing: Stackelberg Equilibria in Risk-Aware Take-or-Pay Contracts
+
+URL Source: https://arxiv.org/pdf/2606.12167v1
+
+Published Time: Thu, 11 Jun 2026 01:23:58 GMT
+
+Number of Pages: 99
+
+Markdown Content:
+# Shared Infrastructure Investment and Pricing: Stackelberg Equilibria in Risk-Aware Take-or-Pay Contracts 
+
+Amal Sakr a,b, ∗, Andrea Araldo a, Tamer Başar b, Tijani Chahed a
+
+> aInstitut Polytechnique de Paris, Palaiseau, 91120, France
+> bUniversity of Illinois Urbana-Champaign, Urbana, 61801, IL, USA
+
+Abstract 
+
+We study a shared infrastructure deployed by an Infrastructure Provider (InP) and used by multiple firms that generate revenues through resource usage. We focus on a challenging setting where: (i) infrastructure deploy-ment requires substantial upfront investment, which the InP must recover via payments by firms that depend on their uncertain future revenues; (ii) firms’ resource usage is jointly influenced by exogenous factors, infrastructure pricing, operational costs, and resource congestion; and (iii) firms exhibit heterogeneous risk aversion. This setting is typical in emerging technologies, e.g., Mobile Edge Computing (MEC). We formalize this setting as a novel Stackelberg game with risk-aware take-or-pay contracting and firm-side operational and congestion costs, in which the InP acts as the leader and jointly optimizes capacity dimension-ing and access pricing, while firms act as followers that share the infrastruc-ture and commit upfront to future resource usage under uncertain revenues. Followers’ heterogeneous risk aversion is modeled through Conditional Value-at-Risk (CVaR). We prove the existence of a Stackelberg equilibrium (SE), in which the followers’ decisions constitute a generalized Nash equilibrium, and develop a polynomial-time algorithm that computes an approximate SE with a bounded optimality gap. We also derive a lower bound on the followers’ Probability of Profit (PoP). Monte Carlo simulations for a MEC   
+
+> ∗Corresponding author
+> Email address: amalsakr@illinois.edu (Amal Sakr)
+> arXiv:2606.12167v1 [cs.GT] 10 Jun 2026
+
+case study show that higher followers’ risk aversion reduces infrastructure capacity, pricing, and leader profit, while increasing followers’ PoP. 
+
+Keywords: Game theory, Investment analysis, Pricing, Risk management. 
+
+1. Introduction 
+
+Several emerging technologies are technically ready for broad deploy-ment, yet their adoption depends on costly shared infrastructure that must be installed before future utilization is known. Mobile edge computing (MEC), for example, requires distributed edge capacity to support latency-sensitive services (Cruz et al., 2022). Similar investment challenges arise in other infrastructure systems, such as electric vehicle (EV) charging net-works (Dimanchev et al., 2023) and electricity storage (Huang et al., 2025). In these settings, the Infrastructure Provider (InP), who deploys and maintains shared infrastructure, is faced with the crucial decisions of how much capacity to install and how to price it to the firms that will use such an infrastructure. The InP is typically reluctant to take the risk of such invest-ments, which prevents critical infrastructure from emerging (Ehlers, 2014, p. 4), (Dimanchev et al., 2023). The reasons for this reluctance are twofold: (i) uncertainty regarding future infrastructure utilization and, consequently, the revenues that the InP may eventually collect, which materialize long af-ter the upfront deployment costs are incurred; and (ii) the fact that revenues generated through the infrastructure are primarily captured by the firms us-ing it, making it difficult for the InP to appropriate a fair share of the value created during operation (FairShare, 2023; Telefonica, 2022). 
+
+Take-or-pay contracts are designed to mitigate this barrier by requiring firms to commit in advance to the capacity (and pay for it) (World Bank, 2014, p. 60). In doing so, risk is transferred from the InP to the firms: while a larger commitment provides the firm with access to greater infrastructure resources, which in principle allow them to generate higher future revenues, it also increases exposure to losses if realized revenues fall short of expectations. Existing works study infrastructure investment under uncertain demand (Zhao et al., 2019; Furman and Diamant, 2025) and access pricing or infras-2tructure sharing through game-theoretic models (Datar et al., 2022; Dhamal et al., 2025). However, they omit either access-price design or capacity in-vestment. Even joint capacity–pricing models focus on deterministic com-petition (Acemoglu et al., 2009) or ignore congestion among firms sharing the resource (Huang et al., 2025). Existing take-or-pay studies (Zahur, 2025; Jin and Wu, 2007) also do not capture the decisions of an InP concerning capacity dimensioning and pricing. To the best of our knowledge, this paper is the first to jointly study shared-infrastructure capacity dimensioning, access pricing, and risk-aware take-or-pay contracting, while accounting for firm-side operational costs and congestion costs among strategic firms with heterogeneous risk aversion. We therefore formulate a novel Stackelberg game in which the InP, as leader, jointly determines infrastructure capacity dimensioning and access pricing, and firms, as followers, commit upfront to future resource usage under un-certain revenues. The main contributions of this paper are as follows. 
+
+• We find a sufficient condition on the structure of firm-side costs that guarantees the uniqueness of the followers’ variational equilibrium, which is a generalized Nash equilibrium. Followers can be hetero-geneous in their revenue profiles and risk aversion, modeled through Conditional Value-at-Risk (Theorem 8). 
+
+• We prove the existence of a Stackelberg equilibrium, which includes the decisions of the leader and the followers’ VE (Theorem 11). 
+
+• We derive meaningful guarantees for ex-ante risk-aware followers’ deci-sions to convert into ex-post positive profit, establishing a lower bound on the followers’ Probability of Profit (PoP) (Theorem 12). 
+
+• Under realistic functional forms, we develop a polynomial-time pro-cedure for computing an approximate Stackelberg equilibrium with a bounded optimality gap (Proposition 15). We evaluate the model in a MEC case study through scenarios with differ-ent uncertainty levels, numbers of followers, revenue heterogeneity, and risk 3preferences. Results show that followers’ risk aversion propagates upstream, reducing capacity, price, and leader profit while increasing the lower bound on followers’ PoP. We further validate the model on a real-world dataset and compare it with representative state-of-the-art benchmarks, showing high InP profit, high utilization, and strong lower bounds on followers’ PoP. The paper is organized as follows. § 2 reviews related work; § 3 presents the system model and Stackelberg game; § 4 gives the computation proce-dure; § 5 reports MEC results; and § 6 concludes the paper. Proofs of main results are included in the appendices. 
+
+2. Related Work 
+
+2.1. Capacity investment under uncertainty 
+
+Huang and Ahmed (2009) study multistage capacity expansion, whereas Zhao et al. (2019) and Yu and Shen (2025) focus on risk-averse capacity plan-ning. When included, risk belongs to the capacity planner; in our model, it belongs to followers and shapes their resource commitments. Related appli-cations include Liu et al. (2025b) for cloud server deployment, Furman and Diamant (2025) for private-cloud capacity planning, García-Cerezo et al. (2025) for strategic investment in electricity markets, Sakr et al. (2025) for co-investment, and Lavrutich et al. (2023) for transmission investment un-der uncertainty. These works determine capacity dimensioning under uncer-tainty in centralized, single-firm, or cooperative settings, but do not model leader access pricing for shared infrastructure. Moreover, Keutz and Kopp (2025) study take-or-pay long-term hydrogen import contracts and examine their impact on infrastructure planning under weather variability. They as-sume a fixed hydrogen import price. We instead model an InP that jointly chooses capacity dimensioning and access price in a Stackelberg game, where risk-aware followers choose their resource under take-or-pay contracts. 
+
+2.2. Access Pricing and Infrastructure Sharing 
+
+A closely related stream studies game-theoretic pricing and provision-ing over shared infrastructure. Cardellini et al. (2016) and Datar et al. 4(2022) study Stackelberg pricing models with generalized Nash games over shared cloud and 5G slicing resources, respectively. Ardagna et al. (2012) formulate cloud provisioning as a generalized Nash game. We instead model endogenous infrastructure dimensioning and risk-aware commitments un-der uncertain firm revenues. Several papers incorporate uncertainty into infrastructure-pricing games. For instance, Jiang et al. (2020) study Stack-elberg resource pricing under miner population uncertainty. In contrast, our uncertainty concerns firms’ future revenues. Dhamal et al. (2025) study Stackelberg pricing and admission control for network slices under stochastic demand, while Jin and Wu (2007) analyze capacity-reservation and take-or-pay contracts under stochastic customer demand. Our work instead endo-genizes the InP’s long-term investment in new physical infrastructure ca-pacity together with access pricing, while firms make resource-commitment decisions under take-or-pay contracts, revenue uncertainty, access payments, follower-side operational costs, and congestion. Fabiani and Franci (2023) and Wen et al. (2025) study distributionally robust generalized Nash games with shared chance constraints, where probabilistic guarantees are on con-straint satisfaction, whereas ours is on followers’ ex-post positive profit. 
+
+2.3. Joint Capacity and Pricing Decisions 
+
+Acemoglu et al. (2009) study deterministic capacity–price competition among firms with private capacities, and Harks and Schedel (2024) study deterministic multi-leader Stackelberg pricing games in which each leader chooses a price and service capacity for a separate congestible resource. We instead model uncertainty and consider a single InP that jointly dimen-sions and prices one common shared infrastructure. Maglaras and Zeevi (2003) analyze pricing and capacity sizing for a shared-resource service sys-tem, while Xu et al. (2017) study deterministic joint road toll pricing and capacity development in a transport network. We instead model strategic firms’ upfront commitments under uncertain revenues. Başar and Srikant (2002) study bandwidth pricing under congestion, assuming that capacity scales proportionally with the number of users, and Shen and Başar (2007) extend this framework to nonlinear pricing and incentive design. In our 5model, capacity is instead an endogenous dimensioning decision. Zhang and Huang (2024) study deterministic shared-storage capacity dimensioning and leasing-price decisions, whereas we model risk-aware commitment decisions under uncertain firm revenues. Closest to our work, Huang et al. (2025) formalize a Stackelberg game in which the leader decides shared-storage in-vestment and service fees, while followers, facing peak-demand uncertainty, choose resources using prospect theory. However, they assume no mutual impact among followers, whereas we consider the more realistic and challeng-ing case of congestion in the shared resource, which requires characterizing a generalized Nash equilibrium. None of the above works provides an ex-post positive-profit probability guarantee for followers. 
+
+3. System Model and Stackelberg Game 
+
+3.1. System overview and notation 
+
+We consider an investment period I divided into time slots t ∈ T =
+
+{1, . . . , T }. An infrastructure provider (InP) deploys an infrastructure re-source with capacity C ≥ 0 and sets an access price θ ≥ 0. After observing 
+
+(C, θ ), each firm i ∈ N = {1, . . . , N } commits to resources hti ≥ 0 at each time slot t ∈ T to serve end-user load and generate revenue. This setting raises three main questions: (i) How should the InP choose C and θ when fu-ture resource usage by firms is uncertain? (ii) How much resource hti should each firm i ∈ N choose at each time slot t, under revenue uncertainty, con-gestion, and risk sensitivity? (iii) What probabilistic profit guarantees can be established for the firms under uncertainty? To answer these questions, we resort to a game-theoretic framework. Since capacity must be deployed before it can be used, it is natural to model the InP as the first decision maker, choosing C and θ in anticipation of the firms’ responses. After observing the InP decisions, and under take-or-pay contracting, firms commit upfront to future resource levels. This leads to a Stackelberg game in which the InP acts as the leader and the firms act as followers. At the follower level, each firm incurs an operational cost from its own resource commitment, while all firms share the same infrastructure 6capacity. Their decisions are mutually dependent: the resource commitment of one firm affects the congestion costs borne by the others, and all commit-ments are coupled through the common capacity constraint. This leads to a generalized Nash equilibrium (GNE) problem among the followers. Follower decisions are made under revenue uncertainty, and different followers may have different levels of risk aversion. Table A.2 in Appendix A summarizes the main notation. 
+
+3.2. Stackelberg game formulation 
+
+We formalize the Stackelberg game by first defining the follower game, then the leader problem and the resulting Stackelberg equilibrium. 
+
+3.2.1. Follower problem 
+
+For a given leader decision (C, θ ), each follower i ∈ N enters a take-or-pay agreement by committing upfront to a resource reservation hti ∈ R+ at each time slot t ∈ T , where R+ is the set of nonnegative real numbers. This commitment determines the access payment pθ(hti), where θ is the access price per unit of resource hti in each time slot t. This payment is due regard-less of the realized revenue or the actual use of the reserved resources. We denote by ht = ( ht
+
+> 1
+
+, . . . , h tN ) ∈ RN 
+
+> +
+
+the vector of resource commitments at time slot t. Revenue uncertainty comes from uncertain end-user load and is modeled on a probability space (Ω , F , P), where Ω is the sample space, F
+
+is the set of events, and P is the probability measure. For each realization 
+
+ω ∈ Ω, the revenue of follower i at time slot t is denoted by rti,ω (hti). A larger commitment hti may increase revenue by allowing follower i to serve more de-mand, but it also increases costs. First, it raises the access payment pθ(hti)
+
+transferred to the InP. Second, it may generate firm-side costs, collected in ψti (ht), which include the operational cost of managing the committed resource level and the congestion cost arising from shared infrastructure. Thus, committing to a large hti exposes follower i to unfavorable outcomes when access payments and firm-side costs remain high while realized rev-enue is low. Conversely, committing to a small hti may limit the ability to serve demand and reduce realized revenue. Hence, each follower balances profitability against downside risk when choosing its commitment. 7To do so, we first define the random profit Πti(ht; θ) of follower i at time slot t. Its realization in ω ∈ Ω is defined as 
+
+Πti,ω (ht; θ) = rti,ω (hti) − pθ(hti) − ψti (ht) (1) We use h ∈ R+ for a scalar resource commitment and h ∈ RN 
+
+> +
+
+for a vector of resource commitments of all followers. We assume that h 7 → rti,ω (h) is a continuous function on R+; pθ(h) : R+ → R+ with (h, θ ) 7 → pθ(h) continuous on R2+; and h 7 → ψti (h) is continuous on RN 
+
+> +
+
+. Define the random loss Lti(ht; θ),with realization 
+
+Lti,ω (ht; θ) = −Πti,ω (ht; θ) (2) Due to the continuity of the aforementioned functions, h ∈ RN 
+
+> +
+
+7 → Πti,ω (h; θ)
+
+and h 7 → Lti,ω (h; θ) are continuous, for any ω ∈ Ω, θ and t ∈ T .We next specify how downside risk is measured. For a confidence level 
+
+αi ∈ (0 , 1) , the Conditional Value-at-Risk (CVaR) of the loss is the expected loss in the worst 1−αi fraction of realizations, capturing how severe losses can be (Rockafellar et al., 2000). Here αi specifies how deep into the loss tail the follower evaluates risk. Higher values of αi place more emphasis on extreme adverse outcomes. Following (Li et al., 2022, Eq. (28),(29)), CVaR can be written as: CVaR αi (Lti(ht; θ)) = Eω
+
+Lti(ht; θ) Lti(ht; θ) ≥ VaR αi (Lti(ht; θ))  ,
+
+where VaR αi (Lti(ht; θ)) denotes the Value-at-Risk of the loss Lti(ht; θ) at con-fidence level αi, defined as the smallest threshold not exceeded with prob-ability at least αi, i.e., VaR αi
+
+ Lti(ht; θ) = min z | P Lti(ht; θ) ≤ z ≥ αi .See Fig. C.13 in Appendix C for an illustration of VaR and CVaR. We refer to Ui(hi, h−i; C, θ ) as the follower’s expected profit penalized by downside risk, defined as (see, e.g., (Wang et al., 2025; Yu et al., 2020)): 
+
+Ui(hi, h−i; C, θ ) := X
+
+> t∈T
+
+ Eω[Π ti(ht; θ)] − βi CVaR αi (Lti(ht; θ))  , (3) where hi := ( hti)t∈T ∈ RT 
+
+> +
+
+denotes the resource commitment vector of fol-lower i over the time horizon, ht := ( ht
+
+> 1
+
+, . . . , h tN ) ∈ RN 
+
+> +
+
+denotes the vec-tor of resource commitments across all followers at time slot t, and h−i := 
+
+8(hj )j∈N , j ̸ =i denotes the collection of resource commitment vectors of all fol-lowers except i. Parameter βi ≥ 0 measures the firm’s sensitivity to downside risk. When βi = 0 , follower i is risk-neutral and maximizes expected profit only. When βi > 0, the follower is risk-averse , placing additional weight on adverse outcomes. 1 Allowing (βi, α i) to differ across followers enables the model to capture heterogeneity in followers’ attitudes toward risk and uncertainty. In (3), each time slot includes a CVaR-based downside-risk term, providing robustness against adverse revenue realizations within that slot (Wang et al., 2025; Yu et al., 2020). Since CVaR is applied before the loss summation, adverse outcomes in one time slot are not canceled out by favorable outcomes in another slot. For fixed (C, θ ), the lower-level interaction among the followers defines a generalized Nash game with shared constraints (Facchinei and Kanzow, 2007), since the feasibility of each follower’s decision depends on the resource commitments of the other followers through the shared capacity constraint. A GNE is a strategy profile H∗ = ( h∗
+
+> 1
+
+, . . . , h∗ 
+
+> N
+
+) ∈ RN T  
+
+> +
+
+, where h∗ 
+
+> i
+
+=(ht∗ 
+
+> i
+
+)t∈T , such that, for every hi ∈ RT 
+
+> +
+
+and every (C, θ ),
+
+Ui(h∗ 
+
+> i
+
+, h∗−i; C, θ ) ≥ Ui(hi, h∗−i; C, θ ), i ∈ N (4) satisfying 
+
+hti + X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
+≤ C, hti ≥ 0, ∀i ∈ N , ∀t ∈ T , (5) where h∗−i := ( h∗ 
+
+> j
+
+)j∈N , j ̸ =i. This GNE problem is consistent with pricing and sharing models (Jiang et al., 2020; Dhamal et al., 2025; Datar et al., 2022). At a GNE, no follower can improve its utility Ui(h∗ 
+
+> i
+
+, h∗−i; C, θ ) (3) by chang-ing its resource commitment, given the other followers’ decisions and the shared capacity constraint. Since the follower game may admit multiple GNEs, an equilibrium-selection criterion is needed. We focus on the varia-
+
+> 1Risk-seeking behavior is excluded, as standard investment models typically focus on risk-neutral or risk-averse decision makers (Zhao et al., 2019; Yu and Shen, 2025).
+
+9tional equilibrium (VE) (Facchinei and Kanzow, 2007) as the selected GNE. In a VE, the common capacity constraint is associated with the same shadow price for all followers. In our setting, the VE has a clear economic interpreta-tion: the shared capacity constraint is enforced uniformly across all followers, consistent with a leader who announces a common capacity and a common price, without giving any follower priority in infrastructure use. Existence of such a VE and sufficient conditions for its uniqueness are established later in § 3.3.1 and § 3.3.2. Under these conditions, the selected follower response is single-valued, so the leader problem in the next subsection is well defined. 
+
+3.2.2. Leader problem 
+
+At the upper level, the leader chooses capacity dimensioning and access price while anticipating the followers’ VE response. Its objective is to maxi-mize profit by balancing access revenue against the investment cost Cost (C),which includes deployment, maintenance, and technical intervention costs and is continuous in C. For each (C, θ ), let H∗(C, θ ) =  ht∗ 
+
+> i
+
+(C, θ ) 
+
+> i∈N, t ∈T
+
+denote the selected VE response. The leader solves 
+
+(C∗, θ ∗) ∈ arg max 
+
+> (C,θ )∈Y
+
+(X
+
+> t∈T
+
+X
+
+> i∈N
+
+pθ
+
+ ht∗ 
+
+> i
+
+(C, θ ) − Cost( C)
+
+)
+
+(6) where Y is the leader feasible set, defined as 
+
+Y := (C, θ ) ∈ R2+ 0 ≤ C ≤ C, 0 ≤ θ ≤ θ (7) Here, C > 0 and θ > 0 denote the maximum admissible capacity and price. 
+
+3.2.3. Stackelberg Equilibrium 
+
+We now introduce the Stackelberg equilibrium (SE). 
+
+Definition 1. A Stackelberg equilibrium is a triple (C∗, θ ∗, H∗) such that: 
+
+• H∗ = H∗(C∗, θ ∗) is the selected variational equilibrium, hence a GNE, of the follower game associated with the leader decision (C∗, θ ∗);
+
+• (C∗, θ ∗) solves the leader problem (6) .
+
+10 Fig. B.12 in Appendix B summarizes the sequential structure of the game. 
+
+3.3. Stackelberg Equilibrium Analysis 
+
+We now establish the existence of an SE by proving existence of the se-lected VE, providing sufficient conditions for its uniqueness, and then proving existence of an optimal solution to the leader problem. 
+
+3.3.1. Existence of the Selected Variational Equilibrium 
+
+We now analyze the selected VE of the follower game. The following standard assumption ensures that each follower’s utility is differentiable with respect to its resource commitment. 
+
+Assumption 2. For every i ∈ N , t ∈ T , and ω ∈ Ω, h 7 → rti,ω (h) is contin-uously differentiable on R+. For every θ ∈ [0 , θ ], h 7 → pθ(h) is continuously differentiable on R+, and (h, θ ) 7 → ∂p θ (h) 
+
+> ∂h
+
+is continuous on R+ × [0 , θ ]. For every i ∈ N and t ∈ T , h 7 → ψti (h) is continuously differentiable on RN 
+
+> +
+
+.
+
+We now ensure that VaR varies continuously with resource commitments. Hence, changes in capacity or price do not cause discontinuous jumps in the loss quantile through their effect on resource commitments. We also ensure that the CVaR varies smoothly with follower resources. 
+
+Assumption 3. For every i ∈ N , let O ⊂ RN be an open set containing 
+
+K := 
+
+n
+
+h ∈ RN 
+
+> +
+
+: P 
+
+> j∈N
+
+hj ≤ C
+
+o
+
+. For every fixed θ ∈ [0 , θ ], and t ∈ T ,let F ti (z, h; θ) := P Lti(h; θ) ≤ z , (z, h) ∈ R × O, denote the cumulative distribution function (CDF) of the loss Lti(h; θ). We assume that: 
+
+1. the CDF F ti is jointly continuous in (z, h) on R × O;
+
+2. for every h ∈ O the random variable Lti(h; θ) admits a density f ti (z; h, θ ),
+
+z ∈ R, which is strictly positive in a neighborhood of VaR αi (Lti(h; θ)) .
+
+Assumption 4. For every i ∈ N , t ∈ T and fixed θ ∈ [0 , θ ], assume that 
+
+1. for every h ∈ O, random loss Lti(h; θ) is integrable; 
+
+2. the derivative of the random loss term with respect to the resource vector 
+
+h is uniformly bounded on O; that is, there exists an integrable random variable Zti such that sup h∈O ∇hLti,ω (h; θ) ≤ Zti,ω , for a.e. ω ∈ Ω.
+
+11 Lemma 5. For every i ∈ N , t ∈ T and fixed θ ∈ [0 , θ ], h 7 → VaR αi
+
+ Lti(h; θ)
+
+is continuous on O and h 7 → CVaR αi (Lti(h; θ)) is continuously differentiable on O, and on K.Proof. See Appendix D. We impose curvature assumptions on the revenue, access-payment, and firm-side cost functions. These assumptions are standard in resource alloca-tion models and are commonly used in network applications: concave revenue captures diminishing returns from additional demand (Başar and Srikant, 2002; Iiduka, 2018); convex access payments are consistent with pay-as-you-go pricing (Başar and Srikant, 2002; Chi et al., 2015); and convex firm-side costs capture increasing operational burden and congestion-induced perfor-mance degradation under shared-resource use (Zhang et al., 2019; Johari et al., 2005; Chen and Zhang, 2012). 
+
+Assumption 6. For every i ∈ N , t ∈ T , and ω ∈ Ω, h 7 → rti,ω (h) is concave on R+. For every θ ∈ [0 , θ ], h 7 → pθ(h) is convex on R+. Moreover, for every fixed ht
+
+> −i
+
+, h 7 → ψti (h, ht
+
+> −i
+
+) is convex on R+.
+
+Proposition 7. For any fixed (C, θ ) ∈ Y, the follower game admits at least one VE, and therefore at least one GNE. Proof. See Appendix E. 
+
+3.3.2. Uniqueness of the Variational Equilibrium 
+
+We now establish the uniqueness of the VE. This ensures that each leader’s decision (C, θ ) induces a well-defined, single-valued follower response. Function ψti (ht) represents costs borne by firm i, not payments transferred to the InP. We decompose it into an operational cost qti (hti) and a congestion cost gti (ht). The operational cost qti (hti) captures the firm-specific effort as-sociated with a larger committed resource level. A larger hti may require ad-ditional configuration, coordination, monitoring, and internal resource man-agement. In MEC, this may correspond to serving a larger workload over a reserved compute slice, managing a larger amount of reserved capacity, or-chestrating more VMs or containers, incurring higher energy usage charged 12 to the firm, and increasing monitoring effort. In EV charging, it may corre-spond to scheduling and coordinating a larger set of charging commitments across stations and time slots. The congestion cost gti (ht) captures the loss borne by firm i when other firms increase their commitments and thereby raise the load on infrastructure components that remain shared across firms. In MEC, even if CPU and memory are reserved per firm, cross-firm effects may still arise through contention for storage I/O, data paths, network links, or backhaul resources, consistent with (Pu et al., 2012; Varadarajan et al., 2012). In EV charging, similar interaction effects arise when multiple EVs are connected to a common distribution transformer: each charging decision contributes to the aggregate transformer load, and this aggregate load enters the individual charging cost (Beaude et al., 2012). 
+
+Theorem 8. For any (C, θ ) ∈ Y, a sufficient condition for the uniqueness of the variational equilibrium is that (i) The firm-side cost admits the decompo-sition ψti (ht) = qti (hti)+ gti (ht); (ii) Functions qti and gti are twice continuously differentiable; (iii) Denoting by Q > 0 a uniform lower bound of the second-order sensitivity coefficients of the operational cost terms, and G < ∞ a uni-form upper bound on the absolute values of the second-order cross-sensitivity coefficients of the congestion cost terms (F.8) , the following condition holds 
+
+Q > max  
+
+> i∈N
+
+ξi G, ξi = 2|N | + |N |βi + P 
+
+> j∈N
+
+βj
+
+2(1 + βi) . (8) 
+
+Proof. See Appendix F. Condition (8) is only a sufficient condition for VE uniqueness. Intuitively, it prevents congestion from making followers’ decisions too strongly depen-dent on each other: if congestion effects, measured by G, are too large rel-ative to each follower’s own operational-cost effect, measured by Q, unique-ness may fail. Condition (8) rules out this case. Parameter ξi captures how the number of followers and their risk attitudes enter (8); a larger ξi makes the inequality harder to satisfy. When G = 0 , condition (8) reduces to the standard requirement Q > 0, i.e., strict convexity of qti in hti. Appendix G discusses how the model can be interpreted when (8) is not satisfied. 13 3.3.3. Leader Problem Analysis and Stackelberg Equilibrium Existence 
+
+By Theorem 8, the follower VE reaction map is single-valued: H∗ : Y →
+
+RN |T | 
+
+> +
+
+, (C, θ ) 7 → H∗(C, θ ). This justifies the leader problem (6). 
+
+Proposition 9. Reaction map (C, θ ) 7 → H∗(C, θ ) is continuous on Y.Proof. See Appendix H. 
+
+Proposition 10. Leader problem (6) admits at least one optimal solution. Proof. See Appendix I. We show that the Stackelberg game admits an equilibrium (C∗, θ ∗, H∗).
+
+Theorem 11. A Stackelberg equilibrium (Def. 1) exists. Proof. See Appendix J. 
+
+3.4. Probabilistic Profit Guarantee 
+
+While the SE is defined through the ex ante utility (3), we are interested in the probability of profit (PoP), i.e., the probability that a firm obtains positive realized profit at equilibrium. For follower i, the realized profit is 
+
+Π∗ 
+
+> i,ω
+
+:= X
+
+> t∈T
+
+rti,ω (ht∗ 
+
+> i
+
+)
+
+| {z }
+
+> R∗
+> i,ω
+
+− X
+
+> t∈T
+
+
+
+pθ∗ (ht∗ 
+
+> i
+
+) + ψti (ht∗)
+
+| {z }
+
+> K∗
+> i
+
+, (9) where R∗ 
+
+> i,ω
+
+denotes the realized total revenue, with corresponding random variable R∗ 
+
+> i
+
+, and K∗ 
+
+> i
+
+denotes the deterministic total cost. We first exclude two trivial cases. If K∗ 
+
+> i
+
+≥ Eω[R∗ 
+
+> i
+
+], then positive profit is not achieved even in expectation, so we cannot certify positive realized profit. If K∗ 
+
+> i
+
+= 0 , follower 
+
+i chooses no resources and is therefore inactive. Apart from these cases, we next derive a lower bound on the PoP, P(Π ∗ 
+
+> i,ω
+
+> 0) .
+
+Theorem 12. For any Stackelberg equilibrium (C∗, θ ∗, H∗), and for any follower i ∈ N , assume that 0 < K ∗ 
+
+> i
+
+< Eω[R∗ 
+
+> i
+
+], and Var ω(R∗ 
+
+> i
+
+) < ∞. Then 
+
+P Π∗ 
+
+> i,ω
+
+> 0 ≥ νi where νi := 11 + Var ω(R∗ 
+
+> i
+
+)
+
+ Eω[R∗ 
+
+> i
+
+] − K∗
+
+> i
+
+2
+
+(10) 14 Moreover, if the confidence level αi required by follower i is not too large, then the probability of profit is guaranteed to be no less than αi; in fact, 
+
+P Π∗ 
+
+> i,ω
+
+> 0 ≥ max {νi, α i} := ˆ νi, if αi < ¯αi, (11) 
+
+where ¯αi := sup αi ∈ (0 , 1) such that P 
+
+> t∈T
+
+CVaR αi
+
+ Lti(ht∗; θ∗) < 0 .
+
+Proof. See Appendix K. The theorem shows that the PoP is protected by two complementary effects. First, the bound νi in (10) measures how safe the firm’s profit is against revenue uncertainty, as captured by the variance Var ω(R∗ 
+
+> i
+
+). The expected profit is positive, since Eω[Π ∗ 
+
+> i
+
+] = Eω[R∗ 
+
+> i
+
+] − K∗ 
+
+> i
+
+> 0. This positive margin acts as a buffer against revenue fluctuations: the larger the margin and the smaller the variance of R∗ 
+
+> i
+
+, the stronger is the guarantee. Second, the CVaR term captures how the follower’s risk sensitivity affects the PoP. Since the loss is the negative of profit, a negative adverse-tail loss means that the follower remains profitable even under unfavorable revenue realizations. Thus, when αi < ¯αi, the CVaR condition guarantees P(Π ∗ 
+
+> i,ω
+
+>
+
+0) ≥ αi. This shows that the follower can improve its guaranteed PoP by choosing a higher confidence level αi, as long as the corresponding adverse-tail loss remains negative. 
+
+4. Equilibrium Characterization and Computation 
+
+We now specify standard functional forms for the revenue, payment, and firm-side cost functions to characterize and compute the SE. 
+
+4.1. Revenue, Pricing, and Firm-Side Cost Models 
+
+The revenue of follower i at time slot t under realization ω is modeled as (Başar and Srikant, 2002, Eq. (1)) (Iiduka, 2018, Eq. (4)): 
+
+rti,ω (hti) = ati,ω ln(1 + hti), ∀i ∈ N , t ∈ T , ω ∈ Ω (12) 15 where ati,ω is a realization of the random revenue coefficient ati which cap-tures exogenous variation in the revenue level. The logarithmic form cap-tures diminishing marginal returns: increasing hti improves revenue, but each additional unit of resource generates a smaller incremental gain. Following usage-based pricing models (Başar and Srikant, 2002, Eq. (1)) (Chi et al., 2015, Eq. (2)), the payment of follower i at time slot t is given by 
+
+pθ(hti) = θh ti, ∀i ∈ N , t ∈ T (13) where θ is the access price per unit of reserved resource hti in time slot t.The firm-side cost incurred by follower i at time slot t is modeled as 
+
+ψti (ht) = δ
+
+2 (hti)2 + γ h ti
+
+X 
+
+> j∈N\{ i}
+
+htj , ∀i ∈ N , t ∈ T (14) where δ > 0 is the operational cost parameter, and γ ≥ 0 is the conges-tion cost parameter. The first term captures the increasing operational cost of managing a larger own resource commitment. The second term captures congestion from shared infrastructure: it increases with follower i’s own com-mitment and with the aggregate commitment of the other followers, and vanishes if either of these two quantities is zero. 
+
+Lemma 13. The sufficient uniqueness condition (8) in Theorem 8 becomes 
+
+δ > γ max  
+
+> i∈N
+
+ξi, where ξi is defined in (8) (15) 
+
+Proof. See Appendix L. 
+
+4.2. Follower-Equilibrium Characterization and Comparative Statics 
+
+We now state the implicit characterization of the follower VE. 
+
+Proposition 14. For every i ∈ N , the VE resource commitment ht∗ 
+
+> i
+
+is 
+
+ht∗ 
+
+> i
+
+= max 
+
+(
+
+0, −κti(δ) + p(κti(−δ)) 2 + 4(1 + βi)δA ti
+
+2(1 + βi)δ
+
+)
+
+, (16) 16 where κti(x) := (1 + βi)( θ + γ P  
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ x) + λt∗, x ∈ R, Ati := 
+
+E[ati] − βi CVaR αi (−ati) is the mean-CVaR benefit factor of follower i at time slot t and λt∗ is the shadow price of the capacity constraint (See Appendix M). Proof. See Appendix N. 
+
+Observation . Proposition 14 provides comparative statics on the follower VE. In Appendix O, we analyze the dependence of ht∗ 
+
+> i
+
+on the relevant pa-rameters. A higher benefit Ati increases follower i’s willingness to commit to resources because serving users becomes more profitable even after account-ing for risk. In contrast, factors that increase the effective marginal cost of resources, including θ, δ, γ, λt∗, and other followers’ resource commitments, reduce the attractiveness of additional resources and lower ht∗ 
+
+> i
+
+.
+
+4.3. Procedure to Approximate the Stackelberg Equilibrium 
+
+We develop a procedure for computing an approximate SE as follows. 1. For fixed θ and t ∈ T , compute the unconstrained total resource com-mitment bst(θ) from the follower VE characterized in Proposition 14, after dropping the shared-capacity constraint (5); see Appendix P.1. 2. For the fixed price θ, the leader’s capacity problem becomes 
+
+ϕ(θ) = max 0≤C≤C
+
+θ P 
+
+> t∈T
+
+min {bst(θ), C } − Cost( C) .3. Construct the finite capacity candidate set C(θ). Sort the values bst(θ),
+
+t ∈ T , together with 0 and C. These sorted values split [0 , C ] into intervals. On each interval, each term min {bst(θ), C } has a fixed form: it is either equal to C or to bst(θ) throughout the interval. We maximize the leader objective on each interval and add the resulting maximizer to C(θ), together with the values bst(θ) lying in [0 , C ] and the boundary points 0 and C. Select C∗(θ) as the candidate in C(θ) that maximizes the objective in ϕ(θ); see Appendix P.2. 4. Optimize ϕ(θ) over a uniform price grid. Let θ∗ be the best grid price, set C∗ = C∗(θ∗), and recover the VE at (C∗, θ ∗); see Appendix P.3. 
+
+Proposition 15. For any η > 0, there exists a procedure that computes an approximate SE with optimality gap at most η. The procedure runs in time 
+
+17 polynomial in |N |, |T |, 1/η , and 1/(δ − γ), and has logarithmic dependence on 1/ε , where ε denotes the accuracy of the computed VE. Proof. See Appendix P. 
+
+5. Application to Mobile Edge Computing (MEC) 
+
+We instantiate the numerical study for a MEC deployment, where the InP is a network operator deploying costly distributed edge capacity, and firms are service providers (SPs) leasing resources under uncertain revenues. 2
+
+5.1. Settings 
+
+The investment cost includes a fixed technical overhead, capacity-dependent deployment costs due to equipment or physical infrastructure needs, and maintenance costs over the investment horizon (Liu et al., 2025a, Eq. (16)– (17)). Since further expansion becomes progressively more expensive due to energy, space, coordination, and operational constraints, we include a convex quadratic term, consistent with (Kim, 2025, Eq. (1)). Accordingly, 
+
+Cost( C) = F0 + ddep + X
+
+> t∈T
+
+dmaint (t)∆ 
+
+!
+
+C + dexp 
+
+2 C2 (17) Here, F0 denotes the fixed technical overhead, ddep the upfront investment cost per unit of capacity, dmaint (t) denotes the maintenance cost per unit capacity per unit time during slot t, and ∆ is the slot length. The term  
+
+> dexp
+> 2
+
+C2 captures increasing marginal capacity-expansion costs. For simplicity, in the experiments, dmaint (t) = dmaint is constant over time. For each SP i ∈ N and time slot t ∈ T , the revenue is modeled as in (12). The uncertain revenue coefficient associated with SP i, time slot t,and realization ω is modeled as ati,ω = μiwi,d (t) (1 + ρi sin (2 πt/T season )) ϵi,ω .Here, μi > 0 is the baseline revenue coefficient, wi,d (t) captures day-of-week effects, ρi ∈ [0 , 1) controls the seasonal amplitude, and Tseason is  
+
+> 2Code is available at https://github.com/amalsakr-tsp/EJOR .
+
+18 the seasonal-cycle length. Coefficient ati,ω represents the effective revenue opportunity in slot t, measured in monetary units over one slot. Shock 
+
+ϵi,ω ∼ Lognormal( −σ2
+
+i /2, σ 2
+
+i ) is positive and satisfies E[ϵi,ω ] = 1 . Thus, σi
+
+controls dispersion without changing the mean revenue level. ϵi,ω is speci-fied at the realization level to represent persistent revenue uncertainty. This avoids adding short-term noise at each time slot that would mainly average out over I. The day-of-week and seasonal terms capture temporal cycles in network traffic, such as day–night patterns in user activity. Access payments and SP-side costs are given by (13) and (14). 3
+
+Table 1 summarizes the parameters; Appendix Q reports the runtime. 
+
+Table 1: Model parameters used in the numerical experiments.                                                            
+
+> Parameter Symbol Value Number of SPs N(§ 3.1) 3and 10
+> Investment horizon I(§ 3.1) 5years Time slot length ∆1hour Number of time slots |T|5×365 ×24 = 43 ,800
+> Low risk-aversion threshold βL(§ 5.2) 1
+> High risk-aversion threshold βH(§ 5.2) 2
+> Extreme risk-aversion threshold βE(§ 5.2) 10
+> Congestion cost parameter γ(14) 0.01 $/vCore 2-hour Operational cost parameter δ(14) 0.0365 $/vCore 2-hour for N= 3 ;0.175 for N= 10
+> Fixed technical cost F0(17) 2000 $Deployment cost per capacity vCore ddep (17) 10 $/vCore (Microsoft Azure) Maintenance cost per capacity vCore per hour dmaint (17) 0.0225 $/vCore-hour (Microsoft Azure) Quadratic capacity cost coefficient dexp (17) 0.02 $/vCore 2
+
+5.2. Classification of SP Risk Attitudes 
+
+SP risk preferences are described by (βi, α i), and we consider the follow-ing representative risk-attitude classes: 
+
+• Risk-neutral (RN): βi = 0 .
+
+• Moderately risk-averse (MRA): 0 < β i ≤ βL, 0.9 < α i ≤ 0.95 .
+
+• Highly risk-averse (HRA): βL < β i ≤ βH , 0.9 < α i ≤ 0.95 .
+
+• Extremely risk-averse (ERA): βi > β E , α i > 0.95 .
+
+> 3
+
+In each experiment, δ = 1 .01 γ max i∈N ξi, computed using the largest max i∈N ξi over the risk classes considered so that the sufficient uniqueness condition (15) is satisfied. Sensitivity with respect to δ and γ is examined in §5.3.4. 
+
+19 We focus on αi > 0.9, since smaller values make CVaR less focused on downside risk; αi > 0.95 indicates more severe tail-risk exposure. 
+
+5.3. Evaluation 5.3.1. Impact of Homogeneous SP Risk Preferences 
+
+We first consider three SPs with homogeneous risk preferences: all SPs belong to the same risk class in § 5.2, although their (βi, α i) values may differ. The SPs represent low-, medium-, and high-revenue SPs, allowing us to isolate the effect of a common risk attitude while preserving revenue het-erogeneity. Revenue uncertainty is measured by the coefficient of variation (CV) of ati,ω , i.e., the ratio of its standard deviation to its mean. 
+
+Impact on SP resource commitments. Fig. 1 reports the average total resource commitment across SPs for different risk classes and CVs. Resource commitments decrease as SPs become more risk-averse. This is because more risk-averse SPs assign greater weight to unfavorable revenue realiza-tions through CVaR and therefore reduce resource commitments to limit downside exposure. The decrease is stronger for larger CV , since higher un-certainty makes low-revenue outcomes more severe, while access payments and SP-side costs still have to be paid. 
+
+Impact on the InP. Fig. 2 shows that InP profit decreases with SP risk aversion. Since the InP’s revenue is proportional to allocated resources, lower SP resource commitments in Fig. 1 directly reduce profit. This effect is stronger under higher CV , as greater uncertainty leads SPs to commit to resources more conservatively. Fig. 3 shows that the optimal capacity C∗
+
+decreases as SPs become more risk-averse. This follows the same trend as the total SP resource commitment in Fig. 1: when the InP anticipates lower resource commitment, it reduces capacity investment to avoid costly over-provisioning. The decline is more pronounced under higher CV , indicating that SP revenue uncertainty propagates upstream from SP resource deci-sions to the InP’s long-term capacity choice. Comparing Fig. 3 with Fig. 1 shows that capacity utilization remains high and slightly increases with risk aversion, from about 76% to above 81% . Fig. 4 shows the optimal price θ∗.Pricing balances access-revenue extraction against SP resource commitment. 20 RN MRA HRA ERA 
+
+> SP risk class
+> 50
+> 60
+> 70
+> Average total
+> resource commitment
+> CV = 25%
+> CV = 50%
+> CV = 75%
+> CV = 100%
+
+Figure 1: Total resource commitment under different risk classes and CVs. RN MRA HRA ERA 
+
+> SP risk class
+> 100
+> 150
+> 200
+> InP profit
+> (million dollars)
+> CV = 25%
+> CV = 50%
+> CV = 75%
+> CV = 100%
+
+Figure 2: InP profit under different risk classes and CVs. RN MRA HRA ERA 
+
+> SP risk class
+> 60
+> 70
+> 80
+> 90
+> 100
+> C * (vCores)
+> CV = 25%
+> CV = 50%
+> CV = 75%
+> CV = 100%
+
+Figure 3: Optimal capacity C∗ under different risk classes and CVs. RN MRA HRA ERA 
+
+> SP risk class
+> 40
+> 50
+> 60
+> 70
+> * ($/vCore-hour)
+> CV = 25%
+> CV = 50%
+> CV = 75%
+> CV = 100%
+
+Figure 4: Optimal price θ∗ under differ-ent risk classes and CVs. 
+
+As SPs become more risk-averse, their resource commitments become more price-sensitive, so raising the price would reduce resource commitments too strongly. The InP therefore adjusts price jointly with capacity to sustain participation while extracting revenue from the resources. 
+
+Impact on SP profitability. Fig. 5 reports the theoretical lower bound ˆνi
+
+on the PoP. Moving from risk-neutral to more risk-averse behavior increases the lower bound, because risk-averse SPs reduce their exposure to access payments and SP-side costs in adverse revenue scenarios. The effect of CV 
+
+is heterogeneous across SPs. At low and moderate CV , the small SP, SP 1, achieves a high lower bound, sometimes comparable to or slightly higher than the medium and large SPs, SP 2 and SP 3, because its smaller resource commitment limits cost exposure. However, as CV becomes large, SP 1 is the most affected, since its limited revenue buffer makes severe adverse 21 RN MRA HRA ERA                                                        
+
+> SP risk class
+> SP 1
+> SP 2
+> SP 3
+> SPs
+> 0.91 0.94 0.94 0.95
+> 0.92 0.93 0.93 1.00
+> 0.93 0.93 0.93 0.99
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound (a) CV = 25% RN MRA HRA ERA
+> SP risk class
+> SP 1
+> SP 2
+> SP 3
+> SPs
+> 0.66 0.94 0.94 0.95
+> 0.69 0.93 0.93 1.00
+> 0.71 0.91 0.91 0.99
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound (b) CV = 50% RN MRA HRA ERA
+> SP risk class
+> SP 1
+> SP 2
+> SP 3
+> SPs
+> 0.44 0.51 0.55 0.62
+> 0.49 0.93 0.93 1.00
+> 0.51 0.91 0.91 0.99
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound
+> (c) CV = 75% RN MRA HRA ERA
+> SP risk class
+> SP 1
+> SP 2
+> SP 3
+> SPs
+> 0.30 0.37 0.42 0.49
+> 0.34 0.93 0.93 1.00
+> 0.37 0.91 0.91 0.99
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound (d) CV = 100%
+
+Figure 5: Lower bound on the PoP ˆνi under different SP risk classes and CVs. 
+
+realizations harder to absorb. For SP 2 and SP 3, the lower bound is sensitive to CV mainly under risk neutrality, whereas once they become risk-averse it remains almost unchanged and close to one across all CV levels. Overall, we show that CVaR-based risk aversion strengthens the PoP, while high revenue uncertainty primarily hurts SP 1. Appendix R shows that the PoP lower bound ˆνi is reasonably tight. The gap between the observed PoP and the lower bound increases under higher revenue uncertainty, especially for risk-neutral SPs, and decreases as SPs become more risk-averse. 
+
+5.3.2. Impact of Individual SP Risk Preferences 
+
+We vary the risk preference of one SP at a time while keeping the other two fixed as MRA. This isolates the effect of the small, medium, and large SPs on the SE and the profit. We fix δ = 0 .0695 and CV = 100% .
+
+Impact on the InP. Fig. 6 shows the InP profit. All curves meet at MRA, which corresponds to the baseline where all SPs are MRA. When the chang-ing SP becomes more risk-averse, InP profit decreases because that SP com-mits to fewer resources, reducing the InP’s access revenue. The size of the 22 decrease depends on the SP: changing SP 1 has the smallest effect, while changing SP 3 has the strongest effect, since SP 3 is the largest resource commitment contributor. Thus, the InP is affected not only by the level of risk aversion, but also by which SP becomes more risk-averse. 
+
+Impact on SP profitability. Figs. 7–9 show the lower bound on the PoP. The change mainly affects the lower bound of the SP whose risk class varies, while the other SPs are only weakly affected. This indicates that risk aversion acts primarily as a self-protection mechanism; the SP that becomes more risk-averse reduces its own resource exposure and improves its own profitability guarantee. Cross-effects appear only for SP 1, whose smaller revenue buffer makes it more sensitive to other SPs’ changes. RN MRA HRA ERA 
+
+> Risk class assigned to changing SP
+> 120
+> 140
+> 160
+> 180
+> 200
+> InP profit
+> (million dollars)
+> SP 1 changes
+> SP 2 changes
+> SP 3 changes
+
+Figure 6: InP profit when one SP changes risk class at CV = 100% .RN MRA HRA ERA          
+
+> Risk class assigned to changing SP
+> SP 1
+> changes
+> SP 2
+> MRA
+> SP 3
+> MRA
+> SP status  0.29 0.36 0.40 0.49
+> 0.93 0.93 0.93 0.93
+> 0.91 0.91 0.91 0.91
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound
+
+Figure 7: Lower bound when SP 1changes risk class at CV = 100% .RN MRA HRA ERA          
+
+> Risk class assigned to changing SP
+> SP 1
+> MRA
+> SP 2
+> changes
+> SP 3
+> MRA
+> SP status  0.36 0.36 0.37 0.37
+> 0.34 0.93 0.93 1.00
+> 0.91 0.91 0.91 0.91
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound
+
+Figure 8: Lower bound when SP 2changes risk class at CV = 100% .RN MRA HRA ERA          
+
+> Risk class assigned to changing SP
+> SP 1
+> MRA
+> SP 2
+> MRA
+> SP 3
+> changes
+> SP status  0.36 0.36 0.38 0.39
+> 0.93 0.93 0.93 0.93
+> 0.36 0.91 0.91 0.99
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound
+
+Figure 9: Lower bound when SP 3changes risk class at CV = 100% .
+
+5.3.3. Scalability to Ten SPs 
+
+We next consider ten SPs with different revenues and risk classes. 
+
+Impact on the InP. Fig. 10 compares the InP outcomes with 3 and 10 SPs. With 10 SPs, InP profit, capacity, and price are higher because more 23 SPs share the infrastructure and generate larger aggregate resource commit-ments. This makes additional capacity more valuable for the InP and allows a higher access price while still inducing SPs to commit to resources. Impor-tantly, scaling from 3 to 10 SPs changes the magnitude of the equilibrium outcomes, but the qualitative behavior remains the same. 25 50 75 100 
+
+> CV (%)
+> 200
+> 400
+> 600
+> InP profit
+> (million dollars)
+> 10 SPs
+> 3 SPs
+
+(a) InP profit 25 50 75 100  
+
+> CV (%)
+> 50
+> 100
+> 150
+> C * (vCores)
+> 10 SPs
+> 3 SPs
+
+(b) Capacity C∗25 50 75 100  
+
+> CV (%)
+> 90
+> 100
+> 110
+> * ($/vCore-hour)
+> 10 SPs
+> 3 SPs
+
+(c) Price θ∗
+
+Figure 10: InP profit and capacity–pricing decisions for 3 and 10 SPs under varying CV .
+
+Impact on SP profitability. Fig. 11 compares the lower bound for the 3-SP and 10-SP cases. In the 3-SP case, SP 2 and SP 3 keep high and almost unchanged bounds across CV , while SP 1 is affected at high uncertainty be-cause its revenue buffer is smaller. The 10-SP case shows the same behavior at larger scale; well-protected SPs, such as SP 2, SP 3, and especially the ERA SP 9, keep high bounds, whereas vulnerable SPs deteriorate more as 
+
+CV increases. The RN SP 5 is the most affected because it does not reduce risk exposure through CVaR. Thus, the lower bound is mainly determined by each SP’s own risk class and revenue size and not by the number of SPs. 
+
+5.3.4. Sensitivity to SP-side and Investment Costs 
+
+Appendix S shows that higher SP-side costs lower capacity and InP profit, raise the access price, and affect SP profit heterogeneously, whereas investment-cost changes have only limited impact. 
+
+5.3.5. Validation with Real-World Dataset 
+
+Appendix T reports a validation experiment using real mobile-traffic traces mapped to five SPs with heterogeneous revenues and risk classes. The SE is profitable for the InP ( C∗ = 109 vCores, θ∗ = 27 $/vCore-hour, profit 
+
+= $1 .37 M), and all SPs achieve high lower bounds on the PoP ( 0.94 –1.00 ), supporting the model under realistic revenue variability. 24 1        
+
+> HRA
+> 2
+> MRA
+> 3
+> HRA
+> SP and risk class
+> 100
+> 75
+> 50
+> 25
+> CV (%)  0.39 0.93 0.91
+> 0.53 0.93 0.91
+> 0.94 0.93 0.91
+> 0.94 0.93 0.93
+> 0.0
+> 0.5
+> 1.0
+> Lower bound
+
+(a) 3-SP case 1                                     
+
+> HRA
+> 2
+> MRA
+> 3
+> HRA
+> 4
+> HRA
+> 5
+> RN
+> 6
+> HRA
+> 7
+> HRA
+> 8
+> MRA
+> 9
+> ERA
+> 10
+> HRA
+> SP and risk class
+> 100
+> 75
+> 50
+> 25
+> CV (%)
+> 0.39 0.93 0.91 0.43 0.30 0.43 0.41 0.39 0.97 0.42
+> 0.52 0.93 0.91 0.56 0.43 0.93 0.94 0.53 0.97 0.55
+> 0.94 0.93 0.91 0.90 0.63 0.93 0.94 0.95 0.97 0.91
+> 0.94 0.93 0.93 0.92 0.89 0.93 0.94 0.95 0.97 0.92
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound
+
+(b) 10-SP case 
+
+Figure 11: Lower bound on the PoP for 3 and 10 SPs under heterogeneous risk classes and varying CV .
+
+5.3.6. Benchmark comparison 
+
+Appendix U compares the proposed risk-aware Stackelberg model with representative state-of-the-art benchmarks. Since existing approaches cap-ture only subsets of the investment–pricing decisions, we treat them as partial formulations of the broader setting addressed in this paper. We thus let each benchmark determine the decisions it models, while the remaining decisions are fixed according to our method. The resulting outcomes are qualitatively aligned with the full model, indicating that our formulation subsumes the main economic mechanisms of existing approaches while endogenizing in-frastructure investment, pricing, SP commitments, and risk exposure. The proposed model achieves high InP profit, high utilization, and a strong lower bound on SPs’ PoP, outperforming the benchmarks. 
+
+6. Conclusion 
+
+This paper has introduced a risk-aware Stackelberg game for shared-infrastructure investment and pricing under uncertainty. The model endoge-nizes future utilization through the resource commitments of heterogeneous firms facing shared capacity, congestion, and downside risk. We have proved the existence of a Stackelberg equilibrium and derived lower bounds on the PoP. The MEC results show that higher firm risk aversion reduces InP profit while improving the PoP. The main finding is that ignoring firm risk pref-erences can overestimate utilization and cost recovery. Future work may consider multiple InPs and dynamic capacity expansion. 25 Appendix A. Notation 
+
+Table A.2 summarizes the main notation. 
+
+Appendix B. Illustration of the Stackelberg equilibrium 
+
+Fig. B.12 summarizes the sequential structure of the proposed Stack-elberg game. The InP first chooses the capacity–price pair (C, θ ). After observing this decision, the firms choose their resource commitments while accounting for the other firms’ decisions. The resulting GNE H∗(C, θ ) is anticipated by the leader when selecting its optimal capacity and pricing decisions. Leader: InP                                 
+
+> chooses ( C,)
+> Followers: Firms
+> observe ( C,)
+> and choose hti
+> Each firm maximizes Ui
+> given hi
+> Satisfying
+> hti+ji
+> htjC
+> GNE: H*(C,)
+> Leader profit
+> using H*(C,)
+> Leader optimizes
+> anticipating response
+> (C*,*)
+> Stackelberg equilibrium
+> (C*,*,H*(C*,*))
+> leader anticipates
+> GNE response
+> Stackelberg Equilibrium Structure
+
+Figure B.12: Sequential structure of the proposed Stackelberg game. 
+
+Appendix C. Illustration of VaR and CVaR 
+
+Fig. C.13 illustrates the interpretation of VaR and CVaR. The threshold 
+
+VaR α separates the loss realizations that occur with cumulative probability 
+
+α from the worst-tail realizations with probability 1 − α. The gray area corresponds to the probability P(L ≤ VaR α) = α, while the red area cor-responds to the tail probability 1 − α. Unlike VaR, which only specifies a loss threshold, CVaR measures the average loss within the tail region and therefore captures the severity of adverse outcomes. 26 Table A.2: Notation 
+
+Notation Description 
+
+N = {1, . . . , N } Set of firms (§3.1). 
+
+T = {1, . . . , T } Set of time slots (§3.1). 
+
+C Infrastructure capacity chosen by the InP (§3.1). 
+
+θ Access price chosen by the InP (§3.1). 
+
+hti Resource commitment of firm i at time slot t (§3.1). 
+
+hi Resource commitment vector of firm i over all time slots (3). 
+
+h−i Resource commitment vectors of all firms except i (§3.2). 
+
+ht Resource commitment vector of all firms at time slot t
+
+(§3.2). 
+
+H Resource commitment of all firms over all time slots (§3.2). 
+
+Πti(ht; θ) Profit of firm i at time slot t under access price θ (1). 
+
+Lti(ht; θ) Loss of firm i at time slot t under access price θ (2). 
+
+βi Risk-aversion coefficient of firm i (3). 
+
+αi CVaR confidence level of firm i (3). 
+
+CVaR αi Conditional Value-at-Risk at level αi (3). 
+
+Ui(hi, h−i; C, θ ) Mean-CVaR of follower i (3). 
+
+(C∗, θ ∗, H∗) Stackelberg equilibrium (Definition 1). 
+
+R+ Set of nonnegative real numbers (§3.2). 
+
+ω Revenue-uncertainty realization, with ω ∈ Ω (§3.2.1). 
+
+rti,ω (hti) Realized revenue of firm i in slot t under realization ω
+
+(1); specified in (12). 
+
+pθ(hti) Access payment paid by firm i (1); specified in (13). 
+
+ψti (ht) firm-side cost of firm i in slot t (1); specified in (14). 
+
+Y Feasible set of the InP’s capacity–price decisions (7). 
+
+Cost( C) Investment cost of capacity C (6); specified in (17). 
+
+H∗(C, θ ) Follower equilibrium response induced by leader decision 
+
+(C, θ ) (6). 
+
+Π∗
+
+> i,ω
+
+, R ∗
+
+> i,ω
+
+, K ∗ 
+
+> i
+
+Equilibrium realized profit, realized total revenue, and deterministic total cost of firm i (9). 
+
+ˆνi Lower bound on the probability of profit (11). 
+
+C, θ Maximum admissible capacity and access price (7). 
+
+ati,ω Revenue coefficient of firm i in time slot t under realiza-tion ω (12). 
+
+δ Operational cost parameter (14). 
+
+γ Congestion cost parameter (14). 
+
+Ati Mean-CVaR benefit factor of firm i at t (Prop. 14). 
+
+λt∗ Shadow price of the shared capacity constraint at t
+
+(Prop. 14). 
+
+27 4 2 0 2 4
+
+Loss 
+
+0.0 
+
+0.1 
+
+0.2 
+
+0.3 
+
+0.4 
+
+> Probability density of loss
+
+Mean VaR CVaR Max 
+
+Illustration of VaR and CVaR     
+
+> Loss distribution
+> (LVaR ) = = 0.95
+> (L> VaR ) = 1 = 0.05
+
+Figure C.13: Illustration of VaR α and CVaR α for a loss random variable L
+
+Appendix D. Proof of Lemma 5 
+
+The result follows from the VaR–CVaR regularity result proved in ( ?). In the present model, Assumptions 3 and 4 are precisely the hypotheses needed to apply that result to the loss Lti(h; θ). Therefore, for every i ∈ N 
+
+and t ∈ T , the map h 7 → VaR αi (Lti(h; θ)) is continuous and the map h 7 →
+
+CVaR αi (Lti(h; θ)) is continuously differentiable. Hence, the lemma is proved. 
+
+Appendix E. Proof of Proposition 7 
+
+For fixed (C, θ ), define the joint feasible set 
+
+X(C) := 
+
+H ∈ RN T 
+
+> +
+
+X
+
+> j∈N
+
+htj ≤ C, ∀t ∈ T
+
+ (E.1) where H := ( hti)i∈N , t ∈T denotes the resource vectors of all followers. For the VE, it is convenient to work with the disutility. For each i ∈ N , define 
+
+Pi(hi, h−i; C, θ ) : (3) 
+
+= X
+
+> t∈T
+
+ −Eω[Π ti(ht; θ)] + βi CVaR αi (Lti(ht; θ))  (E.2) where hi = ( hti)t∈T ∈ RT 
+
+> +
+
+is the resource commitment vector of follower i.28 For compactness, write Pi(H; C, θ ) := Pi(hi, h−i; C, θ ), where H = ( h1, . . . , hN ).We first define the notion of the variational equilibrium of the follower game. 
+
+Definition 16. For fixed (C, θ ), a vector H∗ ∈ X(C) (E.1) is called a vari-ational equilibrium (VE) of the follower game if it solves the variational inequality VI( X(C), G(·; C, θ )) (Facchinei et al., 2007), namely, 
+
+⟨G (H∗; C, θ ), H − H∗⟩ ≥ 0, ∀H ∈ X(C) (E.3) 
+
+where 
+
+G(H; C, θ ) := 
+
+
+
+∇h1 P1(H; C, θ )
+
+...
+
+∇hN PN (H; C, θ )
+
+
+
+=
+
+ ∂P 1
+
+∂h t
+
+> 1
+
+(H; C, θ )
+
+
+
+> t∈T
+
+... ∂P N
+
+∂h tN
+
+(H; C, θ )
+
+
+
+> t∈T
+
+
+
+, (E.4) 
+
+is the pseudo-gradient mapping of the follower game. 
+
+The variational inequality (E.3) states that, at equilibrium H∗, no fol-lower can improve its mean-CVaR, i.e., Ui(hi, h−i; C, θ ) (3), by changing its resource commitment, given the resource commitments of the other followers and the shared capacity constraint. We decompose the proof into the following three lemmas. 
+
+Lemma 17. For every fixed C ∈ [0 , C ], pseudo-gradient mapping (H, θ ) 7 →G(H; C, θ ) defined in (E.4) is continuous on X(C) × [0 , θ ].Proof. Fix C ∈ [0 , C ]. We prove the continuity of 
+
+(H, θ ) 7 → G (H; C, θ )
+
+on X(C) × [0 , θ ]. C only determines the feasible set X(C), and does not enter the expression of the follower disutilities directly (E.2). 29 For each follower i ∈ N , the function Pi(hi, h−i; C, θ ) (E.2) is defined as a finite sum over t ∈ T of terms involving the expected profit and the CVaR penalty. For every H ∈ X(C) and every t ∈ T , the associated time-slot vector ht belongs to K ⊂ O. Hence Lemma 5 applies on the domain considered here. For each i ∈ N and t ∈ T , the loss realization is (2) 
+
+Lti,ω (ht; θ) = −rti,ω (hti) + pθ(hti) + ψti (ht).
+
+For fixed ht and θ, the terms pθ(hti) and ψti (ht) are deterministic. Thus, by translation invariance of CVaR (Pflug, 2000, Prop. 2(i)), 
+
+CVaR αi
+
+ Lti(ht; θ) = pθ(hti) + ψti (ht) + CVaR αi
+
+ −rti (hti) (E.5) Using this identity in (E.2), the disutility of follower i can be written as 
+
+Pi(hi, h−i; C, θ ) = X
+
+> t∈T
+
+−Eωrti (hti) + (1 + βi)  pθ(hti) + ψti (ht) + βiCVaR αi
+
+ −rti (hti) 
+
+Therefore, for every i ∈ N and t ∈ T ,
+
+∂P i(hi, h−i; C, θ )
+
+∂h ti
+
+= − ∂∂h ti
+
+Eωrti (hti)+ (1 + βi)
+
+ ∂p θ(hti)
+
+∂h ti
+
++ ∂ψ ti (ht)
+
+∂h ti
+
+
+
++ βi
+
+∂∂h ti
+
+CVaR αi
+
+ −rti (hti) .
+
+(E.6) We now check the continuity of each term. Under Assumption 2, the mappings h 7 → rti,ω (h) and h 7 → ψti (h) are continuously differentiable in their respective variables. Hence, the firm-side cost-gradient term ∂ψ ti (ht)
+
+> ∂h ti
+
+is continuous in ht.The continuity of the expected-revenue gradient follows from the domi-nated convergence theorem and the standard differentiation-under-the-integral result; see (Folland, 1999, Theorem 2.27). By Assumption 4, the derivative of the stochastic loss with respect to the resource vector is dominated by 30 an integrable random variable. Since the payment and firm-side cost deriva-tives are deterministic and continuous on the compact feasible set, they are bounded there. Hence ∂r ti,ω (hti)/∂h ti is also dominated by an integrable random variable. Therefore, applying Folland’s differentiation-under-the-integral theorem componentwise, 
+
+∂∂h ti
+
+Eω[rti (hti)] = Eω
+
+" ∂r ti,ω (hti)
+
+∂h ti
+
+#
+
+.
+
+Moreover, since ∂r ti,ω (hti)/∂h ti is continuous in hti for almost every ω and is dominated by the same integrable random variable, dominated convergence implies that this mapping is continuous in hti.Moreover, by Assumption 2, (h, θ ) 7 → ∂p θ (h) 
+
+> ∂h
+
+is continuous on R+ × [0 , θ ].Hence the payment-gradient term ∂p θ (hti )
+
+> ∂h ti
+
+is continuous in (hti, θ ).Finally, consider the CVaR term. Although Lemma 5 is stated for the loss Lti, it also implies the required regularity of the random part. Indeed, fix any θ0 ∈ [0 , θ ] and set the other followers’ resource commitments to zero. Then 
+
+Lti,ω (hti, 0; θ0) = −rti,ω (hti) + pθ0 (hti) + ψti (hti, 0).
+
+By (E.5), 
+
+CVaR αi
+
+ −rti (hti) = CVaR αi
+
+ Lti(hti, 0; θ0) − pθ0 (hti) − ψti (hti, 0).
+
+The first term is continuously differentiable by Lemma 5, and the last two terms are continuously differentiable by Assumption 2. Hence hti 7 → CVaR αi (−rti (hti)) 
+
+is continuously differentiable, and its derivative is continuous. Thus each component ∂P i(hi,h−i;C,θ )
+
+> ∂h ti
+
+is continuous in (H, θ ) on X(C) ×
+
+[0 , θ ]. Hence each block component ∇hi Pi(hi, h−i; C, θ ) is continuous in 
+
+(H, θ ). Since the pseudo-gradient mapping G(H; C, θ ) (E.4) is obtained by stacking finitely many continuous components, it is continuous in (H, θ ) on 
+
+X(C) × [0 , θ ].The partial derivative (E.6) contains H and θ, but not C. Therefore, C
+
+affects G only through the feasible set X(C). This proves the lemma. 31 We now ensure that the follower game admits at least one resource com-mitment equilibrium for any leader decision (C, θ ). Without such a guaran-tee, the InP’s anticipated follower response may not be well defined. 
+
+Lemma 18. Fix (C, θ ) ∈ Y. Then the follower game admits at least one variational equilibrium. Proof. Fix (C, θ ) ∈ Y. The joint feasible set (E.1) is nonempty, compact, and convex. Indeed, X(C) is nonempty since 0 ∈ X(C); it is convex and closed because it is defined by linear constraints; and it is bounded since 
+
+0 ≤ hti ≤ C for every i ∈ N and t ∈ T . Moreover, by Lemma 17, the pseudo-gradient mapping G(H; C, θ ) is continuous on X(C). Hence, by (Facchinei and Kanzow, 2007, Proposition 2.2), the variational inequality problem 
+
+VI( X(C), G(·; C, θ )) 
+
+admits at least one solution. Therefore, the follower game admits at least one variational equilibrium. We now relate the VE to the GNE. 
+
+Lemma 19. Fix (C, θ ) ∈ Y. Then any solution of the variational inequality 
+
+VI( X(C), G(·; C, θ )) (E.3) is a generalized Nash equilibrium of the follower game associated with (C, θ ). Consequently, VE( C, θ ) ⊆ GNE( C, θ ). There-fore, the follower game admits at least one GNE. Proof. Fix (C, θ ) ∈ Y. For each follower i ∈ N , let hi := ( hti)t∈T denote the resource commitment vector of follower i over all time slots, and let 
+
+h−i := ( hj )j∈N , j ̸ =i denote the collection of resource commitment vectors of all followers except i.For each follower i ∈ N , the feasible set is 
+
+Xi(h−i; C) = 
+
+hi ∈ RT 
+
+> +
+
+hti + X 
+
+> j̸=i
+
+htj ≤ C, ∀t ∈ T
+
+ .
+
+32 Equivalently, 
+
+Xi(h−i; C) = hi ∈ RT (hi, h−i) ∈ X(C) ,
+
+where X(C) is defined in (E.1). Hence, the follower game is a generalized Nash equilibrium problem with a jointly convex constraint set in the sense of (Facchinei and Kanzow, 2007). Moreover, X(C) is nonempty, closed, and convex. Since 0 ≤ hti ≤ C for all i ∈ N and t ∈ T , the set X(C) is also compact. By Lemma 17, for every i ∈ N , Pi(hi, h−i; C, θ ) is continuously differentiable with respect to hi.For each t ∈ T and ω ∈ Ω, the loss realization is 
+
+Lti,ω (ht; θ) = Lti,ω (hti, ht
+
+> −i
+
+) = −rti,ω (hti) + pθ(hti) + ψti (hti, ht
+
+> −i
+
+)
+
+Fix i ∈ N and t ∈ T . Let h ∈ R+ denote a scalar value of follower i’s resource at time t, and fix ht 
+
+> −i
+
+:= ( htj )j̸ =i ∈ RN −1+ . By Assumption 6, for each t ∈ T , ω ∈ Ω, and fixed ht 
+
+> −i
+
+∈ RN −1+ , the mapping 
+
+h 7 → Lti,ω (h, ht
+
+> −i
+
+) = −rti,ω (h) + pθ(h) + ψti (h, ht
+
+> −i
+
+)
+
+is convex on R+, since −rti,ω (h) is convex in h, pθ(h) is convex in h, and 
+
+ψti (h, ht
+
+> −i
+
+) is convex in h.Hence, for every fixed ht
+
+> −i
+
+, any h, ˜h ∈ R+, and any λ ∈ [0 , 1] , we have 
+
+Lti,ω 
+
+
+
+λh + (1 − λ)˜h, ht
+
+> −i
+
+
+
+≤ λL ti,ω (h, ht
+
+> −i
+
+) + (1 − λ)Lti,ω (˜h, ht
+
+> −i
+
+) (E.7) By monotonicity of CVaR αi (Pflug, 2000, Prop. 2(v)), (E.7) implies 
+
+CVaR αi
+
+
+
+Lti
+
+
+
+λh + (1 − λ)˜h, ht
+
+> −i
+
+ 
+
+≤ CVaR αi
+
+
+
+λL ti(h, ht
+
+> −i
+
+) + (1 − λ)Lti(˜h, ht
+
+> −i
+
+)
+
+
+
+Then, by convexity of CVaR αi with respect to its loss argument (Pflug, 33 2000, Prop. 2(iv)), 
+
+CVaR αi
+
+
+
+λL ti(h, ht
+
+> −i
+
+) + (1 − λ)Lti(˜h, ht
+
+> −i
+
+)
+
+
+
+≤ λCVaR αi
+
+ Lti(h, ht
+
+> −i
+
+) + (1 − λ)CVaR αi
+
+
+
+Lti(˜h, ht
+
+> −i
+
+)
+
+
+
+(E.8) Combining (E.8) and (E.8), we obtain 
+
+CVaR αi
+
+
+
+Lti
+
+
+
+λh + (1 − λ)˜h, ht
+
+> −i
+
+ 
+
+≤ λCVaR αi
+
+ Lti(h, ht
+
+> −i
+
+) + (1 − λ)CVaR αi
+
+
+
+Lti(˜h, ht
+
+> −i
+
+)
+
+
+
+(E.9) Hence, for every fixed ht
+
+> −i
+
+, h 7 → CVaR αi (Lti(h, ht
+
+> −i
+
+)) is convex. Define 
+
+zti (hti, ht
+
+> −i
+
+) := Eω
+
+Lti,ω (hti, ht
+
+> −i
+
+) + βiCVaR αi
+
+ Lti(hti, ht
+
+> −i
+
+)
+
+Since Lti,ω (·, ht
+
+> −i
+
+) is convex for every realization ω, and since convexity is preserved under nonnegative weighted sums (Boyd and Vandenberghe, 2004, §3.2.1), the expectation term 
+
+h 7 → Eω
+
+Lti,ω (h, ht
+
+> −i
+
+)
+
+is convex. Indeed, expectation is a nonnegative weighted average over the realizations ω.Also, as shown above, h 7 → CVaR αi
+
+ Lti(h, ht
+
+> −i
+
+) is convex. Since βi ≥ 0,it follows that h 7 → qti (h, ht
+
+> −i
+
+) is convex. Furthermore, since Pi(hi, h−i; C, θ ) = P 
+
+> t∈T
+
+zti (hti, ht
+
+> −i
+
+), where hi = ( hti)t∈T ,
+
+the function Pi(hi, h−i; C, θ ) is a finite separable sum of convex functions of the components of hi.Therefore, for every fixed h−i = ( hj )j̸ =i,
+
+hi 7 → Pi(hi, h−i; C, θ )
+
+is convex since convexity is preserved under nonnegative weighted sums (Boyd and Vandenberghe, 2004, §3.2.1). 34 Therefore, the Convexity Assumption in (Facchinei and Kanzow, 2007) is satisfied: for every follower i, Pi(·, h−i; C, θ ) is convex and Xi(h−i; C) is closed and convex. Moreover, since 
+
+Xi(h−i; C) = {hi ∈ RT : ( hi, h−i) ∈ X(C)},
+
+with X(C) closed and convex, the follower game is a jointly convex GNEP in the sense of Definition 2 of (Facchinei and Kanzow, 2007). In addition, by Assumption 2, the partial derivatives of the loss Lti(ht; θ) with respect to hti exist. By Assumption 4, differentiation can be interchanged with ex-pectation, so the expected-loss term is differentiable (see (Chua, 2016, The-orem (Differentiation under the integral sign))). Moreover, by Lemma 5, the CVaR term is differentiable. Hence ∇hi Pi(hi, h−i; C, θ ) exists. Since Lemma 17 shows that the pseudo-gradient mapping G(H; C, θ ), whose i-th block is ∇hi Pi(hi, h−i; C, θ ), is continuous, it follows that Pi is continuously differentiable with respect to hi.Thus all assumptions of (Facchinei and Kanzow, 2007, Theorem 5) are satisfied, namely, first, Pi is C1 in hi. second, Pi is convex in hi. third, 
+
+Xi(h−i; C) is a section of the common closed convex set X(C). Therefore, the follower game is a jointly convex GNEP, and Theorem 5 applies. Therefore, every solution of 
+
+VI( X(C), G(·; C, θ )) 
+
+is a generalized Nash equilibrium of the follower game associated with (C, θ ).Hence, 
+
+VE( C, θ ) ⊆ GNE( C, θ ) (E.10) By Lemma 18, the follower game admits at least one variational equilibrium. The existence of at least one generalized Nash equilibrium then follows from (E.10). 
+
+Appendix F. Proof of Theorem 8 
+
+We decompose the proof into the following four lemmas: 35 Lemma 20. For each i ∈ N , the disutility Pi(hi, h−i; C, θ ) (E.2) can be written as 
+
+Pi(hi, h−i; C, θ ) = X
+
+> t∈T
+
+
+
+ϕti(hti) + Ψ ti(ht)
+
+
+
+, (F.1) 
+
+where 
+
+ϕti(hti) := −Eω[rti,ω (hti)] + pθ(hti) + βi CVaR αi (f ti (hti)) (F.2) 
+
+and 
+
+Ψti(ht) := (1 + βi)ψti (ht). (F.3) 
+
+Proof. For each i ∈ N , t ∈ T , and ω ∈ Ω, rewrite (2) as 
+
+Lti,ω (ht; θ) = −rti,ω (hti) + pθ(hti)
+
+| {z }   
+
+> fti,ω (hti)
+
++ψti (ht). (F.4) Since ψti (ht) is deterministic, CVaR translation invariance (Pflug, 2000, Prop. 2(i)) gives 
+
+CVaR αi
+
+ Lti(ht; θ) (F.4) 
+
+= CVaR αi
+
+ f ti (hti) + ψti (ht). (F.5) Substituting (F.4), (F.5), and (1) into (E.2) gives 
+
+Pi(hi, h−i; C, θ )
+
+> (E.2)
+
+= X
+
+> t∈T
+
+
+
+−Eω[Π ti(ht; θ)] + βi CVaR αi (Lti(ht; θ)) 
+
+
+
+> (1)
+
+= X
+
+> t∈T
+
+−Eω
+
+h
+
+rti,ω (hti) − pθ(hti) − ψti (ht)
+
+i
+
++ βi CVaR αi (Lti(ht; θ)) 
+
+!
+
+> (F.5)
+
+= X
+
+> t∈T
+
+−Eω[rti,ω (hti)] + pθ(hti) + βi CVaR αi (f ti (hti)) + (1 + βi)ψti (ht)
+
+! 
+
+> (F.2) ,(F.3)
+
+= X
+
+> t∈T
+
+
+
+ϕti(hti) + Ψ ti(ht)
+
+
+
+. (F.6) 36 which completes the proof. The uniqueness analysis relies on the decomposition of Pi(hi, h−i; C, θ ).We first state a key property of the individual term (F.2). 
+
+Lemma 21. For every i ∈ N and t ∈ T , hti 7 → ϕti(hti) is convex. Proof. By Assumption 6, for every ω ∈ Ω, the mapping h 7 → rti,ω (h) is concave on R+. Hence, the mapping h 7 → − rti,ω (h) is convex on R+. Since 
+
+h 7 → pθ(h) is also convex by Assumption 6, it follows that h 7 → f ti,ω (h)
+
+is convex on R+, where f ti,ω (hti) := −rti,ω (hti) + pθ(hti).. Let f ti (hti) denote the corresponding random variable. We now show that the mapping h 7 →
+
+CVaR αi
+
+ f ti (h) is convex on R+.Since f ti,ω (·) is convex for every ω ∈ Ω, the same monotonicity–convexity argument used in (E.7)–(E.9) implies that h 7 → CVaR αi
+
+ f ti (h) is convex on 
+
+R+. Since convexity is preserved under nonnegative weighted sums (Boyd and Vandenberghe, 2004, §3.2.1), and expectation is a nonnegative weighted average, mapping h 7 → − Eω[rti,ω (h)] is convex. Since βi ≥ 0, mapping h 7 →
+
+βi CVaR αi
+
+ f ti (h) is also convex. Therefore, ϕti, defined by ϕti(hti) = −Eω[rti,ω (hti)]+ pθ(hti)+ βi CVaR αi
+
+ f ti (hti),
+
+is a sum of convex mappings, and is thus convex in hti on R+.We now show the strong monotonicity of (F.3). 
+
+Lemma 22. The firm-side cost-gradient mapping, whose (i, t )-component is 
+
+(1 + βi) ∂ψ ti (ht)
+
+> ∂h ti
+
+, is strongly monotone on X(C) (E.1) .Proof. The firm-side cost is modeled as 
+
+ψti (ht) = qti (hti) + gti (ht). (F.7) Define 
+
+Q := inf    
+
+> i∈N, t ∈T,hti∈R+
+
+(qti )′′ (hti), G := sup    
+
+> i,j ∈N, t ∈T,
+> ht∈R|N|
+> +
+
+∂2gti (ht)
+
+∂h ti ∂h tj
+
+(F.8) 37 For each i ∈ N , differentiating (F.7) with respect to the own decision hti, we obtain ∂ψ ti (ht)
+
+∂h ti
+
+= ( qti )′(hti) + ∂g ti (ht)
+
+∂h ti
+
+(F.9) Multiplying by 1 + βi, it follows that 
+
+M ti (ht) := (1 + βi)
+
+
+
+(qti )′(hti) + ∂g ti (ht)
+
+∂h ti
+
+
+
+, ∀i ∈ N (F.10) Equivalently, for each t ∈ T , define the vector mapping 
+
+M t(ht) :=  M ti (ht)
+
+> i∈N
+
+=
+
+
+
+(1 + βi)
+
+
+
+(qti )′(hti) + ∂g ti (ht)
+
+∂h ti
+
+ 
+
+> i∈N
+
+(F.11) We now compute the Jacobian matrix of the vector mapping M t (F.11). Let 
+
+Jt(ht) = ∇ht M t(ht) = 
+
+"
+
+∂M ti (ht)
+
+∂h tj
+
+#
+
+> i,j ∈N
+
+=
+
+
+
+∂ht 
+
+> 1
+
+M t
+
+> 1
+
+(ht) · · · ∂htN M t
+
+> 1
+
+(ht)
+
+... . . . ...
+
+∂ht 
+
+> 1
+
+M tN (ht) · · · ∂htN M tN (ht)
+
+ (F.12) Using (F.10), we obtain, for each i, j ∈ N ,
+
+∂M ti (ht)
+
+∂h tj
+
+= (1 + βi) ∂∂h tj
+
+
+
+(qti )′(hti) + ∂g ti (ht)
+
+∂h ti
+
+
+
+= (1 + βi) (qti )′′ (hti)δij + ∂2gti (ht)
+
+∂h ti∂h tj
+
+!
+
+, (F.13) 38 where δij denotes the Kronecker delta. 4 Therefore, 
+
+Jt(ht) = 
+
+"
+
+(1 + βi) (qti )′′ (hti)δij + ∂2gti (ht)
+
+∂h ti∂h tj
+
+!# 
+
+> i,j ∈N
+
+(F.14) We study the symmetric matrix given by the symmetric part of the Ja-cobian defined as: 
+
+St(ht) := Jt(ht) +  Jt(ht)⊤
+
+2=
+
+"
+
+12
+
+∂M ti (ht)
+
+∂h tj
+
++ ∂M tj (ht)
+
+∂h ti
+
+!# 
+
+> i,j ∈N
+
+(F.15) Its (i, j )-entry is 
+
+Stij (ht) = 12
+
+∂M ti (ht)
+
+∂h tj
+
++ ∂M tj (ht)
+
+∂h ti
+
+!
+
+= 12
+
+"
+
+(1 + βi) (qti )′′ (hti)δij + ∂2gti (ht)
+
+∂h ti∂h tj
+
+!
+
++ (1 + βj ) (qtj )′′ (htj )δji + ∂2gtj (ht)
+
+∂h tj ∂h ti
+
+! # 
+
+(F.16) We distinguish between the diagonal and off-diagonal entries. 
+
+Diagonal entries . Let i ∈ N . Setting j = i in (F.16), and using δii = 1 ,we obtain 
+
+Stii (ht) = (1 + βi)
+
+
+
+(qti )′′ (hti) + ∂2gti (ht)
+
+∂(hti)2
+
+
+
+(F.17)        
+
+> 4δij = 1 if i=j, and 0otherwise.
+
+39 By (F.8), we have (qti )′′ (hti) ≥ Q and ∂2gti (ht)  
+
+> ∂(hti)2
+
+≤ G, respectively. The latter implies ∂2gti (ht)  
+
+> ∂(hti)2
+
+≥ − G. Substituting these two bounds into (F.17), we obtain 
+
+Stii (ht) ≥ (1 + βi)( Q − G) (F.18) 
+
+Off-diagonal entries . Let i, j ∈ N with i̸ = j. Then δij = δji = 0 , and (F.16) becomes 
+
+Stij (ht) = 12
+
+"
+
+(1 + βi) ∂2gti (ht)
+
+∂h ti∂h tj
+
++ (1 + βj ) ∂2gtj (ht)
+
+∂h tj ∂h ti
+
+#
+
+(F.19) Taking absolute values and using the triangle inequality, we obtain 
+
+|Stij (ht)| ≤ 12
+
+"
+
+(1 + βi) ∂2gti (ht)
+
+∂h ti∂h tj
+
++ (1 + βj ) ∂2gtj (ht)
+
+∂h tj ∂h ti
+
+#
+
+(F.20) Applying (F.8) to each term yields 
+
+|Stij (ht)| ≤ 12
+
+
+
+(1 + βi)G + (1 + βj )G
+
+
+
+(F.21) 
+
+Positive definiteness of St(ht). Summing (F.21) over all j̸ = i, we obtain 
+
+X 
+
+> j̸=i
+
+|Stij (ht)| ≤ 12
+
+X 
+
+> j̸=i
+
+
+
+(1 + βi)G + (1 + βj )G
+
+
+
+(F.22) Subtracting (F.22) from (F.18), we get 
+
+Stii (ht) − X 
+
+> j̸=i
+
+|Stij (ht)|≥ (1 + βi)( Q − G) − 12
+
+X 
+
+> j̸=i
+
+
+
+(1 + βi)G + (1 + βj )G
+
+
+
+(F.23) 40 For any i ∈ N , we simplify the right-hand side of (F.23) as follows: 
+
+(1 + βi)( Q − G) − 12
+
+X 
+
+> j̸=i
+
+
+
+(1 + βi)G + (1 + βj )G
+
+
+
+= (1 + βi)Q − (1 + βi)G
+
+− N − 12 (1 + βi)G − 12
+
+X 
+
+> j̸=i
+
+(1 + βj )G
+
+= (1 + βi)Q −
+
+
+
+1 + N − 12
+
+
+
+(1 + βi)G
+
+− 12
+
+X 
+
+> j̸=i
+
+(1 + βj )G
+
+= (1 + βi)Q − N + 1 2 (1 + βi)G − 12
+
+X 
+
+> j̸=i
+
+(1 + βj )G
+
+= (1 + βi)Q − N + 1 2 (1 + βi)G − 12
+
+X 
+
+> j̸=i
+
+(1 + βj )G
+
++ 12 (1 + βi)G − 12 (1 + βi)G
+
+= (1 + βi)Q − N
+
+2 (1 + βi)G − 12
+
+X
+
+> j∈N
+
+(1 + βj )G
+
+= (1 + βi)Q − N
+
+2 (1 + βi)G − 12
+
+N + X
+
+> j∈N
+
+βj
+
+ G
+
+= (1 + βi)Q − 2N + N β i + P 
+
+> j∈N
+
+βj
+
+2 G
+
+= (1 + βi) Q − ξiG, (F.24) where 
+
+ξi = 2N + N β i + P 
+
+> j∈N
+
+βj
+
+2(1 + βi)
+
+By (F.24), the right-hand side of (F.23) is equal to (1 + βi)( Q − ξiG).Hence, (F.23) becomes 
+
+Stii (ht) − X 
+
+> j̸=i
+
+|Stij (ht)| ≥ (1 + βi)( Q − ξiG) (F.25) 41 Since Q − ξiG > 0 by (8) and 1 + βi > 0, we obtain 
+
+Stii (ht) − X 
+
+> j̸=i
+
+|Stij (ht)| > 0 (F.26) Therefore, 
+
+Stii (ht) > X 
+
+> j̸=i
+
+|Stij (ht)| (F.27) Since the off-diagonal absolute-value sum is nonnegative, (F.27) also implies 
+
+Stii (ht) > 0. Hence 
+
+|Stii (ht)| = Stii (ht),
+
+and, by (F.27), 
+
+|Stii (ht)| > X 
+
+> j̸=i
+
+|Stij (ht)|
+
+Therefore, for each t ∈ T and each h ∈ X(C), the symmetric matrix St(ht)
+
+is strictly row diagonally dominant in the sense of (Gallier, 2022, Theo-rem 8.6(1)). Since St(ht) is strictly row diagonally dominant and has Stii (ht) > 0 for all i, (Gallier, 2022, Theorem 8.6(2)) implies that all eigenvalues of the sym-metric matrix St(ht) are strictly positive. Consequently, St(ht) is positive definite for every t ∈ T and every h ∈ X(C) (Agosti and Pretto, 2005, Theorem 2.4), i.e., St(ht) ≻ 0.
+
+Uniform lower bound of eigenvalues . Define 
+
+m := min 
+
+> i∈N
+
+(1 + βi) Q − ξiG (F.28) By (8), we have m > 0.We now show that every eigenvalue of St(ht) is bounded below by m. Let 
+
+λ be any eigenvalue of St(ht). Indeed, (Luo et al., 2022, Lemma 2) implies that every eigenvalue λ of the symmetric matrix St(ht) belongs to at least 42 one interval of the form 
+
+"
+
+Stii (ht) − X 
+
+> j̸=i
+
+|Stij (ht)|, S tii (ht) + X 
+
+> j̸=i
+
+|Stij (ht)|
+
+#
+
+for some i ∈ N .By (F.25) and the definition of m in (F.28), the left endpoint of each such interval is at least m. Therefore, every eigenvalue of St(ht) satisfies 
+
+λ ≥ m (F.29) Let v ∈ R|N | \ { 0} be an associated eigenvector of λ. Then 
+
+St(ht)v = λv 
+
+Consequently,  St(ht) − mI v = ( λ − m)v
+
+Therefore, the eigenvalues of St(ht) − mI are λ − m. By (F.29), every eigenvalue of St(ht) − mI is of the form λ − m ≥ 0. Hence, St(ht) − mI ⪰ 0,
+
+that is, 
+
+St(ht) ⪰ mI, ∀t ∈ T , ∀h ∈ X(C). (F.30) 
+
+Strong monotonicity of the full coupling term . For each t ∈ T , since each M t(·) (F.11) is C1 on R|N | 
+
+> +
+
+and satisfies St(ht) ⪰ mI for all t ∈ T
+
+and h ∈ X(C) by (F.30), the Jacobian criterion for strong monotonicity (Parise and Ozdaglar, 2019, Prop. 3(a)) and (Facchinei and Pang, 2003, Prop. 2.3.2(c)) yields 
+
+
+
+M t(ht) − M t(ht′)
+
+⊤
+
+(ht − ht′) ≥ m∥ht − ht′∥2, ∀t ∈ T (F.31) Condition (F.31) is the standard definition of strong monotonicity, following (Facchinei and Pang, 2003, Def. 2.3.1 (e)). 43 Summing (F.31) over all t ∈ T , we obtain 
+
+X
+
+> t∈T
+
+
+
+M t(ht) − M t(ht′)
+
+⊤
+
+(ht − ht′)
+
+≥ m X
+
+> t∈T
+
+∥ht − ht′∥2 = m∥H − H′∥2, ∀H, H′ ∈ X(C) (F.32) Expanding this inequality componentwise, we obtain 
+
+X
+
+> i∈N
+
+X
+
+> t∈T
+
+(1 + βi)
+
+ ∂ψ ti (ht)
+
+∂h ti
+
+− ∂ψ ti (ht′)
+
+∂h ti
+
+
+
+(hti − ht′ 
+
+> i
+
+)
+
+≥ m∥H − H′∥2, ∀H, H′ ∈ X(C). (F.33) Therefore, the coupling term (F.3) is strongly monotone on X(C).We now show uniqueness. 
+
+Lemma 23. VE is unique. Proof. By Assumption 2 and Lemma 5, for every i ∈ N and t ∈ T , the mappings hti 7 → ϕti(hti) (F.2) and ht 7 → ψti (ht) are continuously differentiable. From (F.1), for each player i, we have 
+
+Pi(hi, h−i; C, θ ) = X
+
+> t∈T
+
+ ϕti(hti) + (1 + βi)ψti (ht)
+
+Differentiating with respect to hi = ( hti)t∈T gives 
+
+∇hi Pi(hi, h−i; C, θ ) = 
+
+ ∂P i(hi, h−i; C, θ )
+
+∂h ti
+
+
+
+> t∈T
+
+=
+
+
+
+(ϕti)′(hti) + (1 + βi) ∂ψ ti (ht)
+
+∂h ti
+
+
+
+> t∈T
+
+(F.34) Let H, H′ ∈ X(C) (E.1). Using the definition of the pseudo-gradient 44 G(·, C, θ ) (E.4) we obtain 
+
+G(H; C, θ ) − G (H′; C, θ ), H − H′
+
+= X
+
+> i∈N
+
+∇hi Pi(hi, h−i; C, θ ) − ∇ hi Pi(H′; C, θ ), hi − h′
+
+> i
+> (F.34)
+
+= X
+
+> i∈N
+
+X
+
+> t∈T
+
+
+
+(ϕti)′(hti) + (1 + βi) ∂ψ ti (ht)
+
+∂h ti
+
+−(ϕti)′(ht′ 
+
+> i
+
+) − (1 + βi) ∂ψ ti (ht′)
+
+∂h ti
+
+
+
+(hti − ht′ 
+
+> i
+
+)= X
+
+> i∈N
+
+X
+
+> t∈T
+
+
+
+(ϕti)′(hti) − (ϕti)′(ht′ 
+
+> i
+
+)
+
+
+
+(hti − ht′ 
+
+> i
+
+)+ X
+
+> i∈N
+
+X
+
+> t∈T
+
+(1 + βi)
+
+ ∂ψ ti (ht)
+
+∂h ti
+
+− ∂ψ ti (ht′)
+
+∂h ti
+
+
+
+(hti − ht′ 
+
+> i
+
+) (F.35) We now analyze the two sums separately. 
+
+First term. Since ϕti defined in (F.2) is convex by Lemma 21 and differen-tiable by Assumption 2 and Lemma 5, its derivative is nondecreasing on the feasible interval [0 , C ] (Penot, 2013, Prop. 3.17). Therefore, for every i ∈ N ,
+
+t ∈ T , and hti, h t′ 
+
+> i
+
+in [0 , C ],
+
+
+
+(ϕti)′(hti) − (ϕti)′(ht′ 
+
+> i
+
+)
+
+
+
+(hti − ht′ 
+
+> i
+
+) ≥ 0 (F.36) Summing (F.36) over all i and t yields 
+
+X
+
+> i∈N
+
+X
+
+> t∈T
+
+
+
+(ϕti)′(hti) − (ϕti)′(ht′ 
+
+> i
+
+)
+
+
+
+(hti − ht′ 
+
+> i
+
+) ≥ 0 (F.37) 
+
+Second term. By Lemma 22, the coupling term is strongly monotone, i.e., 
+
+X
+
+> i∈N
+
+X
+
+> t∈T
+
+(1 + βi)
+
+ ∂ψ ti (ht)
+
+∂h ti
+
+− ∂ψ ti (h′t)
+
+∂h ti
+
+
+
+(hti − ht′ 
+
+> i
+
+)
+
+≥ m∥H − H′∥2 (F.38) 45 Finally, substituting (F.37) and (F.38) into (F.35), we obtain 
+
+G(H; C, θ ) − G (H′; C, θ ), H − H′ ≥ 0 + m∥H − H′∥2
+
+= m∥H − H′∥2 (F.39) Hence, G(H; C, θ ) is strongly monotone on X(C) (also called 2 monotone). (F.39) is the standard definition of strong monotonicity, following (Facchinei and Pang, 2003, Def. 2.3.1 (e)). Therefore, by (Facchinei and Pang, 2003, Theorem 2.3.3 (b)), the variational inequality problem VI( X(C), G(·; C, θ )) (E.3) admits a unique solution. Equivalently, the follower game admits a unique VE. 
+
+Appendix G. Discussion on the uniqueness condition 
+
+Condition (8) is used to ensure that, for each leader decision (C, θ ), the selected follower response is unique. This condition is sufficient and is not required for the existence of a follower GNE. Indeed, even when Condition (8) is not satisfied, the follower game may still admit a GNE by Proposi-tion 7. However, without uniqueness, the follower response to a given (C, θ )
+
+may no longer be single-valued. In other words, the same capacity–price pair may lead to several possible follower equilibria. In that case, the InP cannot predict a unique vector of firm resource commitments from (C, θ )
+
+alone. The leader problem then becomes an equilibrium-selection problem, because the InP profit may differ across the possible follower equilibria. This does not invalidate the follower problem § 3.2.1, but it changes the interpre-tation of the upper-level problem. One possible formulation is an optimistic leader problem, in which the InP assumes that, among the possible follower equilibria, the one giving the highest InP profit is selected. Another possi-ble formulation is a conservative leader problem, in which the InP evaluates its decision under the follower equilibrium giving the lowest InP profit (see (Başar and Olsder, 1998)). 46 Appendix H. Proof of Proposition 9 
+
+This proof explores special structure of the feasible set X(C) (E.1). We must show that Hn → H∗(C, θ ). We decompose the proof into two lemmas. 
+
+Lemma 24. Let {(Cn, θ n)}n≥1 ⊂ Y (7) be any sequence such that (Cn, θ n) →
+
+(C, θ ) ∈ Y. Define Hn := H∗(Cn, θ n), n ≥ 1. Then the sequence {Hn} is bounded. Moreover, for any convergent subsequence Hnk → H, its limit satisfies H ∈ X(C), and for every y ∈ X(C) there exists a sequence yk ∈
+
+X(Cnk ) such that yk → y.Proof. Since (Cn, θ n) → (C, θ ), the sequence {Cn} is bounded (Rudin, 1976, Theorem 3.2). Hence there exists a constant C > 0 such that 
+
+0 ≤ Cn ≤ C, ∀n
+
+Because Hn ∈ X(Cn), we have for every i ∈ N and t ∈ T ,
+
+0 ≤ hti,n ≤ X
+
+> j∈N
+
+htj,n ≤ Cn ≤ C
+
+Therefore, Hn ∈ [0 , C ]N T , ∀n, and thus the sequence {Hn} is bounded in RN T .Since bounded sequences in finite-dimensional spaces admit convergent subsequences (Sasane, 2017, Lemma 1.4), there exists a subsequence {Hnk }k≥1
+
+and a vector H ∈ RN T such that 
+
+Hnk → H as k → ∞ (H.1) Since Hnk ∈ X(Cnk ), we have for every t ∈ T ,
+
+X
+
+> j∈N
+
+htj,n k ≤ Cnk , hti,n k ≥ 0, ∀i ∈ N
+
+Passing to the limit as k → ∞ , using (H.1) and the fact that Cnk → C, we obtain X
+
+> j∈N
+
+htj ≤ C, hti ≥ 0, ∀i ∈ N .
+
+47 Thus 
+
+H ∈ X(C) (H.2) Let y ∈ X(C) be arbitrary. We show that there exists a sequence yk ∈
+
+X(Cnk ) such that yk → y.If C = 0 , then necessarily X(C) = X(0) = {0}, hence y = 0, and we may simply take yk = 0 for all k. Then clearly yk ∈ X(Cnk ) and yk → y.Assume now that C > 0. Define 
+
+yk := Cnk
+
+C y (H.3) Since y ∈ X(C), we have y ≥ 0 and P 
+
+> j∈N
+
+ytj ≤ C, ∀t ∈ T . Therefore, for every t ∈ T , X
+
+> j∈N
+
+ytj,k = Cnk
+
+C
+
+X
+
+> j∈N
+
+ytj ≤ Cnk
+
+C C = Cnk ,
+
+and clearly yti,k ≥ 0 for all i, t . Hence 
+
+yk ∈ X(Cnk ), ∀k (H.4) Moreover, since Cnk → C, from (H.3) we obtain 
+
+yk → y (H.5) This completes the proof of Lemma 24. 
+
+Lemma 25. Under the setting of Lemma 24, let {Hnk }k≥1 be any convergent subsequence such that Hnk → H. Then H = H∗(C, θ ). Consequently, Hn →
+
+H∗(C, θ ), and the map (C, θ ) 7 → H∗(C, θ ) is continuous on Y.Proof. By Lemma 24, we have 
+
+H ∈ X(C).
+
+Fix an arbitrary y ∈ X(C). By Lemma 24, there exists a sequence 
+
+yk ∈ X(Cnk ) such that yk → y.48 Since yk ∈ X(Cnk ), the variational inequality (E.3) applied at index nk
+
+gives 
+
+⟨G (Hnk ; Cnk , θ nk ), yk − Hnk ⟩ ≥ 0, ∀k. (H.6) By Lemma 17 applied on the common set X(C) × [0 , θ ], and using the fact that G has no direct dependence on C, we obtain 
+
+G(Hnk ; Cnk , θ nk ) = G(Hnk ; C, θ nk ) → G (H; C, θ ) = G(H; C, θ ).
+
+Therefore, taking the limit in (H.6), we obtain by (Kreyszig, 1991, Lemma 3.2.2 (Continuity of inner product)) 
+
+G(H; C, θ ), y − H ≥ 0, ∀y ∈ X(C).
+
+Hence H solves the variational inequality VI( X(C), G(·; C, θ )) .
+
+By Lemma 23, the variational inequality VI( X(C), G(·; C, θ )) admits a unique solution, namely H∗(C, θ ). Since H is also a solution, it follows that 
+
+H = H∗(C, θ ). (H.7) Thus every convergent subsequence of {Hn} converges to the same limit 
+
+H∗(C, θ ). Since the original sequence {Hn} is bounded, this implies that the whole sequence converges to H∗(C, θ ), i.e., 
+
+Hn → H∗(C, θ ).
+
+Because the sequence {(Cn, θ n)} was arbitrary, the map (C, θ ) 7 → H∗(C, θ )
+
+is continuous on Y. This completes the proof of Lemma 25. 
+
+Appendix I. Proof of Proposition 10 
+
+From (6), recall that the leader objective is 
+
+Φ( C, θ ) := X
+
+> t∈T
+
+X
+
+> i∈N
+
+pθ
+
+ ht∗ 
+
+> i
+
+(C, θ ) − Cost (C),
+
+49 where H∗(C, θ ) =  ht∗ 
+
+> i
+
+(C, θ )  
+
+> i∈N,t ∈T
+
+is the unique variational equilibrium induced by (C, θ ). Thus, the leader problem (6) is equivalent to maximizing 
+
+Φ( C, θ ) over Y. Let {(Cn, θ n)}n≥1 ⊆ Y be any sequence such that (Cn, θ n) →
+
+(C, θ ) ∈ Y. We show that Φ( Cn, θ n) → Φ( C, θ ).By Proposition 9, we have H∗(Cn, θ n) → H∗(C, θ ). In particular, for every i ∈ N and t ∈ T ,
+
+ht∗ 
+
+> i
+
+(Cn, θ n) → ht∗ 
+
+> i
+
+(C, θ ). (I.1) By the assumption imposed in §3.2.1, the mapping (h, θ ) 7 → pθ(h) is contin-uous on R+ × [0 , θ ]. Hence, from (I.1) and θn → θ, it follows that, for every 
+
+i ∈ N and t ∈ T ,
+
+pθn
+
+ ht∗ 
+
+> i
+
+(Cn, θ n) → pθ
+
+ ht∗ 
+
+> i
+
+(C, θ ). (I.2) Summing (I.2) over all i ∈ N and t ∈ T , and using the fact that the sums are finite, we obtain 
+
+X
+
+> t∈T
+
+X
+
+> i∈N
+
+pθn
+
+ ht∗ 
+
+> i
+
+(Cn, θ n) → X
+
+> t∈T
+
+X
+
+> i∈N
+
+pθ
+
+ ht∗ 
+
+> i
+
+(C, θ ). (I.3) Moreover, continuity of Cost implies 
+
+Cost (Cn) → Cost (C). (I.4) Combining (I.3) and (I.4), we deduce that 
+
+Φ( Cn, θ n) = X
+
+> t∈T
+
+X
+
+> i∈N
+
+pθn
+
+ ht∗ 
+
+> i
+
+(Cn, θ n) − Cost (Cn)
+
+→ X
+
+> t∈T
+
+X
+
+> i∈N
+
+pθ
+
+ ht∗ 
+
+> i
+
+(C, θ ) − Cost (C)= Φ( C, θ ). (I.5) Hence, Φ is continuous on Y. Moreover, Y (7) is nonempty, closed, and bounded, and therefore compact (Sasane, 2017, Theorem 1.10). Thus, the 50 Weierstrass theorem implies that every continuous real-valued function de-fined on Y attains its maximum on Y (Abbott, 2016, Theorem 4.2.2). There-fore, there exists (C∗, θ ∗) ∈ Y such that Φ( C∗, θ ∗) = max (C,θ )∈Y Φ( C, θ ).
+
+Hence the leader problem (6) admits at least one optimal solution. 
+
+Appendix J. Proof of Theorem 11 
+
+By Proposition 10, let (C∗, θ ∗) ∈ Y be any optimal solution of the leader problem. By Theorem 8, for this leader decision, the follower game admits a unique variational equilibrium, denoted by H∗(C∗, θ ∗). Therefore, 
+
+ C∗, θ ∗, H∗(C∗, θ ∗)
+
+is a Stackelberg equilibrium. 
+
+Appendix K. Proof of Theorem 12 
+
+We first derive the lower bound νi.For player i, the realized profit (9) is positive if and only if 
+
+Π∗ 
+
+> i,ω
+
+> 0 ⇐⇒ R∗ 
+
+> i,ω
+
+> K ∗ 
+
+> i
+
+(K.1) We are interested in the probability of profit P Π∗ 
+
+> i,ω
+
+> 0 = P R∗ 
+
+> i,ω
+
+>K∗
+
+> i
+
+. Since R∗ 
+
+> i
+
+is a nonnegative random variable with finite variance, we can apply the Paley–Zygmund inequality (Kahane, 1985, Page 8)(see also (Ghosh, 2002, Section 3)). For any ϑi ∈ (0 , 1) , it yields 
+
+P R∗ 
+
+> i,ω
+
+> ϑ i Eω[R∗ 
+
+> i
+
+] ≥ (1 − ϑi)2 Eω[R∗ 
+
+> i
+
+]2
+
+(1 − ϑi)2 Eω[R∗ 
+
+> i
+
+]2 + Var ω(R∗ 
+
+> i
+
+) (K.2) Define ϑi := K∗   
+
+> i
+> Eω[R∗
+> i]
+
+. By assumptions, we have K∗ 
+
+> i
+
+< Eω[R∗ 
+
+> i
+
+], thus ϑi ∈
+
+51 (0 , 1) . Substituting this value of ϑi into (K.2), we get 
+
+P R∗ 
+
+> i,ω
+
+> K ∗
+
+> i
+
+ ≥
+
+
+
+1 − K∗  
+
+> i
+> Eω[R∗
+> i]
+
+2 Eω[R∗ 
+
+> i
+
+]2
+
+
+
+1 − K∗  
+
+> i
+> Eω[R∗
+> i]
+
+2 Eω[R∗ 
+
+> i
+
+]2 + Var ω(R∗ 
+
+> i
+
+)
+
+(K.3) Noting that 
+
+
+
+1 − K∗  
+
+> i
+> Eω[R∗
+> i]
+
+2 Eω[R∗ 
+
+> i
+
+]2 =  Eω[R∗ 
+
+> i
+
+] − K∗
+
+> i
+
+2, we can rewrite (K.3) as 
+
+P R∗ 
+
+> i,ω
+
+> K ∗
+
+> i
+
+ ≥
+
+ Eω[R∗ 
+
+> i
+
+] − K∗
+
+> i
+
+2
+
+ Eω[R∗ 
+
+> i
+
+] − K∗
+
+> i
+
+2 + Var ω(R∗ 
+
+> i
+
+)
+
+Dividing the numerator and denominator by 
+
+ Eω[R∗ 
+
+> i
+
+] − K∗
+
+> i
+
+2,
+
+we obtain 
+
+P R∗ 
+
+> i,ω
+
+> K ∗
+
+> i
+
+ ≥ 11 + Var ω(R∗ 
+
+> i
+
+)
+
+ Eω[R∗ 
+
+> i
+
+] − K∗
+
+> i
+
+2
+
+:= νi
+
+Using again (K.1), we conclude that 
+
+P Π∗ 
+
+> i,ω
+
+> 0 ≥ νi (K.4) We now assume that αi < ¯αi. By the definition of ¯αi, we have 5
+
+Γ∗ 
+
+> i
+
+:= X
+
+> t∈T
+
+CVaR αi
+
+ Lti(ht∗; θ∗) < 0.
+
+Define the total realized loss L∗ 
+
+> i,ω
+
+:= −Π∗ 
+
+> i,ω
+
+= K∗ 
+
+> i
+
+− R∗
+
+> i,ω
+
+. The total loss is the sum of the losses over the investment period: L∗ 
+
+> i,ω
+
+= P 
+
+> t∈T
+
+Lti,ω (ht∗, θ ∗),
+
+and the corresponding random loss variable is L∗ 
+
+> i
+
+.
+
+> 5
+
+Note that CvaR α is nondecreasing in α.
+
+52 By subadditivity of CVaR (see (Pflug, 2000, P.15)), 
+
+CVaR αi
+
+ L∗
+
+> i
+
+ = CVaR αi
+
+X 
+
+> t∈T
+
+Lti(ht∗; θ∗)
+
+
+
+≤ X
+
+> t∈T
+
+CVaR αi
+
+ Lti(ht∗; θ∗) < 0
+
+(K.5) Recall that the Value-at-Risk at level αi is defined as (Li et al., 2022, Eq. (28),(29)) 
+
+VaR αi (L∗ 
+
+> i
+
+) = min {x ∈ R : P(L∗ 
+
+> i
+
+≤ x) ≥ αi}
+
+By this definition, the quantity VaR αi (L∗ 
+
+> i
+
+) is a threshold such that the loss does not exceed it with probability at least αi (see (Rockafellar et al., 2000)), i.e., 
+
+P L∗ 
+
+> i,ω
+
+≤ VaR αi (L∗ 
+
+> i
+
+) ≥ αi. (K.6) Moreover, it is well known that 
+
+VaR αi (L∗ 
+
+> i
+
+) ≤ CVaR αi (L∗ 
+
+> i
+
+) (see (Pflug, 2000, Prop. 4)) .
+
+Hence, 
+
+ω ∈ Ω : L∗ 
+
+> i,ω
+
+≤ VaR αi (L∗ 
+
+> i
+
+) ⊆ ω ∈ Ω : L∗ 
+
+> i,ω
+
+≤ CVaR αi (L∗ 
+
+> i
+
+) ,
+
+which implies 
+
+P L∗ 
+
+> i,ω
+
+≤ CVaR αi (L∗ 
+
+> i
+
+) ≥ P L∗ 
+
+> i,ω
+
+≤ VaR αi (L∗ 
+
+> i
+
+) (K.6) 
+
+≥ αi
+
+Since CVaR αi (L∗ 
+
+> i
+
+) < 0, it follows that 
+
+ω ∈ Ω : L∗ 
+
+> i,ω
+
+≤ CVaR αi (L∗ 
+
+> i
+
+) ⊆ ω ∈ Ω : L∗ 
+
+> i,ω
+
+< 0
+
+Therefore, P L∗ 
+
+> i,ω
+
+< 0 ≥ αi.
+
+Finally, since L∗ 
+
+> i,ω
+
+< 0 ⇐⇒ Π∗ 
+
+> i,ω
+
+> 0,, we conclude that 
+
+P Π∗ 
+
+> i,ω
+
+> 0 ≥ αi (K.7) 53 Combining (K.7) with (K.4), we obtain 
+
+P Π∗ 
+
+> i,ω
+
+> 0 ≥ max {νi, α i}, if αi < ¯αi (K.8) This completes the proof. 
+
+Appendix L. Proof of Lemma 13 
+
+Under the firm-cost function (14), we can write 
+
+ψti (ht) = qti (hti) + gti (ht),
+
+where 
+
+qti (hti) = δ
+
+2 (hti)2, gti (ht) = γh ti
+
+X 
+
+> j∈N\{ i}
+
+htj .
+
+Therefore, 
+
+(qti )′′ (hti) = δ, ∀i ∈ N , t ∈ T .
+
+By the definition of Q in (F.8), this gives Q = δ. 
+
+We now identify G (F.8). For the interaction term gti , we have 
+
+∂2gti (ht)
+
+∂h ti∂h tj
+
+= γ, j̸ = i, 
+
+and ∂2gti (ht)
+
+∂(hti)2 = 0 .
+
+Hence 
+
+G = γ = sup    
+
+> i,j ∈N, t ∈T,
+> ht∈R|N|
+> +
+
+∂2gti (ht)
+
+∂h ti ∂h tj
+
+Substituting Q = δ and G = γ into the sufficient uniqueness condition (8) gives δ > γ max i∈N ξi, which is exactly (15). Therefore, whenever (15) holds, the sufficient condition in Theorem 8 is satisfied. The follower variational equilibrium is then unique by Theorem 8. 54 Appendix M. Shadow price explanation 
+
+λt∗ is the shadow price of the shared capacity constraint in time slot t
+
+indicating how valuable an additional unit of capacity would be at the op-timum. It is equal to zero when total equilibrium resource commitment is strictly below available capacity, and becomes positive when total equilib-rium resource commitment exactly reaches the capacity limit, that is, (see (N.8), (N.9), (N.10)) 
+
+λt∗ ≥ 0, X
+
+> j∈N
+
+ht∗ 
+
+> j
+
+≤ C, λt∗
+
+C − X
+
+> j∈N
+
+ht∗
+
+> j
+
+ = 0 (M.1) Note that λt∗
+
+
+
+C − P 
+
+> j∈N
+
+ht∗
+
+> j
+
+
+
+= 0 . If P 
+
+> j∈N
+
+ht∗ 
+
+> j
+
+< C , then 
+
+C − X
+
+> j∈N
+
+ht∗ 
+
+> j
+
+> 0
+
+and therefore necessarily λt∗ = 0. Conversely, if λt∗ > 0, then 
+
+C − X
+
+> j∈N
+
+ht∗ 
+
+> j
+
+= 0
+
+that is, P 
+
+> j∈N
+
+ht∗ 
+
+> j
+
+= C. 
+
+This means the shadow price λt∗ is equal to zero when total resources are strictly below available capacity and becomes positive when total resources exactly reach the capacity limit. 
+
+Appendix N. Proof of Proposition 14 
+
+We first characterize when a follower commits to a positive resource. 
+
+Proposition 26. Given (C, θ ), follower i has a positive resource commit-ment iff 
+
+ht∗ 
+
+> i
+
+> 0 ⇐⇒ Ati := E[ati] − βi CVaR αi (−ati) > (1 + βi)( θ + γ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
+) + λt∗
+
+55 where Ati is the mean-CVaR benefit factor of follower i at time slot t and λt∗
+
+is the shadow price of the capacity constraint (See Appendix M). Proof. Substitute (12), (13), and (14) into (1) for a fixed time slot t ∈ T ,the realized profit of follower i becomes: 
+
+Πti,ω (ht; θ) = ati,ω ln(1 + hti) − θh ti − δ
+
+2 (hti)2 − γ h ti
+
+X 
+
+> j∈N\{ i}
+
+htj , (N.1) and the corresponding loss (2) becomes 
+
+Lti,ω (ht; θ) = −ati,ω ln(1 + hti) + θh ti + δ
+
+2 (hti)2 + γ h ti
+
+X 
+
+> j∈N\{ i}
+
+htj (N.2) For fixed ht, all terms in (N.2) except −ati,ω ln(1 + hti) are deterministic. Hence, by translation invariance of CVaR (Pflug, 2000, Prop. 2(i)), and since hti ≥ 0, we have ln(1 + hti) ≥ 0; therefore, by positive homogeneity of CVaR (Pflug, 2000, Prop. 2(ii)), we obtain 
+
+CVaR αi
+
+ Lti(ht; θ) = CVaR αi
+
+−ati ln(1 + hti) + θh ti + δ
+
+2 (hti)2 + γh ti
+
+X 
+
+> j∈N\{ i}
+
+htj
+
+
+
+= θh ti + δ
+
+2 (hti)2 + γh ti
+
+X 
+
+> j∈N\{ i}
+
+htj + ln(1 + hti) CVaR αi (−ati)
+
+(N.3) Moreover, (N.3) is continuously differentiable with respect to hti on R+. In-deed, for fixed ht
+
+> −i
+
+, each term 
+
+θh ti, δ
+
+2 (hti)2, γh ti
+
+X 
+
+> j∈N\{ i}
+
+htj , ln(1 + hti)CVaR αi (−ati)
+
+is continuously differentiable for hti ≥ 0.56 The utility (3) of follower i can be written as 
+
+U (hi, h−i; C, θ ) := Eω[Π ti(ht; θ)] − βi CVaR αi
+
+ Lti(ht; θ) 
+
+> (N.1) ,(N.3)
+
+=  E[ati] − βi CVaR αi (−ati) ln(1 + hti)
+
+− biθh ti − bi
+
+δ
+
+2 (hti)2 − biγ h ti
+
+X 
+
+> j∈N\{ i}
+
+htj , (N.4) where bi := 1 + βi.
+
+Since the follower objective function at generalized Nash equilibrium problem (4) has a concave objective function (3) and convex constraints (5), the Karush–Kuhn–Tucker conditions (Boyd and Vandenberghe, 2004, §5.5.2) provide necessary and sufficient optimality conditions. For a fixed time slot t, the Lagrangian of follower i is 
+
+Lti =  Ati
+
+ ln(1 + hti) − biθh ti − bi
+
+δ
+
+2 (hti)2 − biγ h ti
+
+X 
+
+> j∈N\{ i}
+
+htj
+
++ λt
+
+C − X
+
+> j∈N
+
+htj
+
+ + μtihti (N.5) where λt ≥ 0 is the Lagrange multiplier associated with the shared capacity constraint P 
+
+> j∈N
+
+htj ≤ C, and μti ≥ 0 is the Lagrange multiplier associated with the nonnegativity constraint hti ≥ 0.Differentiating (N.5) with respect to hti gives 
+
+∂Lti
+
+∂h ti
+
+= Ati
+
+1 + hti
+
+− biθ − biδh ti − biγ X 
+
+> j∈N\{ i}
+
+htj − λt + μti (N.6) where Ati := E[ati] − βi CVaR αi (−ati).Hence the KKT conditions for the VE at time slot t are: 
+
+Stationarity. For every i ∈ N ,(N.6) = 0 (N.7) 57 Primal feasibility. 
+
+hti ≥ 0 ∀i ∈ N ,
+
+X
+
+> j∈N
+
+htj ≤ C (N.8) 
+
+Dual feasibility. 
+
+λt ≥ 0,μti ≥ 0, ∀i ∈ N (N.9) 
+
+Complementary slackness. 
+
+λt
+
+C − X
+
+> j∈N
+
+htj
+
+ = 0 , μtihti = 0 , ∀i ∈ N (N.10) Let (ht∗, μ t∗, λ t∗) be an equilibrium. First suppose that ht∗ 
+
+> i
+
+> 0. By (N.10), μt∗ 
+
+> i
+
+= 0 . Substituting μt∗ 
+
+> i
+
+= 0 
+
+into (N.7) gives 
+
+Ati
+
+1 + ht∗
+
+> i
+
+= biθ + biδh t∗ 
+
+> i
+
++ biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗ (N.11) Since ht∗ 
+
+> i
+
+> 0 and δ > 0 (by definition, see (14)), the right-hand side of (N.11) is strictly larger than biθ + biγ P  
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗. Multiplying (N.11) by 1 + ht∗ 
+
+> i
+
+> 1 yields 
+
+Ati = (1 + ht∗ 
+
+> i
+
+)
+
+biθ + biδh t∗ 
+
+> i
+
++ biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗
+
+
+
+> b iθ + biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗ (N.12) 58 Therefore, 
+
+ht∗ 
+
+> i
+
+> 0 =⇒ Ati > b iθ + biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗
+
+Conversely, assume that 
+
+Ati > b iθ + biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗
+
+If, by contradiction, ht∗ 
+
+> i
+
+= 0 , then (N.7) becomes 
+
+Ati − biθ − biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
+− λt∗ + μt∗ 
+
+> i
+
+= 0 ,
+
+that is, μt∗ 
+
+> i
+
+= biθ + biγ P  
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗ − Ati < 0, which contradicts dual feasibility μt∗ 
+
+> i
+
+≥ 0 (N.9). Hence ht∗
+
+> i
+
+̸ = 0 , and since ht∗ 
+
+> i
+
+≥ 0, it follows that 
+
+ht∗ 
+
+> i
+
+> 0. Thus, 
+
+ht∗ 
+
+> i
+
+> 0 ⇐⇒ Ati > b iθ + biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗
+
+Taking the negation gives 
+
+ht∗ 
+
+> i
+
+= 0 ⇐⇒ Ati ≤ biθ + biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗
+
+This proves the result. Proposition 26 shows that follower resource commitment is governed by a balance between benefit and effective marginal cost. The latter includes the access price θ, congestion generated by other firms γ P  
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
+, and the shadow price λt∗ of shared capacity. As resource commitments increase, congestion and the shadow price increase, making additional resource com-mitments less profitable and more expensive and preventing inefficient over-commitment. 59 Fix i ∈ N . By the characterization established in Proposition 26, we have 
+
+ht∗ 
+
+> i
+
+> 0 ⇐⇒ Ati > (1 + βi)( θ + γ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
+) + λt∗ (N.13) First define 
+
+κti(x) := (1 + βi)( θ + γ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ x) + λt∗, x ∈ R (N.14) We distinguish between two cases. 
+
+Case 1: ht∗ 
+
+> i
+
+= 0 . In this case, (16) holds if and only if the expression inside the maximum is nonpositive. Recall that βi ≥ 0, ∀i ∈ N and let 
+
+bi = 1 + βi > 0 (N.15) and 
+
+Bti := biθ + biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗ (N.16) Note that Bti ≥ 0. Indeed, bi > 0 by (N.15), θ ≥ 0 by (7), γ ≥ 0 by (14), 
+
+ht∗ 
+
+> j
+
+≥ 0 for all j ∈ N \ { i} by primal feasibility (N.8), and λt∗ ≥ 0 by dual feasibility (N.9). Hence every term in (N.16) is nonnegative. (N.14) becomes 
+
+κti(δ) = Bti + biδ, κti(−δ) = Bti − biδ (N.17) The numerator in (16) is nonpositive if and only if 
+
+q
+
+(κti(−δ)) 2 + 4 biδA ti ≤ κti(δ) (N.18) Since Bti ≥ 0 (N.16) bi > 0 (see (N.15) and δ > 0 (by definition, see (14)), it follows that κti(δ) = Bti + biδ > 0, squaring both sides of (N.18) yields 
+
+(κti(−δ)) 2 + 4 biδA ti ≤ (κti(δ)) 2 (N.19) 60 Using 
+
+(κti(δ)) 2 − (κti(−δ)) 2 = ( Bti + biδ)2 − (Bti − biδ)2 = 4 biδB ti , (N.20) we obtain from (N.19) and (N.20) that 
+
+4biδA ti ≤ 4biδB ti (N.21) Again, since bi > 0 and δ > 0, dividing both sides of (N.21) by 4biδ gives 
+
+Ati ≤ Bti , (N.22) that is, by (N.16), 
+
+Ati ≤ biθ + biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗. (N.23) Therefore, ht∗ 
+
+> i
+
+= 0 holds if (N.23) holds. Therefore, in this case (16) holds. 
+
+Case 2: ht∗ 
+
+> i
+
+> 0. By (N.10) μt∗ 
+
+> i
+
+= 0 . Then the stationarity condition (N.7) becomes 
+
+Ati
+
+1 + ht∗
+
+> i
+
+= biθ + biδh t∗ 
+
+> i
+
++ biγ X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
++ λt∗ (N.24) Using (N.16) we rewrite (N.24) as 
+
+Ati
+
+1 + ht∗
+
+> i
+
+= Bti + biδh t∗
+
+> i
+
+Multiplying by 1 + ht∗ 
+
+> i
+
+gives 
+
+Ati = (1 + ht∗ 
+
+> i
+
+)( Bti + biδh t∗ 
+
+> i
+
+),
+
+⇐⇒ 
+
+Ati = Bti + ( Bti + biδ)ht∗ 
+
+> i
+
++ biδ(ht∗ 
+
+> i
+
+)2 (N.25) 61 Rearranging (N.25), we obtain the quadratic equation 
+
+biδ(ht∗ 
+
+> i
+
+)2 + ( Bti + biδ)ht∗ 
+
+> i
+
++ ( Bti − Ati) = 0 (N.26) Since bi > 0 and δ > 0, biδ̸ = 0 . Thus, the quadratic formula (N.26) yields 
+
+ht∗ 
+
+> i
+
+= −(Bti + biδ) ± p(Bti + biδ)2 − 4biδ(Bti − Ati)2biδ (N.27) The discriminant simplifies as 
+
+(Bti + biδ)2 − 4biδ(Bti − Ati)= ( Bti − biδ)2 + 4 biδA ti
+
+> (N.17)
+
+= (κti(−δ)) 2 + 4 biδA ti (N.28) Moreover by (N.17) 
+
+Bti + biδ = κti(δ) (N.29) Substituting (N.28) and (N.29) into (N.27), we obtain 
+
+ht∗ 
+
+> i
+
+= −κti(δ) ± p(κti(−δ)) 2 + 4 biδA ti
+
+2biδ (N.30) Since biδ > 0, the denominator in (N.30) is positive. Moreover, the root with the minus sign has a negative numerator and is therefore infeasible for an active solution ht∗ 
+
+> i
+
+> 0. Thus, the admissible active solution is given by the larger root. Hence 
+
+ht∗ 
+
+> i
+
+= −κti(δ) + p(κti(−δ)) 2 + 4 biδA ti
+
+2biδ (N.31) To see that this larger root (N.31) is positive, note that the stationarity condition (N.13) gives 
+
+Ati > b iθ + biγ X 
+
+> j̸=i
+
+ht∗ 
+
+> j
+
++ λt∗.
+
+62 Hence, 
+
+(κti(−δ)) 2 + 4 biδA ti =
+
+
+
+biθ + biγ X 
+
+> j̸=i
+
+ht∗ 
+
+> j
+
++ λt∗ − biδ
+
+2
+
++ 4 biδA ti
+
+>
+
+
+
+biθ + biγ X 
+
+> j̸=i
+
+ht∗ 
+
+> j
+
++ λt∗ − biδ
+
+2
+
++ 4 biδ
+
+
+
+biθ + biγ X 
+
+> j̸=i
+
+ht∗ 
+
+> j
+
++ λt∗
+
+=
+
+
+
+biθ + biγ X 
+
+> j̸=i
+
+ht∗ 
+
+> j
+
++ λt∗ + biδ
+
+2
+
+= ( κti(δ)) 2
+
+Thus, the numerator of the larger root (N.31) is strictly positive. Since its denominator is positive, the larger root is strictly positive. Combining (N.31) with the case ht∗ 
+
+> i
+
+= 0 yields (16) and completes the proof. 
+
+Appendix O. Comparative Statics of Proposition 14 Proposition 27. Fix t ∈ T and i ∈ N with ht∗ 
+
+> i
+
+> 0, and let st∗−i := 
+
+P  
+
+> j̸=i
+
+ht∗ 
+
+> j
+
+. Conditional on st∗−i, the resource commitment ht∗ 
+
+> i
+
+is increasing in 
+
+Ati, decreasing in θ, δ, and λt∗, and nonincreasing in γ, with strict decrease in γ whenever st∗−i > 0. Moreover, holding all primitive parameters fixed, ht∗
+
+> i
+
+is nonincreasing in st∗−i, and strictly decreasing whenever γ > 0.Proof. We derive the comparative statics from the stationarity condition (O.2). Fix t ∈ T and i ∈ N . Let 
+
+st∗−i := X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
+(O.1) denote the total equilibrium resource commitment of the other firms in time slot t.Since ht∗ 
+
+> i
+
+> 0, the complementary-slackness condition (N.10) implies that 
+
+μt∗ 
+
+> i
+
+= 0 . Therefore, the stationarity condition (N.7) reduces to 
+
+Ati
+
+1 + ht∗
+
+> i
+
+− biθ − biδh t∗ 
+
+> i
+
+− biγs t∗−i − λt∗ = 0 (O.2) 63 To study how ht∗ 
+
+> i
+
+varies with the model parameters, define 
+
+Fi(h; Ati, θ, δ, γ, s t∗−i, λ t∗) := Ati
+
+1 + h − biθ − biδh − biγs t∗−i − λt∗ (O.3) Then (O.2) can be written as 
+
+Fi(ht∗ 
+
+> i
+
+; Ati, θ, δ, γ, s t∗−i, λ t∗) = 0 (O.4) For simplicity we use Fi := Fi(h; Ati, θ, δ, γ, s t∗−i, λ t∗). Differentiating (O.3) with respect to h, we obtain 
+
+∂F i
+
+∂h = − Ati
+
+(1 + h)2 − biδ (O.5) Evaluating at h = ht∗ 
+
+> i
+
+gives 
+
+∂F i
+
+∂h ti
+
+= − Ati
+
+(1 + ht∗ 
+
+> i
+
+)2 − biδ < 0 (O.6) Indeed, since ht∗ 
+
+> i
+
+> 0, the stationarity condition (O.2) implies Ati > 0, and therefore both terms on the right-hand side of (O.6) are nonpositive, with the second one being strictly negative because bi > 0 and δ > 0. Hence 
+
+> ∂F i
+> ∂h
+
+̸ = 0 .For convenience, define 
+
+M ti := Ati
+
+(1 + ht∗ 
+
+> i
+
+)2 + biδ > 0 (O.7) Then ∂F i 
+
+> ∂h
+
+(ht∗ 
+
+> i
+
+) = −M ti . Therefore 
+
+∂h t∗
+
+> i
+
+∂z = − ∂F i/∂z ∂F i/∂h for each parameter z
+
+We now compute the derivatives one by one. 64 Dependence on Ati. From (O.3), 
+
+∂F i
+
+∂A ti
+
+= 11 + ht∗
+
+> i
+
+(O.8) Therefore, by (O.6), (O.7) and (O.8) 
+
+∂h t∗
+
+> i
+
+∂A ti
+
+= − ∂F i/∂A ti
+
+∂F i/∂h = 1(1 + ht∗ 
+
+> i
+
+)M ti
+
+> 0. (O.9) Thus, follower i’s equilibrium resource commitment is increasing in its own mean-CVaR benefit Ati.
+
+Dependence on θ. From (O.3) 
+
+∂F i
+
+∂θ = −bi (O.10) By (O.10) and (O.6), we obtain 
+
+∂h t∗
+
+> i
+
+∂θ = − ∂F i/∂θ ∂F i/∂h = − bi
+
+M ti
+
+< 0 (O.11) Hence ht∗ 
+
+> i
+
+is decreasing in the access price θ.
+
+Dependence on δ. From (O.3), 
+
+∂F i
+
+∂δ = −biht∗ 
+
+> i
+
+(O.12) Therefore by (O.12) and (O.6), 
+
+∂h t∗
+
+> i
+
+∂δ = − ∂F i/∂δ ∂F i/∂h = − biht∗
+
+> i
+
+M ti
+
+< 0 (O.13) Thus the equilibrium resource commitment is decreasing in the operational cost parameter δ.
+
+Dependence on γ. From (O.3) 
+
+∂F i
+
+∂γ = −bist∗−i (O.14) 65 By (O.14) and (O.6), we obtain 
+
+∂h t∗
+
+> i
+
+∂γ = − ∂F i/∂γ ∂F i/∂h = − bist∗−i
+
+M ti
+
+≤ 0 (O.15) Hence ht∗ 
+
+> i
+
+is nonincreasing in the congestion cost parameter γ, and it is strictly decreasing whenever st∗−i > 0.
+
+Dependence on λt∗. From (O.3) 
+
+∂F i
+
+∂λ t∗ = −1, (O.16) By (O.16) and (O.6), we obtain 
+
+∂h t∗
+
+> i
+
+∂λ t∗ = − ∂F i/∂λ t∗
+
+∂F i/∂h = − 1
+
+M ti
+
+< 0 (O.17) Thus the equilibrium resource commitment is decreasing in the shadow price 
+
+λt∗.
+
+Dependence on st∗−i. Finally, from (O.3) 
+
+∂F i
+
+∂s t∗−i
+
+= −biγ, (O.18) we get from (O.18) and (O.6) 
+
+∂h t∗
+
+> i
+
+∂s t∗−i
+
+= − ∂F i/∂s t∗−i
+
+∂F i/∂h = − biγM ti
+
+≤ 0 (O.19) Therefore, holding the primitive parameters fixed, follower i’s equilibrium resource commitment is nonincreasing in the total resource commitment of the other firms, and it is strictly decreasing whenever γ > 0.Collecting (O.9)–(O.19), we complete the proof. 
+
+Appendix P. Proof of Proposition 15 
+
+We first establish a Lemma needed in the proof. 66 Lemma 28. If (15) holds, then δ > γ .Proof. By (15), 
+
+δ > γ max  
+
+> i∈N
+
+ξi.
+
+It remains to show that max i∈N ξi ≥ 1. From (8), for every i ∈ N ,
+
+ξi = 2|N | + |N |βi + P 
+
+> j∈N
+
+βj
+
+2(1 + βi) .
+
+Hence, 
+
+ξi − 1 = 2( |N | − 1) + ( |N | − 2) βi + P 
+
+> j∈N
+
+βj
+
+2(1 + βi)= 2( |N | − 1) + ( |N | − 1) βi + P  
+
+> j∈N\{ i}
+
+βj
+
+2(1 + βi) (P.1) Since |N | ≥ 1 and βj ≥ 0 for all j ∈ N , the numerator and the denominator of (P.1) are nonnegative. Therefore, ξi ≥ 1, ∀i ∈ N , and consequently 
+
+max i∈N ξi ≥ 1. Using γ ≥ 0, we obtain γ max i∈N ξi ≥ γ. Combining this inequality with (15) gives δ > γ. 
+
+We now decompose the proof of Proposition 15 into three parts: 
+
+Appendix P.1. Follower computation 
+
+Fix t ∈ T and a leader decision (C, θ ) ∈ Y. We first introduce the notation used in the proof. Let 
+
+st := X
+
+> j∈N
+
+ht∗ 
+
+> j
+
+(P.2) denote the total resource commitment in time slot t. Then, for each i ∈ N ,
+
+X 
+
+> j∈N\{ i}
+
+ht∗ 
+
+> j
+
+= st − ht∗ 
+
+> i
+
+. (P.3) Substituting (P.3) into (16) with 
+
+Bti (s, λ ) := biθ + biγs + λ. (P.4) 67 We obtain, for any fixed pair (s, λ ),
+
+φti(s, λ ) = max 
+
+(
+
+0, − Bti (s, λ ) + bi(δ − γ) + ∆ ti(s, λ )2bi(δ − γ)
+
+)
+
+, (P.5) 
+
+∆ti(s, λ ) := 
+
+q Bti (s, λ ) − bi(δ − γ)2 + 4 bi(δ − γ)Ati (P.6) Thus, once st and λt∗ are known, the equilibrium resource commitments are recovered from 
+
+ht∗ 
+
+> i
+
+= φti(st, λ t∗), i ∈ N . (P.7) Define the scalar residuals 
+
+Rt(s; λ) := s − X
+
+> i∈N
+
+φti(s, λ ), (P.8) 
+
+QCt (λ) := C − X
+
+> i∈N
+
+φti(C, λ ). (P.9) The computation of the follower VE is summarized in Algorithm 1. 
+
+Algorithm 1 Computation of the VE at each time slot t.
+
+Require: Leader decision (C, θ ) ∈ Y, time slot t ∈ T
+
+Ensure: st, λt∗, and ht∗(C, θ ) 
+
+> 1:
+
+Compute bst as the solution of Rt(s; 0) = 0 (P.8).  
+
+> 2:
+
+if bst > C then  
+
+> 3:
+
+Compute bλt as the solution of QCt (λ) = 0 (P.9).  
+
+> 4:
+
+end if  
+
+> 5:
+
+Set 
+
+st =
+
+(bst, if bst ≤ C, C, if bst > C, λt∗ =
+
+(
+
+0, if bst ≤ C, 
+
+bλt, if bst > C. (P.10)  
+
+> 6:
+
+Recover ht∗ 
+
+> i
+
+= φti(st, λ t∗), i ∈ N (P.5).  
+
+> 7:
+
+return st, λt∗, and ht∗(C, θ ).We next justify each step of Algorithm 1. The first Lemma establishes the monotonicity of φti (P.5). 
+
+Lemma 29. Fix t ∈ T and i ∈ N . Assume that δ > γ . Then the function 
+
+68 φti(s, λ ) defined in (P.5) is nonincreasing in s and nonincreasing in λ.Proof of Lemma 29. Let 
+
+Di := bi(δ − γ) > 0. (P.11) By (P.4), 
+
+Bti (s, λ ) = biθ + biγs + λ. (P.12) Hence ∂B ti (s, λ )
+
+∂s = biγ ≥ 0, ∂B ti (s, λ )
+
+∂λ = 1 > 0. (P.13) For B ≥ 0, define 
+
+χti(B) := −(B + Di) + p(B − Di)2 + 4 DiAti
+
+2Di
+
+. (P.14) Then (P.5) can be written as 
+
+φti(s, λ ) = χti
+
+ Bti (s, λ ) + , [x]+ := max {x, 0}. (P.15) We first identify when the positive part in (P.15) is active. Since 2Di > 0
+
+and B + Di > 0, we have 
+
+χti(B) > 0 ⇐⇒ 
+
+q
+
+(B − Di)2 + 4 DiAti > B + Di
+
+⇐⇒ (B − Di)2 + 4 DiAti > (B + Di)2
+
+⇐⇒ Ati > B. (P.16) Therefore, the positive part is active exactly when B < A ti. If B ≥ Ati, then 
+
+[χti(B)] + = 0 .It remains to show that [χti(B)] + is nonincreasing in B. On the region 
+
+B < A ti, since B ≥ 0, we have Ati > 0. Therefore, 4DiAti > 0. Differentiating (P.14) with respect to B gives 
+
+dχ ti(B)
+
+dB =
+
+−1 + B − Di
+
+p(B − Di)2 + 4 DiAti
+
+2Di
+
+. (P.17) 69 Since 4DiAti > 0, we have (B − Di)2 + 4 DiAti > (B − Di)2. Taking square roots gives p(B − Di)2 + 4 DiAti > |B − Di|. Consequently, 
+
+B − Di
+
+p(B − Di)2 + 4 DiAti
+
+< 1.
+
+Indeed, if B − Di ≥ 0, then the denominator is strictly larger than the numerator. If B − Di < 0, then the fraction is negative and is therefore strictly smaller than 1. Hence, 
+
+−1 + B − Di
+
+p(B − Di)2 + 4 DiAti
+
+< 0.
+
+Since 2Di > 0, we obtain, by (P.17), dχ ti (B) 
+
+> dB
+
+< 0 for B < A ti. Thus, [χti(B)] +
+
+is strictly decreasing on the region B < A ti.At the threshold B = Ati, the left branch equals zero because 
+
+(Ati − Di)2 + 4 DiAti = ( Ati + Di)2.
+
+Hence 
+
+χti(Ati) = −(Ati + Di) + p(Ati + Di)2
+
+2Di
+
+= 0 .
+
+For B ≥ Ati, we have [χti(B)] + = 0 . Therefore, [χti(B)] + is strictly decreasing before the threshold, reaches zero at the threshold, and remains equal to zero after the threshold. Hence [χti(B)] + is nonincreasing in B.Finally, Bti (s, λ ) is nondecreasing in s and increasing in λ by (P.13). Since 
+
+φti(s, λ ) = χti
+
+ Bti (s, λ ) + , and [χti(B)] + is nonincreasing in B, it follows that φti(s, λ ) is nonincreasing in s and nonincreasing in λ. This proves the lemma. The next Lemma establishes the monotonicity of the residuals. 
+
+Lemma 30. For fixed λ, the residual Rt(s; λ) (P.8) is strictly increasing in s. Moreover, QCt (λ) (P.9) is nondecreasing in λ.Proof. By Lemma 29, for fixed λ, the map s 7 −→ P 
+
+> i∈N
+
+φti(s, λ ) is nonin-creasing. Therefore, Rt(s; λ) = s − P 
+
+> i∈N
+
+φti(s, λ ) is strictly increasing in s.70 Similarly, by Lemma 29, the map λ 7 −→ P 
+
+> i∈N
+
+φti(C, λ ) is nonincreasing. Hence QCt (λ) = C − P 
+
+> i∈N
+
+φti(C, λ ) is nondecreasing in λ.
+
+Lemma 31. The scalar equation Rt(s; 0) = 0 can be solved by bisection on any interval [0 , s t] containing bst. If bst > C , then the equation QCt (λ) = 0 
+
+can be solved by bisection on any interval [0 , λ t] containing λt∗.Proof. By Lemma 30, Rt(·; 0) is strictly increasing. Moreover, Rt(·; 0) is continuous because each φti(·, 0) is continuous. Let bst be a solution of Rt(s; 0) = 0 . Assume that bst ∈ [0 , s t]. Then 
+
+0 ≤ bst ≤ st. Since Rt(·; 0) is strictly increasing, we obtain 
+
+Rt(0; 0) ≤ Rt(bst; 0) ≤ Rt(st; 0) .
+
+Using Rt(bst; 0) = 0 , this gives Rt(0; 0) ≤ 0 ≤ Rt(st; 0) . If one endpoint value is zero, then the solution has already been found. Otherwise, Rt(0; 0) <
+
+0 < R t(st; 0) , and hence Rt(0; 0) Rt(st; 0) < 0. Therefore, by the classical bisection theorem for continuous functions with opposite signs at the end-points (Burden et al., 2015, Theorem 2.1) and (Sikorski, 1982), the equation 
+
+Rt(s; 0) = 0 can be solved by bisection on [0 , s t]. Since Rt(·; 0) is strictly increasing, this solution is unique. Now suppose that bst > C . Then the unconstrained candidate violates the shared-capacity constraint. Hence the capacity constraint binds, so st =
+
+C. The multiplier is determined by C = P 
+
+> i∈N
+
+φti(C, λ t∗), or equivalently, 
+
+QCt (λt∗) = 0 . By Lemma 30, QCt (λ) is nondecreasing in λ. Moreover, QCt
+
+is continuous because each φti(C, ·) is continuous. Let [0 , λ t] be an interval satisfying 
+
+QCt (0) ≤ 0 ≤ QCt (λt).
+
+If one endpoint value is zero, then the solution has already been found. Otherwise, QCt (0) < 0 < Q Ct (λt), and hence QCt (0) QCt (λt) < 0. Therefore, by the classical bisection theorem (Burden et al., 2015, Theorem 2.1), the equation QCt (λ) = 0 can be solved by bisection on [0 , λ t].71 Lemma 32. Algorithm 1 recovers the unique follower VE ht∗(C, θ ) and its associated multiplier λt∗(C, θ ).Proof. First compute bst from Rt(s; 0) = 0 . Then bst = P 
+
+> i∈N
+
+φti(bst, 0) . If bst ≤
+
+C, the unconstrained candidate is feasible for the shared-capacity constraint. Therefore the capacity constraint is not binding, and the multiplier is λt∗ = 0 .
+
+Thus st = bst, ht∗ 
+
+> i
+
+= φti(st, 0) , i ∈ N .
+
+If bst > C , the unconstrained candidate violates the capacity constraint. Therefore the shared-capacity constraint binds, and st = C. The multi-plier is then chosen to satisfy Qt(λt∗) = 0 , that is, C = P 
+
+> i∈N
+
+φti(C, λ t∗).
+
+Then ht∗ 
+
+> i
+
+= φti(C, λ t∗), i ∈ N . In both cases, ht∗ 
+
+> i
+
+is recovered from ht∗ 
+
+> i
+
+=
+
+φti(st, λ t∗), i ∈ N , and the scalar pair (st, λ t∗) satisfies the corresponding feasibility and complementarity conditions (N.9) (N.10). Since the follower VE is unique, the vector returned by the algorithm is the unique VE. The next Lemma gives the computational cost. 
+
+Lemma 33. Assume that st and λt are fixed problem-dependent bounds in-dependent of the accuracy tolerance ε. Then Algorithm 1 has worst-case complexity O |N | log 1
+
+> ε
+
+ .
+
+Proof. Each evaluation of Rt(·; λ) or QCt (·) requires computing φti(·, ·) for every follower i ∈ N . Since each φti is evaluated in constant time, one residual evaluation costs O(|N |).
+
+By the bisection error bound recalled in (Burden et al., 2015, Theorem 2.1), after n bisection evaluations on an interval [a, b ], the error is of order  
+
+> b−a
+> 2n+1
+
+. Hence, to achieve accuracy ε, it is sufficient to take n = O log b−aε
+
+ .
+
+For the equation Rt(s; 0) = 0 , the bisection interval is [0 , s t], whose length is st. Since st is fixed with respect to ε, log st 
+
+> ε
+
+= log( st) + log 1 
+
+> ε
+
+=
+
+O log 1
+
+> ε
+
+ . Thus solving Rt(s; 0) = 0 requires O log 1
+
+> ε
+
+ bisection iterations, and therefore costs O |N | log 1
+
+> ε
+
+ .
+
+In the binding case, the equation QCt (λ) = 0 is solved on [0 , λ t]. Since λt
+
+is also fixed with respect to ε, log λt 
+
+> ε
+
+= O log 1
+
+> ε
+
+ . Therefore the multiplier step also costs O |N | log 1
+
+> ε
+
+ .
+
+Thus, the worst-case complexity of the algorithm is O |N | log 1
+
+> ε
+
+ .
+
+72 Combining Lemma 31, Lemma 32, and Lemma 33, we obtain that the unique follower VE can be computed by bisection on at most two scalar monotone equations: first Rt(s; 0) = 0 , and, only if the shared-capacity constraint is binding, QCt (λ) = 0 . Then the overall computational cost is 
+
+O |N | log 1
+
+> ε
+
+ .
+
+Appendix P.2. Leader capacity computation 
+
+Fix a price θ ∈ [0 , θ ]. The leader problem (6) is 
+
+max 
+
+> 0≤C≤C
+
+Φ( C, θ ), Φ( C, θ ) := X
+
+> t∈T
+
+X
+
+> i∈N
+
+θ h t∗ 
+
+> i
+
+(C, θ ) − Cost (C), (P.18) where ht∗ 
+
+> i
+
+(C, θ ) denotes the unique VE of follower i at time t.For each t ∈ T , let bh t(θ) =  bht
+
+> 1
+
+(θ), . . . , bht 
+
+> |N|
+
+(θ) denote the unconstrained follower resource commitment obtained from the follower-side computation with multiplier equal to zero ( λt = 0 ) (see (16)). Define the corresponding unconstrained total resource by 
+
+bst(θ) := X
+
+> i∈N
+
+bh ti (θ). (P.19) The leader capacity is computed by Algorithm 2. 
+
+Algorithm 2 Computation of the optimal leader capacity for fixed θ
+
+Require: Fixed price θ ∈ [0 , θ ], capacity bound C
+
+Ensure: Optimal capacity C∗(θ) 
+
+> 1:
+
+For every t ∈ T , compute bst(θ) (P.19).  
+
+> 2:
+
+Form the ordered list 0 = c0 < c 1 < · · · < c M = C. 
+
+> 3:
+
+For each interval Jℓ = [ cℓ−1, c ℓ], compute kℓ = t ∈ T : bst(θ) ≥ cℓ . 
+
+> 4:
+
+For every ℓ = 1 , . . . , M , compute C∗ 
+
+> ℓ
+
+∈ arg max C∈Jℓ {θk ℓC − Cost (C)} . 
+
+> 5:
+
+Define the finite candidate set 
+
+C(θ) = {C∗ 
+
+> ℓ
+
+: ℓ = 1 , . . . , M } ∪  {bst(θ) : t ∈ T } ∩ [0 , C ] ∪ { 0, C }. 
+
+> 6:
+
+Compute C∗(θ) ∈ arg max C∈C (θ)
+
+θ P 
+
+> t∈T
+
+min {bst(θ), C } − Cost (C) . 
+
+> 7:
+
+return C∗(θ).We now justify the steps of Algorithm 2. The first Lemma reduces the 73 total follower resource commitment in each slot to a scalar minimum. 
+
+Lemma 34. For every t ∈ T and every C ∈ [0 , C ], the total VE resource commitment satisfies 
+
+X
+
+> i∈N
+
+ht∗ 
+
+> i
+
+(C, θ ) = min {bst(θ), C }. (P.20) 
+
+Proof. Fix t ∈ T and C ∈ [0 , C ]. If bst(θ) ≤ C, where bst(θ) is defined in (P.19). Then the unconstrained follower candidate bh t(θ) is feasible for the shared-capacity constraint. Hence the capacity multiplier λt∗ is zero, and 
+
+X
+
+> i∈N
+
+ht∗ 
+
+> i
+
+(C, θ ) = bst(θ). (P.21) If instead bst(θ) > C, then the unconstrained follower candidate bh t(θ) violates the shared-capacity constraint. Hence the capacity constraint binds, and 
+
+X
+
+> i∈N
+
+ht∗ 
+
+> i
+
+(C, θ ) = C. (P.22) Combining (P.21) and (P.22) gives (P.20). For fixed θ ∈ [0 , θ ], applying (P.20) to each t ∈ T gives 
+
+Φ( C, θ ) = θ X
+
+> t∈T
+
+min {bst(θ), C } − Cost (C), 0 ≤ C ≤ C. (P.23) We now introduce the breakpoints of (P.23). Let 
+
+0 = c0 < c 1 < · · · < c M = C (P.24) be the ordered list obtained from the boundary points 0, C and the distinct breakpoints bst(θ) that belong to [0 , C ]. Since there are at most |T | such breakpoints, 
+
+M ≤ | T | + 1 . (P.25) 74 The points in (P.24) define the regime intervals 
+
+Jℓ := [ cℓ−1, c ℓ], ℓ = 1 , . . . , M. (P.26) For each interval Jℓ, define 
+
+T ℓ>(θ) := t ∈ T : bst(θ) ≥ cℓ , (P.27) and 
+
+kℓ := |T ℓ>(θ)|. (P.28) 
+
+Lemma 35. For every ℓ ∈ { 1, . . . , M }, every C ∈ Jℓ, and every t ∈ T ,
+
+min {bst(θ), C } =
+
+
+
+C, t ∈ T ℓ>(θ),
+
+bst(θ), t / ∈ T ℓ>(θ).
+
+(P.29) 
+
+Proof. Fix ℓ ∈ { 1, . . . , M } and C ∈ Jℓ.If t ∈ T ℓ>(θ), then by (P.27), bst(θ) ≥ cℓ. Since C ∈ Jℓ = [ cℓ−1, c ℓ], we have C ≤ cℓ. Hence C ≤ cℓ ≤ bst(θ), and therefore min {bst(θ), C } = C. 
+
+If t / ∈ T ℓ>(θ), then by (P.27), bst(θ) < c ℓ. Because the ordered list in (P.24) contains all breakpoints, no breakpoint lies in the interior of Jℓ. Therefore, 
+
+bst(θ) ≤ cℓ−1. Since C ∈ Jℓ, we have cℓ−1 ≤ C. Hence bst(θ) ≤ cℓ−1 ≤ C, and therefore min {bst(θ), C } = bst(θ). This proves (P.29). The next Lemma gives the explicit expression of the leader objective on each regime interval. 
+
+Lemma 36. For every ℓ ∈ { 1, . . . , M } and every C ∈ Jℓ,
+
+Φ( C, θ ) = θk ℓC + θ X  
+
+> t∈T\Tℓ>(θ)
+
+bst(θ) − Cost (C). (P.30) 
+
+Consequently, maximizing Φ( C, θ ) over Jℓ is equivalent to maximizing 
+
+C 7 −→ θk ℓC − Cost (C) (P.31) 
+
+over the same interval Jℓ.
+
+75 Proof. By (P.29), for every C ∈ Jℓ,
+
+X
+
+> t∈T
+
+min {bst(θ), C } = |T ℓ>(θ)| C + X  
+
+> t∈T\Tℓ>(θ)
+
+bst(θ)= kℓC + X  
+
+> t∈T\Tℓ>(θ)
+
+bst(θ), (P.32) where the second equality uses (P.28). Substituting (P.32) into (P.23) gives (P.30). The second term in (P.30) is constant with respect to C on Jℓ. Hence maximizing Φ( C, θ ) over Jℓ is equivalent to maximizing the reduced function (P.31) over Jℓ.The next Lemma constructs a finite candidate set that contains a global maximizer. 
+
+Lemma 37. Assume that for every integer k ∈ { 0, . . . , |T |} and every inter-val J ⊆ [0 , C ], a maximizer of C 7 −→ θkC −Cost (C) over J can be computed. For each interval Jℓ, let 
+
+C∗ 
+
+> ℓ
+
+∈ arg max 
+
+> C∈Jℓ
+
+{θk ℓC − Cost (C)} . (P.33) 
+
+Define the finite candidate set 
+
+C(θ) := {C∗ 
+
+> ℓ
+
+: ℓ = 1 , . . . , M }
+
+| {z }
+
+> interval maximizers
+
+∪  {bst(θ) : t ∈ T } ∩ [0 , C ]| {z }
+
+> breakpoints
+
+∪ {0, C }
+
+| {z } 
+
+> boundary points
+
+.
+
+(P.34) 
+
+Then the leader problem admits an optimal solution in C(θ). Equivalently, 
+
+C∗(θ) ∈ arg max  
+
+> C∈C (θ)
+
+Φ( C, θ ) (P.35) 
+
+solves the fixed-price leader problem. Proof. Let eC be a global maximizer of Φ( ·, θ ) over [0 , C ]. Since the intervals in (P.26) cover [0 , C ], there exists ℓ ∈ { 1, . . . , M } such that 
+
+eC ∈ Jℓ. (P.36) 76 By Lemma 36, maximizing Φ( C, θ ) over Jℓ is equivalent to maximizing (P.31) over Jℓ. Hence the interval maximizer C∗ 
+
+> ℓ
+
+in (P.33) satisfies 
+
+Φ( C∗ 
+
+> ℓ
+
+, θ ) ≥ Φ( eC, θ ). (P.37) Since eC is globally optimal, (P.37) implies that C∗ 
+
+> ℓ
+
+is also globally optimal. Moreover, by (P.34), C∗ 
+
+> ℓ
+
+∈ C (θ). Therefore, C(θ) contains at least one global maximizer of the original leader problem. Hence (P.35) solves the fixed-price leader problem. The next Lemma gives the arithmetic complexity of the leader capacity computation. 
+
+Lemma 38. Assume that each interval maximizer in (P.33) can be computed in time ΓC . Then Algorithm 2 has arithmetic complexity 
+
+O
+
+
+
+|T |
+
+
+
+|N | log 1
+
+ε + log |T | + Γ C
+
+ 
+
+. (P.38) 
+
+Proof. First, by Lemma 33, each bst(θ) is obtained by solving one scalar mono-tone equation, with cost O(|N | log(1 /ε )) . Therefore, computing all values 
+
+bst(θ), t ∈ T , costs 
+
+O X
+
+> t∈T
+
+|N | log(1 /ε )
+
+!
+
+= O(|T || N | log(1 /ε )) (P.39) Second, constructing the ordered list in (P.24) requires sorting the break-points bst(θ), t ∈ T . This costs 
+
+O(|T | log |T |). (P.40) Third, by (P.25), there are at most |T | + 1 regime intervals. Since each interval maximizer C∗ 
+
+> ℓ
+
+in (P.33) can be computed in time ΓC , computing all interval maximizers costs 
+
+O(|T | ΓC ). (P.41) Finally, the candidate set C(θ) in (P.34) has cardinality O(|T |). Once 77 the values bst(θ) are available, evaluating θ P 
+
+> t∈T
+
+min {bst(θ), C } − Cost (C)
+
+at all candidates and selecting the best one is linear in the number of can-didates. This cost is dominated by (P.39), (P.40), and (P.41). Combining these bounds gives (P.38). 
+
+Appendix P.3. Leader price computation 
+
+Define the leader objective in (6) by 
+
+ϕ(θ) := max 
+
+> 0≤C≤C
+
+(
+
+θ X
+
+> t∈T
+
+min {bst(θ), C } − Cost (C)
+
+)
+
+, θ ∈ [0 , θ ], (P.42) where bst(θ) is defined in (P.19). The price computation is summarized in Algorithm 3. 
+
+Algorithm 3 Price-grid computation 
+
+Require: Price bound θ, optimality gap η > 0, Lipschitz constant Lϕ
+
+Ensure: Grid price θ∆ and capacity C∗(θ∆) 
+
+> 1:
+
+Choose a uniform price grid Θ∆ ⊂ [0 , θ ] with mesh size ∆θ ≤ 2ηLϕ . 
+
+> 2:
+
+for each θ ∈ Θ∆ do  
+
+> 3:
+
+Compute C∗(θ) using Algorithm 2.  
+
+> 4:
+
+Evaluate ϕ(θ) = θ P 
+
+> t∈T
+
+min {bst(θ), C ∗(θ)} − Cost (C∗(θ)) . 
+
+> 5:
+
+end for  
+
+> 6:
+
+Select θ∆ ∈ arg max θ∈Θ∆ ϕ(θ). 
+
+> 7:
+
+return θ∆ and C∗(θ∆).We first prove that bst(θ) is Lipschitz in θ.
+
+Lemma 39. For every t ∈ T , bst(θ) is nonincreasing and Lipschitz continu-ous on [0 , θ ]. In particular, for all θ1, θ 2 ∈ [0 , θ ],
+
+bst(θ1) − bst(θ2) ≤ |N |
+
+δ − γ |θ1 − θ2|. (P.43) 
+
+Proof. Fix t ∈ T . By definition, bst(θ) = P 
+
+> i∈N
+
+bhti(θ) is the unconstrained to-tal resource commitment defined in (P.19). Since the unconstrained problem has no capacity multiplier, the stationarity condition (N.24) for an active follower is Ati
+
+> 1+ bhti
+
+= biθ + biγ P  
+
+> j̸=i
+
+bhtj + biδbhti. Using P  
+
+> j̸=i
+
+bhtj = bst(θ) − bhti, we 78 obtain Ati
+
+1 + bhti
+
+= biθ + biγbst(θ) + bi(δ − γ)bhti. (P.44) Defining 
+
+z := θ + γbst(θ), (P.45) (P.44) becomes 
+
+Ati
+
+1 + bhti
+
+= biz + bi(δ − γ)bhti. (P.46) For each fixed z ≥ 0, let ρti(z) denote the unique nonnegative solution of (P.46). Equivalently, from (16), 
+
+ρti(z) = max 
+
+0, − (biz + bi(δ − γ)) + 
+
+q
+
+(biz − bi(δ − γ)) 2 + 4 bi(δ − γ)Ati
+
+2bi(δ − γ)
+
+ .
+
+(P.47) Then 
+
+bhti(θ) = ρti(z), bst(θ) = X
+
+> i∈N
+
+ρti(z). (P.48) For any active follower, implicit differentiation of (P.46) with respect to 
+
+z gives 
+
+− Ati
+
+(1 + ρti(z)) 2
+
+dρ ti(z)
+
+dz = bi + bi(δ − γ) dρ ti(z)
+
+dz .
+
+Hence, 
+
+dρ ti(z)
+
+dz = − biAti  
+
+> (1+ ρti(z)) 2
+
++ bi(δ − γ)
+
+. (P.49) Since Ati ≥ 0, ρti(z) ≥ 0, and δ > γ by Lemma 28, the denominator in (P.49) is bounded below by bi(δ − γ). Hence, 
+
+dρ ti(z)
+
+dz = biAti  
+
+> (1+ ρti(z)) 2
+
++ bi(δ − γ)
+
+≤ bi
+
+bi(δ − γ) = 1
+
+δ − γ . (P.50) If follower i is inactive, then ρti(z) = 0 on the corresponding inactive region. Hence ρti is constant there and dρ ti (z) 
+
+> dz
+
+= 0 . Therefore, dρ ti (z) 
+
+> dz
+
+= 0 ≤ 1 
+
+> δ−γ
+
+. At the activation threshold, ρti may fail to be differentiable because it switches 79 from the zero branch to the positive branch. However, this does not affect Lipschitz continuity. On the zero branch the slope is 0, and on the positive branch, the derivative is bounded in absolute value by 1/(δ − γ). Since the two branches agree at the threshold, ρti is continuous there. Therefore, applying (Pugh and Pugh, 2002, 3.Mean Value Theorem ) on each branch and using continuity at the switching point, ρti is globally Lipschitz with constant 1/(δ − γ); see (Pugh and Pugh, 2002, 5.Corollary). Define Xt(z) := P 
+
+> i∈N
+
+ρti(z). Then Xt is nonincreasing and Lipschitz continuous with constant LX := |N | 
+
+> δ−γ
+
+. Moreover, bst(θ) satisfies 
+
+bst(θ) = Xt θ + γbst(θ) . (P.51) Let 0 ≤ θ1 < θ 2 ≤ θ, and write Sℓ := bst(θℓ), zℓ := θℓ + γS ℓ, ℓ = 1 , 2.
+
+Since Xt is nonincreasing, (P.51) implies 
+
+S2 ≤ S1. (P.52) Also, z2 ≥ z1; otherwise z2 < z 1 would imply 
+
+S2 = Xt(z2) ≥ Xt(z1) = S1,
+
+contradicting (P.52) unless S1 = S2, in which case the desired bound is immediate. Therefore, S1 − S2 = Xt(z1) − Xt(z2) ≤ LX (z2 − z1). Using 
+
+z2 − z1 = ( θ2 − θ1) − γ(S1 − S2), we obtain S1 − S2 ≤ LX
+
+ (θ2 − θ1) − γ(S1 −
+
+S2) ≤ LX (θ2 − θ1). Thus, for all θ1, θ 2 ∈ [0 , θ ],
+
+bst(θ1) − bst(θ2) ≤ |N |
+
+δ − γ |θ1 − θ2|.
+
+This proves (P.43). We now prove that ϕ in (P.42) is Lipschitz. 
+
+Lemma 40. ϕ in (P.42) is Lipschitz continuous on [0 , θ ]. In particular, one may take 
+
+Lϕ := |T |
+
+
+
+C + θ|N |
+
+δ − γ
+
+
+
+(P.53) 80 as a Lipschitz constant. That is, for all θ1, θ 2 ∈ [0 , θ ],
+
+|ϕ(θ1) − ϕ(θ2)| ≤ Lϕ |θ1 − θ2| . (P.54) 
+
+Proof. For any fixed C ∈ [0 , C ], define 
+
+Φ( C, θ ) := θ X
+
+> t∈T
+
+min {bst(θ), C } − Cost (C), (P.55) as in (P.23). Since 0 ≤ C ≤ C, we have 
+
+X
+
+> t∈T
+
+min {bst(θ), C } ≤ | T |C. (P.56) Since θ2 ∈ [0 , θ ], we have θ2 ≤ θ. Moreover, taking the minimum with the fixed capacity C cannot increase differences between two values. Indeed, for any x, y ≥ 0, |min {x, C } − min {y, C }| ≤ | x − y| Therefore, for each t ∈ T ,
+
+min {bst(θ1), C } − min {bst(θ2), C } ≤ bst(θ1) − bst(θ2) .
+
+Hence, 
+
+θ2
+
+X
+
+> t∈T
+
+min {bst(θ1), C } − min {bst(θ2), C } ≤ θ X
+
+> t∈T
+
+bst(θ1) − bst(θ2) . (P.57) Therefore, using (P.43), for any θ1, θ 2 ∈ [0 , θ ],
+
+|Φ( C, θ 1) − Φ( C, θ 2)| ≤ | θ1 − θ2| X
+
+> t∈T
+
+min {bst(θ1), C }
+
++ θ2
+
+X
+
+> t∈T
+
+min {bst(θ1), C } − min {bst(θ2), C } 
+
+> (P.56) ,(P.57)
+
+≤ |T |C|θ1 − θ2| + θ X
+
+> t∈T
+
+bst(θ1) − bst(θ2)
+
+> (P.43)
+
+≤ |T |
+
+
+
+C + θ|N |
+
+δ − γ
+
+
+
+|θ1 − θ2|. (P.58) The bound in (P.58) is uniform in C ∈ [0 , C ].81 Therefore, taking the maximum of the functions C 7 → Φ( C, θ ) over the compact set [0 , C ], it follows that ϕ is Lipschitz with the same constant Lϕ
+
+in (P.53). Indeed, for any θ1, θ 2,
+
+ϕ(θ1) − ϕ(θ2) ≤ max 
+
+> 0≤C≤C
+
+{Φ( C, θ 1) − Φ( C, θ 2)} ≤ Lϕ|θ1 − θ2|.
+
+Interchanging θ1 and θ2 gives 
+
+|ϕ(θ1) − ϕ(θ2)| ≤ Lϕ|θ1 − θ2|.
+
+This proves (P.54). It remains to prove the grid approximation guarantee. 
+
+Lemma 41. Let Θ∆ ⊂ [0 , θ ] be a uniform price grid with mesh size ∆θ, and let θ∆ ∈ arg max θ∈Θ∆ ϕ(θ). If 
+
+∆θ ≤ 2ηLϕ
+
+, (P.59) 
+
+then 
+
+max 
+
+> θ∈[0 ,θ ]
+
+ϕ(θ) − ϕ(θ∆) ≤ η. (P.60) 
+
+Proof. Let θ∗ ∈ arg max θ∈[0 ,θ ] ϕ(θ). Choose a grid point bθ ∈ Θ∆ such that 
+
+|θ∗ − bθ| ≤ ∆θ 
+
+> 2
+
+. Since θ∆ maximizes ϕ over Θ∆, ϕ(θ∆) ≥ ϕ(bθ). Therefore, by the Lipschitz continuity of ϕ (Lemma 40), 
+
+ϕ(θ∗) − ϕ(θ∆) ≤ ϕ(θ∗) − ϕ(bθ) ≤ Lϕ|θ∗ − bθ| ≤ Lϕ∆θ
+
+2
+
+Using (P.59), we obtain ϕ(θ∗) − ϕ(θ∆) ≤ η, which proves (P.60). Hence the price-grid solution is an approximate price solution with a bounded optimal-ity gap η.Combining Lemma 41 with Lemma 37 which computes C∗(θ) for each fixed grid price, gives an approximate SE with a bounded optimality gap η.82 Appendix P.4. Stackelberg Equilibrium computation 
+
+By Lemma 38, for each fixed price θ, the capacity C∗(θ) can be computed with arithmetic complexity 
+
+O
+
+
+
+|T |(|N | log 
+
+ 1
+
+ε
+
+
+
++ log |T | + Γ C )
+
+
+
+. (P.61) By Lemma 41, an approximate price with bounded optimality gap η can be obtained using a uniform grid with mesh size ∆θ ≤ 2ηLϕ . Hence the number of grid points can be chosen as 
+
+nθ = O Lϕθη
+
+!
+
+. (P.62) Combining (P.61) and (P.62), the overall arithmetic complexity for comput-ing an approximate SE with bounded optimality gap ηO Lϕθη |T |(|N |L + log |T | + Γ C )
+
+!
+
+. (P.63) Using the Lipschitz constant in (P.53), this becomes 
+
+O
+
+ θη |T |2
+
+
+
+C + θ|N |
+
+δ − γ
+
+
+
+(|N |L + log |T | + Γ C )
+
+
+
+. (P.64) In particular, for the quadratic investment cost in (17), the maximizer of C 7 → θkC − Cost (C) over any interval can be computed in closed form by projecting the solution of Cost ′(C) = θk onto that interval. Hence ΓC =
+
+O(1) , and (P.64) reduces to 
+
+O
+
+ θη |T |2
+
+
+
+C + θ|N |
+
+δ − γ
+
+
+
+(|N |L + log |T |)
+
+
+
+. (P.65) Therefore, the proposed algorithm computes an η-optimal Stackelberg solu-tion in time polynomial in |N |, |T |, 1/η , and 1/(δ−γ), with only logarithmic dependence on the scalar bisection tolerance through L = O(log(1 /ε )) .
+
+83 Appendix Q. Computational runtime 
+
+All experiments are implemented in Python on a machine equipped with a 13th Gen Intel Core i9-13950HX CPU at 2.20 GHz. In the numerical study, we set C = 5000 , θ = 2000 , ε = 10 −8 and at most 1000 iterations for the scalar searches (see Proposition 15). Table Q.3 reports the average computational time for different problem sizes. Runtime increases with both the investment horizon and the number of SPs. Although individual runs vary across risk and uncertainty configurations, the average runtime remains below one hour even for the largest instance with ten SPs and a five-year horizon. 
+
+> Table Q.3: Runtime per experiment.
+
+N (SPs) I (years) Runtime (min) 3 1 14 3 5 30 10 5 49 
+
+Appendix R. Tightness of the Lower Bound on the PoP 
+
+Fig. R.14 shows the maximum gap, across SPs, between the empiri-cal PoP estimated over 1000 revenue realizations and the theoretical lower bound ˆνi. The gap measures the conservativeness of the guarantee. It is small at low CV , where revenue outcomes are stable, and increases with CV 
+
+because the bound must protect against more severe adverse realizations. The gap is largest under risk neutrality, where SPs keep higher resource ex-posure. Risk aversion reduces the gap by raising the lower bound through more conservative resource choices. The high-CV gap is mainly driven by SP 1, whose bound is most sensitive to severe uncertainty. 
+
+Appendix S. Sensitivity to SP-Side and Investment Costs 
+
+Appendix S.1. Sensitivity to Operational and Congestion Parameters 
+
+We next examine the sensitivity of the equilibrium to the operational and congestion parameters δ and γ (14). The baseline case corresponds to 84 RN MRA HRA ERA 
+
+> SP risk class
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> Maximum
+> probability gap
+> CV = 25%
+> CV = 50%
+> CV = 75%
+> CV = 100%
+
+Figure R.14: Maximum gap across SPs between the empirical PoP and the theoretical lower bound on the PoP. 
+
+the congestion setting used in the main experiments (see Table 1), where γ
+
+is kept at its nominal value and δ is chosen just above the uniqueness thresh-old, i.e., δ = 1 .01 γ max i ξi. We compare this baseline with cases in which either the operational cost parameter δ or the congestion cost parameter 
+
+γ is increased. Figure S.15 reports the InP outcomes normalized by their baseline  
+
+> 5
+> 5
+> 10
+> 10
+> Sensitivity analysis case
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> Value relative
+> to baseline
+> InP profit
+> C*
+> *
+
+Figure S.15: Sensitivity of InP profit, optimal capacity C∗, and optimal price θ∗ to SP-side cost parameter changes. Values are normalized by their baseline values. 
+
+corresponding baseline values. Hence, the curves show relative changes in InP profit, optimal capacity C∗, and optimal price θ∗. The figure shows that stronger SP-side cost parameters mainly affect the InP through capacity and price. The optimal capacity decreases as operational and congestion cost pa-rameters become stronger, because SPs reduce their resource commitments when SP-side costs increase. The InP, therefore, scales down capacity in-vestment to avoid over-provisioning. At the same time, the optimal price increases, indicating that the InP compensates for the smaller resource base by charging a higher access price. The InP’s profit decreases only mildly, 85 baseline               
+
+> 5
+> 5
+> 10
+> 10
+> Sensitivity analysis case
+> SP 1
+> SP 2
+> SP 3
+> SPs
+> 0.37 0.35 0.34 0.33 0.32
+> 0.93 0.93 0.93 0.36 0.35
+> 0.91 0.91 0.91 0.91 0.34
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> Lower bound Figure S.16: Sensitivity of the lower bound ˆνion the probability of profit to SP-side cost parameters changes.
+
+since the joint adjustment of capacity and price partly offsets the negative effect of operational and congestion costs. Figure S.16 shows that the effect on SP profit guarantees is heteroge-neous. The smallest SP (SP 1) is affected across all cases, reflecting its limited revenue buffer. The medium SP (SP 2) remains protected under moderate change in δ and γ but becomes vulnerable under stronger values of δ and γ. The largest SP (SP 3) is the most robust and is mainly affected only when shared-infrastructure congestion becomes severe. Overall, increas-ing γ has the strongest impact because it amplifies the coupling among SPs sharing the same infrastructure. 
+
+Appendix S.2. Sensitivity to Investment Costs 
+
+We also examine the sensitivity of the equilibrium to the investment-cost parameters. The baseline case corresponds to the cost setting used in the main experiments (see Table 1). We then multiply all investment-cost parameters, F0, ddep , dmaint , and dexp , by a factor of ten and compare the resulting equilibrium with the baseline case. Table S.4 shows that multiplying all investment-cost parameters by ten has only a limited effect on the equilibrium. The InP slightly reduces capacity and increases the access price, while InP profit decreases slightly. The lower bounds on the probability of positive profit ˆν remain unchanged for all SPs because the investment cost parameters affect the InP’s cost function, but do not directly enter the SP profit, CVaR, or resource commitment decisions. 86 Their effect on SPs is only indirect through the small changes in C∗ and θ∗.  
+
+> Table S.4: Sensitivity to investment-cost parameters at CV = 100% .
+
+Metric Baseline 10 × cost parameters InP profit ($) 192 .54 M 191 .77 M
+
+C∗(vCore) 86 84 
+
+θ∗($/vCore-hour) 67 69 ˆν1 0.37 0.37 ˆν2 0.93 0.93 ˆν3 0.91 0.91 
+
+Appendix T. Validation with Real-World Dataset 
+
+We further strengthen the realism of our results by incorporating a real-world dataset. Since large-scale MEC deployments by network operators at their 5G base stations remain limited, possibly due to the absence of effective investment-pricing mechanisms, our study relies on the closest available em-pirical representation for mobile-demand. Specifically, we use the publicly available Telecom Italia Call Detail Records dataset, 6 which contains real mobile traffic measurements collected in Milan, Italy. This dataset has been widely adopted in MEC-related studies (Bouet and Conan, 2018; Hussain et al., 2019) as a representation for real-world user demand. We therefore use it to capture user demand variations across time and across SPs. The dataset contains Call Detail Records collected in Milan, Italy, over November and December 2013. The records are organized by geographical grid cell and by 10-minute time interval, which makes the dataset suitable for representing time dependent mobile activity. It also includes several categories of mobile-network usage: sent and received SMS, incoming and outgoing voice calls, and Internet activity. Each entry contains a timestamp, a square identifier, and the corresponding traffic measurements for these ac-tivity categories. Since the MEC services considered in this work are mainly associated with data user demand, we use the Internet-usage category. We 
+
+> 6https://doi.org/10.7910/DVN/EGZHFV
+
+87 first aggregate the Internet-usage measurements from 10-minute intervals to hourly slots. For each hour, the traffic load is computed at the grid-cell level. The grid cells are then divided among the SPs, so that each SP receives a fixed set of cells. The traffic observed in these assigned cells provides the empirical load realizations used in the dataset-based experiment. Let ℓti,ω be the hourly request load associated with SP i at time slot t
+
+for empirical realization ω. We convert this load into the revenue coefficient through ati,ω = eiℓti,ω , where ei denotes the benefit per request in dollars. Hence, ati,ω captures the monetary revenue opportunity generated by the observed traffic assigned to SP i. The realizations are obtained from the empirical traffic traces. We set ei = 6 × 10 −6 $/req according to (Amazon Web Services, 2024). Table T.5 summarizes the dataset-based simulation setup, including the number of SPs, the number of hourly time slots, and the simulation invest-ment period. 
+
+> Table T.5: Dataset-based simulation setup.
+
+Quantity Symbol Value Number of SPs N 5Number of time slots |T | 1440 Investment period I 2 months Table T.6 reports the equilibrium outcomes obtained from the dataset-based experiment, including the InP’s optimal capacity, access price, profit, and computational runtime. 
+
+> Table T.6: InP equilibrium outcomes for the dataset-based experiment.
+
+Quantity Symbol Value Optimal capacity C∗ 109 vCores Optimal access price θ∗ $27 per vCore-hour InP profit – $1.37 million Runtime – 5 minutes Figure T.17 reports the SP profit guarantees obtained in the dataset-based experiment. The empirical PoP is equal to one for all SPs, indicating 88 SP 1 
+
+RN 
+
+SP 2 
+
+ERA 
+
+SP 3 
+
+HRA 
+
+SP 4 
+
+HRA 
+
+SP 5 
+
+MRA 
+
+SP and risk class 
+
+Lower bound i
+
+Empirical P( i > 0)         
+
+> 0.94 0.99 0.99 0.97 0.98
+> 1.00 1.00 1.00 1.00 1.00
+
+0.0 
+
+0.5 
+
+1.0        
+
+> Probability Figure T.17: Dataset-based profit guarantees across SPs. Each column corresponds to one SP, with its risk class shown below the SP label. The first row reports the theoretical lower bound ˆνi, while the second row reports the empirical PoP P(Π ∗
+> i>0) .
+
+that every SP remains profitable across the tested realizations. The theoret-ical lower bound on the PoP ˆνi is also high for all SPs, ranging from 0.94 
+
+to 1.00 . This confirms that the equilibrium resource commitment decisions provide a strong profit guarantee even under real mobile-traffic data. The figure also shows that the guarantee is not identical across SPs. SP 2 and SP 3 obtain the strongest lower bounds while SP 1 has the lowest lower bound. This difference reflects the heterogeneity in risk preferences and revenue lev-els across SPs. The small gap between the empirical PoP and the lower bound also indicates that the theoretical guarantee is relatively tight in this data-driven setting, especially for the more risk-sensitive SPs. Overall, the real-data results are consistent with the findings obtained from the synthetic experiments. 
+
+Appendix U. Benchmark Comparison 
+
+We evaluate the proposed model through three representative bench-marks that reflect the main modeling directions in the related literature. Because those studies are built on different assumptions, objectives, and decision structures, we do not attempt a direct numerical reproduction. In-stead, we use a common experimental setting and vary one modeling layer at a time, which allows a fair comparison of the economic impact of capacity dimensioning, access pricing, and endogenous SP resource choices. The capacity-only benchmark is motivated by capacity-investment mod-els under uncertainty, which optimize infrastructure dimensioning without 89 joint access-price design (Zhao et al., 2019; Sakr et al., 2025). The price-only benchmark is motivated by access-pricing and infrastructure-sharing mod-els, which optimize price for a given infrastructure capacity (Huang et al., 2022; Cardellini et al., 2016). The third benchmark is motivated by joint capacity–pricing models (Fu et al., 2018; Huang et al., 2025; Dong et al., 2021; Maglaras and Zeevi, 2003). These models capture important InP-level capacity and pricing decisions, but they do not include the SP-side structure considered here: revenue-generating SPs committing to resource levels under revenue uncertainty, risk-aware take-or-pay contracts, opera-tional and congestion costs, and a shared capacity constraint. To obtain a benchmark that is comparable within our setting, we therefore use a joint capacity–pricing benchmark with exogenous utilization, where the InP op-timizes both capacity and access price, while SP resource usage is given by a forecast rather than by the endogenous SP equilibrium. Together, these benchmarks provide a controlled ablation of the proposed framework: the capacity-only benchmark isolates the value of access-price optimization, the price-only benchmark isolates the value of capacity dimensioning, and the exogenous-utilization benchmark isolates the value of modeling strategic risk-aware SP responses under uncertainty. A key feature of the proposed model is that SPs can adjust their resource commitments to control downside profit exposure, which allows us to derive probabilistic lower bounds on realized positive profit. Fig. U.18 compares the proposed risk-aware Stackelberg model with the benchmarks under the HRA setting and CV = 100% . Overall, the proposed model provides the best balance across the main performance dimensions. It maintains the highest InP profit, high utilization, and strong lower bounds on the SP’s PoP at equilibrium. The comparison with the capacity-only and price-only benchmarks demonstrates the advantage of jointly optimiz-ing the InP’s investment and pricing decisions. As shown in Fig. U.18d, the capacity-only benchmark maintains high utilization, but fixing the access price restricts the InP’s ability to balance access-revenue extraction against SP resource commitments. As a result, it yields lower InP profit in Fig. U.18a and a weaker lower bound for SP 1 and SP 3 in Fig. U.18e. The price-only 90 benchmark achieves a profit close to the proposed model in Fig. U.18a, but it does so with a larger capacity investment in Fig. U.18b and lower average utilization in Fig. U.18d. This indicates that optimizing price alone may lead to costly over-provisioning. The exogenous-utilization benchmark performs worst across the main dimensions. Since it treats utilization as an exoge-nous forecast, it does not account for the fact that utilization is generated by strategic SPs whose resource commitments depend on capacity, access price, congestion, revenue uncertainty, and risk preferences. Consequently, it se-lects an excessively high access price in Fig. U.18c, which reduces SP resource commitments and leads to severe under-utilization in Fig. U.18d, lower InP profit in Fig. U.18a, and weaker lower-bound guarantees in Fig. U.18e. This confirms that ignoring the equilibrium response can weaken SP profit and lead to poor investment and pricing decisions. Thus, the proposed model combines the main advantages of the bench-marks while avoiding their limitations. It preserves high utilization as in the capacity-only benchmark, achieves profit close to or above the best bench-mark outcome, avoids the over-investment pattern observed under price-only optimization, and substantially improves over the exogenous-utilization benchmark by endogenizing utilization through the SP equilibrium response. 
+
+References 
+
+Abbott, S., 2016. Understanding analysis. volume 2. Springer. Acemoglu, D., Bimpikis, K., Ozdaglar, A., 2009. Price and capacity compe-tition. Games and Economic Behavior 66, 1–26. Agosti, M., Pretto, L., 2005. A theoretical study of a generalized version of kleinberg’s hits algorithm. Information Retrieval 8, 219–243. Amazon Web Services, 2024. Aws lambda pricing. https://aws.amazon. com/fr/lambda/pricing/ . Accessed: 2024-07-18. Ardagna, D., Panicucci, B., Passacantando, M., 2012. Generalized nash equilibria for the service provisioning problem in cloud systems. IEEE Transactions on Services Computing 6, 429–442. 91 Our model Capacity 
+
+> only
+> Price
+> only
+> Exogenous
+> 110
+> 115
+> 120
+> InP profit
+> (million dollars)
+
+(a) InP profit Our model Capacity  
+
+> only
+> Price
+> only
+> Exogenous
+> 50
+> 60
+> 70
+> 80
+> 90
+> C * (vCores)
+
+(b) Optimal capacity Our model Capacity 
+
+> only
+> Price
+> only
+> Exogenous
+> 50
+> 100
+> 150
+> 200
+> * ($/vCore-hour)
+
+(c) Optimal access price Our model Capacity  
+
+> only
+> Price
+> only
+> Exogenous
+> 20
+> 40
+> 60
+> Average utilization (%)
+
+(d) Average utilization Our 
+
+model 
+
+Capacity 
+
+only 
+
+Price 
+
+only 
+
+Exogenous 
+
+Benchmarks 
+
+SP 1 
+
+SP 2 
+
+SP 3 
+
+> SPs
+
+0.56 0.53 0.56 0.44 
+
+0.93 0.93 0.93 0.33 
+
+0.91 0.33 0.91 0.30 
+
+0.0 
+
+0.5 
+
+1.0 
+
+> Lower bound
+
+(e) Lower bound on the probability of profit 
+
+Figure U.18: Comparison of the proposed risk-aware Stackelberg model with three bench-marks under the HRA setting and CV = 100% .
+
+Başar, T., Srikant, R., 2002. Revenue-maximizing pricing and capacity ex-pansion in a many-users regime, in: Proceedings of IEEE INFOCOM, IEEE. pp. 294–301. Başar, T., Olsder, G.J., 1998. Dynamic noncooperative game theory. SIAM. Beaude, O., Lasaulce, S., Hennebel, M., 2012. Charging games in networks of electrical vehicles, in: 2012 6th International Conference on Network Games, Control and Optimization (NetGCooP), IEEE. pp. 96–103. 92 Bouet, M., Conan, V., 2018. Mobile edge computing resources optimization: A geo-clustering approach. IEEE Transactions on Network and Service Management 15, 787–796. Boyd, S.P., Vandenberghe, L., 2004. Convex Optimization. Cambridge Uni-versity Press. Burden, R., Faires, J., Burden, A., 2015. Numerical Analysis. Cengage Learning. URL: https://books.google.com/books?id=CMZjzgEACAAJ .Cardellini, V., Di Valerio, V., Presti, F.L., 2016. Game-theoretic resource pricing and provisioning strategies in cloud systems. IEEE Transactions on Services Computing 13, 86–98. Chen, Y.J., Zhang, J., 2012. Design of price mechanisms for network resource allocation via price of anarchy. Mathematical programming 131, 333–364. Chi, Y., Li, X., Wang, X., Leung, V.C., Shami, A., 2015. A fairness-aware pricing methodology for revenue enhancement in service cloud infrastruc-ture. IEEE Systems Journal 11, 1006–1017. Chua, D., 2016. Probability and measure. link. Cruz, P., Achir, N., Viana, A.C., 2022. On the edge of the deployment: A survey on multi-access edge computing. ACM Computing Surveys 55, 1–34. Datar, M., Altman, E., Le Cadre, H., 2022. Strategic resource pricing and allocation in a 5g network slicing stackelberg game. IEEE Transactions on Network and Service Management 20, 502–520. Dhamal, S., Ben-Ameur, W., Chahed, T., 2025. Admission control and pric-ing for multi-tenant network slices in 5g: A learning perspective. Computer Networks , 111949. Dimanchev, E., Fleten, S.E., MacKenzie, D., Korpås, M., 2023. Accelerating electric vehicle charging investments: A real options approach to policy design. Energy Policy 181, 113703. 93 Dong, H., Wang, L., Wei, X., Xu, Y., Li, W., Zhang, X., Zeng, M., 2021. Capacity planning and pricing design of charging station considering the uncertainty of user behavior. International Journal of Electrical Power & Energy Systems 125, 106521. Ehlers, T., 2014. Understanding the Challenges for Infrastructure Finance. Technical Report 454. Bank for International Settlements. Basel, Switzer-land. Fabiani, F., Franci, B., 2023. On distributionally robust generalized nash games defined over the wasserstein ball. Journal of Optimization Theory and Applications 199, 298–309. Facchinei, F., Fischer, A., Piccialli, V., 2007. On generalized nash games and variational inequalities. Operations Research Letters 35, 159–164. Facchinei, F., Kanzow, C., 2007. Generalized nash equilibrium problems. 4or 5, 173–210. Facchinei, F., Pang, J.S., 2003. Finite-dimensional variational inequalities and complementarity problems. Springer. FairShare, 2023. A call for fair share legislation – europe must act to protect its digital future. Open letter by CEOs of European telecoms operators. Folland, G.B., 1999. Real analysis: modern techniques and their applica-tions. John Wiley & Sons. Fu, X., van den Berg, V.A., Verhoef, E.T., 2018. Private road networks with uncertain demand. Research in Transportation Economics 70, 57–68. Furman, E., Diamant, A., 2025. Optimal capacity planning for cloud ser-vice providers with periodic, time-varying demand. European Journal of Operational Research 322, 133–146. Gallier, J., 2022. Applications of scientific computation: Eas205, notes. link. 94 García-Cerezo, Á., Siddiqui, A.S., Boomsma, T.K., García-Bertrand, R., Baringo, L., 2025. Strategic investment in electricity markets: Robust optimization versus stochastic programming. European Journal of Oper-ational Research . Ghosh, B.K., 2002. Probability inequalities related to markov’s theorem. The American Statistician 56, 186–190. Harks, T., Schedel, A., 2024. Stackelberg pricing games with congestion effects. Mathematical Programming 203, 763–799. Huang, K., Ahmed, S., 2009. The value of multistage stochastic programming in capacity planning under uncertainty. Operations Research 57, 893–904. Huang, Q., Xu, J., Sun, P., Liu, B., Wu, T., Courcoubetis, C., 2025. Strate-gic storage investment and operation under uncertainty: Behavioral eco-nomics analysis. Transactions on Network Science and Engineering . Huang, S., Huang, H., Gao, G., Sun, Y.E., Du, Y., Wu, J., 2022. Edge resource pricing and scheduling for blockchain: A stackelberg game ap-proach. IEEE Transactions on Services Computing 16, 1093–1106. Hussain, B., Du, Q., Zhang, S., Imran, A., Imran, M.A., 2019. Mobile edge computing-based data-driven deep learning framework for anomaly detection. IEEE Access 7, 137656–137667. Iiduka, H., 2018. Distributed optimization for network resource allocation with nonsmooth utility functions. IEEE Transactions on Control of Net-work Systems 6, 1354–1365. Jiang, S., Li, X., Wu, J., 2020. Multi-leader multi-follower stackelberg game in mobile blockchain mining. IEEE Transactions on Mobile Computing 21, 2058–2071. Jin, M., Wu, S.D., 2007. Capacity reservation contracts for high-tech indus-try. European Journal of Operational Research 176, 1659–1677. 95 Johari, R., Mannor, S., Tsitsiklis, J.N., 2005. Efficiency loss in a network resource allocation game: the case of elastic supply. IEEE Transactions on Automatic Control 50, 1712–1724. Kahane, J.P., 1985. Some random series of functions. volume 5. Cambridge University Press. Keutz, J., Kopp, J.H., 2025. Assessing the impact of take-or-pay rates in long-term contracts for hydrogen imports on a decarbonized european en-ergy system under weather variability. Applied Energy 389, 125784. Kim, Y., 2025. The impact of dual-channel investments and contract mech-anisms on telecommunications supply chains. Systems 13, 539. Kreyszig, E., 1991. Introductory functional analysis with applications. John Wiley & Sons. Lavrutich, M., Hagspiel, V., Siddiqui, A.S., 2023. Transmission investment under uncertainty: Reconciling private and public incentives. European Journal of Operational Research 304, 1167–1188. Li, X., Xiao, R., Pan, M., Zhao, N., 2022. Risk-averse investment strategy for mec service provisioning: A data-driven distributionally robust solution. IEEE Internet of Things Journal 9, 24148–24160. Liu, H., Wu, J., Wang, Z., Cao, B., Gao, L., 2025a. Joint edge server deployment and computation offloading: a multi-timescale stochastic pro-gramming framework. IEEE Transactions on Mobile Computing . Liu, R.P., Mellou, K., Gong, E.X.Y., Li, B., Coffee, T., Pathuri, J., Simchi-Levi, D., Menache, I., 2025b. Efficient cloud server deployment under demand uncertainty. Manufacturing & Service Operations Management 27, 425–440. Luo, Y., Huo, X., Mei, Y., 2022. The directional bias helps stochastic gradi-ent descent to generalize in kernel regression models, in: 2022 International Symposium on Information Theory (ISIT), IEEE. pp. 678–683. 96 Maglaras, C., Zeevi, A., 2003. Pricing and capacity sizing for systems with shared resources: Approximate solutions and scaling relations. Manage-ment Science 49, 1018–1038. Microsoft Azure, . Pricing – Azure Stack Edge. link. Accessed 2025. Parise, F., Ozdaglar, A., 2019. A variational inequality framework for net-work games: Existence, uniqueness, convergence and sensitivity analysis. Games and Economic Behavior 114, 47–82. Penot, J.P., 2013. Calculus without derivatives. volume 266. Springer. Pflug, G.C., 2000. Some remarks on the value-at-risk and the conditional value-at-risk, in: Probabilistic constrained optimization: Methodology and applications. Springer, pp. 272–281. Pu, X., Liu, L., Mei, Y., Sivathanu, S., Koh, Y., Pu, C., Cao, Y., 2012. Who is your neighbor: Net i/o performance interference in virtualized clouds. IEEE Transactions on Services Computing 6, 314–329. Pugh, C.C., Pugh, C., 2002. Real mathematical analysis. volume 2011. Springer. Rockafellar, R.T., Uryasev, S., et al., 2000. Optimization of conditional value-at-risk. Journal of risk 2, 21–42. Rudin, W., 1976. Principles of Mathematical Analysis. International series in pure and applied mathematics, McGraw-Hill. URL: https://books. google.com/books?id=kwqzPAAACAAJ .Sakr, A., Araldo, A., Chahed, T., Kofman, D., 2025. Co-investment under revenue uncertainty based on stochastic coalitional game theory. arXiv preprint arXiv:2510.14555 . Sasane, A., 2017. A friendly approach to functional analysis. World Scientific. Shen, H., Başar, T., 2007. Optimal nonlinear pricing for a monopolistic network service provider with complete and incomplete information. IEEE Journal on Selected Areas in Communications 25, 1216–1223. 97 Sikorski, K., 1982. Bisection is optimal. Numerische Mathematik 40, 111– 117. Telefonica, 2022. A call for large content platforms to contribute to the cost of the european digital infrastructure that carries their services. Varadarajan, V., Kooburat, T., Farley, B., Ristenpart, T., Swift, M.M., 2012. Resource-freeing attacks: improve your cloud performance (at your neigh-bor’s expense), in: Proceedings of the 2012 ACM conference on Computer and communications security, pp. 281–292. Wang, R., Gu, B., Sun, Z., Liu, C., Jiang, C., Zhou, S., Cao, Z., 2025. Bi-level stochastic optimization for load aggregator participating in energy and reserve markets based on conditional value at risk. International Journal of Electrical Power & Energy Systems 170, 110892. Wen, Y., Gao, Y., Chen, B., 2025. Distributionally robust equilibria over the wasserstein distance for generalized nash game, in: 2025 IEEE 64th Conference on Decision and Control (CDC), IEEE. pp. 4863–4868. World Bank, 2014. Understanding Power Purchase Agreements. Technical Report 1. World Bank Group. Washington, DC. Xu, M., Wang, G., Grant-Muller, S., Gao, Z., 2017. Joint road toll pricing and capacity development in discrete transport network design problem. Transportation 44, 731–752. Yu, R., Xue, G., Wan, Y., Tang, J., Yang, D., Ji, Y., 2020. Robust resource provisioning in time-varying edge networks, in: Proceedings of the Twenty-First International Symposium on Theory, Algorithmic Foundations, and Protocol Design for Mobile Networks and Mobile Computing, pp. 21–30. Yu, X., Shen, S., 2025. On the value of risk-averse multistage stochastic programming in capacity planning. INFORMS Journal on Computing 37, 1143–1162. Zahur, N.B., 2025. Long-term contracts and efficiency in the liquefied natural gas industry. Available at SSRN 4222408 . 98 Zhang, B., Huang, J., 2024. Shared energy storage capacity configuration of a distribution network system with multiple microgrids based on a stack-elberg game. Energies 17, 3104. Zhang, M., Arafa, A., Huang, J., Poor, H.V., 2019. How to price fresh data, in: 2019 International Symposium on Modeling and Optimization in Mobile, Ad Hoc, and Wireless Networks (WiOPT), IEEE. pp. 1–8. Zhao, S., Haskell, W.B., Cardin, M.A., 2019. A flexible multi-facility capacity expansion problem with risk aversion. arXiv preprint arXiv:1905.05328 . 99

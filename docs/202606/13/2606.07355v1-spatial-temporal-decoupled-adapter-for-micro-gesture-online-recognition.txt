@@ -1,0 +1,599 @@
+Title: Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition
+
+URL Source: https://arxiv.org/pdf/2606.07355v1
+
+Published Time: Mon, 08 Jun 2026 01:00:43 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 
+
+Xucheng Shen 1[0009 −0009 −8586 −8274] , Kun Li 2[0000 −0001 −5083 −2145] ⋆,Fei Wang 1,3,4[0009 −0004 −1142 −6434] , Wei Qian 1[0009 −0007 −9467 −6296] ,Jin Jiang 2[0000 −0003 −4299 −6259] , and Dan Guo 1,3[0000 −0003 −2594 −254 X] 
+
+> 1
+
+Hefei University of Technology, Hefei, China  
+
+> 2
+
+United Arab Emirates University, Al Ain, United Arab Emirates  
+
+> 3
+
+Institute of Artificial Intelligence, Hefei Comprehensive National Science Center, Hefei, China  
+
+> 4
+
+Anhui Evolution Technology Co., Ltd., Hefei, China 
+
+Abstract. Micro-gesture online recognition aims to temporally local-ize and classify subtle gestures in untrimmed videos. Owing to their extremely short duration, low motion amplitude, and ambiguous visual cues, capturing discriminative spatiotemporal representations remains highly challenging. Existing parameter-efficient adapters typically em-ploy a single branch to model spatial and temporal cues jointly, which may fail to capture the fine-grained patterns of micro-gestures. To ad-dress this limitation, we propose a Spatial-Temporal Decoupled Adapter that decomposes video adaptation into independent temporal and spatial branches via lightweight depthwise convolutions. In addition, to address the long-tail distribution problem in the benchmark dataset, we intro-duce Adaptive Soft Balanced Augmentation, which dynamically allocates augmentation intensity based on class rarity and learning difficulty, with-out manual thresholds. Our method achieves an F1 score of 0.43808, ranking 1st in Track 2 of the 4th EI-MiGA-IJCAI Challenge. 
+
+Keywords: Micro-Gesture Recognition · Data Augmentation · Parameter-Efficient Fine-Tuning 
+
+1 Introduction 
+
+Micro-gestures [6,13,32] are subtle and frequently unconscious body movements, primarily involving the hands, fingers, and arms, that arise spontaneously in the course of interpersonal communication. These inconspicuous behaviors pro-vide valuable insights into human psychological states and emotional conditions, making them increasingly important for affective computing [9,45,37,38], psycho-logical assessment [4,35,36], and intelligent human-computer interaction [27]. As a highly challenging task, micro-gesture online recognition requires both temporal localization and category classification of micro-gesture instances in  
+
+> ⋆
+
+Corresponding author. Email: kunli.hfut@gmail.com  
+
+> arXiv:2606.07355v1 [cs.CV] 5 Jun 2026 2X. Shen et al.
+
+untrimmed videos. Compared to traditional action recognition [15,16] or tempo-ral action detection [26,50], this task places greater emphasis on distinguishing between fine-grained micro-gesture categories and precisely identifying the start and end times of each instance. The core difficulty lies in capturing subtle differ-ences among micro-gestures to distinguish fine-grained categories and accurately determine the start and end timestamps of action segments. Traditional temporal action detection methods [26,31,52] typically rely on a two-stage paradigm, where video features are extracted offline and subsequently used to train a detector. Such a design prevents the backbone from being op-timized by the detection loss, potentially limiting representation learning. End-to-end training overcomes this by jointly learning the backbone and detection head, which theoretically yields stronger representations. However, fully fine-tuning a large model like VideoMAE-g requires extremely high GPU memory that common hardware cannot afford. Recent advances [1,30] have explored parameter-efficient fine-tuning of pre-trained vision encoders for temporal action detection, achieving an effective bal-ance between performance and computational efficiency. A common strategy is to insert lightweight adapter modules into frozen backbone layers, enabling the pretrained model to efficiently adapt to the downstream detection task with min-imal additional parameters. Most existing designs adopt a single-branch struc-ture that processes spatial and temporal information within a unified pathway, which may limit the model’s ability to independently capture local spatial pat-terns and long-range temporal dynamics. To address this issue, we propose a Spatial-Temporal Decoupled Adapter that decouples spatial and temporal mod-eling into parallel streams, allowing each branch to specialize in its respective dimension before merging their complementary representations. In addition to the challenge of modeling subtle spatio-temporal cues, micro-gesture recognition also suffers from severe data imbalance. As the official bench-mark of the EI-MiGA-IJCAI Challenge Track 2, the SMG dataset [6] consists of 40 untrimmed videos spanning 16 micro-gesture categories and one non-micro-gesture category, with a highly skewed class distribution where several categories contain significantly fewer samples than the majority classes. To alleviate this long-tail issue, we introduce Adaptive Soft Balanced Augmentation, which dy-namically adjusts augmentation intensity for each class based on effective sample counts and learning difficulty, without relying on manual thresholds. In summary, the contributions of our framework are as follows:  
+
+> •
+
+We propose a Spatial-Temporal Decoupled Adapter for parameter-efficient fine-tuning, enabling enhanced fine-grained spatio-temporal representation learning for micro-gesture recognition.  
+
+> •
+
+We introduce Adaptive Soft Balanced Augmentation to improve robustness against long-tail class imbalance by adaptively determining augmentation intensity according to class rarity and learning difficulty.  
+
+> •
+
+Experiments on the SMG dataset demonstrate the effectiveness of both com-ponents for micro-gesture online recognition. Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 3
+
+2 Related Work 
+
+2.1 Micro-Gesture Analysis 
+
+Micro-gesture analysis [6,32], including micro-gesture recognition [3,11,22,39], micro-gesture online detection [28,29], and behavior-based emotion understand-ing [47], has attracted increasing research attention with the development of dedi-cated datasets [12,20,24,43], advanced methods [10,21], and competitions [5,13,23]. The iMiGUE [32] is the first public dataset for micro-gesture understanding and emotion analysis, containing over 18,000 video clips across 32 categories. SMG [6] focuses on spontaneous micro-gestures under psychological stress with 16 MG categories and one non-MG category. MA-52 [12] extends to 52 micro-action categories, covering fine-grained natural actions in daily communication. MMA-52 [24] introduces multi-label annotations to better reflect action co-occurrence in real-world scenarios. These datasets establish standardized benchmarks for research on fine-grained non-verbal behavior. Micro-gesture online recognition is challenging due to subtle motion patterns and sparse temporal distribution. Early methods adopted skeleton-based ap-proaches: Guo et al . [14] combined GCNs with multi-scale Transformers, leverag-ing the structural prior of human joints to capture fine-grained spatial dependen-cies, though skeleton extraction errors in occluded scenarios limited robustness. Wang et al . [46] constructed a dual-stream architecture processing RGB and skeleton modalities in parallel, fusing appearance and structural cues through cross-modal attention, which demonstrated that complementary modalities can compensate for the ambiguity inherent in single-source inputs. Recent methods have shifted toward large-scale pretrained video backbones, exploiting their rich generalizable representations to reduce reliance on hand-crafted features. Liu et al . [29] introduced learnable query points coupled with Mamba blocks, replacing conventional temporal modeling with selective state-space scanning that offers linear complexity while preserving long-range con-text, achieving competitive results using only RGB input. In MiGA 2025, Liu et al . [28] proposed data augmentation strategies and spatial-temporal attention modules built upon DyFADet with VideoMAEv2-g features; their augmenta-tion pipeline alleviated the severe class imbalance in micro-gesture datasets, while the attention modules sharpened boundary localization, achieving an F1 score of 0.38027. Meng et al . [33] adopted a two-stage pipeline using a frozen VideoMAE-g encoder and DyFADet, validating that combining pretrained vi-sual representations with dynamic sequence modeling advances micro-gesture understanding in complex real-world settings. 
+
+2.2 Parameter-Efficient Fine-tuning for Video Understanding 
+
+Parameter-efficient fine-tuning has become a popular strategy for adapting large pretrained models to downstream tasks with limited trainable parameters. Ex-isting PEFT methods mainly include prompt tuning [19,25], low-rank adapta-tion [18], and adapter-based tuning [7,17]. Among these approaches, adapter 4 X. Shen et al. 
+
+tuning is a widely used PEFT strategy that freezes most parameters of the pretrained backbone and inserts small learnable modules into intermediate lay-ers. During fine-tuning, adapters allow pretrained vision representations to be adapted to downstream tasks with minimal additional parameters while pre-serving the general knowledge learned during large-scale pretraining. learn task-specific transformations while keeping most pretrained parameters fixed. Recent advances [7,34,49] have demonstrated the strong potential of adapter-based PEFT for adapting large pretrained vision models to downstream video understanding tasks. AdaptFormer [7] introduces lightweight adapter modules into Vision Transformers, enabling efficient task adaptation while preserving the generalization capability of pretrained representations. Following this paradigm, several studies adapt PEFT to video understanding by enhancing pretrained backbones with specialized temporal modules. For instance, AIM [49] introduces temporal attention modules into frozen CLIP encoders, whereas ST-Adapter [34] augments transformer blocks with lightweight spatio-temporal operators to fa-cilitate video representation learning. More recently, PEFT has also been explored in temporal action detection. AdaTAD [30] introduces lightweight adapters into a frozen VideoMAE back-bone, enabling end-to-end optimization while preserving the efficiency advan-tages of parameter-efficient tuning. Despite their effectiveness, existing adapter-based methods predominantly perform spatial and temporal adaptation within a shared adaptation pathway. Such a design may be insufficient for micro-gesture recognition, where discriminative cues are characterized by subtle appearance variations and weak motion patterns. To better capture these fine-grained spatio-temporal characteristics, we propose a Spatial-Temporal Decoupled Adapter that explicitly separates spatial and temporal adaptation into dedicated branches, allowing each branch to focus on complementary aspects of micro-gesture repre-sentation learning. 
+
+2.3 Temporal Action Detection 
+
+Temporal Action Detection [26,30,50,51] aims to localize and classify action in-stances in untrimmed videos. Existing methods can be broadly categorized into three paradigms: two-stage approaches, single-stage methods, and end-to-end optimization. Early methods typically adopt a two-stage [26,31,52] paradigm, where temporal proposals are first generated and then classified using separate detection heads. While effective, such approaches suffer from information loss due to offline feature extraction and require multiple training stages. Single-stage TAD methods have emerged to simplify the pipeline and improve efficiency. ActionFormer [50] introduces a multi-scale transformer architecture with local self-attention within each temporal scale and cross-scale feature fusion, enabling direct per-frame classification and boundary regression without explicit proposals. TriDet [40] enhances boundary precision via a trident-head design, while TemporalMaxer [42] demonstrates that simple max-pooling can replace complex temporal attention with competitive accuracy at lower computational Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 5
+
+cost. DyFADet [48] further leverages dynamic feature aggregation to adaptively fuse multi-scale temporal features based on content-dependent routing. End-to-end approaches have also gained attention, particularly for scenarios with large pretrained backbones. PointTAD [41] adopts a sparse query-based paradigm with learnable keyframe points for multi-label temporal action de-tection using only RGB input. Building on this idea, AdaTAD [30] introduces lightweight temporal adapters into a frozen VideoMAE backbone, jointly opti-mizing the backbone and a multi-scale detection head in an end-to-end manner. This eliminates the conventional two-step pipeline of offline feature extraction followed by separate detection training, and substantially improves localization quality. AdaTAD++ [1] further explores spatial-temporal decoupling for scalable action detection, mainly through separated adapter training and high-resolution inference. Different from it, our method adopts a parallel dual-branch adapter within each backbone block, where spatial and temporal branches are jointly trained and their complementary adaptation features are fused for fine-grained micro-gesture recognition. 
+
+3 Methodology 
+
+3.1 Problem Definition 
+
+Micro-gesture online recognition can be formulated as follows: given a streaming video V ∈ RT ×H×W ×3, where H and W denote the height and width of each frame and T is the number of frames processed so far, its micro-gesture anno-tations can be represented as Ψg = {φi = ( ts, t e, c )}Ni=1 , where ts, te, and c are the start time, end time, and category of micro-gesture instance φi, and N is the total number of ground-truth instances. The goal of online recognition is to predict a candidate proposal set Ψp = { ˆφi = (ˆ ts, ˆte, ˆc, s )}Mi=1 to cover Ψg in a causal manner, where s denotes the confidence score. 
+
+3.2 Overall Architecture 
+
+We design a parameter-efficient adaptation framework that preserves the spatial representation capability of pretrained Vision Transformers while incorporating necessary temporal modeling through lightweight modules. Given an input video clip X ∈ RT ×H×W ×3, a 3D patch embedding layer first converts it into a token sequence Z ∈ RN ×C , where C is the embedding dimension and N is determined by the spatio-temporal resolution after patchification. This sequence is then fed into a pretrained backbone with positional encodings added to preserve spatio-temporal structure. To enable task adaptation while retaining pretrained knowledge, we freeze all backbone parameters and insert Spatial-Temporal Decoupled Adapters after each transformer block. As illustrated in Figure 1, these lightweight bottleneck structures independently model spatial appearance patterns and temporal dy-namics, avoiding feature entanglement and improving discriminative ability. Af-ter feature extraction, the token sequence is passed through a projection layer 6 X. Shen et al. Video 
+
+> Patch Embedding
+> Detection Head
+> Backbone
+> Block 1
+
+❄
+
+> 🐀
+> Spatial-
+> Temporal
+> Decoupled
+> Adapter
+> Backbone
+> Block 2
+
+❄
+
+> 🐀
+> Spatial-
+> Temporal
+> Decoupled
+> Adapter
+> Backbone
+> Block N
+
+❄  
+
+> 🐀
+> Spatial-
+> Temporal
+> Decoupled
+> Adapter
+> ●●●
+
+❄️ Frozen 🐀 Learnable   
+
+> Time  ●●●
+> Classification
+> Score
+> Predicted
+> Segments
+> Projection
+> Features
+
+Fig. 1 : Micro-gesture online recognition framework. The input video is patchified and processed by a frozen backbone. Trainable decoupled adapters separately model spatial and temporal information. Aggregated features are fed to the detection head for localization and classification. while preserving its temporal structure. The projected features are subsequently processed by the detection head to jointly predict temporal boundaries and cat-egory labels for micro-gesture instances. 
+
+3.3 Adaptive Soft Balanced Augmentation 
+
+The SMG dataset exhibits a pronounced long-tailed distribution, where a few dominant categories contain significantly more annotation segments than the majority of tail classes. This causes models to be biased toward head classes and severely degrades recognition performance on rare micro-gesture categories. Conventional oversampling or fixed-threshold augmentation strategies fail to ac-count for the varying degrees of underrepresentation across classes, often leading to overfitting on duplicated tail samples or insufficient augmentation for the most scarce categories. To address this, we propose Adaptive Soft Balanced Augmentation (ASBA), a data-driven augmentation strategy that dynamically allocates augmentation intensity based on class rarity and learning difficulty, eliminating reliance on manually specified thresholds. Inspired by the effective number of samples pro-posed by Cui et al . [8], which captures the diminishing marginal benefit of ad-ditional data points through a geometric data overlap model, we compute an 
+
+effective sample count for each class c:
+
+Ec = 1 − βnc
+
+1 − β , (1) where nc denotes the original sample count of class c, and β is a decay coefficient that controls the diminishing marginal contribution of additional samples. Based on the effective sample count, we define a rarity weight 
+
+wr (c) = 1/E c
+
+max k(1 /E k) , (2) Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 7C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13 C14 C15 C16 C17                                         
+
+> Class ID
+> 0
+> 200
+> 400
+> 600
+> Annotation segments
+> +42 +35
+> +1 +135
+> +0
+> +71 +11
+> +0
+> +0
+> +115 +96
+> +1
+> +41 +26 +115 +76 +43
+> (a) Per-class sample counts before and after augmentation
+> Raw Data
+> Augmented Data
+> C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13 C14 C15 C16 C17
+> Class ID
+> 0
+> 5
+> 10
+> 15
+> Augment before/after ratio
+> (b) Augmentation ratio per class
+> No change
+> C4 C10 C15 C11 C16 C6 C17 C1 C13 C2 C14 C7 C12 C3 C8 C5 C9
+> Classes sorted by original frequency
+> 0
+> 200
+> 400
+> 600
+> Annotation segments
+> (c) Class distribution sorted by frequency
+> Raw Data
+> Augmented Data
+
+Fig. 2 : Effect of ASBA on the class distribution of the SMG training set. (a) Raw vs augmented annotation segments. ASBA selectively boosts tail categories while keeping head classes nearly unchanged. (b) Class-wise augmentation ra-tios. Underrepresented classes receive stronger augmentation. (c) Sorted class frequency before and after augmentation. ASBA alleviates long-tailed imbal-ance while preserving the original data structure. which assigns larger weights to underrepresented classes. To further account for class imbalance, we introduce a difficulty weight 
+
+wd(c) = Ntotal − nc
+
+Ntotal 
+
+, (3) where Ntotal = P
+
+c nc denotes the total number of samples across all classes. The rarity and difficulty weights are then linearly combined into a joint adaptive weight: 
+
+wc = λ · wr (c) + (1 − λ) · wd(c). (4) Rather than relying on a manually specified quantile as the balancing target, ASBA computes a data-driven adaptive target ceiling :
+
+T ∗ = 1
+
+|C| 
+
+X
+
+c
+
+nc(1 + wc). (5) For each tail class satisfying nc < T ∗, the augmented sample count is deter-mined by: 
+
+ˆnc =
+
+l
+
+nc + wc · α ·
+
+
+
+1 − nc
+
+T ∗
+
+
+
+(T ∗ − nc)
+
+m
+
+, (6) where α controls the overall augmentation intensity. The quadratic gap term ensures that the most underrepresented classes receive proportionally stronger augmentation, while head classes ( nc ≥ T ∗) remain unchanged. 
+
+3.4 Spatial-Temporal Decoupled Adapter 
+
+Pretrained Vision Transformers encode rich spatial representations but lack tem-poral modeling capabilities. Existing adapter approaches often apply a single 8 X. Shen et al. Down       
+
+> Up
+> (a) Standard Adapter
+> GeLU
+> FC
+> DwConv
+> Down
+> Up
+> GeLU
+> Down
+> (b) Temporal-Informative Adapter
+> PwConv1d
+> DwConv1d
+> PwConv2d
+> DwConv2d
+> GeLU GeLU
+> Down
+> temporal Down
+> spatial
+> (c) Spatial-Temporal Decoupled Adapter (Ours)
+> Up
+> temporal
+> Up
+> spatial
+> ZtZs
+> HtHs
+> ∆t∆s
+> X
+> X'
+> Temporal Spatial
+
+Fig. 3 : Architectural comparison of adapter variants. (a) Standard Adapter: a bottleneck consisting of a down-projection, GeLU activation, and up-projection, with a residual connection. (b) Temporal-Informative Adapter: extends the stan-dard design by inserting a depthwise convolution and a fully connected layer be-tween the down- and up-projections. (c) Spatial-Temporal Decoupled Adapter (Ours): routes the input into parallel temporal and spatial branches, each per-forming depthwise and pointwise convolutions independently; the deltas from both branches are summed and added back to the input. module that jointly processes spatial and temporal information, which may lead to feature entanglement. We argue that spatial appearance patterns and tempo-ral dynamics should be modeled independently to avoid interference and enable more targeted adaptation. Our Spatial-Temporal Decoupled Adapter consists of two parallel branches inserted after each Transformer block: a Temporal Adapter and a Spatial Adapter. Both branches follow a bottleneck design with down-projection, convolution, and up-projection. 
+
+Temporal Branch. Given input tokens X ∈ RBc×N ×D , where Bc denotes the chunked batch size, N is the number of spatio-temporal tokens in each chunk, and D is the embedding dimension. For simplicity, we omit the batch dimension in the following equations and write X ∈ RN ×D .
+
+Zt = GELU (XW (t)
+
+> down
+
+), (7) where Wdown ∈ RD×D′
+
+, D′ = ⌊D · r⌋ with bottleneck ratio r. The hidden features are then reshaped from the chunked token sequence to a 4D tensor 
+
+(T, h, w, D ′), where T is the number of temporal positions, and h, w are spatial grid dimensions. A depthwise 1D convolution is applied along the temporal axis for each spatial position: 
+
+Ht = PWConv1D (DWConv1D (Zt)) , (8) where Zt ∈ Rh·w×D′×T , DWConv1D denotes depthwise temporal convolution with kernel size kt, and PWConv1D is a pointwise convolution for channel mix-Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 9
+
+ing. The output is reshaped back and projected up: 
+
+Xt = γt · (Zt + Ht)W (t) 
+
+> up
+
+, (9) where Wup ∈ RD′×D is zero-initialized for training stability and γt is a learnable scale parameter. 
+
+Spatial Branch. The spatial branch shares the same bottleneck structure but applies depthwise 2D convolutions within each frame: 
+
+Hs = PWConv2D (DWConv2D (Zs)) , (10) where Zs ∈ RT ×D′×h×w and T = N/ (h · w) denotes the number of temporal tokens per chunk. The spatial convolution captures local spatial patterns such as hand configurations and body part relationships: 
+
+Xs = γs · (Zs + Hs)W (s) 
+
+> up
+
+. (11) 
+
+Parallel Combination. The two branches operate in parallel on the same input X, and their outputs are combined additively: 
+
+X′ = X + ( Xt − X) + ( Xs − X)= X + ∆t + ∆s. (12) The decoupled combination of the two branches ensures that each branch contributes an independent delta, preventing gradient interference between spa-tial and temporal learning signals. 
+
+4 Experiments 
+
+4.1 Experimental Setup Datasets. The SMG dataset [6] contains 16 MG categories and one non-MG category, collected from 40 subjects. Following the official cross-subject protocol, 35 subjects are used for training and the remaining 5 for testing. Although both RGB and skeleton modalities are available, our method operates solely on RGB input. 
+
+Evaluation Metric. We perform experiments on the SMG dataset and adopt the F1 score and mAP as evaluation metrics. The formula of the F1 score is presented as follows: F1 = 2 · Precision · Recall Precision + Recall , (13) where Precision denotes the fraction of predicted micro-gestures that are cor-rectly classified, and Recall denotes the fraction of ground-truth micro-gestures that are successfully detected. This metric captures both the temporal localiza-tion accuracy and the classification correctness in a single measure. 
+
+Implementation Details. We adopt VideoMAEv2-g [44] as our video back-bone and enhance it with our Spatial-Temporal Decoupled Adapters for feature 10 X. Shen et al. 
+
+Table 1: The Results of Micro-gesture Online Recognition on the SMG test set. Data is provided by the Kaggle competition page 1.                    
+
+> Rank Team F1 Score MiGA’26 1st XInsight Lab (Ours) 0.43808
+> MiGA’26 2nd AIM 0.40882 MiGA’26 3rd XD-L 0.35559 MiGA’25 1st HFUT-VUT [28] 0.38027 MiGA’25 2nd Chutian Meng [33] 0.31536 MiGA’24 1st NPU-MUCIS [46] 0.27571 MiGA’24 2nd HFUT-VUT [29] 0.14346 MiGA’23 1st NPU-Stanford [14] 0.14810 MiGA’23 2nd HFUT-VUT 0.04670
+
+extraction. The adapter bottleneck ratio is set to 0.25, the temporal kernel size 
+
+kt is set to 3, and the spatial kernel size ks is set to 3. ActionFormer head [50] is adopted as the detection head for temporal action localization. Videos are processed at the original frame rate of 28 fps with a sliding window of 16 frames and stride of 4 frames. All frames are resized to 160 ×160 . We adopt the AdamW optimizer with a weight decay of 0.05. The learning rate is initialized to 1 × 10 −4
+
+and scheduled with cosine annealing over 400 epochs. The batch size is set to 4. For ASBA, we set β = 0 .999 , λ = 0 .7, and α = 1 .0.
+
+4.2 Experimental Results 
+
+Here, we evaluate our method on the SMG test set and compare with top-performing entries from both the current and previous challenge editions. As shown in Table 1, our method achieves an F1 score of 0.43808, ranking 1st in Track 2 of the 4th EI-MiGA-IJCAI Challenge, surpassing the second-place team by 2.926 percentage points. Compared with prior challenge winners, our approach substantially outperforms these methods, demonstrating substantial progress on this task. 
+
+4.3 Ablation Study 
+
+We conduct ablation studies to evaluate the contribution of each major design choice in our framework. 
+
+Scaling backbone. To evaluate the impact of backbone scale, we compare VideoMAE-Small and VideoMAEv2-g in Table 2. Scaling up from the small to the giant variant raises the F1 score from 0.35614 to 0.41913, confirming that larger-scale pre-trained representations bring substantial benefits to micro-gesture recognition. 
+
+Component contributions. To further understand the contribution of each component, we conduct an ablation study in Table 2. The default single-branch  
+
+> 1
+
+The Kaggle competition page: https://www.kaggle.com/competitions/the-4th-ei-mi-ga-ijcai-challenge-track-2/leaderboard Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 11 
+
+Table 2: Ablation results of key modules on the SMG test set.                         
+
+> Data Augmentation Spatial-Temporal Decoupled Adapter Method Backbone F1 score
+> ✗✗AdaTAD [30] VideoMAE-S 0.35614
+> ✗✗AdaTAD [30] VideoMAE-B 0.38324
+> ✗✗AdaTAD [30] VideoMAEv2-g 0.41913
+> ✓✗AdaTAD [30] VideoMAEv2-g 0.42450
+> ✓✓AdaTAD [30] VideoMAEv2-g 0.43808
+
+Table 3: Comparison of augmentation strategies under different tIoU thresholds on the SMG validation set.                                                   
+
+> mAP Strategy @0.1 @0.2 @0.3 @0.4 @0.5 @0.6 @0.7 @0.8 @0.9 Avg None 36.16 35.95 35.13 33.48 31.33 25.61 19.61 7.22 1.43 25.10 Mean 38.62 38.30 37.64 34.34 32.52 29.29 24.94 15.27 1.42 28.04 Median 38.55 38.23 37.54 34.28 32.45 28.98 13.25 6.21 1.34 25.65
+> ASBA (Ours) 39.04 38.74 38.28 35.75 33.60 30.65 25.55 17.72 2.08 29.05
+
+adapter in AdaTAD tends to entangle spatial and temporal features, limiting fine-grained discrimination. To mitigate the class imbalance issue, we apply data augmentation alone and obtain an F1 score improvement from 0.41913 to 0.42450, confirming its effectiveness in alleviating category imbalance. Further-more, we integrate our proposed Spatial-Temporal Decoupled Adapter together with data augmentation. This combination increases the F1 score to 0.43808, indicating that decoupled spatial-temporal modeling provides a more effective adaptation mechanism for capturing subtle micro-gesture cues. 
+
+Augmentation strategy. We evaluate the augmentation strategy on the SMG validation set in Table 3. Training without augmentation yields an average mAP of 25.10%, highlighting the severe impact of class imbalance. Fixed balanc-ing targets based on mean or median statistics set a target sample size for each class as the mean or median of the class distribution and then augment minority classes up to that target. These targets offer some improvement, but their per-formance heavily depends on the choice of threshold. In contrast, ASBA achieves 29.05% average mAP, consistently outperforming both fixed-target baselines across all tIoU levels. This improvement can be attributed to ASBA’s mech-anism of adjusting augmentation intensity per class according to its effective sample count and learning difficulty, which avoids the over-augmentation or under-augmentation caused by a uniform threshold. 
+
+4.4 Error Analysis 
+
+In addition, we follow the standard practice in temporal action detection by adopting the diagnostic evaluation toolkit proposed by Alwassel et al . [2] to analyze model behavior from three perspectives. To better match the character-istics of the SMG dataset, we define Coverage groups as [XS, S, M, L, XL] with boundaries [0, 0.001, 0.0015, 0.0025, 0.0045, 1], Length groups as [XS, S, M, L, 12 X. Shen et al. XS S M L XL XS S M L XL XS S M L
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+> False Negative (%)
+> 69.6 82.4 60.1 42.5 37.5 74.6 76.2 58.8 32.6 46.2 21.4 19.1 62.0 77.0
+
+Coverage Length # Instances 
+
+XS S M L XL XS S M L XL XS S M L
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+> False Negative (%)
+> 71.6 83.5 59.0 38.6 33.3 76.3 76.8 55.9 30.5 41.0 21.4 18.0 60.6 76.7
+
+Coverage Length # Instances 
+
+> 1G 2G 3G 4G 5G 6G 7G 8G 9G 10G
+
+Top Predictions 
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+50 
+
+60 
+
+70 
+
+80 
+
+90 
+
+100 
+
+> Error Breakdown (%)
+
+False Positive Profile 
+
+Background Err Confusion Err Localization Err Wrong Label Err Double Detection Err True Positive 
+
+Error Type 
+
+0
+
+1
+
+2
+
+3
+
+4
+
+> Average-mAP N
+> Improvement (%)
+> 0.0 0.6 0.7 0.7 3.4
+
+Removing Error Impact 
+
+> 1G 2G 3G 4G 5G 6G 7G 8G 9G 10G
+
+Top Predictions 
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+50 
+
+60 
+
+70 
+
+80 
+
+90 
+
+100 
+
+> Error Breakdown (%)
+
+False Positive Profile 
+
+Background Err Confusion Err Localization Err Wrong Label Err Double Detection Err True Positive 
+
+Error Type 
+
+0
+
+1
+
+2
+
+3
+
+4
+
+> Average-mAP N
+> Improvement (%)
+> 0.0 0.8 0.5 0.7 3.5
+
+Removing Error Impact 
+
+XS S M L XL XS S M L XL XS S M L 
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+> Average-mAP N (%)
+> 36.1 24.9 21.6 20.8 11.4 40.2 18.6 16.2 33.4 7.1 48.0 46.2 14.4 34.8 26.37
+
+Coverage Length # Instances   
+
+> Cov. Len. # Inst.
+
+0.25 
+
+0.50 
+
+0.75 
+
+1.00 
+
+1.25 
+
+1.50 
+
+1.75 
+
+2.00 
+
+> Average-mAP N
+> Relative Change
+> 1.4 0.4 1.5 0.3 1.8 0.5
+
+XS S M L XL XS S M L XL XS S M L 
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+> Average-mAP N (%)
+> 36.6 29.7 21.3 31.0 26.9 40.0 21.1 24.8 32.9 22.2 49.4 45.1 15.4 46.7 32.75
+
+Coverage Length # Instances   
+
+> Cov. Len. # Inst.
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+1.2 
+
+1.4 
+
+1.6 
+
+1.8 
+
+> Average-mAP N
+> Relative Change
+> 1.1 0.6 1.2 0.6 1.5 0.5
+
+(a) False Negative Analysis on Baseline (b) False Negative Analysis on Our Method (c) False Positive Analysis on Baseline (d) False Positive Analysis on Our Method (e) Sensitivity Analysis on Baseline (f) Sensitivity Analysis on Our Method 
+
+Fig. 4 : Diagnostic evaluation of the baseline and our method on false negatives, false positives, and sensitivity analysis. The baseline adopts the AdaTAD model with VideoMAEv2-g as the backbone without data augmentation. XL] with boundaries [0, 1, 1.5, 2.5, 4, INF], and Instance groups as [XS, S, M, L] with boundaries [-1, 50, 100, 200, INF]. 
+
+False Negative Analysis. Figures 4 (a) and (b) compare the missed de-tection rates at tIoU = 0.5. Our method reduces false negatives primarily in medium-to-large coverage and longer-duration groups, indicating improved de-tection capability for temporally extended action instances. However, both meth-ods still exhibit high miss rates on very short segments, suggesting that detecting brief micro-gestures remains challenging. 
+
+False Positive Analysis. Figures 4 (c) and (d) decompose false positive errors into five categories. Background error dominates the false positive com-position in both methods and contributes the largest potential gain if removed. Compared to the baseline, our method slightly increases the true positive propor-Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 13 
+
+tion in top-ranked predictions and reduces background errors, while localization and confusion errors remain comparable. 
+
+Sensitivity Analysis. Figures 4 (e) and (f) evaluate Average-mAP N across different characteristic groups. Our method improves the overall Average-mAP N
+
+from 26.4% to 32.7%, with particularly notable gains in large-coverage, longer-duration, and high-instance-count groups. The relative sensitivity analysis shows that our method achieves more balanced performance across different segment characteristics, with reduced sensitivity to coverage and length variations com-pared to the baseline. 
+
+5 Conclusion 
+
+In this paper, we present our solution for the Micro-gesture Online Recogni-tion track of the IJCAI 2026 MiGA Challenge. We propose a spatial-temporal-decoupled adapter together with an adaptive soft balanced augmentation strat-egy to model fine-grained spatial-temporal patterns and alleviate severe category imbalance. Specifically, the proposed adapter introduces parallel temporal and spatial branches into the frozen video backbone, capturing subtle motion dynam-ics and local appearance cues with few trainable parameters. The augmentation strategy dynamically adjusts augmentation intensity based on class rarity and sample distribution, improving tail-class representation while preserving head classes. Experimental results demonstrate that the proposed method achieves performance improvements by a large margin. Although the proposed method achieves notable improvements, the accuracy of temporal localization and boundary detection remains limited. In future work, we plan to incorporate skeleton data, explore multi-modal fusion, and improve the detection head to further enhance temporal localization and recognition per-formance. 
+
+Acknowledgments 
+
+This work was supported by Anhui Provincial Natural Science Foundation (2408085J040), National Key R&D Program of China (2024YFB3311600), Natural Science Foun-dation of China (62272144, 72188101), the Major Project of Anhui Provincial Science and Technology Breakthrough Program (202423k09020001), and the New Cornerstone Science Foundation through the XPLORER PRIZE. 
+
+References           
+
+> 1. Agrawal, T., Ali, A., Dantcheva, A., Bremond, F.: Scaling action detection: Adatad++ with transformer-enhanced temporal-spatial adaptation. In: Proceed-ings of the IEEE/CVF International Conference on Computer Vision. pp. 12222– 12231 (2025)
+
+14 X. Shen et al. 2. Alwassel, H., Caba Heilbron, F., Escorcia, V., Ghanem, B.: Diagnosing error in tem-poral action detectors. In: The European Conference on Computer Vision (Septem-ber 2018) 3. Chen, G., Wang, F., Li, K., Wu, Z., Fan, H., Yang, Y., Wang, M., Guo, D.: Pro-totype learning for micro-gesture classification. arXiv preprint arXiv:2408.03097 (2024) 4. Chen, H., Liu, X., Li, X., Shi, H., Zhao, G.: Analyze spontaneous gestures for emotional stress state recognition: A micro-gesture dataset and analysis with deep learning. In: 2019 14th IEEE International Conference on Automatic Face & Ges-ture Recognition (FG 2019). pp. 1–8. IEEE (2019) 5. Chen, H., Schuller, B.W., Adeli, E., Zhao, G.: The 3rd challenge on human behav-ior analysis for emotion understanding (miga) 2025: From recognition to emotion understanding (2025) 6. Chen, H., Shi, H., Liu, X., Li, X., Zhao, G.: Smg: A micro-gesture dataset to-wards spontaneous body gestures for emotional stress state analysis. International Journal of Computer Vision 131 (6), 1346–1366 (2023) 7. Chen, S., Ge, C., Tong, Z., Wang, J., Song, Y., Wang, J., Luo, P.: Adaptformer: Adapting vision transformers for scalable visual recognition. Advances in Neural Information Processing Systems 35 , 16664–16678 (2022) 8. Cui, Y., Jia, M., Lin, T.Y., Song, Y., Belongie, S.: Class-balanced loss based on effective number of samples. In: Proceedings of the IEEE/CVF conference on com-puter vision and pattern recognition. pp. 9268–9277 (2019) 9. Gao, R., Liu, X., Xing, B., Yu, Z., Schuller, B.W., Kälviäinen, H.: Identity-free ar-tificial emotional intelligence via micro-gesture understanding. IEEE Transactions on Affective Computing (2026) 10. Gu, J., Li, K., Wang, F., Wei, Y., Wu, Z., Fan, H., Wang, M.: Motion matters: Motion-guided modulation network for skeleton-based micro-action recognition. In: Proceedings of the 33rd ACM International Conference on Multimedia. pp. 5461–5470 (2025) 11. Gu, J., Wang, F., Li, K., Wei, Y., Wu, Z., Guo, D.: Mm-gesture: towards precise micro-gesture recognition through multimodal fusion. arXiv preprint arXiv:2507.08344 (2025) 12. Guo, D., Li, K., Hu, B., Zhang, Y., Wang, M.: Benchmarking micro-action recog-nition: Dataset, methods, and applications. IEEE Transactions on Circuits and Systems for Video Technology 34 (7), 6238–6252 (2024) 13. Guo, D., Li, X., Li, K., Chen, H., Hu, J., Zhao, G., Yang, Y., Wang, M.: Mac 2024: Micro-action analysis grand challenge. In: Proceedings of the 32nd ACM International Conference on Multimedia. pp. 11304–11305 (2024) 14. Guo, X., Peng, W., Huang, H., Xia, Z.: Micro-gesture online recognition with graph-convolution and multiscale transformers for long sequence. In: MiGA@ IJ-CAI (2023) 15. Hao, Y., Wang, S., Cao, P., Gao, X., Xu, T., Wu, J., He, X.: Attention in attention: Modeling context correlation for efficient video classification. IEEE Transactions on Circuits and Systems for Video Technology 32 (10), 7120–7132 (2022) 16. Hao, Y., Zhang, H., Ngo, C.W., He, X.: Group contextualization for video recog-nition. In: Proceedings of the ieee/cvf conference on computer vision and pattern recognition. pp. 928–938 (2022) 17. Houlsby, N., Giurgiu, A., Jastrzebski, S., Morrone, B., de Laroussilhe, Q., Ges-mundo, A., Attariyan, M., Gelly, S.: Parameter-efficient transfer learning for nlp. In: International Conference on Machine Learning (2019) Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 15 18. Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W.: Lora: Low-rank adaptation of large language models. In: International Conference on Learning Representations (2022) 19. Jia, M., Tang, L., Chen, B.C., Cardie, C., Belongie, S., Hariharan, B., Lim, S.N.: Visual prompt tuning. In: European Conference on Computer Vision (2022) 20. Li, K., Gu, J., Wang, F., Wu, Z., Fan, H., Guo, D.: Ma-bench: Towards fine-grained micro-action understanding. arXiv preprint arXiv:2603.26586 (2026) 21. Li, K., Guo, D., Chen, G., Fan, C., Xu, J., Wu, Z., Fan, H., Wang, M.: Prototypical calibrating ambiguous samples for micro-action recognition. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 39, pp. 4815–4823 (2025) 22. Li, K., Guo, D., Chen, G., Peng, X., Wang, M.: Joint skeletal and semantic embed-ding loss for micro-gesture classification. arXiv preprint arXiv:2307.10624 (2023) 23. Li, K., Guo, D., Li, X., Chen, H., Liu, P., Wang, F., Hu, J., Zhao, G., Wang, M.: Mac 2025: The 2nd micro-action analysis grand challenge. In: Proceedings of the 33rd ACM International Conference on Multimedia. pp. 14216–14221 (2025) 24. Li, K., Liu, P., Guo, D., Wang, F., Wu, Z., Fan, H., Wang, M.: Mmad: Multi-label micro-action detection in videos. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 13225–13236 (2025) 25. Li, X.L., Liang, P.: Prefix-tuning: Optimizing continuous prompts for generation. In: Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Pro-cessing (2021) 26. Lin, T., Liu, X., Li, X., Ding, E., Wen, S.: Bmn: Boundary-matching network for temporal action proposal generation. In: Proceedings of the IEEE/CVF interna-tional conference on computer vision. pp. 3889–3898 (2019) 27. Liu, P., Dong, G., Guo, D., Li, K., Li, F., Yang, X., Wang, M., Ying, X.: A survey on fMRI-based brain decoding for reconstructing multimodal stimuli. arXiv preprint arXiv:2503.15978 (2025) 28. Liu, P., Li, K., Wang, F., Wei, Y., She, J., Guo, D.: Online micro-gesture recog-nition using data augmentation and spatial-temporal attention. arXiv preprint arXiv:2507.09512 (2025) 29. Liu, P., Wang, F., Li, K., Chen, G., Wei, Y., Tang, S., Wu, Z., Guo, D.: Micro-gesture online recognition using learnable query points. arXiv preprint arXiv:2407.04490 (2024) 30. Liu, S., Zhang, C.L., Zhao, C., Ghanem, B.: End-to-end temporal action detec-tion with 1b parameters across 1000 frames. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 18591–18601 (2024) 31. Liu, S., Zhao, X., Su, H., Hu, Z.: Tsi: Temporal scale invariant network for action proposal generation. In: Proceedings of the Asian Conference on Computer Vision (2020) 32. Liu, X., Shi, H., Chen, H., Yu, Z., Li, X., Zhao, G.: imigue: An identity-free video dataset for micro-gesture understanding and emotion analysis. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 10631– 10642 (2021) 33. Meng, C., Ma, F., Zhang, C., Miao, J., Yang, Y., Zhuang, Y.: Online micro-gesture recognition in long videos via spatiotemporal feature encoding and query-based temporal detection. MiGA@ IJCAI (2025) 34. Pan, J., Lin, Z., Zhu, X., Shao, J., Li, H.: St-adapter: Parameter-efficient image-to-video transfer learning. Advances in Neural Information Processing Systems 35 ,26462–26477 (2022) 16 X. Shen et al. 35. Qian, W., Guo, D., Li, K., Zhang, X., Tian, X., Yang, X., Wang, M.: Dual-path tokenlearner for remote photoplethysmography-based physiological measurement with facial videos. IEEE Transactions on Computational Social Systems (2024) 36. Qian, W., Guo, D., Zhou, J., Zou, B., Yu, Z., Wang, M.: Freqphys: Repurposing implicit physiological frequency prior for robust remote photoplethysmography. arXiv preprint arXiv:2604.00534 (2026) 37. Qian, W., Li, K., Guo, D., Hu, B., Wang, M.: Cluster-phys: Facial clues clustering towards efficient remote physiological measurement. In: Proceedings of the 32nd ACM International Conference on Multimedia. pp. 330–339 (2024) 38. Qian, W., Su, G., Guo, D., Zhou, J., Li, X., Hu, B., Tang, S., Wang, M.: Physdiff: Physiology-based dynamicity disentangled diffusion model for remote physiologi-cal measurement. Proceedings of the AAAI Conference on Artificial Intelligence (AAAI) (2025) 39. Shang, T., Hao, Y., Pei, M., Li, K., Ben, H., Wang, S.: Cross-modal feature en-hancement and contrastive alignment for micro-gesture recognition. In: Chinese Conference on Pattern Recognition and Computer Vision (PRCV). pp. 203–217. Springer (2025) 40. Shi, D., Zhong, Y., Cao, Q., Ma, L., Li, J., Tao, D.: Tridet: Temporal action detection with relative boundary modeling. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 18857–18866 (2023) 41. Tan, J., Zhao, X., Shi, X., Kang, B., Wang, L.: Pointtad: Multi-label temporal action detection with learnable query points. Advances in Neural Information Pro-cessing Systems 35 , 15268–15280 (2022) 42. Tang, T.N., Kim, K., Sohn, K.: Temporalmaxer: Maximize temporal context with only max pooling for temporal action localization. arXiv preprint arXiv:2303.09055 (2023) 43. Wang, C., Chen, H., Wei, H., Yang, Y., Chen, Y., Zhao, G.: imigue-3k: A large-scale benchmark for micro-gesture analysis with self-supervised learning. arXiv preprint arXiv:2605.17179 (2026) 44. Wang, L., Huang, B., Zhao, Z., Tong, Z., He, Y., Wang, Y., Wang, Y., Qiao, Y.: Videomae v2: Scaling video masked autoencoders with dual masking. In: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 14549–14560 (2023) 45. Wang, R., Li, K., Tong, A., Xu, J., Guo, D., Wang, M.: Gait emotion recognition via uncertainty-oriented class discriminative learning. IEEE Transactions on Affective Computing pp. 1–14 (2026) 46. Wang, Y., Kerui, L., Huang, H., Xia, Z.: Micro-gesture online recognition with dual-stream multi-scale transformer in long videos. MiGA@ IJCAI (2024) 47. Xia, Z., Huang, H., Chen, H., Feng, X., Zhao, G.: Hybrid-supervised hypergraph-enhanced transformer for micro-gesture based emotion recognition. IEEE Trans-actions on Affective Computing (2025) 48. Yang, L., Zheng, Z., Han, Y., Cheng, H., Song, S., Huang, G., Li, F.: Dyfadet: Dy-namic feature aggregation for temporal action detection. In: European conference on computer vision. pp. 305–322. Springer (2024) 49. Yang, T., Zhu, Y., Xie, Y., Zhang, A., Chen, C., Li, M.: Aim: Adapting image mod-els for efficient video action recognition. arXiv preprint arXiv:2302.03024 (2023) 50. Zhang, C.L., Wu, J., Li, Y.: Actionformer: Localizing moments of actions with transformers. In: European Conference on Computer Vision. pp. 492–510. Springer (2022) Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition 17 51. Zhao, C., Liu, S., Mangalam, K., Ghanem, B.: Re2tal: Rewiring pretrained video backbones for reversible temporal action localization. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 10637– 10647 (2023) 52. Zhao, C., Thabet, A.K., Ghanem, B.: Video self-stitching graph network for tempo-ral action localization. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 13658–13667 (2021)

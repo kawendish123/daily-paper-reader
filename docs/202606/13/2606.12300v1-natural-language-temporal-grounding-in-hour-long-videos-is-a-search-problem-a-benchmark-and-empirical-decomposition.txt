@@ -1,0 +1,405 @@
+Title: Natural-Language Temporal Grounding in Hour-Long Videos is a Search Problem: A Benchmark and Empirical Decomposition
+
+URL Source: https://arxiv.org/pdf/2606.12300v1
+
+Published Time: Thu, 11 Jun 2026 01:19:08 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Natural-Language Temporal Grounding in Hour-Long Videos is a Search Problem: A Benchmark and Empirical Decomposition 
+
+Sukmin Seo ∗
+
+NAVER Cloud AI 
+
+mellonggo@gmail.com 
+
+Geewook Kim ∗† 
+
+NAVER Cloud AI KAIST AI 
+
+gwkim.rsrch@gmail.com 
+
+Abstract 
+
+Temporal grounding—returning the interval 
+
+[ts, t e] for a natural-language query over a video—is the language interface to long-form video, yet has been studied on short videos; the dynamics of hour-scale natural-language grounding remain underexplored. We take the position that at hour-scale, the binding con-straint is search, not recognition : Video-LLMs are bottlenecked not by localizing anearby event, but—given a natural-language query—by searching for the relevant region of a long video. To test this, we release Ex-tremeWhenBench , the first open hour-scale grounding benchmark (2,273 queries over 194 videos, mean 75.7 min, max 9 hr) with an open-form query distribution. Every open Video-LLM collapses while a frame-level retrieval baseline outperforms them; a failure taxon-omy attributes 85% of failures to search ; and a retrieve-then-ground hybrid recovers 6.7 ×
+
+over the monolithic Video-LLM—mirroring retrieve-then-read in open-domain QA. 
+
+1 Introduction 
+
+A user asks, in plain language, “when in this lec-ture does the instructor first introduce backpropa-gation?” , or “what minute of the meeting did we agree on the budget?” . Returning the right interval 
+
+[ts, t e] for a natural-language query q over a video 
+
+V —temporal grounding—is the language interface to long-form video (Figure 1). Such queries operate on hour-scale content, yet the grounding literature has been built on short-video benchmarks (Gao et al., 2017; Krishna et al., 2017; Lei et al., 2021; Regneri et al., 2013) of 30 s to a few minutes; how Video-LLMs handle hour-scale natural-language queries remains underexplored.  
+
+> ∗
+
+Sukmin Seo and Geewook Kim contributed equally to this work and share first authorship.  
+
+> †
+
+Corresponding author. GT      
+
+> 010s 20s 30s
+> 053.7m
+> Hour-long Temporal Grounding Benchmark
+> Charades-STA
+> short-video timestamp benchmark
+> Ours
+> hour-long video timestamp benchmark
+> t=2758s
+> on boat
+> t=2766s
+> jump
+> t=2768s
+> into sea
+> t=2769s
+> surfaces
+> t=2772s
+> snorkels
+> t=2777s
+> snorkels
+> t=2785s
+> reef
+> Q: When does a man jump from a boat
+> into the ocean then snorkel?
+> avg video duration: 29.8 sec → 75.7 min (153×)
+
+Figure 1: ExtremeWhenBench places a ∼9 s event in-side a 76 min video—a search space 153 × larger than Charades-STA at matched event grain. Grounding no longer reduces to recognition. 
+
+Why the gap is structural. MAD (Soldan et al., 2022) aligns natural-language sentences with movie audio descriptions but ships only pre-computed CLIP features, blocking modern Video-LLM evaluation; Ego4D NLQ (Grauman et al., 2022) requires an NDA and a multi-TB download. Neither is integrated into lmms-eval (Zhang et al., 2024a) or VLMEvalKit (Duan et al., 2024). TVG-Bench (Wang et al., 2026) is a compact LVLM-friendly benchmark of 11 balanced query types over short-video sources, preserving the short-video regime rather than the hour-scale setting we target. Even recent grounding splits such as TVBench (Cores et al., 2025) remain template-bound, with five 4-gram prefixes covering 99.9% of its action_localization split (§2)—unlike how users phrase real natural-language queries. No existing benchmark simultaneously satisfies (i) long video length ( ≥30 min mean), (ii) open-form natural-language queries, and (iii) open ac-cess via public URLs, compatible with standard Video-LLM toolkits. 
+
+> arXiv:2606.12300v1 [cs.CV] 10 Jun 2026
+
+The question hour-scale grounding makes cen-tral. When a Video-LLM fails on a long video, is it failing to recognize the target event once nearby, or failing to find the region of the long video that the query refers to? Short-video benchmarks can-not distinguish these because their search spaces are too small. Hour-scale grounding makes the dis-tinction central and lets us decompose long-form grounding into a search stage (query-conditioned retrieval over long temporal context) and a localize 
+
+stage (boundary placement within a short window). This is structurally the retrieve-then-read decompo-sition that reshaped open-domain QA (Karpukhin et al., 2020; Izacard and Grave, 2021): the reader’s ceiling is set by the retriever. At hour-scale, the grounding model’s ceiling is set the same way. 
+
+Contributions. 
+
+1. ExtremeWhenBench : an open hour-scale benchmark of natural-language temporal queries (2,273 queries / 194 videos, mean 75.7 min, max 9 hr) built on LVBench (Wang et al., 2025a), MLVU (Zhou et al., 2025), and VideoMME (Fu et al., 2025), with a VLM-in-the-loop boundary verifier that refines 20.6% of caption-derived intervals. More details will be available at GitHub 1.2. A query-side quality filter that produces open-form (not template-bound) natural-language queries , validated by a ∼3× type-token-ratio (TTR) gap over Charades-STA and a ∼25 ×
+
+per-question 4-gram-stem gap over TVBench (Cores et al., 2025); full table in Appendix D. 3. An empirical decomposition of long-form grounding into search/localize, with a retrieve-then-ground hybrid recovering 6.7 × over the monolithic Video-LLM, mirroring open-domain QA’s retrieve-then-read at hour-scale. 
+
+2 ExtremeWhenBench 
+
+Why not just pad short videos? Padding Charades-STA 30 s clips with random footage is a simpler route, but the queries are too broad: Qwen3.5-9B drops from 0.572 mIoU on native Cha-rades to 0.247 at 10 min padded and 0.183 at 20 min (vs. 0.369 on a same-length crop of our natural videos), and 47%/74.5% of the worst-200 failures at 10/20 min place the prediction inside the padding region—an alternative scene typically matches a query like “a person walks through the doorway” 
+
+> 1https://github.com/naver-ai/ExtremeWhenBench
+
+as well as the true Charades segment. We build on naturally long videos, where each (query, interval) pair is verified unique within its source video. 
+
+Source corpora. We source 195 videos (mean 75.7 min, max 9.04 hr) from LVBench, MLVU, and VideoMME—all publicly available under their original licenses, with stable URLs, integrated into 
+
+lmms-eval / VLMEvalKit . We use them as video sources only ; the original QA annotations are not used. 
+
+Pipeline. The 7-stage pipeline (Figure 2; full de-tails in App. B) runs in three phases. Event min-ing (P0–P3): 1 fps Qwen3-VL-8B (Qwen Team, 2025b) captions → gpt-5-mini event group-ing → gpt-5.1 visual boundary verification on 
+
+8×8 frame mosaics (3.3% rejected; among kept, 79.4% verified / 20.6% refined) → removes re-peated events within the same video (3-aspect match; 41,139 → 37,599). Question generation 
+
+(P4): gpt-5-mini writes one 8–18-word natural-language question per event, banning cinematic vocabulary and applying explicit ordinal disam-biguation. Quality control (P5–P6): a gpt-5.4 
+
+visual-rubric filter scores each question on validity, uniqueness-within-grids, and temporal difficulty (anti-CLIP), keeping the top 30% per group with score ≥7 (2,375 candidates); CLIP ViT-L/14-336 top-10 coverage then flags 164 ambiguity-prone items for author review, with 102 dropped to yield the 2,273 released items. 
+
+Statistics. The released set is 2,273 questions over 194 videos. The median GT event duration is 9 s, closely matched to Charades-STA’s 7.1 s, so the 9 s event sits inside a 76 min video—a search space ∼153 × larger at matched event grain. 
+
+Query-side diversity. Long-form grounding is only well-posed if the queries are not template-bound. We compare against Charades-STA and TVBench action_localization (closest video-LLM grounding split) using sample-size-invariant MATTR (Covington and McFall, 2010) and unique 4-gram stems (first four tokens, a template-diversity probe). Our queries achieve MATTR 0.78 vs. 0.60 (TVBench) and 0.54 (Charades-STA), and yield 1,578 unique 4-gram stems—a ∼25 × per-question gap over TVBench, whose five prefixes cover 99.9% of its split. We treat this query-side diversity, not video length, as the benchmark’s pri-mary linguistic contribution ; long-form video pro-vides the evaluation substrate (full table in App. D). P0 Caption frames                  
+
+> 1 fps frame captions
+> P1 Group events
+> captions → events
+> event 1 event 2 event 3
+> caption stream
+> P2 Verify bounds
+> 8×8 grid; refine GT
+> GT
+> P3 Event dedup
+> remove duplicates
+> e1 e2 e3 e4 e5 e6 e7 e8
+> duplicate
+> P4 Question gen.
+> natural-language query
+> P5 Score & filter
+> drop low-score items
+> score ≥7
+> drop keep
+> rubric score
+> P6 Human review
+> pass / filtered
+> PASS
+> FILTER
+> PASS
+> OUT Release
+> 195 videos
+> 2,273
+> QA pairs
+
+Figure 2: Seven-stage benchmark construction. Funnel: 41,139 P2-verified events → 37,599 after P3 dedup →
+
+7,188 after P5 pre-pass → 2,375 after P5 main filter → 2,273 after P6 human review. Stage details in App. B. 
+
+Model Charades Ours Ratio Qwen3.5-9B 0.579 0.110 5.3 ×
+
+InternVL3.5-8B 0.359 0.003 120 ×
+
+LLaVA-OneVision-7B 0.226 0.003 75 ×
+
+LLaVA-NextVideo-7B 0.089 0.001 89 ×
+
+GPT-5.4 (64f) 0.299 0.013 23 ×
+
+Gemini-2.5-flash (1k f) 0.308 0.053 5.8 ×
+
+Gemini-3.5-flash (auto-fps) 0.466 0.115 4.1 ×
+
+CLIP ViT-L/14-336 0.332 0.269 1.2 ×
+
+Table 1: Hour-scale collapse and retrieval cross-over. 
+
+Best per-model mIoU on Charades-STA vs. ours for the same natural-language temporal grounding task. Open Video-LLMs collapse 5–120 ×; CLIP (frame-level re-trieval) outperforms all open Video-LLMs. 
+
+3 Empirical Study 
+
+Setup. We evaluate four open Video-LLMs— Qwen3.5-9B (Qwen Team, 2025a), InternVL3.5-8B (Wang et al., 2025b), LLaVA-OneVision-7B (Li et al., 2024), LLaVA-NextVideo-7B (Zhang et al., 2024b)—served via vLLM with lmms-eval ; three closed models (GPT-5.4 with 8×8 grid, Gemini-2.5-flash and Gemini-3.5-flash with raw video); and a frame-level language-image retrieval base-line, CLIP ViT-L/14-336 (Radford et al., 2021) at 1 fps. Frame counts N are swept per model up to context limit; we report the best-N configura-tion. All systems emit a start/end timestamp pair; parse failures count as IoU=0. We report mIoU here; R@ τ , parse-failure rates, and CLIP smooth-ing/clipping are in Appendix C. 
+
+Finding 1: Open Video-LLMs collapse. Every open Video-LLM that performs non-trivially on Charades-STA collapses by at least an order of magnitude on ours (Table 1, upper). The smallest relative drop (5.3 ×) belongs to Qwen3.5-9B—the only open model whose context scales gracefully         
+
+> 416 64 256 1k 2k
+> 0
+> 0.2
+> 0.4
+> 0.6
+> Frames N(log scale)
+> Charades-STA mIoU
+> Charades-STA (left) Ours (right)
+> 0
+> 0.03
+> 0.06
+> 0.09
+> 0.12
+> Ours mIoU
+
+Figure 3: Frame-count sweep, Qwen3.5-9B. Charades-STA mIoU (blue, left axis) peaks at N =64 (0.579 ) and stays flat—more frames carry no new information. Ours mIoU (red, right axis) rises monotonically and is still climbing at N =2 ,048 (0.110 ); we extend N 8× beyond the Charades regime and remain unsaturated. Note the 
+
+∼5× difference in y-axis scale. 
+
+to N =2 ,048 frames—and its mIoU on ours rises monotonically from 0.022 at N =128 to 0.110 at 
+
+N =2 ,048 (Figure 3; App. C). The bottleneck is context coverage, not recognition : models that can-not reach the target frame cannot ground it. Scaling 
+
+N alone does not close the gap: even at N =2 ,048 
+
+(0.110), Qwen trails retrieval-alone (0.269). 
+
+Finding 2: Query-conditioned retrieval outper-forms open Video-LLMs. On Charades-STA the language-image retrieval baseline sits in the middle of the pack (0.332 vs. Qwen 0.579)—recognition matters most when search is trivial. On ours, the order flips : CLIP (0.269) outperforms the best open Video-LLM (Qwen, 0.110) and every closed Video-LLM under our compute budget (Table 1, last row), pointing to query-conditioned retrieval over long temporal context as the dominant axis of difficulty. 
+
+When the task is hour-scale, a model that retrieves the right region from a natural-language query is more useful than one that recognizes once nearby. 30s 1m 5m 10m 20m 40m Full  
+
+> 0
+> 0.2
+> 0.4
+> 0.6
+> Clip length (GT-centered window, log scale)
+> mIoU
+> Qwen3.5-9B ( N=768 )
+> Gemini-3.5-flash
+> CLIP ViT-L/14-336
+
+Figure 4: Search–localize cross-over. mIoU vs. GT-centered clip length for Qwen3.5-9B, Gemini-3.5-flash, and a CLIP frame-level retrieval baseline. Qwen de-grades monotonically and crosses CLIP near a 20 min clip; Gemini-3.5-flash stays above CLIP across all win-dows and only drops below at full-video length.         
+
+> Pipeline context mIoU Video-LLM Grounding (Qwen3.5-9B) 76 min 0.053 Retrieval (CLIP) + Rule-based Thresholding 76 min 0.269
+> Retrieval + Video-LLM Grounding 6 min 0.354
+
+Table 2: Retrieve-then-ground hybrid recovers 6.7 ×
+
+over the monolithic Video-LLM (Qwen3.5-9B at 
+
+N =768 , its native frame budget; 0.053 on full 76 min) and 1.32 × over retrieval-alone, using only 6 min of Video-LLM context. Hybrid uses CLIP top-3 ±1 min, NMS 60 s; per-K ablation in Appendix C (Table 6). 
+
+Finding 3: Search–localize cross-over shifts with Video-LLM strength. Cropping the input to a GT-centered window of varying width (Figure 4) varies search difficulty without changing localiza-tion difficulty. Both Video-LLMs at a 30 s window match their Charades-STA localizer ceiling (Qwen 0.572, Gemini-3.5 0.578 vs. 0.579), so localization is intact. The Video-LLM–CLIP cross-over then shifts with model capacity: Qwen crosses CLIP near a 20 min clip (between ±5 and ±10 min, with CLIP winning by up to 22 mIoU points at full video), while Gemini-3.5-flash stays above CLIP across all shorter windows and only drops below at full-video length (76 min). This locates the regime boundary mechanistically: once the clip is long enough that search matters, recognition stops be-ing the binding constraint—and the clip length at which this happens scales with the Video-LLM’s long-context capacity. 
+
+Finding 4: A retrieve-then-ground hybrid re-covers most of the gap. A minimal two-stage pipeline—CLIP top-K retrieval from the natural-language query, then Qwen3.5-9B grounding within the union of candidate windows (NMS at 60 s)—achieves 0.354 mIoU with only 6 min of        
+
+> 85% ■search_fail 85%
+> ■localization_fail 11%
+> ■uncertain 4%
+
+Figure 5: Failure taxonomy on 100 random IoU <0.05 cases from Qwen3.5-9B N =2 ,048 (1,817/2,273 fail this threshold; parsing_fail and refusal each 0%). 
+
+Video-LLM context (Table 2): 6.7 × over the monolithic Video-LLM and 1.32 × over retrieval-alone. Performance peaks at K=3 and degrades at 
+
+K=10 , where the Video-LLM is again forced to search ∼20 min of context (Appendix C, Table 6). 
+
+4 Analysis 
+
+Failure taxonomy: 85% search. We sample 100 IoU <0.05 cases (seed 42) from Qwen3.5-9B N =2 ,048 and classify each with a GPT-5.4 classifier into five a-priori categories (Fig-ure 5; parsing_fail and refusal are 0%); we split search_fail vs. localization_fail at a 
+
+±5 min prediction-to-GT offset. Search failures (85%) dominate localization failures (11%) : when the model lands in the right region it places bound-aries with reasonable fidelity, but the dominant fail-ure mode is picking the wrong window of the long video —the mechanistic correlate of the cross-over. 
+
+Synthesis. Findings 1–4 and the failure taxon-omy converge on a single picture. At hour-scale, the dominant failure of monolithic Video-LLMs on natural-language temporal queries is wrong-window selection —a search failure, not a recogni-tion failure. This is what makes a language-image retrieval baseline—no grounding training, no lan-guage model in the loop—competitive on absolute mIoU, and what makes a two-stage retrieve-then-ground pipeline beat monolithic grounding under matched compute. Splitting retrieval and ground-ing into separate stages—rather than asking one model to do both—mirrors the retrieve-then-read consensus in open-domain QA. 
+
+5 Conclusion 
+
+We introduced a new hour-scale benchmark for 
+
+natural-language temporal grounding , and used it to decompose long-form grounding into search 
+
+and localize . Open Video-LLMs collapse while a frame-level retrieval baseline matches or ex-ceeds them; a search–localize cross-over exists at clip lengths that scale with Video-LLM capacity; 85% of failures are search failures; and a minimal retrieve-then-ground hybrid recovers 6.7 × over the monolithic Video-LLM with strictly less Video-LLM compute. The natural next step is to replace the retrieval stage with a stronger temporally-aware, language-grounded retriever and ask whether the hybrid’s mIoU ceiling rises in tandem with retriever quality. Our benchmark provides the testbed. 
+
+Limitations 
+
+Our pipeline relies on a single source-VLM (Qwen3-VL-8B-Instruct) for the 1 fps caption stream; a cross-VLM caption sanity check that would verify the caption distribution is not bi-ased toward one model family’s failure modes is deferred. The released benchmark also inherits the genre distribution of LVBench, MLVU, and VideoMME—long movies, documentaries, and multi-domain long-form videos—so performance on egocentric or surveillance content, which may interact differently with the search vs. recognition decomposition, is not separately measured. For query-side diversity, the two long-form references that match our length regime (MAD and Ego4D NLQ) are NDA/license-gated, so direct per-query MATTR or distinct-n comparisons against them re-main inaccessible and we rely on short-form refer-ences (TVBench, Charades-STA) for the diversity claim. On the empirical side, the failure taxonomy in §4 uses a single ±5 min boundary between search and localization failures; sensitivity to ±2 / ±10 min is deferred to follow-up analysis and we expect the qualitative 85/11 split to be robust but the exact share to shift. Finding 4 also uses a single retriever (CLIP ViT-L/14-336): a stronger temporally-aware, language-grounded retriever could in principle shift the hybrid’s operating point and the location of the cross-over in Figure 4, and the relationship between retriever quality and hybrid ceiling is the natural follow-up our benchmark is designed to support. 
+
+References 
+
+Daniel Cores, Michael Dorkenwald, Manuel Mucientes, Cees G. M. Snoek, and Yuki M. Asano. 2025. TVBench: Redesigning video-language evaluation. In Proceedings of the British Machine Vision Confer-ence (BMVC) .Michael A. Covington and Joe D. McFall. 2010. Cutting the Gordian knot: The moving-average type–token ratio (mattr). Journal of Quantitative Linguistics ,17(2):94–100. Haodong Duan and 1 others. 2024. VLMEvalKit: An open-source toolkit for evaluating large multi-modality models. In Proceedings of the 32nd ACM International Conference on Multimedia (MM) .Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, Peixian Chen, Yanwei Li, Shaohui Lin, Sirui Zhao, Ke Li, Tong Xu, Xiawu Zheng, Enhong Chen, Caifeng Shan, and 2 others. 2025. Video-MME: The first-ever compre-hensive evaluation benchmark of multi-modal LLMs in video analysis. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition (CVPR) , pages 24108–24118. Jiyang Gao, Chen Sun, Zhenheng Yang, and Ram Neva-tia. 2017. TALL: Temporal activity localization via language query. In Proceedings of the IEEE Interna-tional Conference on Computer Vision (ICCV) , pages 5267–5275. Kristen Grauman, Andrew Westbury, Eugene Byrne, Zachary Chavis, Antonino Furnari, Rohit Girdhar, Jackson Hamburger, Hao Jiang, Miao Liu, Xingyu Liu, and 1 others. 2022. Ego4D: Around the world in 3,000 hours of egocentric video. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 18995–19012. Yongxin Guo, Jingyu Liu, Mingda Li, Xiaoying Tang, Qingbin Liu, and Xi Chen. 2025. TRACE: Temporal grounding video LLM via causal event modeling. In 
+
+International Conference on Learning Representa-tions (ICLR) .Tanveer Hannan, Md Mohaiminul Islam, Thomas Seidl, and Gedas Bertasius. 2024. RGNet: A unified clip retrieval and grounding network for long videos. In 
+
+Proceedings of the European Conference on Com-puter Vision (ECCV) , pages 352–369. Bin Huang, Xin Wang, Hong Chen, Zihan Song, and Wenwu Zhu. 2024. VTimeLLM: Empower LLM to grasp video moments. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pat-tern Recognition (CVPR) , pages 14271–14280. Gautier Izacard and Edouard Grave. 2021. Leveraging passage retrieval with generative models for open do-main question answering. In Proceedings of the 16th Conference of the European Chapter of the Associ-ation for Computational Linguistics: Main Volume ,pages 874–880. Association for Computational Lin-guistics. Vladimir Karpukhin, Barlas Oguz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and Wen-tau Yih. 2020. Dense passage retrieval for open-domain question answering. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP) , pages 6769–6781. Association for Computational Linguistics. Ranjay Krishna, Kenji Hata, Frederic Ren, Li Fei-Fei, and Juan Carlos Niebles. 2017. Dense-captioning events in videos. In Proceedings of the IEEE Interna-tional Conference on Computer Vision (ICCV) , pages 706–715. Jie Lei, Tamara L. Berg, and Mohit Bansal. 2021. QVHighlights: Detecting moments and highlights in videos via natural language queries. In Advances in Neural Information Processing Systems (NeurIPS) .Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Hein-rich Küttler, Mike Lewis, Wen-tau Yih, Tim Rock-täschel, Sebastian Riedel, and Douwe Kiela. 2020. Retrieval-augmented generation for knowledge-intensive NLP tasks. In Advances in Neural Infor-mation Processing Systems (NeurIPS) , volume 33, pages 9459–9474. Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Peiyuan Zhang, Yan-wei Li, Ziwei Liu, and Chunyuan Li. 2024. LLaVA-OneVision: Easy visual task transfer. arXiv preprint arXiv:2408.03326 .Jiwei Li, Michel Galley, Chris Brockett, Jianfeng Gao, and Bill Dolan. 2016. A diversity-promoting ob-jective function for neural conversation models. In 
+
+Proceedings of the Conference of the North Ameri-can Chapter of the Association for Computational Linguistics (NAACL) , pages 110–119. Long Qian, Juncheng Li, Yu Wu, Yaobo Ye, Hao Fei, Tat-Seng Chua, Yueting Zhuang, and Siliang Tang. 2024. Momentor: Advancing video large language model with fine-grained temporal reasoning. In Pro-ceedings of the International Conference on Machine Learning (ICML) .Qwen Team. 2025a. Qwen3 technical report. arXiv preprint arXiv:2505.09388 .Qwen Team. 2025b. Qwen3-VL technical report. arXiv preprint arXiv:2511.21631 .Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sas-try, Amanda Askell, Pamela Mishkin, Jack Clark, and 1 others. 2021. Learning transferable visual models from natural language supervision. In Proceedings of the International Conference on Machine Learning (ICML) .Michaela Regneri, Marcus Rohrbach, Dominikus Wet-zel, Stefan Thater, Bernt Schiele, and Manfred Pinkal. 2013. Grounding action descriptions in videos. 
+
+Transactions of the Association for Computational Linguistics (TACL) , 1:25–36. Shuhuai Ren, Linli Yao, Shicheng Li, Xu Sun, and Lu Hou. 2024. TimeChat: A time-sensitive multi-modal large language model for long video under-standing. In Proceedings of the IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition (CVPR) , pages 14313–14323. Mattia Soldan, Alejandro Pardo, Juan León Alcázar, Fabian Caba Heilbron, Chen Zhao, Silvio Giancola, and Bernard Ghanem. 2022. MAD: A scalable dataset for language grounding in videos from movie audio descriptions. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition (CVPR) , pages 5026–5035. Weihan Wang, Zehai He, Wenyi Hong, Yean Cheng, Xiaohan Zhang, Ji Qi, Xiaotao Gu, Shiyu Huang, Bin Xu, Yuxiao Dong, Ming Ding, and Jie Tang. 2025a. LVBench: An extreme long video understanding benchmark. In Proceedings of the IEEE/CVF In-ternational Conference on Computer Vision (ICCV) .Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, Zhaokai Wang, Zhe Chen, and 1 others. 2025b. InternVL3.5: Ad-vancing open-source multimodal models in versa-tility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265 .Ye Wang, Ziheng Wang, Boshen Xu, Yang Du, Kejun Lin, Zihan Xiao, Zihao Yue, Jianzhong Ju, Liang Zhang, Dingyi Yang, Xiangnan Fang, Zewen He, Zhenbo Luo, Wenxuan Wang, Junqi Lin, Jian Luan, and Qin Jin. 2026. Time-r1: Post-training large vi-sion language model for temporal video grounding. In The Thirty-ninth Annual Conference on Neural Information Processing Systems .Yueqian Wang, Xiaojun Meng, Jianxin Liang, Yuxuan Wang, Qun Liu, and Dongyan Zhao. 2024. Hawk-Eye: Training video-text LLMs for grounding text in videos. arXiv preprint arXiv:2403.10228 .Jianlong Wu, Wei Liu, Ye Liu, Meng Liu, Liqiang Nie, Zhouchen Lin, and Chang Wen Chen. 2025. A survey on video temporal grounding with multimodal large language model. arXiv preprint arXiv:2508.10922 .Accepted to IEEE TPAMI. Kaichen Zhang, Bo Li, Peiyuan Zhang, Fanyi Pu, Joshua Adrian Cahyono, Kairui Hu, Shuai Liu, Yuan-han Zhang, Jingkang Yang, Chunyuan Li, and Ziwei Liu. 2024a. Lmms-eval: Reality check on the eval-uation of large multimodal models. arXiv preprint arXiv:2407.12772 .Yuanhan Zhang, Bo Li, Haotian Liu, Yong Jae Lee, Liangke Gui, Di Fu, Jiashi Feng, Ziwei Liu, and Chunyuan Li. 2024b. LLaVA-NeXT: A strong zero-shot video understanding model. LLaVA-NeXT blog post. Junjie Zhou, Yan Shu, Bo Zhao, Boya Wu, Zhengyang Liang, Shitao Xiao, Minghao Qin, Xi Yang, Yong-ping Xiong, Bo Zhang, Tiejun Huang, and Zheng Liu. 2025. MLVU: Benchmarking multi-task long video understanding. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition (CVPR) .System Venue Grounding mechanism VTimeLLM (Huang et al., 2024) CVPR24 Boundary-aware 3-stage training TimeChat (Ren et al., 2024) CVPR24 Timestamp-aware encoder + sliding Q-Former Momentor (Qian et al., 2024) ICML24 Continuous-time tokens (TPM) TRACE (Guo et al., 2025) ICLR25 Causal event modeling, task-interleaved heads HawkEye (Wang et al., 2024) arXiv24 Fully text-to-text, coarse-grained spans 
+
+Table 3: Representative Video-LLMs trained or adapted for temporal grounding. All reported eval splits are short- to medium-form (Charades-STA, ActivityNet Captions, QVHighlights, YouCook2); none extends to our 75.7 min mean regime. 
+
+A Related Work and Positioning 
+
+This appendix expands the brief related-work para-graph in §1 along three lines: (A.1) Video-LLMs trained or adapted for temporal grounding, (A.2) long-form video benchmarks, and (A.3) two-stage retrieve-then-X pipelines. 
+
+A.1 Video-LLMs for temporal grounding 
+
+A recent survey (Wu et al., 2025) catalogues over 30 Video-LLMs trained or adapted for temporal grounding. We summarize representative systems in Table 3. The mechanisms differ substantially— multi-stage training with text timestamps (Huang et al., 2024), timestamp-aware encoders (Ren et al., 2024), continuous-time tokens (Qian et al., 2024), causal event modeling (Guo et al., 2025), fully text-to-text grounding (Wang et al., 2024)—but the reported evaluation splits cluster on short- to medium-form sources (Charades-STA ∼30 s, Ac-tivityNet Captions ∼2 min, QVHighlights ∼150 s, YouCook2 cooking clips). We are not aware of any of these systems reporting hour-scale natural-language grounding numbers under standard Video-LLM evaluation toolkits (Zhang et al., 2024a; Duan et al., 2024). Our §3 suggests this evaluation choice obscures the regime where these models break: at hour-scale, the search bottleneck becomes binding. 
+
+A.2 Long-form video benchmarks 
+
+Several prior benchmarks address aspects of long-form temporal grounding but each fails at least one of our three constraints (long mean length, open-form natural-language queries, open access via pub-lic URLs compatible with standard Video-LLM toolkits): 
+
+MAD (Soldan et al., 2022): hour-scale movie-derived queries, but ships only pre-computed CLIP features rather than raw video, precluding modern Video-LLM evaluation. 
+
+Ego4D NLQ (Grauman et al., 2022): hour-scale egocentric video with NL queries, but access re-quires an NDA and a multi-TB download. We further use LVBench (Wang et al., 2025a), MLVU (Zhou et al., 2025), and VideoMME (Fu et al., 2025) as raw video sources only; their origi-nal QA annotations (multiple-choice or generative) do not enter our pipeline. To our knowledge, our benchmark is the first to simultaneously satisfy 
+
+≥30 min mean length, open-form natural-language queries, and open access via public URLs compat-ible with standard Video-LLM toolkits, such as, 
+
+lmms-eval (Zhang et al., 2024a). 
+
+A.3 Two-stage retrieve-then-X pipelines 
+
+Two-stage retrieve-then-read is the default ar-chitecture for open-domain QA over long text (Karpukhin et al., 2020; Izacard and Grave, 2021; Lewis et al., 2020), with the consistent finding that end-to-end performance is bounded by retrieval quality—the structural parallel we test for long video. The closest video-side counterpart is RGNet (Hannan et al., 2024), which proposes a unified clip-retrieval-and-grounding architecture for 20– 120 min videos, evaluated on Ego4D NLQ and MAD. RGNet proposes the architecture ; we empir-ically establish that the decomposition is needed at all for hour-scale grounding under standard Video-LLM toolkits (Findings 1, 3, 4 in §3), using a mini-mal training-free hybrid (CLIP retrieval + a frozen Video-LLM grounder) to make the point. The two contributions are complementary. 
+
+B Annotation pipeline details 
+
+We document the seven stages summarized in §2 and Figure 2 in per-stage form below. Table 4 lists the model, reasoning setting, and prompt used at each stage; “reasoning” refers to the OpenAI-style reasoning-effort parameter, which we set to medium 
+
+throughout. P0 is the only stage that consumes raw video frames at scale; downstream stages operate on the caption stream emitted by P0 except for P2 (boundary verification), which re-consults the origi-nal video frames in an 8×8 grid with ±5 s padding around the candidate event. Figure 6 shows the natural-language query, the ground-truth interval, and a strip of frames sampled within and around the GT. 
+
+P0 Captioning. 1 fps frame-level descriptions are generated by Qwen3-VL-8B-Instruct (Qwen Team, 2025b). Each frame yields a short text de-scribing visible entities and actions, with the abso-lute video timestamp attached. The caption stream Q: When does a man jump from a boat into the ocean then snorkel?           
+
+> GT 2766–2777s
+> t=2758s t=2762s t=2766s t=2768s t=2769s t=2771s
+> t=2772s t=2774s t=2775s t=2777s t=2781s t=2785s
+
+Figure 6: A qualitative example.                         
+
+> Stage Model Reasoning Prompt P0 caption (1 fps) Qwen3-VL-8B —frame-level desc P1 event grouping gpt-5-mini medium V1d P2 boundary verify gpt-5.1 medium v3 ( 8×8+pad) P3 within-vid dedup gpt-5-mini medium v2 P4 question gen gpt-5-mini medium v2 (8–18 tok) P5 quality filter gpt-5.4 medium 3-criteria, top-30% P6 human review authors —CLIP-flagged 164
+
+Table 4: Per-stage configuration. 
+
+is the input substrate for P1–P5. 
+
+P1 Event grouping. gpt-5-mini reads the cap-tion stream of each video and emits a sequence of candidate events, each with a coarse [ts, t e] bound-ary derived from adjacent captions that describe the same ongoing action. This step is purely textual and does not re-consult the video. 
+
+P2 Boundary verification. gpt-5.1 re-examines each candidate by sampling 64 frames uniformly from a ±5 s-padded window around the candidate interval and tiling them into a single 
+
+8×8 mosaic image (64 thumbnails = one “frame grid” the VLM can see at once). For each grid the VLM returns one of four verdicts: V ERIFIED 
+
+(boundaries are correct as proposed), R EFINED 
+
+(boundaries shifted to better match the event onset/offset), S PLIT (the candidate contains two distinct events and is divided), or R EJECTED (the candidate does not depict the proposed event). Among kept events the verdict mix is 79.4% VERIFIED / 20.6% R EFINED ; a further ∼3.3% of raw P1 candidates are R EJECTED , and S PLIT is rare ( ∼0%). 
+
+P3 Within-video deduplication. One 
+
+gpt-5-mini call per video reads all P2-verified events and flags a pair as duplicate only when at least three semantic aspects of the event description overlap (e.g., same actor and same action and same setting). Pairs that share only one aspect—for instance, the same character appearing in two different scenes, or two events in the same setting with different actions—are kept as distinct. The pass retains 91.4% of P2 events (41,139 →
+
+37,599), confirming that within long videos true near-duplicates are rare. 
+
+P4 Question generation. gpt-5-mini writes one natural-language question per deduplicated event under three constraints: (i) length 8–18 words; (ii) ban on cinematic vocabulary (e.g., “scene”, “cut”, “establishing shot”) that leaks production-side framing into a viewer-side query; (iii) explicit ordinal disambiguation (e.g., “the first time”, “when finally”) to prevent referent ambigu-ity for queries that admit multiple candidate inter-vals within the same video. 
+
+P5 Visual-rubric quality filter. Two passes feed the released number. The pre-pass (gpt-5-mini ,text-only) drops obviously bad items (unanswer-able, non-memorable, ambiguous, borderline-duplicate, over-long) from the P4 output and ap-plies a 25 s GT-duration cutoff, leaving 7,188 can-didates. The main pass groups neighbouring ques-tions per video (8–15 per group; the group ends when the next GT is more than 300 s away) and builds 5–15 8×8 frame grids that cover the union of those GTs ( ±10 s pad, 1 fps, empty time skipped; each thumbnail keeps its absolute video timestamp). 
+
+gpt-5.4 via Batch API scores each question 1–10 on (A) VALIDITY —does the marked interval really answer the question; (B) UNIQUENESS WITHIN GRIDS —is there a different moment in the shown N 4 16 64 128 256 best                                                      
+
+> Charades-STA mIoU
+> Qwen3.5-9B .299 .514 .579 .575 .557 N=64
+> InternVL3.5 .298 .359 .335 .336 .004 †N=16
+> LLaVA-OV-7B .234 .206 OOM ——N=8
+> LLaVA-NextV .089 .075 .072 0—N=4
+> N128 256 512 1024 2048 best
+> Ours mIoU
+> Qwen3.5-9B .022 .033 .047 .068 .110 N=2048
+> InternVL3.5 .003 0———sat. LLaVA-OV-7B 0————sat.
+
+Table 5: Per-model frame-count sweep on Charades-STA (top) and ours (bottom). †context overflow. 
+
+frames that would answer it equally well; (C) TEM - 
+
+> PORAL DIFFICULTY
+
+(anti-CLIP)—down-weight questions a single still frame can solve, up-weight those that need motion or sequence. We keep the top 30% per group, then drop any remaining item with score < 7, producing 2,375 release candidates. Kept-score histogram: 7 :209 / 8 :1,394 / 9 :751 / 10 :21. 
+
+P6 Targeted human review. For each P5-passing query we compute CLIP ViT-L/14-336 top-10 candidate windows ( ±1 min, NMS 60 s) and flag the 164 items ( ≈6.9% of the 2,375-item pool) whose GT interval is not covered by any top-10 hit—a strong signal of annotation ambiguity, miss-ing visual evidence, or wording-induced referent ambiguity. At the final stage, the authors manually inspect all 164 (video, query, GT) triples and dis-card 102 (ambiguous boundary, event missing from frames, or wording artifact), yielding the 2,273-item released set spanning 194 videos (one source video lost all its queries at this stage). 
+
+Cost. Total API cost was ≈$200 across the 195-video corpus. P2 (boundary verification on the 
+
+8×8 grid) accounts for the largest fraction; P0 cap-tioning is a single-VLM cost amortized across all downstream stages. 
+
+License. Source videos and original annotations retain their upstream licenses (LVBench, MLVU, VideoMME); our added annotations (event bound-aries, queries, quality scores) will be released under MIT. 
+
+C Full per-model metrics 
+
+Retrieve-then-ground: per-K ablation. Table 6 expands the hybrid row of Table 2 across retrieval breadth. Recall is the fraction of items whose GT                
+
+> Hybrid setting VLM ctx Recall mIoU CLIP top-1 ±2.5 min 5 m 62.8 0.302
+> CLIP top-3 ±1 min (NMS 60 s) 6 m 81.6 0.354
+> CLIP top-10 ±1 min 20 m 96.7 0.295
+
+Table 6: Per-K ablation of the retrieve-then-ground hybrid. Recall is the fraction of items whose GT is covered by the top-K candidate set after NMS. 
+
+interval is covered by at least one of the top-K can-didate windows; the VLM (Qwen3.5-9B N =768 )is invoked only on the union of those windows. Performance peaks at K=3 : K=10 adds recall but forces the VLM to again search ∼20 min, while 
+
+K=1 has too low coverage. 
+
+Open models: where the sweep saturates. Two patterns are visible in Table 5. On Charades-STA, every model peaks at small N (N =4 to N =64 )and degrades thereafter, consistent with the 30 s clip length: more frames do not add information. On ours, only Qwen3.5-9B makes use of larger 
+
+N ; InternVL3.5 and LLaVA-OneVision saturate near N =128 because their context windows do not support deeper sweeps without overflow. LLaVA-NextVideo is omitted from the Ours sweep because its Charades-STA peak (0.089 at N =4 ) is already too weak. 
+
+Closed models and CLIP baseline. GPT-5.4 (8×8 grid, 64f) scores 0.013 mIoU on ours; ex-panding to 512f across eight grids improves to 0.042 mIoU at 50.7% parse-failure rate. Gemini-2.5-flash (1024f via raw video file) scores 0.053 mIoU; Gemini-3.5-flash with auto-fps on the same input reaches 0.115 mIoU , the best closed-model result—still below CLIP-alone (0.269). CLIP ViT-L/14-336 (1 fps, peak β=0 .7, clip [4 , 60] )scores 0.269 mIoU with no parse failures; the absence of prompting and response parsing con-tributes to robustness at hour-scale. 
+
+Window-clipping sweep (numerical). Table 7 reports the per-window mIoU values visualized in Figure 4. Qwen3.5-9B runs at N =768 . Gemini-3.5-flash uses fps=5 up to ±5 min and auto-fps (VideoMetadata fps=0; Gemini samples internally) for ±10 min, ±20 min, and Full. 
+
+D Linguistic diversity: full table 
+
+Setup. We compare against two reference points: Charades-STA test (canonical moment-retrieval benchmark) and TVBench action_localization Window Clip Qwen Gemini-3.5 CLIP                             
+
+> ±15 s 30 s 0.572 0.578 0.534
+> ±0.5 min 1 min 0.541 0.542 0.458
+> ±2.5 min 5 min 0.466 0.402 0.387
+> ±5 min 10 min 0.381 0.413 0.358
+> ±10 min 20 min 0.265 0.409 0.331
+> ±20 min 40 min 0.098 0.320 0.300 Full 76 min 0.053 0.115 0.269
+
+Table 7: Window-clipping sweep, human-filtered (n=2 ,273 ). Bold = best per row.                               
+
+> Metric Ours TVBench CSTA TTR 0.173 0.091 0.058 MATTR (W=50) 0.780 0.595 0.539 Distinct-1 0.173 0.091 0.058 Distinct-2 0.610 0.230 0.249 Distinct-3 0.845 0.331 0.506 Distinct-4 0.946 0.392 0.705 Unique bigrams (tot) 17,618 556 1,690 Unique 4-gram stems 1,578 5707 Top-5 stem coverage 47% 99.9% 19%
+
+Table 8: Full diversity table. “Top-5 stem coverage” is the fraction of questions whose 4-gram prefix matches one of the five most common prefixes. TVBench’s 99.9% reflects its declared 5-template design. 
+
+(Cores et al., 2025) (closest video-LLM grounding split). We report TTR; MATTR (Covington and McFall, 2010) (sliding-window TTR, sample-size-invariant at W =50 ); Distinct-n (Li et al., 2016); and unique 4-gram stems (the first 4 tokens of each question), which directly probe question-template diversity. 
+
+Findings. On sample-size-invariant MATTR, our queries (0.78) exceed both TVBench (0.60) and Charades-STA (0.54). The most striking gap is at the 4-gram level: TVBench’s five 4-gram prefixes (during which part , when in the , at what moment , in the given , can you identify ) cover 99.9% of its 160-question split , while our top-5 pre-fixes cover only 47% of 2,273 questions, yielding 1,578 unique stems ( ∼25 × the per-question rate). The two long-form references that match our length regime (MAD, Ego4D NLQ) are NDA/license-gated, so we cite only their published statistics (MAD (Soldan et al., 2022): >60K unique words across 384K queries).
