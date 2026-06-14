@@ -1,0 +1,139 @@
+Title: Augmentation techniques for video surveillance in the visible and thermal spectral range
+
+URL Source: https://arxiv.org/pdf/2606.13042v1
+
+Published Time: Fri, 12 Jun 2026 00:39:39 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Augmentation techniques for video surveillance in the visible and thermal spectral range 
+
+## Vanessa Buhrmester, Ann-Kristin Grosselfinger, David M¨ unch, and Michael Arens Fraunhofer IOSB, Gutleuthausstraße 1, 76275 Ettlingen, Germany 
+
+ABSTRACT 
+
+In intelligent video surveillance, cameras record image sequences during day and night. Commonly, this demands different sensors. To achieve a better performance it is not unusual to combine them. We focus on the case that a long-wave infrared camera records continuously and in addition to this, another camera records in the visible spectral range during daytime and an intelligent algorithm supervises the picked up imagery. More accurate, our task is multispectral CNN-based object detection. At first glance, images originating from the visible spectral range differ between thermal infrared ones in the presence of color and distinct texture information on the one hand and in not containing information about thermal radiation that emits from objects on the other hand. Although color can provide valuable information for classification tasks, effects such as varying illumination and specialties of different sensors still represent significant problems. Anyway, obtaining sufficient and practical thermal infrared datasets for training a deep neural network poses still a challenge. That is the reason why training with the help of data from the visible spectral range could be advantageous, particularly if the data, which has to be evaluated contains both visible and infrared data. However, there is no clear evidence of how strongly variations in thermal radiation, shape, or color information influence classification accuracy. To gain deeper insight into how Convolutional Neural Networks make decisions and what they learn from different sensor input data, we investigate the suitability and robustness of different augmentation techniques. We use the publicly available large-scale multispectral ThermalWorld dataset consisting of images in the long-wave infrared and visible spectral range showing persons, vehicles, buildings, and pets and train for image classification a Convolutional Neural Network. The training data will be augmented with several modifications based on their different properties to find out which ones cause which impact and lead to the best classification performance. 
+
+Keywords: Augmentation technique, video surveillance, long-wave thermal infrared, LWIR, color space, grayscale, image classification, CNN 
+
+1. INTRODUCTION 1.1 Motivation 
+
+Dealing with thermal infrared ( IR ) images is important in security and defense tasks like video surveillance or unmanned ground vehicles, and moreover it plays an upcoming role in autonomous driving systems. A trained Convolutional Neural Network (CNN) for this has learned to detect persons, vehicles, buildings, animals or other objects of interest. The properties of the training data that is fed into the model were decisive for the success of detecting objects. Video cameras should monitor day and night, so our regarded detector should have the ability to classify both types of images data reliable. Depending on the dataset, if a network has been trained with images of the visible spectrum ( VIS ) one could assume that it is good in classifying visible images but not in classifying infrared ones and vice versa. However, indeed, IR and VIS 
+
+images can enrich each other by the respective advantages or missing disadvantages which are there: Objects behind glass, not visible in IR , see Figure 1 (a,b), disturbing reflections in IR images, see Figure 2 (a), diffuse occluded objects in VIS 
+
+images, see Figure 1 (d-f), or problems with too little light, see Figures 1 (c) and 2 (b). It is not always easy for humans to predict what spectral range works well and what does not. For example the person in the VIS image in Figure 3 is not easily detected by humans since the image is quite a lot confusing, but better detected from a machine than the one in the corresponding IR image. 
+
+Further information of correspondence author: V.B.: E-mail: vanessa.buhrmester@iosb.fraunhofer.de, Telephone: +49 (0)72 43 92 21 67,     
+
+> arXiv:2606.13042v1 [cs.AI] 11 Jun 2026 (a) (b) (c)
+> (d) (e) (f)
+
+Figure 1: Examples for advantages and disadvantages in IR or VIS detection: Objects behind glass are only visible in VIS 
+
+(a,b). Motion blur in dark situations, where IR works better (c). Diffuse occlusion leads to better results in IR (d-f). (White boxes are ground truth, blue boxes detections in IR and VIS , red boxes detections in only one spectral range, and yellow boxes detections without matching ground truth). All examples from MIL Tokyo detection dataset. 1 
+
+> (a) (b)
+
+Figure 2: More examples for advantages and disadvantages in IR or VIS detection: IR detection is more error-prone due to reflections in glassy surfaces (a). Example from DGB Toronto dataset. 2 IR detection works better in darkness (b). Example from CATS dataset. 3
+
+If one looks at the confidence values of related IR and VIS detection pairs according to ground truth, it is noticeable that there is still room left for the exploitation of both spectral ranges. The bottom right and the top left corners in Figure 4 show detections with no detection or only low confidence detection in the other spectral range. Hence, it is not clear, which training data achieve maximum performance in multispectral evaluation. Furthermore, a big problem is that CNNs need a huge set of training data and it is a tedious procedure to annotate it. Especially compatible annotated long-wave-infrared data is rare. That is the reason why we prefer to train our network with images of the visible range and find augmentation techniques to prepare them suitable. Figure 3: Sometimes the more visible spectrum for humans is not the one with the better detection. Red box: Detection in 
+
+VIS , white box missed ground truth in IR . Image from MIL Tokyo detection dataset. 100.2 0.4 0.6 0.8 10 0.2 0.4 0.6 0.8 1IR Confidence TV Confidence 
+
+Figure 4: YOLOv3 Detector on MILtokyo Dataset: Confidence values in IR and VIS detection. The values of correspond-ing detections with respect to the ground truth against each other. 1.2 Related Work 
+
+In 2008 Zhang and Viola 4 introduced an infrared person-detector, which was trained on images from the visible spectrum since the overall shape of humans is similar in each spectra. One of early comparative studies on visible and thermal face recognition was presented by Socolinsky and Selinger. 5 They concluded that ”LWIR thermal imagery of human faces is not only a valid biometric, but almost surely a superior one to comparable visible imagery.” In 2013, Kieritz et al. 6 used a transmodal detector from the visual spectrum for training and applied it on infrared images. Nowadays CNN-based methods became popular because they gain good practical results. They are universal frame-works and need not much development. In 2015, Sarfraz and Stiefelhagen 7 published an approach for thermal-to-visible face recognition. Their model attempts to learn a non-linear mapping from visible to thermal spectrum while preserving the identity information. K¨ onig et al. 8 presented a novel multispectral Region Proposal Network that is built upon the pre-trained VGG-16 and employed to detect persons from multispectral images that combine visual-optical and infrared image information. In 2018 Herrmann et al. 9 used pre-trained neural networks for IR data, which is transformed as close as possible to the RGB domain. Their applied methods were stretching, equalization, inversion and combination of stretching and inversion. 
+
+1.3 Contribution 
+
+We take up the method of Herrmann et al. 9 and adapt and optimize the augmentation techniques to achieve better results when our test data is a mixture of VIS and IR data. Contrary to them, we transform the visible data as close as possible to the infrared data and not the other way around. We do not use stretching or equalization, rather we convert the images in different color systems. Our goal is to make easy available train data compatible for a detector, which is specialized on a mixture of visible and thermal infrared images. It is obviously purposeful to make the visible images more looking like infrared ones. Therefor we try several methods that were described and visualized in the following. On the whole, we reach an improvement of about 76% and 24% in classification of infrared images and combined images of the visible and thermal infrared spectrum, respectively in comparison to unaugmented visible train data. The performance of only visible test data remains unchanged. To underline the results and to get insights what the CNN learns from the input data, we also compare the filterkernels of the first convolution of the utilized techniques. 
+
+2. METHODS 2.1 Examples of employed augmentation techniques 
+
+In this work we have tuples of input images (i, v ) ∈ IR, V IS , which we describe now. Let T be a tensor with entries in 
+
+[0 , 1] representing an image with c channels. The pixels of the visible color input image v with height h and width w are scaled to 
+
+v ∈ [R, G, B ] ⊂ T h×w×c, (1) where c = 3 , v ij 1 = R, v ij 2 = G, v ij 3 = B ∈ T h×w. Furthermore let 
+
+i ∈ IR ⊂ T h×w (2) describe thermal infrared images. Now, we want to convert the visible RGB images. For a conversion into grayscale one applies a convex combination. The model is also known as Luminance , and is inspired by the current spectra, which human eyes are differently sensitive to perceiving red, green, and blue: 
+
+v′ = [0 .2989 R + 0 .5870 G + 0 .1140 B] ∈ T h×w. (3) Another grayscale space is the Intensity , mean of the RGB channels: 
+
+v′ = 13 [R + G + B] ∈ T h×w. (4) More simple is Value , set pixel-wise 
+
+v′ = max  
+
+> i,j
+
+(vij 1, v ij 2, v ij 3) ∈ T h×w (5) by regarding only the maximum entry along the third axis. 
+
+Gaussian blur is also an augmentation technique to make the images more blurring and is the same as convolving each channel of the image with a 2-dimensional Gaussian function. For each channel we calculate pixel-wise: 
+
+v′ 
+
+> ij
+
+= vij ∗ 12πσ 2 exp − ∥vij ∥22σ2 . (6) To calculate the inverse of an image v ∈ V IS we just set 
+
+v′ = 1hwc − v, (7) whereby 1hwc describes a h × w × c-tensor with all ones. Intensity can be modified by adding b ∈ [−1, 1] to every entry vijc in v:
+
+v′ 
+
+> ijc
+
+= min(max( vijc + b, 0) , 1) . (8) To change the contrast by factor k ≥ 0, set channel-wise: 
+
+v′ 
+
+> ij
+
+= ( vij − 1hw · mean( vij )) · k + 1hw · mean( vij ). (9) In this work we apply augmentation techniques A to the input images v ∈ V IS , see Buhrmester et al. 10 
+
+A : v → A(v), (10) 
+
+A is the successive execution of one or more of the of the described conversions or the identity function. The pre-processed image can now be fed in the classification algorithm, the CNN. It depicts the input images v ∈ V IS, i ∈ IR to a prediction: 
+
+CNN : A(v) → P ′, CNN : i → P. (11) and our goal is to calculate A, so that P ≈ P ′.
+
+3. EXPERIMENTS 
+
+In this section we describe our data, our deep neural network and how we apply the before presented augmentation tech-niques to the input images. Furthermore we explain the results of the study. 
+
+3.1 Data 
+
+We use the ThermalWorld dataset 11 for our experiments. It provides 1659 pairs of aligned color and thermal images with ground truth class annotations. Images sizes are 1185 × 889 × 3 pixels and 640 × 480 × 1 pixels, respectively. About 21% are taken for validation. The data is labeled with the 9 classes [car, truck, minibus, bus, building, human, cat, dog, boat], see Figure 5. 
+
+3.2 Neural Network 
+
+As model we use an established Convolutional Neural Network which performs well in classification tasks. The architec-ture has two convolutional layers ( conv 1 , conv 2 ) with maxpooling ( pool 1, pool 2 ) and three fully connected layers ( fc 1 ,
+
+fc 2 , and softmax ) and further state-of-the-art tools like standardization, data augmentation, normalization, and dropout, see Hinton et al. 12 We have accordingly modified it to enter color, grayscale or infrared images and to visualize the kernels and output of the first layer. The input images are scaled at a size of 128 × 128 × 3 and 128 × 128 × 1, respectively. 
+
+3.3 Execution 
+
+First we train our neural network with thermal infrared images. After that we train our network with visible RGB images. We get a comparative value P for each test mode: test images are IR or VIS or a mix of them ( IR /VIS ). Our goal is to find an augmentation technique A to improve the performance P’ of the network in the test cases IR, VIS , and IR/VIS . It is promising to use transformations that transfer the visible images optical as close as possible in thermal infrared images. First we try a conversion into the different grayscale modes Luminance (Lum), Intensity and Value. After that we add Gaussian blurring (blur) with σ = 0 .5 on the images. We also invert (inv) them or change the brightness or the contrast. We make experiments with several combinations of those transformations. Finally, we feed these different augmented images into our architecture and train the network in several modes. We compare the accuracies P ′(A) for our test images (IR , VIS , and IR /VIS ) to find out which augmentation A leads closest to P ≈ P ′. In the evaluation the respective same pre-processing is employed to the visible test images VIS of course. Figure 5: Images of the ThermalWorld Dataset, including humans, cars, cats, bus, humans, building, each in VIS and IR .
+
+3.4 Results 
+
+Table 1: Test accuracy in % under different augmentation techniques. Table 2: train modus / test modus IR VIS IR/VIS RGB 33 99 66 Luminance 32 99 65.5 Lum blur 52 71 61.5 Lum inv 54 99 76.5 Intensity inv blur 56 99 77.5 Lum inv blur contrast 56 99 77.5 Lum inv blur 58 99 78.5 
+
+Lum inv blur brighter 58 99 78.5 
+
+IR 76 51 63.5 
+
+Evaluation results. The important output values are in Table 1. In the first column are the augmentation techniques for the train and test images from the visible spectrum. In the other columns are the accuracies in different test modes ( IR , VIS ,
+
+IR /VIS ) shown. IR/VIS contains 50% of each kind of image, that is why the result is the average precision. The graphic illustrates the numbers. Contrary to expectations RGB performs better than Luminance even though the infrared spectrum contains no color. Although Gaussian blur with σ = 0 .5 significantly improves the detection of IR images, the recognition rate of VIS images decreases hence blurring is known to degrade shapes. Furthermore, inversion of Luminance images increase the detection rate. This can be gained by additional Gaussian blur. Adjusting contrast seems to be also a good idea, as one compares image (e) and (g) , Figure 6 but even has a negative effect on the accuracy. Decreasing brightness about 4% scored no further improvement. As expected Luminance is more suitable than Intensity. Altogether we reach an improvement of −1 + 78 .5/63 .5 ≈ 24% when the test data is a mix of IR and VIS images and the training mode is a combinatino of inversion, Gaussian blurring and Luminance in comparison to infrared training. In comparison to unaugmented visible RGB training our approach performs −1 + 78 .5/66 ≈ 19% better. If only IR test data is available we achieve a deterioration of −1 + 58 /76 ≈ 24% with inverse Luminance and blur train images, but together with the advantage that we can use easily available visible train data. Regarding the use of unaugmented visible train data instead would yield a deterioration of −1 + 58 /33 ≈ 76% .Figure 6: Filterkernels of the first layer, car, and building while training with the following augmentation techniques, from left to right: (a) none ( RGB ), (b) Luminance, (c) Lum blur, (d) Lum inv, (e) Lum inv blur, (f) Lum inv blur brighter (all VIS ) and (g) IR .The images in the red box have the greatest similarities. To detect objects on images from the visible spectrum, the algorithm performs well with mostly all data augmentation methods applied on the visible data. 
+
+Filter visualization. In Figure 6 the 64 filters in the first convolutional layer are presented under several train modes and six different augmentation techniques. The 3D filters of training with RGB images are colored, the others are 1-channeled because the images are grayscale. One can regard the similarity to the IR filters (g) is increasingly approaching from (a) to (f) . This underlines the above results of our study. 
+
+4. CONCLUSION AND FUTURE WORK 
+
+With our augmentation method we reach an improvement of about 24% in classification of combined images of the visible and thermal infrared spectrum. The used ThermalWorld dataset includes nine classes, especially persons, vehicles, pets, and buildings and the application is important for video surveillance. Next to the enhancement of the accuracy it is beneficial to use visible train data instead of infrared data which is still available to a limited extend. Our best performing color augmentation method has been the transformation of RGB to inverse Luminance with added Gaussian blur. Adapting brightness or contrast was contrary to expectation not helpful. Methods like gamma correction or other color systems could be explored further. 
+
+REFERENCES 
+
+[1] Takumi, K., Watanabe, K., Ha, Q., Tejero-De-Pablos, A., Ushiku, Y., and Harada, T., “Multispectral object detection for autonomous vehicles,” in [ Proceedings of the on Thematic Workshops of ACM Multimedia ], (2017). [2] Morris, N. J., Avidan, S., Matusik, W., and Pfister, H., “Statistics of infrared images,” in [ Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition ], (2007). [3] Treible, W., Saponaro, P., Sorensen, S., Kolagunda, A., O’Neal, M., Phelan, B., Sherbondy, K., and Kambhamettu, C., “Cats: A color and thermal stereo benchmark,” in [ Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition ], (2017). [4] Zhang, C. and Viola, P. A., “Multiple-instance pruning for learning efficient cascade detectors,” in [ Advances in neural information processing systems ], (2008). [5] Socolinsky, D. A. and Selinger, A., “A comparative analysis of face recognition performance with visible and thermal infrared imagery,” in [ Object recognition supported by user interaction for service robots ], IEEE (2002). [6] Kieritz, H., H¨ ubner, W., and Arens, M., “Learning transmodal person detectors from single spectral training sets,” in [Security and Defence Conference SPIE ], (2013). [7] Sarfraz, M. S. and Stiefelhagen, R., “Deep perceptual mapping for thermal to visible face recognition,” in [ Proceed-ings of the British Machine Vision Conference ], (2015). [8] K¨ onig, D., Adam, M., Jarvers, C., Layher, G., Neumann, H., and Teutsch, M., “Fully convolutional region proposal networks for multispectral person detection,” in [ Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops ], (2017). [9] Herrmann, C., Ruf, M., and Beyerer, J., “CNN-based thermal infrared person detection by domain adaptation,” in [Autonomous Systems: Sensors, Vehicles, Security, and the Internet of Everything ], International Society for Optics and Photonics (2018). [10] Buhrmester, V., M¨ unch, D., Bulatov, D., and Arens, M., “Evaluating the Impact of Color Information in Deep Neural Networks,” in [ Proceedings of the Iberian Conference on Pattern Recognition and Image Analysis (ibPRIA) ], (2019). [11] Kniaz, V. V., Knyaz, V. A., Hladuvka, J., Kropatsch, W. G., and Mizginov, V., “Thermalgan: Multimodal color-to-thermal image translation for person re-identification in multispectral dataset,” in [ Proceedings of the European Conference on Computer Vision (ECCV) ], (2018). [12] Hinton, G. E., Srivastava, N., Krizhevsky, A., Sutskever, I., and Salakhutdinov, R. R., “Improving neural networks by preventing co-adaptation of feature detectors,” arXiv preprint arXiv:1207.0580 (2012).

@@ -1,0 +1,535 @@
+Title: LGVSC: A Large-Model-Driven Generative Video Semantic Communication Framework
+
+URL Source: https://arxiv.org/pdf/2606.12899v1
+
+Published Time: Fri, 12 Jun 2026 00:29:22 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+> 1
+
+# LGVSC: A Large-Model-Driven Generative Video Semantic Communication Framework 
+
+Yu Ma, Hang Yin, Li Qiao, Shuo Sun, Zhen Gao, Senior Member, IEEE , Yin Xu, Senior Member, IEEE , and Wenjun Zhang, Fellow, IEEE 
+
+Abstract —Driven by the massive video transmission require-ments in the Internet of Everything, semantic communication holds great promise for striking a balance between transmission effi ciency and quality. This paper introduces a large-model-driven generative video semantic communication (LGVSC) framework, enabling e ffi cient video semantic transmission under extremely low bandwidth conditions. First, by decoupling the encoder and decoder as well as exposing explicit intermediate semantic repre-sentations, LGVSC maintains interpretability, avoiding the black-box behavior commonly observed in end-to-end systems. Next, we introduce a new metric, i.e., the probability-based semantic similarity score (PSSS), which quantifies semantic similarity for complex modalities within a continuous range, allowing for more precise evaluation of semantic content. Building on PSSS, we propose a semantic-guided keyframe extraction module driven by a multimodal large model. This module can enhance fine-grained semantic consistency during keyframe selection at the transmit-ter, optimizing transmission bandwidth without compromising semantic fidelity. Additionally, we design a generative large-model-driven dynamic semantic-adaptive decoder at the receiver, which can adapt to videos of arbitrary lengths. Simulation results demonstrate that LGVSC significantly outperforms traditional schemes, achieving a channel bandwidth ratio on the order of 
+
+10 −4 to 10 −3, while maintaining strong zero-shot generalization across downstream tasks. 
+
+Index Terms —Generative AI, Generative Semantic Communi-cation, Multimodal Large Model. 
+
+I. I ntroduction 
+
+# SEMANTIC communication (SemCom) has emerged as a promising paradigm for enhancing communication ef-ficiency under bandwidth constraints, particularly as tradi-tional Shannon-based syntactic communication approaches face limitations in supporting immersive communication. Re-cent studies have focused on two main directions: (1) en-hancing compression e ffi ciency by transmitting only essen-tial semantic information, thereby enabling ultra-low bitrate communication; and (2) integrating artificial intelligence to facilitate task-oriented transmission and enhancing semantic accuracy. In particular, the paradigm evolution from specialist models to large models has been shown to substantially benefit semantic-aware communication system design [1]. SemCom demonstrates strong potential under conditions of extremely limited bandwidth and low signal-to-noise ratio (SNR), such as concurrent high-resolution video streaming in the Internet of Everything (IoE). Despite these advancements, two fundamental challenges remain unresolved. First , the e ffi cient semantic extraction and transmission for arbitrary-length videos remains an open challenge. Specifically, generative video semantic communi-cation (GVSC) [2] can only transmit short video clips (8 − 16 
+
+Copyright (c) 2026 IEEE. Personal use of this material is permitted. However, permission to use this material for any other purposes must be obtained from the IEEE by sending a request to pubs-permissions@ieee.org. 
+
+frames) at 10 -2 channel bandwidth ratio (CBR 1). Wireless deep video semantic transmission (DVST) [3] o ff ers higher fidelity through entropy coding and deep joint source-channel coding (JSCC) but requires substantially higher CBR. Semantic video conferencing (SVC) [4] is designed exclusively for meeting-style video transmission and is thus unsuitable for general video applications. Second , current SemCom frameworks ex-hibit limited generalization across di ff erent downstream tasks, often requiring costly task-specific fine-tuning to achieve ef-fective performance [5]. These limitations highlight the lack of scalable, bandwidth-e ffi cient, and training-free SemCom frameworks for long video sequences. Recent advances in large models have demonstrated strong zero-shot capabilities across modalities [6]. Moreover, the integration of large models into 6G networks has been shown to enable embodied intelligence for integrated perception, communication, and computation [7]. We observe that large models are capable of achieving state-of-the-art performance in video SemCom without fine-tuning. A representative case is that world models like Sora [8] act as e ff ective semantic decoders, capable of reconstructing realistic video from text-only semantic information under low CBR (Fig. 1b) [2] [9], in contrast to traditional methods that exhibit noticeable dis-tortion (Fig. 1d, 1c, and 1e). While video reconstruction or generation based solely on textual semantics can preserve high-level meaning, they often fail to capture fine-grained and long-term semantic dependen-cies essential for complex video content. For images, neural semantic coding schemes such as nonlinear transform source-channel coding (NTSCC) [10] have shown strong capability in preserving fine-grained visual semantics under extremely low CBR. However, extending image-level semantic coding to long video sequences incurs prohibitive communication over-head. Enabling e ffi cient video semantic transmission therefore requires selective delivery of semantically critical multimodal information, which is fundamentally constrained by the lack of a principled and quantifiable semantic similarity metric for adaptive temporal information selection. Therefore, we propose a large-model-driven generative video semantic communication (LGVSC) framework, which introduces a novel semantic similarity evaluation method sup-ported by a multimodal large model. The proposed LGVSC can improve semantic transmission quality, aligning with hu-man perception, while reducing the CBR for video SemCom to the order of 10 −4 to 10 −3. The framework designs large-model-driven multimodal semantic encoders and decoders, decoupling the semantic perception process from traditional communication pipelines, thereby preserving semantic inter-
+
+> 1
+
+CBR = BC×H×W×F , where B denotes transmitted symbols and C, H, W, and 
+
+F denote the numbers of color channels, height, width, and frame, respectively. 
+
+> arXiv:2606.12899v1 [eess.SP] 11 Jun 2026 2
+
+(a) Origin PSNR: 8.98  
+
+> CLIP: 0.88
+
+(b) Text-Only PSNR: 19.78 
+
+> CLIP: 0.90
+
+(c) H.264 PSNR: 21.26  
+
+> CLIP: 0.89
+
+(d) H.265 PSNR: 18.45 
+
+> CLIP: 0.85
+
+(e) DVST PSNR: 19.93  
+
+> CLIP: 0.92
+
+(f) LGVSC(Ours) 
+
+Fig. 1. Visual comparison of reconstructed video frames under di ff erent transmission schemes at SNR =10 dB. Semantic -Aware                                                       
+
+> Keyframe
+> Extraction using
+> MLLM
+> (SKEM)
+> Semantic Encoder
+> World
+> Model
+> (Open
+> -Sora)
+> Multimodal
+> Large
+> Language
+> Model Compare the two images.
+> Provide a detailed
+> description for each
+> image ……
+> PSSS
+> Semantic caption 1
+> Input
+> Video
+> Simple Keyframe
+> Interval -
+> based Method
+> (SKIM )
+> or
+> Semantic Decoder
+> Fixed
+> Interval
+> Segments
+> LLM -
+> based
+> Sem antic
+> Segments
+> or
+> Output
+> Video
+> Latent In Latent Out &×𝑁
+> Latent In &Out 1
+> Frame
+> Information Latent In &Out 2
+> …
+> In &Out 3
+> SKEM Module
+> Current
+> frame
+> Current
+> frame …
+> Keyframes
+> Last
+> keyframe
+> Are they
+> semantically
+> the same?
+> Answer with
+> yes or no. If 𝑷 𝑵𝒐 −𝑷 𝒀𝒆𝒔 >𝒕𝒉𝒓𝒆𝒔𝒉𝒐𝒍𝒅
+> Is Key Frame
+> PSSS
+> Embedding
+> Norm
+> Multi -head Attention
+> Add &Norm
+> Feed Forward
+> Add &Norm
+> 𝑁 ×
+> Linear &Sample
+> Sample
+> 𝑷 𝑵𝒐 𝑷 𝒀𝒆𝒔 Out token
+> Prompt Prompt
+> Current
+> frame
+> Current
+> frame
+> Current
+> frame
+> …
+> Input frames
+> Semantic caption 2
+> Video
+> Semantic
+> Caption
+> or
+> Dynamic Semantic -Aware Adapt er
+> (DSA)
+> Keyframes
+> Side
+> Information
+> Joint Source and Channel Coding
+> Wireless  Channel
+> Static Feature Adapter
+> (SFA)
+
+Fig. 2. Proposed LGVSC framework using SKEM (or SKIM) at transmitter and DSA (or SFA) at receiver. 
+
+pretability and enhancing compatibility with existing wireless networks. A core design goal of LGVSC is to support the transmission and reconstruction of arbitrary length videos, which is a capability that existing GVSC systems, restricted to fixed-length clips, do not provide. This goal motivates all three proposed contributions and distinguishes LGVSC from prior art. Our contributions are summarized as follows:  
+
+> •
+
+We propose a probability-based semantic similarity score (PSSS). This method accurately evaluates multimodal semantic similarity via predicted probability distributions, providing a continuous similarity score, thus o ff ering more precise semantic comparison.  
+
+> •
+
+Building on PSSS, we develop a multimodal large-model-driven semantic-aware keyframe extraction mod-ule (SKEM) at the transmitter. This module can explicitly incorporate semantic similarity into the autoregressive keyframe selection process, enhancing fine-grained se-mantic consistency in LGVSC.  
+
+> •
+
+We design a di ff usion world model-driven dynamic semantic-adaptive decoder. We conceive a dynamic semantic-aware adapter (DSA), which serves as the ar-chitectural enabler for arbitrary length video reconstruc-tion by loading latent variables of varying dimensions matched to each semantic segment. II. P roposed LGVSC F ramework 
+
+This section elaborates on the proposed LGVSC, which comprises three main components: a semantic encoder, asemantic decoder, and a JSCC module, as illustrated in Fig. 2. 
+
+A. Procedure and Modules of LGVSC Framework 
+
+At the transmitter, we conceive a multimodal large-model-driven semantic encoder and this encoder can segment the in-put video X ∈ RF×H×W×C by extracting keyframes X[Kn, :, :, :] (Kn ∈ { 1, 2, · · · , F}, 1 ≤ n ≤ N + 1, N + 1 is the number of keyframes) and forming a set of variable-length semantic seg-ments X = {S 1; S2; · · · ; SN }. Here {· ; ·} denotes concatenation along the temporal dimension, Sn = X[Kn : Kn+1 − 1, :, :, :], and N is the number of segments. Furthermore, each segment is encoded as {Itext  
+
+> n
+
+, Iframe  
+
+> n
+
+, Iside  
+
+> n
+
+}: a semantic caption, the n-th keyframe (i.e., Iframe  
+
+> n
+
+= X[Kn, :, :, :], here KN+1 = F being the last frame), and a task-specific side information. Itext  
+
+> n
+
+is generated by a pre-trained model, providing compact spa-tiotemporal semantics. {Iframe  
+
+> n
+
+}N+1 
+
+> n=1
+
+can be extracted by simple keyframe interval-based method (SKIM) or SKEM, providing fine-grained semantics. PSSS, the core component of SKEM, will first be introduced in Section II-B. Then, both SKIM and SKEM will be detailed respectively in Section II-C. For the semantic information from di ff erent modalities, namely Itext  
+
+> n
+
+, Iframe  
+
+> n
+
+, and Iside  
+
+> n
+
+, we design distinct transmission strategies. The textual description and side information are encoded into binary bitstream. This stream is encoded by using a channel code and then modulated. The resulting signal is transmitted over the wireless channel. The receiver performs the corresponding reverse operations. For each keyframe Iframe 
+
+> n
+
+(1 ≤ n ≤ N), we employ NTSCC for encoding. The frame undergoes nonlinear transformation and JSCC to produce the channel input vector sn = fNTSCC (Iframe  
+
+> n
+
+), where fNTSCC denotes the NTSCC network function. At the receiver side, the channel output vector ˆ sn is decoded to reconstruct the keyframe ˆ Iframe  
+
+> n
+
+. The semantic decoder re-constructs segments { ˆSn}Nn=1 using a world model conditioned on { ˆItext  
+
+> n
+
+, ˆIframe  
+
+> n
+
+, ˆIside  
+
+> n
+
+}. A redesigned adapter enables alignment with our communication setting: the combination of SKIM and static feature adapter (SFA), i.e., SKIM-SFA, is suitable for low-latency, low-computational power and low dynamic variation scenarios, while the combination of SKEM and dynamic semantic-aware adapter (DSA), i.e., SKEM-DSA, is ideal for scenarios requiring higher semantic fidelity in transmission. Both SFA and DSA will be detailed respectively in Section II-D. The final video is reconstructed by concate-nating the restored video segments as ˆX = { ˆS1; ˆS2; · · · ; ˆSN } ∈ 
+
+RF×H×W×C .
+
+B. Proposed PSSS for Keyframe Selection 
+
+Transformer-based large models leverage their pre-trained knowledge to perform autoregressive reasoning in response to specific tasks. The attention mechanism allows these models to e ffi ciently assess the relevance between the task and the input information. 3
+
+To this end, we propose a semantic similarity evaluation prompt structured as follows: “ ⟨Info. A ⟩, ⟨Info. B ⟩. Determine whether they are similar from the perspective of ⟨Semantic Focus ⟩2, use yes or no to answer.” As illustrated in Fig. 2, in the PSSS module, existing approaches utilizing large models for evaluation typically rely on the sampled outputs of “Yes” or “No” as the final assessment results [11]. However, such binary classification outputs cannot deliver a continuous measure of semantic similarity, limiting their ability to support fine-grained comparison across semantic segments. To address this limitation, we skip the sampling step during inference. Instead, we use the model-predicted probability of the “Yes” token during autoregressive inference as acontinuous-valued semantic similarity score S abs . This score is an absolute confidence value output by large models, i.e., 
+
+S abs = P“Yes” | ⟨ Info. A ⟩, ⟨Info. B ⟩,
+
+⟨Semantic Focus ⟩ ∈ [0 , 1) . (1) However, S abs is often influenced by imbalances in their training data. As a result, semantic similarity scores derived from this method may exhibit significant variation across di ff erent semantic contexts. To mitigate this issue, we further introduce a relative semantic similarity measure, expressed as 
+
+S rel (⟨Info. A ⟩, ⟨Info. B ⟩) = P(“No”) − P(“Yes”) ∈ (−1, 1) . (2) This formulation normalizes the absolute similarity score by comparing the model’s confidence in generating contradictory outputs for the same semantic input, e ff ectively reducing the impact of semantic variability. The relative probability for-mulation in Eq. (2) simultaneously reduces model pretraining bias and prompt formulation bias: any systematic shift in the model’s overall response tendency a ff ects both P(“Yes”) and 
+
+P(“No”) proportionally, leaving S rel largely una ff ected. The same common-mode cancellation also yields graceful degrada-tion under out-of-distribution inputs: when both frames are se-mantically degenerate, the model’s confidence becomes di ff use and both token probabilities rise together, so S rel ≈ 0 and no spurious keyframe is inserted. Moreover, the ⟨Semantic Focus ⟩
+
+field provides a steerable, task-specific sensitivity: switching the focus between foreground action and background scene yields substantially di ff erent S rel values for the same frame pair, enabling downstream-task-aware keyframe selection that a fixed visual-feature distance such as CLIP cannot provide. In section III, this method is employed for the quantitative evaluation of semantic similarity. 
+
+C. SKIM or SKEM-based Semantic Encoder at Transmitter 
+
+The semantic encoder consists primarily of a keyframe extraction module, segmenting the video signal into semantic segments. These segments are then encoded into semantic representations. To enable e ff ective semantic encoding, we propose two keyframe extraction methods: SKIM and SKEM, which respectively adopt fixed-interval and semantic-guided segmentation strategies.   
+
+> 2In this context, “Info.” represents the extracted semantic information, while ⟨Semantic Focus ⟩defines the semantic aspect to be emphasized, e.g., concentrating on the subject or prioritizing the action.
+
+1) SKIM: To address low-latency and computationally constrained scenarios, SKIM is considered to segment the video into fixed time intervals. Given the number of semantic segments N, the video signal X ∈ RF×H×W×C is divided into 
+
+N segments X = {S 1; S2; · · · ; SN } of equal length ln = FN .Each segment’s semantic text information Itext  
+
+> n
+
+is generated by multimodal large models, while the side information Iside 
+
+> n
+
+can be derived using optical flow [12]. The keyframe Iframe 
+
+> n
+
+is selected as the first frame of the segment. By adjusting N,we can control the number of transmitted keyframes to meet di ff erent CBR requirements. The SKIM method is simple, with nearly real-time seg-mentation and minimal computational overhead. However, it accounts less for semantic content, potentially omitting critical semantic information and negatively impacting the reconstruction quality of the semantic decoder. 
+
+2) SKEM: To better align with the semantic information needs of the decoder’s world model, we further propose SKEM. Based on a multimodal large language model, SKEM uses the PSSS method to evaluate the semantic similarity of video content, determining the segmentation of semantic segments. The process is shown in the lower-left of Fig. 2. SKEM operates in an autoregressive framework where the video signal X ∈ RF×H×W×C is divided into a sequence of frames 
+
+X[i, :, :, :], 1 ≤ i ≤ F. The framework maintains a dynamic sequence of keyframes X[Kn, :, :, :], with the first keyframe 
+
+X[K1, :, :, :] automatically selected as X[1 , :, :, :] with K1 = 1. For the n-th (2 ≤ n ≤ N) keyframe selection with the corresponding autoregressive step, the current frame 
+
+X [i, :, :, :] ( Kn−1 +1 ≤ i ≤ F) is compared to the latest keyframe 
+
+X [Kn−1, :, :, :] in the sequence, and a semantic similarity score 
+
+S rel (X [i, :, :, :] , X [Kn−1, :, :, :]) according to (2) is computed. Note that S rel is a semantic similarity score in the lower-is-more-similar sense: a lower value indicates that the two frames share greater semantic similarity (the model strongly prefers “Yes”), while a higher value indicates greater semantic divergence. The threshold ηth therefore functions as a semantic divergence threshold : when S rel > η th , the current frame is semantically su ffi ciently di ff erent from the latest keyframe to warrant insertion as a new keyframe; when S rel ≤ ηth ,the two frames are considered semantically similar and no new keyframe is inserted. This design is consistent with other lower-is-better distance metrics in the literature (e.g., LPIPS, AbsRel). If the similarity exceeds the threshold ηth , the current frame X [i, :, :, :] for Kn−1 + 1 ≤ i ≤ F is added as the n-th keyframe and the search for the ( n + 1)-th keyframe begins, and so on. Otherwise, the process proceeds without modifying the keyframe sequence. SKEM enhances frame selection by incorporating task-specific semantics, using pre-trained multimodal language models like InternVL [13] to generate textual descriptions 
+
+Itext  
+
+> i
+
+(Kn−1 ≤ i ≤ F) and Itext  
+
+> Kn−1
+
+(2 ≤ n ≤ N) for the current frame and latest keyframe. The PSSS method then computes the semantic similarity between these descriptions, simplifying the task by first converting the visual information into textual representation and then comparing them. To get the frame semantics, we use the InternVL model, which can process multiple images simultaneously, ensuring 4
+
+that the model’s description and focus remain aligned at each step, facilitating accurate semantic similarity evaluation. Both the ⟨Semantic Focus ⟩ and the semantic divergence threshold ηth are dynamic inputs in the SKEM framework, allowing flexibility in adapting to various downstream tasks and video content. By adjusting ηth , the number of keyframes can be controlled to meet CBR requirements, ensuring e ffi cient encoding. In practice, ηth is calibrated against a target CBR budget on a small held-out set, analogously to quantization parameter selection in conventional video codecs, and no model retraining is required. 
+
+D. SFA or DSA-based Semantic Decoder at Receiver 
+
+The core of the semantic decoder lies the world model like Open-Sora [14]. We have redesigned the adapter component to enable the di ff usion model within the world model to dynam-ically adapt to semantic segments Sn of variable lengths. The adapted model can controllably reconstruct the video segments based on adjacent keyframes and textual semantics. 
+
+1) Static feature adapter (SFA): The SFA is an inherent component of the world model, where the segment length is fixed, and the latent feature dimension of the variational auto-encoder (VAE) encoder-decoder remains constant across all segments. 
+
+2) Dynamic semantic adapter (DSA): To accommodate semantic segments of variable length, we further conceive the DSA, which dynamically adjusts the latent feature dimension of the VAE encoder-decoder based on the length of each semantic segment. When loading the world model, the model dimensions are correspondingly adapted, while the parameters remain reusable. III. EXPERIMENT AND DISCUSSION This section verifies the eff ectiveness of our proposed LGVSC framework that enables high-fidelity transmission of arbitrary length videos under ultra-low CBR. Particularly, we assess the zero-shot generalization of our LGVSC framework across three downstream tasks: video captioning, action clas-sification, and depth estimation. 
+
+A. Dataset 
+
+We randomly selected 55 videos from the WebVid dataset [15] as the test set in our experiments. The same set was used for both video captioning and depth estimation tasks. For action classification, we used the Kinetics-400 dataset [16], randomly selecting 14 videos for testing. For the NTSCC model used to transmit keyframes, we trained it on one hundred thousand frames, using a learning rate of 0.0001, a batch size of 64, and 100 epochs. 
+
+B. Experimental settings 
+
+We consider the following transmission schemes: 
+
+SKEM +DSA : Semantic segments are extracted using the SKEM method, with a semantic divergence threshold of 
+
+ηth = 0.35. Keyframe information Iframe  
+
+> n
+
+is transmitted via NTSCC, textual description Itext  
+
+> n
+
+and side information Iside  
+
+> n
+
+are transmitted over an additive white Gaussian noise (AWGN) channel. TABLE I: Parameter Settings for H.264 /H.265 + LDPC                                
+
+> SNR (dB) Codec QP GOP Size LDPC Coding Rate Modulation Order
+> 6∗H.264 51 400 3/416-QAM H.265 51 400 3/44-QAM 8H.264 51 80 1/216-QAM H.265 51 50 1/216-QAM 10 H.264 51 20 2/316-QAM H.265 50 13 2/316-QAM
+> ∗The cli ff eff ect occurs when the SNR is below 6 dB.
+
+TABLE II: CBR Values for Di ff erent SNR Levels                                                                        
+
+> SNR (dB) SKIM +
+> SFA SKEM +
+> DSA Text-Only DVST H.264 /H.265 +
+> LDPC
+> 06.1×10 −46.1×10 −410 −4–∗–26.1×10 −46.1×10 −410 −4––46.3×10 −46.3×10 −410 −4––66.4×10 −46.4×10 −410 −44×10 −31.70 ×10 −3
+> 86.4×10 −46.4×10 −410 −44×10 −31.40 ×10 −3
+> 10 6.6×10 −46.5×10 −410 −44×10 −31.38 ×10 −3
+> ∗‘–’ indicates transmission failure or model collapse under low SNR conditions.
+
+SKIM +SFA : Keyframes are extracted at fixed intervals, with 3 − 4 frames randomly selected per video, matching the CBR of SKEM +DSA. 
+
+Text-Only : Only textual descriptions are transmitted. 
+
+DVST : Video transmission is done using the DVST method, with CBR set to its minimum. Specifically, Transmission parameters are η = 0.2 and λ = 128, where η maps entropy to channel symbols and λ controls the rate-distortion trade-off [3]. 
+
+H.264 or H.265 + LDPC : H.264 [17] and H.265 [18] codecs are used for source encoding, while low-density parity-check (LDPC) is applied for channel encoding. Parameter details are listed in Table I. Quantization parameter (QP) controls the trade-o ff between video compression and quality, and group of pictures (GOP) size determines the distance between keyframes. Note that the cli ff eff ect occurs when the SNR is below 6 dB. The CBR values for each scheme at di ff erent SNR levels are summarized in Table II. The baseline methods exhibit lower compression effi ciency (higher CBR) due to architectural limitations. Note that the full LGVSC pipeline (SKEM +DSA and SKIM +SFA) operates around 6 × 10 −4, while the 10 −4
+
+value corresponds to the Text-Only configuration that transmits captions only. We tested the SKEM +DSA as our method in downstream evaluation. Both tests were conducted at SNR of 10 dB. For video captioning, we used the PLLava-7B [19] model; for action classification, we used TimeSformer [20]; and for monocular depth estimation, we used Depth-Anything-v2 [21]. All models were configured according to their respective default settings. 
+
+C. Evaluation metrics 
+
+We evaluate the system using both traditional video trans-mission metrics and semantic-level metrics as follows. The peak signal-to-noise ratio (PSNR) measures pixel-level im-age quality; the structural similarity index measure (SSIM) assesses structural fidelity of images; the contrastive language-image pre-training (CLIP) score measures semantic similarity 50 2 4 6 8 10 
+
+> SNR (dB)
+> 0.82
+> 0.84
+> 0.86
+> 0.88
+> 0.90
+> 0.92
+> 0.94
+> 0.96
+> CLIP score
+> Ours(SKEM+DSA)
+> Ours(SKIM+SFA)
+> Text-Only
+> H.265+LDPC
+> H.264+LDPC
+> DVST
+
+(a) CLIP ↑0 2 4 6 8 10 
+
+> SNR (dB)
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> 0.45
+> 0.50
+> DISTS
+> Ours(SKEM+DSA)
+> Ours(SKIM+SFA)
+> Text-Only
+> H.265+LDPC
+> H.264+LDPC
+> DVST
+
+(b) DISTS ↓0 2 4 6 8 10  
+
+> SNR (dB)
+> 0.35
+> 0.40
+> 0.45
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> LPIPS
+> Ours(SKEM+DSA)
+> Ours(SKIM+SFA)
+> Text-Only
+> H.265+LDPC
+> H.264+LDPC
+> DVST
+
+(c) LPIPS ↓18      
+
+> 19
+> 20
+> 21
+> 22
+> 23
+> 24
+> 25
+> 26
+> PSNR (dB)
+> Ours(SKEM+DSA)
+> Ours(SKIM+SFA)
+> H.265+LDPC
+> H.264+LDPC
+> DVST
+> DVST(First 100 frames)
+> DVST(Last 100 frames)
+> 0246810
+> SNR (dB)
+> 8
+> 9
+> 10
+> Text-Only
+
+(d) PSNR ↑0.50       
+
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> SSIM
+> Ours(SKEM+DSA)
+> Ours(SKIM+SFA)
+> H.265+LDPC
+> H.264+LDPC
+> DVST
+> DVST(First 100 frames)
+> DVST(Last 100 frames)
+> 0246810
+> SNR (dB)
+> 0.250
+> 0.275
+> 0.300
+> Text-Only
+
+(e) SSIM ↑
+
+Fig. 3: Performance of various quality metrics under di ff erent SNR levels. between images, capturing high-level semantic features; the learned perceptual image patch similarity (LPIPS) is a per-ceptual image quality metric based on human visual percep-tion; the deep image structure and texture similarity (DISTS) captures both structure and texture information using deep learning. For each metric, the video quality is averaged across all frames. For the DVST method, PSNR and SSIM were tested on the average of the first 100 frames and the last 100 frames, demonstrating their cumulative error o ff set for long video transmission. As for downstream tasks, we use the bilingual evaluation understudy (BLEU), the recall-oriented understudy for gisting evaluation longest common subsequence (ROUGE-L), and the bidirectional encoder representations from transformers (BERT) score [22] for video captioning; the Top-1 and Top-5 accuracy for action classification; the depth estimation metrics (D n, the percentage of pixels where max 
+
+ di
+
+d∗
+
+> i
+
+, d∗
+
+> i
+
+di
+
+
+
+< 1.25 n,for n = 1, 2, 3, d∗
+
+i is the ground truth), the absolute relative di ff erence (AbsRel, 1
+
+|N|
+
+Pd∈N |d−d∗|
+
+d∗ , where N is the number of available pixels in the ground-truth), and the root mean squared error (RMSE) for monocular depth estimation. 
+
+D. Simulation results 
+
+In Fig. 3, the results across di ff erent metrics indicate the following key conclusions: (1) The Text-Only scheme, despite operating at an extremely low CBR, demonstrates signifi-cant semantic fidelity, highlighting the e ff ectiveness of the TABLE III: Results of Video Description Task 
+
+Metric H.265 +LDPC DVST SKIM +SFA SKEM +DSA Origin 
+
+BLEU ↑ 0.3444 0.3847 0.4317 0.4421 0.4556 ROUGE-L ↑ 0.2987 0.3144 0.3857 0.3992 0.4188 BERT ↑ 0.8830 0.8889 0.9023 0.9052 0.9076 
+
+world model as a semantic decoder. It outperforms or closely matches other schemes in both CLIP and DISTS scores. (2) The SKEM +DSA scheme outperforms the SKIM +SFA 
+
+baseline across all evaluation metrics, validating the e ff ec-tiveness of our proposed PSSS metric. This enables more accurate keyframe selection and enhances semantic encoding. Since SKIM produces fixed-length segments (making DSA functionally equivalent to SFA in that setting), the full perfor-mance gain of SKEM +DSA over SKIM +SFA is attributable to SKEM’s semantic-aware keyframe selection, while DSA serves as the necessary architectural enabler for handling variable-length segments. (3) At ultra-low bitrates, when SNR 
+
+< 6 dB, traditional schemes including H.264 /H.265 +LDPC and DVST su ff er from cli ff eff ects and fail to transmit reli-ably. DVST, although a SemCom framework, exhibits severe color distortion indicative of semantic collapse. In contrast, our framework remains robust, maintaining semantic integrity under low-SNR conditions. Specifically, Fig. 3a, 3b, and 3c show results for deep-learning-based perceptual metrics. Our scheme achieves the satisfactory performance across all metrics, even with a lower CBR compared to other baselines. In contrast, Fig. 3d and 3e depict results for traditional metrics, where our method does not achieve the highest scores. This is expected, as conventional codecs are optimized for PSNR and SSIM. How-ever, qualitative visualizations (shown in Fig. 1) reveal that, despite higher scores on traditional metrics, the reconstructed content is blurrier and semantically degraded. Our method preserves fine-grained details such as embedded watermarks, highlighting the limitations of traditional metrics in evaluating semantic quality. Table III presents results for the video description task. All metrics assess the similarity between the generated tex-tual descriptions and human-annotated references. The Origin 
+
+column shows the performance with the original video. Our proposed SKEM +DSA outperforms all baselines and achieves nearly identical scores to those obtained from the original videos, demonstrating high semantic fidelity. The newly added SKIM +SFA baseline confirms that PSSS-guided keyframe selection (SKEM) provides additional gains over fixed-interval extraction, with BLEU improving from 0.4317 to 0.4421. Ta-ble IV presents results for the human action classification task, evaluated against the ground truth labels. Both SKIM +SFA and SKEM +DSA match the performance of the original video input, surpassing all other baselines. This indicates that high-level action recognition is robust to the keyframe selection strategy, while finer-grained tasks benefit more from semantic-aware selection (see Table V). Table V shows the performance on the pixel-level monocular depth estimation task. All metrics assess the consistency of predictions on transmitted videos compared to the original videos. SKEM +DSA consistently outperforms SKIM +SFA across all metrics, with RMSE im-proving by 10.0% (39.96 → 35.95), confirming that semanti-6
+
+TABLE IV: Results of Human Action Classification Task                
+
+> Metric H.264 +LDPC DVST SKIM +SFA SKEM +DSA Origin
+> Top-1 Acc. 64.29% 78.57% 85.71% 85.71% 85.71% Top-5 Acc. 78.57% 92.86% 92.86% 92.86% 92.86%
+
+TABLE V: Results of Depth Estimation Task                               
+
+> Method D1 ↑D2 ↑D3 ↑AbsRel ↓RMSE ↓
+> H.265 +LDPC 0.4445 0.6602 0.7775 1.1739 65.1621
+> DVST 0.4083 0.6366 0.7600 0.7752 71.6045
+> SKIM +SFA 0.6803 0.8373 0.8964 1.4064 39.96
+> SKEM +DSA 0.7140 0.8646 0.9139 1.3285 35.95
+
+cally selected keyframes better preserve fine-grained spatial details for machine perception tasks. Our approach scores lower on the AbsRel metric compared to DVST, due to the generative model used in the decoder, which is not explicitly constrained to preserve pixel-level fidelity. 
+
+E. Computational complexity analysis 
+
+We report the end-to-end latency of the LGVSC pipeline measured on our testbed. At the transmitter, SKEM prepro-cessing (InternVL captioning + PSSS scoring) takes approx-imately 2 ,444 s per minute of input video on an NVIDIA RTX 4090 (165.2 BF16 TFLOPS), with each PSSS frame-pair evaluation requiring 8 .77 s (of which 95.7% is consumed by Round-1 caption generation). NTSCC keyframe encoding adds only 46.5 ms per frame. At the receiver, Open-Sora video reconstruction runs at approximately 24.5 s per generated second of video on an RTX 4080 SUPER. Projecting the measured BF16 latencies to data-center GPUs using peak TFLOPS scaling, an NVIDIA B200 SXM (2250 BF16 TFLOPS) would reduce PSSS scoring to around 0.64 s /pair and SKEM preprocessing to around 179 s /min of video, a 13 .6× speedup over the RTX 4090. On H100 /H200 SXM GPUs (989.4 BF16 TFLOPS) already in widespread deployment, the projected speedup is 6 .0×. Furthermore, the rapid evolution of e ffi cient di ff usion inference is indepen-dently reducing receiver-side reconstruction cost. LGVSC thus benefits from two converging trends, namely hardware scaling and software architectural advances, which together may progressively narrow the gap to near-real-time operation. Nevertheless, the present pipeline is best positioned for o ffl ine or edge-cloud-assisted scenarios rather than real-time wireless transmission. IV. C onclusions 
+
+In this work, we propose LGVSC, a large-model-driven generative video semantic communication framework designed for high-fidelity video transmission under extremely low-bitrate conditions. A novel probability-based semantic sim-ilarity score is introduced to enable fine-grained semantic evaluation and guide adaptive keyframe extraction through the SKEM module. The proposed SKEM +DSA scheme achieves state-of-the-art performance in both semantic and perceptual quality metrics while operating at a channel bandwidth ratio on the order of 10 −4 to 10 −3. LGVSC e ff ectively balances human perceptual needs and downstream machine-task requirements, demonstrating its significant potential for practical deployment in future bandwidth-constrained IoE scenarios. The current LGVSC framework targets general-purpose video semantic transmission in o ffl ine or edge-cloud-assisted scenarios. Real-time transmission and safety-critical applications such as au-tonomous driving and medical video transmission both require further dedicated investigation. References 
+
+[1] K. Ying, Z. Gao, T. Yang, J. Zhang, X. Cheng, T. Q. Quek, and H. V. Poor, “From specialist to large models: A paradigm evolution towards semantic-aware mimo,” IEEE Communications Magazine , pp. 1–8, 2026. [2] H. Yin, L. Qiao, Y. Ma, S. Sun, K. Li, Z. Gao, and D. Niyato, “Generative video semantic communication via multimodal semantic fusion with large model,” IEEE Trans. Veh. Technol. , vol. 75, no. 1, pp. 1701–1706, 2026. [3] S. Wang, J. Dai, Z. Liang, K. Niu, Z. Si, C. Dong, X. Qin, and P. Zhang, “Wireless deep video semantic transmission,” IEEE J. Select. Areas Commun. , vol. 41, pp. 214–229, Jan. 2023. [4] H. Tong, H. Li, H. Du, Z. Yang, C. Yin, and D. Niyato, “Multimodal se-mantic communication for generative audio-driven video conferencing,” 
+
+IEEE Wireless Commun. Lett. , vol. 14, pp. 93–97, Jan. 2025. [5] J. Guo, W. Chen, Y. Sun, J. Xu, and B. Ai, “Videoqa-sc: Adaptive semantic communication for video question answering,” IEEE J. Select. Areas Commun. , vol. 43, pp. 2462–2477, July 2025. [6] L. Qiao, M. B. Mashhadi, Z. Gao, R. Tafazolli, M. Bennis, and D. Niyato, “Token communications: A large model-driven framework for cross-modal context-aware semantic communications,” IEEE Wireless Commun. , vol. 32, pp. 80–88, Jan. 2025. [7] Z. Li, Z. Gao, X. Liu, Z. Wang, X. Zhou, L. Liu, Y. Wu, W. Feng, and Y. Huang, “Large model enabled embodied intelligence for 6g integrated perception, communication, and computation network,” arXiv preprint arXiv:2512.15109 , 2025. [8] Y. Liu, K. Zhang, Y. Li, Z. Yan, C. Gao, R. Chen, Z. Yuan, Y. Huang, H. Sun, J. Gao, L. He, and L. Sun, “Sora: A review on background, technology, limitations, and opportunities of large vision models,” arXiv preprint arXiv:2402.17177 , 2024. [9] L. Qiao, M. B. Mashhadi, Z. Gao, C. H. Foh, P. Xiao, and M. Bennis, “Latency-aware generative semantic communications with pre-trained di ff usion models,” IEEE Wireless Commun. Lett. , vol. 13, pp. 2652– 2656, Oct. 2024. [10] J. Dai, S. Wang, K. Tan, Z. Si, X. Qin, K. Niu, and P. Zhang, “Nonlinear transform source-channel coding for semantic communications,” IEEE J. Select. Areas Commun. , vol. 40, no. 8, pp. 2300–2316, 2022. [11] Y. Hu et al. , “Tifa: Accurate and interpretable text-to-image faithfulness evaluation with question answering,” in Proc. IEEE Int. Conf. Comput. Vis. (ICCV) , pp. 20349–20360, 2023. [12] H. Xu, J. Zhang, J. Cai, H. Rezatofighi, F. Yu, D. Tao, and A. Geiger, “Unifying flow, stereo and depth estimation,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 45, no. 11, pp. 13941–13958, 2023. [13] Z. Chen et al. , “Internvl: Scaling up vision foundation models and align-ing for generic visual-linguistic tasks,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR) , pp. 24185–24198, June 2024. [14] Z. Zheng, X. Peng, T. Yang, C. Shen, S. Li, H. Liu, Y. Zhou, T. Li, and Y. You, “Open-sora: Democratizing e ffi cient video production for all,” 
+
+arXiv preprint arXiv:2412.20404 , 2024. [15] M. Bain, A. Nagrani, G. Varol, and A. Zisserman, “Frozen in time: A joint video and image encoder for end-to-end retrieval,” in Proc. IEEE Int. Conf. Comput. Vis. (ICCV) , pp. 1728–1738, October 2021. [16] J. Carreira and A. Zisserman, “Quo vadis, action recognition? a new model and the kinetics dataset,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR) , pp. 6299–6308, July 2017. [17] ITU-T and ISO /IEC JTC 1, “Advanced video coding for generic audio-visual services,” 2010. [18] G. J. Sullivan, J.-R. Ohm, W.-J. Han, and T. Wiegand, “Overview of the high e ffi ciency video coding (hevc) standard,” IEEE Trans. Circuit Syst. Video Technol. , vol. 22, no. 12, pp. 1649–1668, 2012. [19] L. Xu, Y. Zhao, D. Zhou, Z. Lin, S. K. Ng, and J. Feng, “Pllava: Parameter-free llava extension from images to videos for video dense captioning,” 2024. [20] G. Bertasius, H. Wang, and L. Torresani, “Is space-time attention all you need for video understanding?,” in Proc. Int. Conf. Mach. Learn. (ICML) , July 2021. [21] L. Yang, B. Kang, Z. Huang, Z. Zhao, X. Xu, J. Feng, and H. Zhao, “Depth anything v2,” Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) ,vol. 37, pp. 21875–21911, 2024. [22] T. Zhang, V. Kishore, F. Wu, K. Q. Weinberger, and Y. Artzi, “Bertscore: Evaluating text generation with bert,” in Proc. Int. Conf. Learn. Repre-sentations (ICLR) , 2020.

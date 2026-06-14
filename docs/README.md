@@ -6,40 +6,52 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-13
-- 运行时间：2026-06-13 20:31:53 UTC
+- 最新运行日期：2026-06-14
+- 运行时间：2026-06-14 20:58:04 UTC
 - 运行状态：成功
-- 本次总论文数：6
+- 本次总论文数：10
 - 精读区：4
-- 速读区：2
+- 速读区：6
 
 ### 今日简报（AI）
-1. 今日精选6篇论文，聚焦微手势在线识别与LLM驱动边缘AI调度两大高评分方向。
-2. 最值得关注：时空解耦适配器实现微手势在线识别、语义合约调度提升LLM边缘AI服务效率。
-3. 建议优先精读两篇8.0分论文，兼顾长视频时间定位与知识表征的速读方法。
-- 详情：[/202606/13/README](/202606/13/README)
+1) 今日精读视频监控增强和物体中心学习两大方向，速读视频去重、长视频RAG及事件驱动超分。  
+2) 最值得看：9.0分的《Augmentation techniques for video surveillance》与7.0分的《Rethinking RAG in Long Videos》分别聚焦监控数据增强和长视频检索策略。  
+3) 建议普通读者优先关注视频监控增强方法，并思考如何将检索技术融入长视频分析流程。
+- 详情：[/202606/14/README](/202606/14/README)
 
 ### 精读区论文标签
-1. [Spatial-Temporal Decoupled Adapter for Micro-gesture Online Recognition](/202606/13/2606.07355v1-spatial-temporal-decoupled-adapter-for-micro-gesture-online-recognition)  
+1. [Augmentation techniques for video surveillance in the visible and thermal spectral range](/202606/14/2606.13042v1-augmentation-techniques-for-video-surveillance-in-the-visible-and-thermal-spectral-range)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：可见光和热红外视频监控增强
+2. [Dual-State Slot Attention: Decoupling Appearance and Identity for Video Object-Centric Learning](/202606/14/2606.12601v1-dual-state-slot-attention-decoupling-appearance-and-identity-for-video-object-centric-learning)  
    标签：评分：8.0/10、query:mec-video
-   evidence：实时视频微手势识别
-2. [STEPS: Semantic-Contract-Guided Scheduling for LLM-Assisted Natural-Language-Driven Edge AI Services](/202606/13/2606.09537v1-steps-semantic-contract-guided-scheduling-for-llm-assisted-natural-language-driven-edge-ai-services)  
+   evidence：视频以对象为中心的学习分析
+3. [DIMOS: Disentangling Instance-level Moving Object Segmentation](/202606/14/2606.12826v1-dimos-disentangling-instance-level-moving-object-segmentation)  
    标签：评分：8.0/10、query:mec-video
-   evidence：边缘计算调度AI服务
-3. [Metadata-Aware Multi-Prompt Reasoning for Zero-Shot Accident Understanding](/202606/13/2606.12047v1-metadata-aware-multi-prompt-reasoning-for-zero-shot-accident-understanding)  
+   evidence：用于事件相机的运动实例分割，适用于流式视频分析
+4. [Fully Distributed Multi-View 3D Tracking in Real-Time](/202606/14/2606.13127v1-fully-distributed-multi-view-3d-tracking-in-real-time)  
    标签：评分：8.0/10、query:mec-video
-   evidence：从监控视频中零样本理解事故
-4. [Shared Infrastructure Investment and Pricing: Stackelberg Equilibria in Risk-Aware Take-or-Pay Contracts](/202606/13/2606.12167v1-shared-infrastructure-investment-and-pricing-stackelberg-equilibria-in-risk-aware-take-or-pay-contracts)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：移动边缘计算基础设施投资的斯坦克尔伯格博弈模型
+   evidence：全分布式实时多视角3D跟踪，适用于边缘计算
 
 ### 速读区论文标签
-1. [Natural-Language Temporal Grounding in Hour-Long Videos is a Search Problem: A Benchmark and Empirical Decomposition](/202606/13/2606.12300v1-natural-language-temporal-grounding-in-hour-long-videos-is-a-search-problem-a-benchmark-and-empirical-decomposition)  
+1. [MLT-Dedup: Efficient Large-Scale Online Video Deduplication via Multi-Level Representations and Spatial-Temporal Matching](/202606/14/2606.12215v1-mlt-dedup-efficient-large-scale-online-video-deduplication-via-multi-level-representations-and-spatial-temporal-matching)  
    标签：评分：7.0/10、query:mec-video
-   evidence：长视频时间定位基准与分析，直接相关视频分析
-2. [From Content to Knowledge: Lightning Fast Long-Video Understanding with Neural Knowledge Representations](/202606/13/2606.11913v1-from-content-to-knowledge-lightning-fast-long-video-understanding-with-neural-knowledge-representations)  
+   evidence：使用多层表示和时空匹配的视频去重框架
+2. [Rethinking RAG in Long Videos: What to Retrieve and How to Use It?](/202606/14/2606.13141v1-rethinking-rag-in-long-videos-what-to-retrieve-and-how-to-use-it)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：长视频检索增强生成
+3. [EvTexture++: Event-Driven Texture Enhancement for Video Super-Resolution](/202606/14/2606.13580v1-evtexture-event-driven-texture-enhancement-for-video-super-resolution)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：事件驱动视频超分辨率纹理增强
+4. [Decoupling Semantics and Logic: A Training-Free Coarse-to-Fine Pipeline for Video Retrieval-Augmented Generation](/202606/14/2606.07924v1-decoupling-semantics-and-logic-a-training-free-coarse-to-fine-pipeline-for-video-retrieval-augmented-generation)  
    标签：评分：6.0/10、query:mec-video
-   evidence：快速长视频理解与神经知识表示
+   evidence：无训练的视频RAG流水线，用于跨语言长视频理解，可用于流式视频分析
+5. [OmniCap-IF: Benchmarking and Improving Instruction Following Abilities for Omni-Video Captioning](/202606/14/2606.08572v1-omnicap-if-benchmarking-and-improving-instruction-following-abilities-for-omni-video-captioning)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：全模态视频字幕指令遵循
+6. [LGVSC: A Large-Model-Driven Generative Video Semantic Communication Framework](/202606/14/2606.12899v1-lgvsc-a-large-model-driven-generative-video-semantic-communication-framework)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：生成式视频语义通信框架
 
 
 <div class="dpr-home-promo-card">

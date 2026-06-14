@@ -1,0 +1,690 @@
+Title: MLT-Dedup: Efficient Large-Scale Online Video Deduplication via Multi-Level Representations and Spatial-Temporal Matching
+
+URL Source: https://arxiv.org/pdf/2606.12215v1
+
+Published Time: Thu, 11 Jun 2026 01:13:31 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# MLT-Dedup: Efficient Large-Scale Online Video Deduplication via Multi-Level Representations and Spatial-Temporal Matching 
+
+# David Yuchen Wang ∗
+
+TikTok Singapore, Singapore david.w@tiktok.com 
+
+# Haoying Li ∗
+
+TikTok Singapore, Singapore haoying.li@tiktok.com 
+
+# Hailun Xu 
+
+TikTok Singapore, Singapore xuhailun@tiktok.com 
+
+# Wei Chee Yew 
+
+TikTok Singapore, Singapore weichee.yew@tiktok.com 
+
+# Zirui Zhu 
+
+TikTok Singapore, Singapore School of Computing National University of Singapore Singapore, Singapore ziruizhu@u.nus.edu 
+
+# Sanjay Saha 
+
+TikTok Singapore, Singapore sanjay.saha@tiktok.com 
+
+# Hao Hei 
+
+TikTok Singapore, Singapore hao.hei1@tiktok.com 
+
+# Kanchan Sarkar †‡ 
+
+TikTok San Jose, CA, USA kanchan.sarkar@tiktok.com 
+
+# Kun Xu 
+
+TikTok San Jose, CA, USA daniel.chen28@tiktok.com 
+
+## Abstract 
+
+The explosive growth of user-generated video content on online platforms is accompanied by the emergence of numerous near-duplicate videos—videos that are identical or highly similar but dif-fer by partial edits. These duplicates degrade user experience and in-crease storage and bandwidth costs, making large-scale video dedu-plication a critical task. Existing video deduplication frameworks face a fundamental challenge in retrieving sufficient high-quality candidates under a limited index budget, as well as trade-offs be-tween efficiency and precision. To address these issues, we propose 
+
+MLT-Dedup , an efficient large-scale online video deduplication framework with Multi-Level representations and spatial-Temporal matching. Our approach employs a Multi-Level Video Encoder (ML-VE ) to extract both fine-grained frame-level and sparse clip-level embeddings: sparse embeddings support efficient candidate retrieval, while fine-grained embeddings are loaded for precise pairwise matching. During matching, we introduce DiF-SiM , a 
+
+Di fferential Feature-enhanced Si milarity Module capable of locat-ing duplicated temporal segments and providing reliable similarity evidence to support policy-driven deduplication decisions. Exten-sive experiments on a real-world large-scale platform demonstrate that MLT-Dedup reduces online repetition rates by 91% at 90% precision. Furthermore, our sparse retrieval design achieves a 5× 
+
+> ∗Equal contribution.
+> †Project lead.
+> ‡Corresponding author.
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+> KDD ’26, Jeju Island, Republic of Korea
+> ©2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2259-2/2026/08 https://doi.org/10.1145/3770855.3818450
+
+increase in indexing capacity, enabling broader candidate coverage in real-world deployment. 
+
+## CCS Concepts 
+
+• Information systems → Retrieval models and ranking ; •
+
+Computing methodologies → Computer vision .
+
+## Keywords 
+
+Video deduplication; video representation; large-scale video re-trieval; video copy localization 
+
+ACM Reference Format: 
+
+David Yuchen Wang, Haoying Li, Hailun Xu, Wei Chee Yew, Zirui Zhu, Sanjay Saha, Hao Hei, Kanchan Sarkar, and Kun Xu. 2026. MLT-Dedup: Efficient Large-Scale Online Video Deduplication via Multi-Level Repre-sentations and Spatial-Temporal Matching. In Proceedings of the 32nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining V.2 (KDD ’26), August 09–13, 2026, Jeju Island, Republic of Korea. ACM, New York, NY, USA, 12 pages. https://doi.org/10.1145/3770855.3818450 
+
+## 1 Introduction 
+
+With the proliferation of multi-source user-generated content, a large number of near-duplicate videos emerge, differing only by lightweight transformations such as clipping, watermark insertion, or format conversion [ 27 , 36 ]. These duplicated videos degrade search and recommendation quality while increasing copyright risks and storage overhead, making video deduplication critical at scale. In practice, video deduplication frameworks consist of three key components: video representation, candidate retrieval, and video pair matching [ 3, 23 , 39 ]. Specifically, videos are encoded into visual representations, indexed for scalable retrieval, and further examined by matching models to make deduplication decisions. In large-scale user-generated-content (UGC) platforms, dedupli-cation systems must operate under strict index resources while  
+
+> arXiv:2606.12215v1 [cs.CV] 10 Jun 2026 KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea David Yuchen Wang et al.
+
+meeting strong requirements on duplicate reduction, as inefficient designs directly reduce candidate coverage and deduplication accu-racy. In this paper, we propose an efficient large-scale online video deduplication framework, MLT-Dedup, to address the indexing ca-pacity issue while reducing video repetition via multi-granularity representation and spatial–temporal matching. In the video representation stage of deduplication frameworks, visual embeddings are typically generated by a recall model and can take two forms: frame-level and clip-level embeddings [ 3, 20 , 23 ,25 , 39 ]. Frame-level embeddings extract features for every frame, providing fine-grained visual details that benefit accurate duplicate detection. Yet under a fixed indexing budget, such dense represen-tations severely limit index capacity, resulting in fewer retrievable candidates and degraded recall. Clip-level embeddings summarize video segments through key-frame selection [ 46 ] or direct clip en-coding. While clip-level embeddings significantly reduce memory footprint and indexing cost, their coarse granularity may discard fine temporal details, potentially degrading matching accuracy. This trade-off reveals a key challenge in large-scale deduplication frame-works. To address this challenge, we deploy a multi-level video encoder, ML-VE, which can generate frame-level and clip-level em-beddings simultaneously. Coarse clip-level embeddings are used for scalable indexing and retrieval, while fine-grained frame-level embeddings are stored on disk and only loaded for matching when a candidate is retrieved. To ensure effective retrieval performance, ML-VE is trained with dedicated optimization strategies, including hybrid loss formulations, inner-feature knowledge distillation, and data-centric memory bank deduplication. In the video pair matching stage, video duplicate detection meth-ods relying on global similarity [ 1, 22 , 42 ] degrade as video editing techniques become more sophisticated. They cannot provide tempo-ral localization of duplicated content and are prone to misclassifying partially overlapping videos due to lack of fine-grained temporal information and sensitivity to irrelevant content. To tackle this issue, we introduce the proportion of overlapping content policy to the video pair matching stage, that is, only candidates exceeding a certain temporal coverage are considered duplicates. This not only ensures that partially overlapping videos are not misclassified, but is also fair when comparing videos with varying lengths and supports policy-driven content management such as manual review. To enforce such policies effectively, we propose DiF-SiM, a differen-tial feature-enhanced similarity module in the video pair matching stage. DiF-SiM captures temporal relations between video frames through differential features ( Δf𝑡 ), a learned similarity metric, and pre-training techniques leveraging unlabeled videos and images. To summarize, this paper makes the following contributions: 
+
+• We propose MLT-Dedup, which addresses the indexing ca-pacity issue while reducing video repetition by integrating compact multi-level video representation and a carefully designed spatial–temporal matching model. 
+
+• In the video representation stage, we introduce ML-VE along with effective training strategies to generate video embed-dings at both coarse and fine granularities. Coarse embed-dings are used for retrieval to improve candidate coverage and recall, while fine-grained embeddings enhance matching precision in downstream deduplication. 
+
+• In the pairwise matching stage, we propose DiF-SiM, capable of locating duplicated temporal segments between video pairs and providing reliable similarity evidence to support policy-driven deduplication decisions. Extensive experiments on a large-scale online platform show that MLT-Dedup reduces the online repetition rate by 91% at 90% precision, while achieving a 5 × increase in indexing capacity under the same resource budget. 
+
+## 2 Method 2.1 Overall Framework 
+
+MLT-Dedup follows the standard three-stage video deduplication pipeline, consisting of video representation, candidate retrieval, and pairwise matching, as shown in Fig. 1. Given an input video, ML-VE first encodes a video as multi-level representations. Compact clip-level embeddings are indexed using a Hierarchical Naviga-ble Small World (HNSW) graph-based approximate nearest neigh-bor index [ 32 ] to retrieve top-K candidate embeddings, which are subsequently aggregated to obtain candidate videos. Fine-grained frame-level embeddings are stored on disk and loaded on demand for precise matching. Retrieved candidate video embeddings are then examined by a fine-grained matching module, DiF-SiM, which localizes duplicated temporal overlap and outputs a similarity score. Finally, policy-driven deduplication decisions are made based on the proportion of overlapping time. The following subsections describe the design of the ML-VE model, the clip-level embedding-based retrieval strategy, and the DiF-SiM matching module in detail. 
+
+## 2.2 Multi-Level Video Representations 
+
+The challenge of building effective large-scale video retrieval sys-tems lies in maintaining high retrieval recall under a fixed resource budget. With limited memory and storage, the library can only store a small number of representations per video, which reduces visual coverage and candidate recall. To address this trade-off, we propose ML-VE, a video encoder that generates multi-level video representations in a single forward pass. Compact clip-level embed-dings are used for scalable retrieval, while fine-grained frame-level embeddings are retained for precise downstream matching. The ef-fectiveness of these multi-level representations is achieved through a jointly designed model architecture and a set of targeted training strategies, such as hybrid loss formulation, inner-feature knowledge distillation, and data-centric memory bank deduplication. 
+
+2.2.1 ML-VE Architecture. ML-VE is built upon a Swin-Large back-bone [ 28 ] and trained under a MoCo-style momentum contrastive learning framework [12], as illustrated in Figure 2. For each video frame, the online (query) branch encodes the input with a Swin-Large encoder 𝐵 𝜃 , producing frame-level visual tokens, and then ap-plies a Perceiver Resampler 𝑅 𝜃 to aggregate temporally distributed features into a fixed number of latent tokens. This yields com-pact clip-level token representations that are subsequently average-pooled into a 𝐷 -dim global embedding for large-scale indexing and candidate retrieval. In parallel, we maintain a momentum (key) branch with the same architecture, parameterized by ¯𝜃 , which is updated as an exponential moving average (EMA) of the online MLT-Dedup: Efficient Large-Scale Online Video Deduplication KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea Input Video 
+
+Video Representation  Candidate Retrieval  
+
+> HNSW Index Aggregation
+> Top-K Candidates
+
+... 
+
+Clip-level embeddings 
+
+... 
+
+Frame-level embeddings 
+
+Matching 
+
+ML-VE 
+
+DiF-SiM 
+
+> Temporal policy
+
+Deduplication decision 
+
+Figure 1: Overall framework of MLT-Dedup: Input videos are encoded by ML-VE into fine-grained frame-level embeddings (used for precise pairwise matching) and sparse clip-level embeddings (indexed via HNSW for high-recall candidate retrieval). Retrieved top-K candidates are matched using DiF-SiM, which computes temporal overlaps to make deduplication decisions. Momentum    
+
+> Swin-L
+> Momentum
+> Perceiver Resampler
+> Memory Bank
+> Input Images / Frames Augmented Images
+> Momentum
+> Update
+> Momentum
+> Update
+> KD Loss
+> Clip-level embedding
+> Clip-level embedding
+> Perceiver Resampler
+> VICReg
+> Loss
+> MoCo
+> Loss
+> Swin-L Teacher
+> Swin-L
+> Input Images / Frames
+> Frame-level embedding Frame-level embedding Frame-level embedding
+
+Figure 2: ML-VE architecture. 
+
+parameters. During training, the momentum branch produces sta-ble key embeddings that are enqueued into a memory bank (FIFO queue) to construct a large set of negative samples for contrastive learning. Our basic training objective consists of a VICReg [ 1] reg-ularization loss and a MoCo [12] contrastive loss. 
+
+VICReg loss: We apply VICReg on paired embeddings from the two branches: 
+
+LVICReg = 𝜆 Linv + 𝜇 Lvar + 𝜈 Lcov , (1) 
+
+where 𝜆, 𝜇, 𝜈 are scalar weights. Let 𝑄 ∈ R𝐵 7𝐷 and 𝐾 ∈ R𝐵 7𝐷 
+
+be the batch-stacked embeddings whose 𝑏 -th rows are 𝑞 ⊤ 
+
+> 𝑏
+
+and 𝑘 ⊤ 
+
+> 𝑏
+
+,respectively. We define 
+
+Linv = 1
+
+𝐵 
+
+> 𝐵
+
+∑︁ 
+
+> 𝑏 =1
+
+∥𝑞 𝑏 − 𝑘 𝑏 ∥22, (2) 
+
+Lvar = 1
+
+𝐷 
+
+> 𝐷
+
+∑︁ 
+
+> 𝑑 =1
+
+h
+
+max  0, 𝛾 − 𝜎 (𝑄 :,𝑑 ) + max  0, 𝛾 − 𝜎 (𝐾 :,𝑑 )i
+
+, (3) 
+
+Lcov = 1
+
+𝐷 ∑︁ 𝑖 ≠𝑗 
+
+
+
+Cov (𝑄 )2 
+
+> 𝑖 𝑗
+
++ Cov (𝐾 )2
+
+> 𝑖 𝑗
+
+
+
+, (4) 
+
+where 𝜎 (𝑄 :,𝑑 ) denotes the standard deviation of the 𝑑 -th feature over the minibatch, 𝛾 > 0 is a margin, and Cov (𝑄 ), Cov (𝐾 ) ∈ R𝐷 7𝐷 
+
+are covariance matrices computed on centered embeddings: 
+
+Cov (𝑄 ) = 1
+
+𝐵 − 1 ˜𝑄 ⊤ ˜𝑄, Cov (𝐾 ) = 1
+
+𝐵 − 1 ˜𝐾 ⊤ ˜𝐾, (5) 
+
+with ˜𝑄 and ˜𝐾 obtained by subtracting the per-dimension batch mean from 𝑄 and 𝐾 .
+
+MoCo loss: We maintain a memory bank (queue) Q of size 𝐾 
+
+that stores negative keys 𝑘 − ∈ R𝐷 produced by the momentum branch. With temperature 𝜏 and similarity function sim (· , ·) , the MoCo (InfoNCE) loss is defined as 
+
+LMoCo = − 1
+
+𝐵 
+
+> 𝐵
+
+∑︁ 
+
+> 𝑏 =1
+
+log exp (sim (𝑞 𝑏 , 𝑘 𝑏 )/ 𝜏 )
+
+exp (sim (𝑞 𝑏 , 𝑘 𝑏 )/ 𝜏 ) + Í  
+
+> 𝑘 −∈ Q
+
+exp (sim (𝑞 𝑏 , 𝑘 − )/ 𝜏 ) .
+
+(6) 
+
+2.2.2 Hybrid Loss Formulation. To further enhance the discrimina-tive power of the learned embeddings for retrieval and matching, we incorporate a supervised pairwise loss and a triplet loss on top of the self-supervised pre-training. This formulation combines the generalization ability of self-supervised representation learning with task-specific supervision, encouraging the learned embed-dings to better distinguish near-duplicate and non-duplicate videos in retrieval and matching scenarios. 
+
+Pairwise Loss: We use a labeled pair dataset Dpair = {( 𝑣 𝑖 , 𝑣 𝑗 , 𝑦 𝑖 𝑗 )} 
+
+with 𝑦 𝑖 𝑗 ∈ { 0, 1} indicating whether (𝑣 𝑖 , 𝑣 𝑗 ) is a near-duplicate pair. Let 𝑞 𝑖 , 𝑞 𝑗 ∈ R𝐷 be the pooled embeddings produced by the online branch for 𝑣 𝑖 and 𝑣 𝑗 . Using similarity 𝑠 𝑖 𝑗 = sim (𝑞 𝑖 , 𝑞 𝑗 ) (consistent with MoCo), we optimize a logistic pairwise loss: 
+
+Lmatch = − 1
+
+| D pair |∑︁ (𝑖,𝑗 )
+
+h
+
+𝑦 𝑖 𝑗 log 𝜎 (𝑠 𝑖 𝑗 ) + ( 1 − 𝑦 𝑖 𝑗 ) log  1 − 𝜎 (𝑠 𝑖 𝑗 )i
+
+, (7) 
+
+where 𝜎 (·) is the sigmoid function. 
+
+Triplet Loss: We form triplets Dtrip = {( 𝑣 𝑎 , 𝑣 𝑝 , 𝑣 𝑛 )} from labels, where (𝑣 𝑎 , 𝑣 𝑝 ) is a positive (duplicate) pair and (𝑣 𝑎 , 𝑣 𝑛 ) is a negative pair. Let 𝑞 𝑎 , 𝑞 𝑝 , 𝑞 𝑛 ∈ R𝐷 denote their online pooled embeddings. We use a margin-based triplet loss: 
+
+Ltri = 1
+
+| D trip |∑︁ (𝑎,𝑝,𝑛 )
+
+max 
+
+
+
+0, sim (𝑞 𝑎 , 𝑞 𝑛 ) − sim (𝑞 𝑎 , 𝑞 𝑝 ) + 𝑚 
+
+
+
+, (8) 
+
+where 𝑚 is the margin. This objective enforces that positive pairs are embedded closer than negative ones by a fixed margin. KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea David Yuchen Wang et al. 
+
+2.2.3 Inner-Feature Knowledge Distillation. In practice, we observe that joint optimization with retrieval-oriented objectives biases ML-VE toward clip-level representations, while the quality of frame-level embeddings degrades, leading to suboptimal downstream matching performance. To explicitly enhance frame-level features, we introduce an inner-feature knowledge distillation (KD) strategy. We adopt a Swin-Large teacher model trained to produce matching-friendly frame-level embeddings. The teacher model is trained on 7M image samples using a MoCo contrastive loss applied to the average-pooled token embedding, encouraging strong local visual semantics without clip-level aggregation bias. During ML-VE train-ing, we apply feature-level distillation at multiple intermediate layers of the Swin-Large backbone. Let 𝑓 (𝑙 ) 
+
+> 𝜃
+
+and 𝑓 (𝑙 ) 
+
+> T
+
+denote the student and teacher feature maps at layer 𝑙 . The distillation loss is defined as:            
+
+> LKD =∑︁
+> 𝑙 ∈L
+> Norm  𝑓 (𝑙 )
+> 𝜃
+> −Norm  𝑓 (𝑙 )
+> T
+> 22.(9)
+
+This inner-feature supervision improves the discriminability of frame-level embeddings for matching, without increasing indexing memory or affecting retrieval efficiency. To summarize, the overall objective is:                
+
+> L=LMoCo +𝛼 LVICReg +𝛽 Lmatch +𝜌 Ltri +𝜔 LKD ,(10)
+
+where 𝛼 , 𝛽 , 𝜌 , 𝜔 balance each loss term. 
+
+2.2.4 Data-Centric Memory Bank Deduplication. As commonly ob-served in large-scale contrastive learning, random sampling over massive datasets inevitably introduces near-duplicated samples, reducing the number of unique negatives and limiting contrastive supervision. To mitigate this issue, we adopt a query-adaptive filter-ing strategy when computing the contrastive loss with the memory bank. For each query embedding, we compute cosine similarities against all key embeddings in the memory bank. Based on the simi-larity scores, we identify near-positive or highly similar samples and exclude them from the negative set. The contrastive loss is then computed only over the remaining dissimilar keys, which serve as valid negatives for the given query. This data-centric, query-level filtering preserves the diversity of the memory bank while preventing false negatives from dominating the training signal. 
+
+## 2.3 Sparse Retrieval 
+
+We perform retrieval on sparse clip-level representations from ML-VE, rather than dense frame-level embeddings, to improve indexing efficiency and candidate recall coverage under a fixed memory bud-get. Specifically, compact clip-level embeddings are indexed using an HNSW-based approximate nearest neighbor structure [ 19 ], en-abling scalable retrieval with low memory overhead while allowing a larger portion of the video corpus to be retained in the index. Given a query video, its clip-level embeddings are independently queried against the HNSW index to retrieve nearest-neighbor em-beddings. Each retrieved embedding corresponds to a specific clip from a candidate video. We then aggregate these clip-level matches into video-level similarity scores through a clip-to-video aggrega-tion process. Retrieved results are first grouped by candidate video ID. If multiple clips from the same candidate video are retrieved by the same query clip, only the match with the highest similarity score is retained to avoid redundant contributions from tempo-rally adjacent segments. Subsequently, for each candidate video, we Dif f Key      
+
+> Feature Pairing
+> Key
+> Query
+> Dif f
+> Query
+> Localization
+> Module
+> Deep-SiM
+> Deep-SiM
+> Concat c
+> q_start
+> q_end
+> k_start k_end
+> Learned Similarity Map
+> Detected Copied Segments
+> q_time
+> k_time
+
+Figure 3: DiF-SiM model architecture: Static frame-level fea-tures from the ML-VE are used with their differential features (Δf𝑡 ) to produce similarity maps by Deep-Sim. They are then concatenated and fed into a localization module to predict the temporal boundaries of duplicated segments that dictate the timestamps q_start, q_end, k_start, and k_end. 
+
+collect its retained similarity scores across all query clips, discard low-confidence matches below a similarity threshold (i.e., 0.4), and average the remaining scores to obtain a single video-level similar-ity score. Finally, candidate videos are ranked by their aggregated similarity scores, and the top-𝐾 videos are selected as retrieval results for downstream fine-grained matching. This coarse-to-fine design follows a similar efficiency principle to recent multi-stage content decision systems [43, 45]. 
+
+## 2.4 Spatial-Temporal Matching 
+
+In this stage, we determine duplication based on the proportion of overlapping content in time and deduplication score: a video is flagged as a duplicate only when the duplicated temporal coverage exceeds a predefined threshold, and has a deduplica-tion score over the threshold. This strategy avoids misclassifying partially overlapping videos, enables fair comparison across videos of different lengths, and provides explicit temporal localization for downstream auditing and manual review. We observe that using clip-level embeddings from ML-VE di-rectly for matching leads to degraded accuracy, especially for par-tially duplicated or temporally misaligned videos. Frame-level em-beddings better preserve fine-grained visual and temporal details, enabling more accurate modeling of localized content reuse. Thus, the spatial-temporal matching stage performs fine-grained veri-fication on frame-level representations. Only the embeddings of retrieved video pairs are loaded and processed in this stage, which allows the matching stage to remain compute-efficient. To effectively leverage these fine-grained spatial-temporal match-ing signals, we propose DiF-SiM, a differential feature-enhanced similarity module for spatial-temporal video matching. DiF-SiM models frame-level correspondences between video pairs, localizes duplicated temporal segments, and produces similarity evidence that directly supports proportion-based deduplication policies. The architecture and matching strategy are detailed as follows. 
+
+2.4.1 DiF-SiM Model Architecture. As shown in Figure 3, frame-level embeddings from ML-VE are used as inputs of DiF-SiM. To MLT-Dedup: Efficient Large-Scale Online Video Deduplication KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea 
+
+model temporal correspondence, we also compute differential fea-tures by taking frame-wise differences of the embeddings, which highlight local temporal changes and are complementary to the static appearance cues. Both sets of features are passed to a deep similarity module (Deep-Sim), which learns an enhanced similarity map between query and key feature pairs. The learned similarity maps are concatenated with cosine similarity maps and passed through a localization module to detect copied temporal video seg-ments. Finally, DiF-SiM outputs the estimated overlap duration for both videos and a deduplication score ([q_start, q_end, k_start, k_end, score]). Only when both the predicted overlap duration and the deduplication score exceed predefined thresholds could we consider the video pair to be duplicate. 
+
+2.4.2 Differential Features. In spatial-temporal video matching, directly comparing query and candidate videos via independent frame-to-frame similarity is insufficient for accurately modeling partial duplication and temporal misalignment. Such static pairwise comparisons ignore temporal transitions within each video, making it difficult to distinguish true content reuse from incidental visual similarity and to robustly localize duplicated segments. To address this limitation, we leverage both conventional static frame features and additional differential features that capture video dynamics within each video. Given a sequence of frame-level em-beddings f𝑡 ∈ R𝐷 , 𝑡 = 1, . . . ,𝑇 , extracted by ML-VE, we compute normalized differences between consecutive frames:        
+
+> Δf𝑡 =Norm (f𝑡 +1−f𝑡 ),(11)
+
+where Norm (·) denotes ℓ2 normalization. For the last frame, we apply wrap-around to keep the feature length consistent: Δf𝑇 =
+
+Norm (f1 − f𝑇 ).The resulting differential features characterize local temporal transitions and motion patterns within a video, explicitly encode motion cues between adjacent frames, and complement static ap-pearance information encoded in the original static embeddings. As illustrated in Appendix A, similarity maps derived from differential features exhibit clearer temporal alignment, especially under partial duplication and temporal shifts. 
+
+2.4.3 Deep-Sim: Deep Similarity Module. In the spatial-temporal matching stage, similarity maps are computed to reflect temporal alignment. However, directly computing similarity using a fixed cosine metric between feature vectors is often insufficient, because it compresses rich relationships into a single scalar value and lacks the flexibility to integrate heterogeneous cues. To handle this issue, we introduce a Deep Similarity Module (Deep-Sim), which learns a parametric similarity metric that maps a pair of features to a high-dimensional similarity representation. Instead of relying on a hand-crafted metric, Deep-Sim models similarity as a learnable function, enabling richer semantic alignment between video elements. The architecture of the Deep-Sim module is shown in Figure 4. The input query and candidate features are concatenated and passed through a series of residual linear layers (Res-Block), followed by a multi-layer perceptron (MLP). The module learns an enhanced simi-larity for each query-key pair, achieving strong semantics compared to direct cosine similarity. During SSL pre-training, an additional MLP is introduced to enhance model training by using transformed image pairs in place of the query and key. Linear  MLP    
+
+> Concat
+> ResBlock x N
+> cCosine
+> Simiarity
+> Query
+> Key Enhanced
+> Simiarity
+> Deep-Sim
+> Linear Head Label
+> BCE Loss
+> SSL Image Pretraining
+> Localization Module
+> +
+
+Figure 4: Deep-Sim model architecture. 
+
+We pre-train Deep-Sim in a self-supervised manner using un-labeled image data to endow it with general-purpose similarity modeling capability. Specifically, we attach an auxiliary linear head 
+
+M to the Deep-Sim network F . Deep-Sim is optimized by a bi-nary cross-entropy loss to distinguish matching and non-matching pairs. This pre-training stage encourages Deep-Sim to learn discrim-inative similarity patterns beyond simple feature distance. After pre-training, we discard the auxiliary head M and transfer the learned weights of F into the DiF-SiM module. In the full system, Deep-Sim is fine-tuned jointly with the downstream localization module, allowing similarity estimation to adapt to video-level tem-poral matching objectives. Deep-Sim is applied to both static frame features and differential features, producing two enhanced similarity maps that capture complementary static and temporal correspondences. In parallel, we compute a conventional cosine similarity map on both static frame features and differential features. These four similarity maps are concatenated along the channel dimension and fed into the localization module to infer duplicated temporal segments. 
+
+2.4.4 Localization Module. Our localization module follows pre-vious works [ 13 , 31 ] and use the YOLOX-s [ 10 ] detector with width = 0.33 , depth = 0.33 , with an input shape of 640 × 640 . To ac-commodate similarity-map inputs, we modify the shape of the first convolutional layer accordingly. The localization module performs detection on a two-dimensional time plane—each bounding-box corresponds to a "time-time" rectangular window (horizontal axis for query time, vertical axis for candidate time), indicating that two time intervals may match with each other. The localization module outputs the estimated overlap boundaries for both videos, together with a deduplication confidence score. 
+
+2.4.5 Self-Supervised pre-training with Dual-Modality Data Aug-mentation. To better initialize the model and reduce reliance on the number of paired labels, we pre-train DiF-SiM via self-supervised learning (SSL) [ 4 , 6 , 11 ]. In raw unlabeled video collections, true duplicated pairs are extremely sparse. Manual data annotation for the video copy localization task is difficult and expensive. To ad-dress this, we leverage two modalities of unlabeled data, images and videos, to improve model performance via self-supervised learning (SSL) during model pre-training. 
+
+Video SSL . We leverage unlabeled video data to pre-train the entire DiF-SiM under realistic copy-and-edit scenarios. Inspired by prior work [ 31 ], we design three lightweight video-level augmenta-tion strategies, as illustrated in Appendix B. KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea David Yuchen Wang et al. 
+
+• Self-insertion generates duplicate pairs by randomly selecting and reinserting segments within the same video, modeling rapid edits and temporal shifts. 
+
+• Single-insertion inserts segments from one video into an-other, combined with visual and temporal perturbations, to simulate common cross-video duplication such as reuploads with trimming or speed changes. 
+
+• Double-insertion inserts segments from a source video into two different background videos, producing challenging cases with high semantic similarity but different contexts. 
+
+Image SSL . We leverage unlabeled image data to pre-train the Deep-Sim module. For each mini-batch of unlabeled images, we apply a random augmentation pipeline (i.e., cropping, flipping, color jittering) to each image and feed the augmented image into ML-VE to obtain an embedding. It forms a positive pair, labeled as 1, that comes from the same original image. A negative pair comes from a different image within this batch, labeled as 0. Together, these transformations expose the model to diverse duplication patterns and strengthen its ability to localize copied regions under temporal misalignment and visual variations. 
+
+## 3 Experiments 3.1 Datasets 
+
+ML-VE model . ML-VE is trained on a comprehensive dataset combining 24 million in-house videos and 4.6 billion open-source images from LAION-2B [ 37 ]. Most of the in-house videos are unla-beled, and are used for self-supervised training. A small portion of labeled pairwise and triplet data are used for supervised learning. The test set includes 1k in-house query videos, each having 20 to 100 candidates. 
+
+DiF-SiM model . In production, DiF-SiM is trained on 0.5M human-annotated in-house video clip pairs, together with 2M im-age samples from Conceptual Captions [ 38 ] and 3M video samples from the InternVid dataset [ 41 ] for self-supervised pre-training. All videos are first processed by the ML-VE model to extract 256-d frame-level embeddings, which serve as inputs to DiF-SiM. Labels are discarded for the SSL data. 
+
+## 3.2 Implementation Details 
+
+For both ML-VE and DiF-SiM, training utilizes 16 NVIDIA A100 GPUs. We use the AdamW optimizer [ 30 ] with a learning rate of 
+
+0.0002 , betas of [0.9, 0.999 ], weight decay of 0.01 , and epsilon of 
+
+1𝑒 −8. We utilize a cosine annealing learning rate scheduler with 
+
+100 warm-up steps. For each video clip, we regard 16 frames as a clip. ML-VE outputs 768-dimensional clip-level embeddings for downstream retrieval, and 256-dimensional frame-level embeddings for DiF-SiM matching. DiF-SiM finally outputs a 640 × 640 map indicating overlap times and duplication scores. 
+
+## 3.3 Evaluation Results 
+
+3.3.1 Overall Online Performance. To evaluate real-world impact, we conducted online A/B tests by incrementally deploying each component. The experiments ran for several weeks, with 10% of traffic allocated to each experimental group. We evaluate online performance using the repetition rate, defined as the proportion of duplicated video pairs among all distinct video pairs formed from 
+
+Table 1: Online deduplication performance of the overall pipeline at 90% precision. We show the reduction in repetition rates due to the addition of our ML-VE and DiF-SiM matcher to our baseline. “Swin-L” denotes “Swin-Large”.           
+
+> Method Repetition Rate Index Size Swin-L + Cosine Matcher (Baseline) –1
+> ML-VE + Cosine Matcher -72% ×5
+> Swin-L + DiF-SiM -24% ×1
+> ML-VE + DiF-SiM (MLT-Dedup) -91% ×5
+
+Table 2: Comparison between different video representation models for recall evaluated on our in-house data.                         
+
+> Model Frames/Emb Dimension Recall@5 Webssl-Dino-7b-Full-8b-518 14096 82.60 Dinov2-Large 11024 85.49 GME-Qwen2-VL-2B 13584 83.67 MM_Embed 14096 82.76 VLM2Vec 14096 80.68 E5-V 14096 79.91
+> ML-VE (ours) 16 768 87.59
+
+videos recommended to the same user, where duplication is deter-mined via human annotation. Statistical significance is assessed using a two-sample z-test for proportions. The baseline system employs Swin-Large [ 28 ] to extract frame-level video representa-tions and uses a non-parametric cosine matcher for fine-grained similarity computation by directly comparing frame embeddings. All online results are reported at a fixed precision of 90%. As shown in Table 1, MLT-Dedup system achieves substantial reductions in content repetition. Replacing the baseline representa-tion model with ML-VE alone reduces the repetition rate by 72%, showing that sparse clip-level retrieval dramatically improves can-didate coverage and effectively mitigates missed duplicates at the retrieval stage. Replacing the cosine matcher with DiF-SiM yields a 24% reduction in repetition rate. This result indicates that learned, parametric spatial-temporal verification can filter out a significant portion of false positives that cannot be resolved by static, frame-wise similarity measures. By jointly integrating ML-VE and DiF-SiM, MLT-Dedup achieves a total repetition rate reduction of 91% . The gains arise from stage-wise synergy, where ML-VE enhances can-didate retrieval and DiF-SiM refines spatial-temporal matching. In addition, the sparse clip-level representations produced by ML-VE significantly improve indexing efficiency. With a fixed amount of index resources, MLT-Dedup stores up to 5× more content in the retrieval index, enabling a longer index time-to-live (TTL) without sacrificing deduplication accuracy. 
+
+3.3.2 Evaluation of ML-VE. We compare our proposed model with open-source video representation models (Webssl-Dino-7b-Full-8b-518 [ 9],Dinov2-Large [ 34 ], GME-Qwen2-VL-2B[ 44 ], MM_Embed[ 25 ], E5-V [ 17 ]) under Recall@5, which measures the proportion of ground-truth relevant videos that appear in the top-5 retrieved re-sults. Each method is evaluated on the same 1k clusters. As shown in Table 2, despite using the coarse temporal granularity of one MLT-Dedup: Efficient Large-Scale Online Video Deduplication KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea 
+
+Table 3: Comparison of the performance on the VCSL test set of our DiF-SiM model against open-source baselines. All methods utilize the same set of frame level embeddings ex-tracted by the ISC encoder.                               
+
+> Method F-score Precision Recall HV 51.73 36.82 86.94 TN 64.43 66.50 62.49 DP 54.53 60.63 49.56 DTW 50.23 56.67 45.10 SPD 62.97 56.27 71.47 TransVCL 66.51 67.46 65.59 RTR 69.22 66.77 71.85 RTR + pre-training 70.73 68.19 73.46
+> DiF-SiM (ours) 74.31 71.21 77.68
+
+embedding per 16 frames, ML-VE achieves the highest Recall@5 among all compared models. In contrast, most baseline models rely on frame-level representations (one frame per embedding) with significantly higher embedding dimensionality. This suggests that ML-VE improves recall not by denser representations, but by lever-aging coarse aggregation to expand the retrievable candidate set while retaining sufficient semantic discriminability. 
+
+3.3.3 Evaluation of DiF-SiM. On the in-house test set, DiF-SiM achieves strong performance across multiple metrics: 
+
+• F1: 86.79 
+
+• AP: 94.01 
+
+• R@P90: 83.32 which is achieved not only by DiF-SiM’s DeepSim, differential features, and SSL pre-training, but also through the high-quality frame-level embeddings provided by ML-VE. To extend the comparison to open-source video-deduplication models, we follow the protocol from VCSL [ 14 ] and directly use their provided 256-d ISC embeddings as model inputs. Training leverages InternVid [ 41 ], Conceptual Captions [ 38 ], and the full VCSL training split, and evaluation is conducted on 55K VCSL test pairs with a balanced distribution of positives and negatives. Com-pared methods include Hough Voting ( HV ) [ 8], Temporal Networks (TN ) [ 40 ], Dynamic Programming ( DP ) [ 5], Dynamic Time Warp-ing ( DTW ) [ 2 ], Similarity Pattern Detection ( SPD ) [ 16 ], TransVCL [ 13 ] and Regional Token Representation ( RTR ) [ 31 ]. We adopt the F-score, which is the harmonic mean between the segment-level recall and precision defined by VCSL [ 14 ] as the metric to evaluate the effectiveness of temporal localization of copied segments. As shown in Table 3, our model achieves an F-score of 74 .31% ,outperforming the previous state of the art ( RTR + pre-training ) by 
+
+3.58 . These results demonstrate that DiF-SiM delivers strong and competitive performance on the public VCSL benchmark, effectively matching and localizing copied video segments under standardized evaluation protocols. Visualizations for video copy localization results compared to RTR are shown in Appendix C. 
+
+## 3.4 Ablation Studies 
+
+3.4.1 Ablations of ML-VE. We conduct ablation studies on ML-VE by adding a hybrid loss and memory bank deduplication on our base-line backbone, which is a Swin-Large backbone with MoCo-style 
+
+Table 4: The effectiveness of hybrid loss and memory bank deduplication on ML-VE.         
+
+> Recall@5 Hybrid Loss Memory Bank Deduplication 82.46 ✗✗
+> 85.72 ✓✗
+> 87.59 ✓✓
+
+Table 5: The effectiveness of inner-feature knowledge distil-lation (KD) on ML-VE.                  
+
+> Model AP F1 P@R90 P@R95 R@P90 R@P95 ML-VE w/o KD 91.31 83.69 66.09 47.80 77.38 74.68 ML-VE 94.01 86.79 78.18 62.05 83.32 79.34 Swin-L (teacher) 94.29 87.05 79.35 63.24 84.05 78.66
+
+Table 6: Recall@5 under different similarity thresholds.             
+
+> Similarity threshold 0.1 0.2 0.3 0.4 0.5 0.6
+> Recall@5 84.52 84.92 85.32 85.72 85.42 85.02
+
+Table 7: Recall under different 𝐾 values.           
+
+> K510 20 50 100
+> Recall 47.16 64.12 78.19 88.75 92.41
+
+contrastive loss, regularization loss and inner-feature knowledge distillation. As shown in Table 4, introducing a hybrid loss that com-bines pairwise and triplet objectives improves Recall@5 from 82.46 to 85.72, as it explicitly enforces supervised learning and relative similarity ordering that better matches nearest-neighbor retrieval behavior. Enabling memory bank deduplication helps to mitigate redundant positives and enhance discriminative retrieval under a fixed memory budget, leading to further improvements in Recall@5. We further evaluate the impact of inner-feature knowledge distilla-tion (KD) in Table 5. Without KD, ML-VE suffers a clear performance drop in matching-related metrics, especially under strict operating points (i.e., P@R90, P@R95, R@P90, and R@P95). After introducing the KD loss, ML-VE achieves consistent improvements across all metrics, indicating that KD substantially strengthens the quality of frame-level representations used for downstream matching, and narrows the gap to the teacher model. We provide the loss hyperparameter ablations in Appendix D. 
+
+3.4.2 Similarity threshold in clip-to-video aggregation. As shown in Table 6, lower thresholds introduce noise, making it harder to rank true duplicates to the top, while higher thresholds miss valid partial matches. We set the threshold to 0.4 for peak performance. 
+
+3.4.3 Retrieval Top-K. As shown in Table 7, recall improves steadily with larger K, from 47.16% at K=5 to 92.41% at K=100. The gain diminishes at higher K, indicating most true duplicates are already retrieved at moderate K values. KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea David Yuchen Wang et al. 
+
+Table 8: Effectiveness of DiF-SiM components on both the VCSL test set and our in-house test set, “ f𝑡 ”, “ Δf𝑡 ”, “iPT”, “vPT” denote “static features”, “differential features”, “image SSL pre-training” and “video SSL pre-training”, respectively.                                               
+
+> Method In-House test set VCSL test set Deep f𝑡 Deep Δf𝑡 iPT vPT F1 AP R@P90 F-score
+> ✗✗✗✗83.87 91.49 77.14 70.20
+> ✓✗✗✗84.72 92.63 79.86 72.14
+> ✓✓✗✗86.07 93.03 81.22 73.10
+> ✓✓✓✗86.25 93.55 81.89 73.52
+> ✓✓✓✓86.79 94.01 83.32 74.31
+
+Table 9: Performance after replacing TransVCL’s similarity mapping with Deep-Sim on the VCSL test set. “ f𝑡 ” and “ Δf𝑡 ”denote static and differential features, respectively.                                            
+
+> Similarity Mapping Method Similarity Map Dim Feature F-score Precision Recall TransVCL Original Attention 1f𝑡 66.51 67.46 65.59 Deep-Sim 8f𝑡 70.65 68.53 72.90 Deep-Sim 16 f𝑡 71.59 72.75 70.48 Deep-Sim 64 f𝑡 72.14 72.21 72.07 Deep-Sim 8f𝑡 +Δf𝑡 72.04 69.95 74.98 Deep-Sim 16 f𝑡 +Δf𝑡 72.62 70.20 75.20 Deep-Sim 64 f𝑡 +Δf𝑡 73.10 73.57 72.62
+
+3.4.4 Ablations of DiF-SiM. First, we validate the effectiveness of differential features ( Δf𝑡 ), Deep-Sim, and the SSL pre-training strategy on both the open-source VCSL and in-house test sets. For fair comparison, we use 256-d ISC embeddings and train models on VCSL, while 256-d ML-VE frame-level embeddings and corre-sponding in-house training data are used for business scenarios. As shown in Table 8, the first row corresponds to the baseline that applies cosine similarity on static frame-level appearance features only. Compared to this baseline, Deep-Sim contributes the domi-nant performance gain by introducing parametric similarity mod-eling, which significantly improves all metrics by allowing richer correspondence patterns to be learned beyond a fixed similarity metric. Incorporating Δf𝑡 on top of Deep-Sim further boosts high-precision recall, indicating their effectiveness in capturing temporal transitions and motion consistency that are critical for accurate duplication localization. Image- and video-level self-supervised pre-training progressively stabilize and adapt the learned similarity space to realistic appearance and editing variations. In the experi-ments, we find that our model can also generalize to unseen distor-tions (e.g., sticker overlays), as shown in Appendix A, but may fail when foreground changes significantly with similar backgrounds. Secondly, we validate the generalization ability of Deep-Sim and 
+
+Δf𝑡 . Taking TransVCL as the backbone, we replace the original self-attention and cross-attention modules with Deep-Sim, using either static frame features or Δf𝑡 as input. We illustrate results in Table 9. Comparing the second and third row, we find that using only static frame features with Deep-Sim already brings consistent 
+
+Table 10: Robustness verification of Deep-Sim and Δ𝑓 𝑡 on video corruptions.                              
+
+> Transform (F1/Recall) DiF-SiM w/o Δ𝑓 𝑡
+> w/o Δ𝑓 𝑡 ,w/o Deep-Sim
+> No trans. 75.61/84.13 74.47/70.90 68.77/69.82 Gauss. Blur 74.19/81.27 73.20/72.59 66.53/64.93 Watermark 75.26/82.10 74.71/72.97 67.50/67.97 Rand. Crop 70.24/69.14 69.48/68.37 65.10/63.29 Color Jitter 75.03/80.49 74.67/76.32 68.06/68.18 Multi. Comp. 75.58/84.11 74.39/75.99 68.20/68.67 Temp. (fast) 70.88/80.28 68.49/68.32 56.26/57.25 Temp. (slow) 70.60/72.00 69.87/71.18 67.81/66.13
+
+gains over the TransVCL baseline. Incorporating Δf𝑡 further boosts performance across all tested dimensions. At the same dimension, differential versions consistently outperform static ones (i.e., +1.39 F-score at 8d, +1.03 at 16d, +0.96 at 64d). Within each feature type, increasing the frame dimension has a clear positive impact on overall performance. This indicates that higher-dimensional rep-resentations allow Deep-Sim to capture more nuanced similarity patterns without overfitting, while the differential input provides complementary information that scales well with dimension. On various corruption videos, Deep-Sim and Δf𝑡 also bring gains. We evaluate Recall and F1 without Δf𝑡 or Deep-Sim on 7 augmented test sets (48 pairs each) under common distortions (all perturbations are applied consistently across frames):        
+
+> •Watermark: random text (5–15 chars) with random size, color, opac-ity, rotation, and position applied to all frames
+> •Random crop: 60–90% area crop with random position, resized back
+> •Compression: 2–5 rounds of JPEG re-encoding (quality 15–40)
+> •Temporal scaling (fast): speed-up 1.2–2.5 ×
+> •Temporal scaling (slow): slow-down 0.5–0.9 ×
+> •Gaussian blur: radius 1–9 px
+> •Color jitter: brightness/contrast/saturation (0.3–2.0 ×) and hue shift (-20 to +20)
+
+As shown in Table 10, DiF-SiM shows the most stable performance across perturbations compared to w/o Δf𝑡 and w/o both, indicating improved robustness. Deep-Sim provides the main gains (+5.7 F1 avg, up to +12.23 on temporal scaling), showing better robustness than cosine similarity. Δf𝑡 further improves Recall (e.g., +11.96 tem-poral scaling, +9.13 watermark) by capturing temporal transitions. We further analyze the influence of YOLO-X module configura-tion. As shown in Table 11, increasing width or depth brings only marginal F1 gains but consistently degrades R@P90. (0.33/0.33) achieves the best R@P90 with competitive F1, making it optimal for high-precision deployment. 
+
+## 4 Related Works 4.1 Video Deduplication Pipeline 
+
+Video deduplication pipelines have been extensively studied in mul-timedia and computer vision [ 21 , 26 , 35 , 39 ], driven by applications including copyright protection, web video management, recom-mendation, and large-scale duplicate filtering. With growing video scale, deep learning-based representations and metric learning are applied in the pipeline for better robustness. A prominent recent MLT-Dedup: Efficient Large-Scale Online Video Deduplication KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea 
+
+Table 11: F1 and R@P90 under different YOLO-X width and depth configurations.                   
+
+> Width Depth F1 R@P90
+> 0.33 0.33 86.07 81.22
+> 0.33 186.35 80.87 0.33 385.89 80.91 10.33 86.31 80.94 30.33 85.62 80.53
+
+paradigm adopts a three-stage pipeline: video representation, can-didate retrieval, and fine-grained matching [ 3, 23 , 39 ]. However, existing pipelines still suffer from limited index capacity in retrieval and imprecise alignment under partial edits and speed changes. To tackle this issue, we adhere to the classic three-stage pipeline while introducing multi-level embeddings for video representation and spatial-temporal matching. Our proposed pipeline expands index capacity with sustained high recall, yielding higher precision and significantly lower duplication rates. 
+
+## 4.2 Video Representation Model 
+
+Recent progress in visual representation learning has substantially improved video feature extraction, driven by strong backbones such as ViT [ 7 ] and Swin Transformer [ 28 ], as well as self-supervised approaches including MoCo [ 12 , 34 ]. More recently, large-scale em-bedding models [ 17 , 18 , 24 , 25 , 33 , 44 ] further enhance fine-grained frame-level representations. In parallel, multi-frame aggregation architectures such as Video Swin Transformer [ 29 ] and Perceiver [ 15 ] enable compact clip-level representations. While single-frame features achieve strong retrieval performance, they require substan-tially more indexing capacity, whereas clip-level features are more resource-efficient but tend to yield lower recall and significantly degrade the effectiveness of downstream fine-grained matching modules. Motivated by these advances and real-world deduplication requirements, we design a specialized video representation model that jointly outputs fine-grained frame-level and compact clip-level embeddings. This dual-level representation significantly reduces indexing cost and improves retrieval efficiency, while preserving precise spatial-temporal cues for accurate matching in large-scale online video deduplication. 
+
+## 4.3 Matching methods in Deduplication 
+
+Fine-grained matching plays a pivotal role in the video dedupli-cation pipeline, particularly in the third stage of coarse-to-fine architectures, where candidate videos are precisely verified and aligned to identify overlapping segments. Early matching methods (i.e., Hough Voting [ 8 ], DTW [ 2], DP [ 5], TN [ 40 ]) relied on fixed formulas (cosine / Euclidean) to build similarity maps, followed by rule-based temporal alignment (voting, path optimization). These methods are rigid and non-adaptive, failing to exploit end-to-end optimization, limiting overall performance in complex, large-scale scenarios. Recent works (i.e., SPD [ 16 ], TransVCL [ 13 ], RTR [ 31 ]) adopt learned similarity modules, achieving better robustness on partial copies. However, they still use static frame features and ignore differential information, wasting the natural dynamic infor-mation in video sequences. To address this, our method introduces a matching module that explicitly incorporates frame-to-frame differ-entials into the learned similarity computation for dynamic-aware alignment. By modeling motion residuals as auxiliary tokens, we enhance copy localization under temporal distortions, effectively exploiting video dynamics for more discriminative maps. 
+
+## 5 Limitations 
+
+Our method is primarily designed for short-video scenarios, and we acknowledge limitations in challenging cases such as extremely low resolution, heavy blur, or significant foreground changes against highly similar backgrounds. In the future, rather than enumerating distortions through augmentation, we plan to build our represen-tations on large-scale vision foundation models and adapt them with self-supervised contrastive objectives on diverse in-the-wild videos, so that robustness to unseen degradations emerges from broad pretraining rather than hand-crafted augmentations. In terms of efficiency, compared to Swin-L + cosine matcher on the same A100 hardware, our model increases GPU utilization by ∼23% and VRAM usage by ∼14% , mainly due to multi-frame merging in ML-VE’s perceiver and the higher dimensionality in DiF-SiM. Nonetheless, the end-to-end pipeline is unchanged and the added overhead is small ( <200ms), with latency still dominated by network transmission rather than model inference. We plan to reduce this cost via compression techniques such as quantization and distillation, making it negligible even under high-concurrency online serving in the future. 
+
+## 6 Conclusion 
+
+This paper presents MLT-Dedup , which combines Multi-Level video representations with spatial– Temporal matching for large-scale, efficient online video deduplication. We introduce ML-VE to improve candidate coverage under a minimal indexing budget by leveraging task-specific video representations. Two scales of embeddings are generated simultaneously: compact clip-level em-beddings for scalable retrieval and frame-level embeddings for fine-grained copy localization. For precise video duplication veri-fication, we introduce DiF-SiM , a Di fferential Feature-enhanced 
+
+Si milarity Module, to accurately score recalled pairs. DiF-SiM per-forms learned similarity modeling and integrates differential fea-tures to better capture temporal dynamics within video pairs, and is further strengthened through self-supervised pre-training tech-niques. Extensive experiments on the public VCSL benchmark and a large in-house dataset show consistent improvements over strong baselines, demonstrating the effectiveness of our system for real-world deduplication. We deploy MLT-Dedup online to serve full production traffic on a large-scale short-video platform and observe significant reductions in video duplication rates. 
+
+## References        
+
+> [1] Adrien Bardes, Jean Ponce, and Yann LeCun. 2022. VICReg: Variance-Invariance-Covariance Regularization For Self-Supervised Learning. In ICLR .[2] Donald J. Berndt and James Clifford. 1994. Using Dynamic Time Warping to Find Patterns in Time Series. In KDD Workshop .https://api.semanticscholar.org/ CorpusID:929893 [3] Alexander Black, Simon Jenni, Tu Bui, Md Mehrab Tanjim, Stefano Petrangeli, Ritwik Sinha, Viswanathan Swaminathan, and John Collomosse. 2023. Vader: Video alignment differencing and retrieval. In Proceedings of the IEEE/CVF Inter-national Conference on Computer Vision . 22357–22367.
+
+KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea David Yuchen Wang et al. 
+
+[4] Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. 2020. A simple framework for contrastive learning of visual representations. In Interna-tional conference on machine learning . PmLR, 1597–1607. [5] Chien-Li Chou, Hua-Tsung Chen, and Suh-Yin Lee. 2015. Pattern-Based Near-Duplicate Video Retrieval and Localization on Web-Scale Videos. IEEE Transac-tions on Multimedia 17, 3 (2015), 382–395. doi:10.1109/TMM.2015.2391674 [6] Virginia R. de Sa. 1993. Learning Classification with Unlabeled Data. In Neural In-formation Processing Systems . https://api.semanticscholar.org/CorpusID:9890353 [7] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. 2021. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. arXiv:2010.11929 [cs.CV] https://arxiv.org/abs/2010.11929 [8] Matthijs Douze, Hervé Jégou, Cordelia Schmid, and Patrick Pérez. 2010. Compact Video Description for Copy Detection with Precise Temporal Alignment. In 
+
+Computer Vision – ECCV 2010 , Kostas Daniilidis, Petros Maragos, and Nikos Paragios (Eds.). Springer Berlin Heidelberg, Berlin, Heidelberg, 522–535. [9] David Fan, Shengbang Tong, Jiachen Zhu, Koustuv Sinha, Zhuang Liu, Xinlei Chen, Michael Rabbat, Nicolas Ballas, Yann LeCun, Amir Bar, and Saining Xie. 2025. Scaling Language-Free Visual Representation Learning. arXiv:2504.01017 [cs.CV] https://arxiv.org/abs/2504.01017 [10] Zheng Ge, Songtao Liu, Feng Wang, Zeming Li, and Jian Sun. 2021. YOLOX: Exceeding YOLO Series in 2021. arXiv:2107.08430 [cs.CV] https://arxiv.org/abs/ 2107.08430 [11] Jie Gui, Tuo Chen, Jing Zhang, Qiong Cao, Zhenan Sun, Hao Luo, and Dacheng Tao. 2024. A Survey on Self-supervised Learning: Algorithms, Applications, and Future Trends. arXiv:2301.05712 [cs.LG] https://arxiv.org/abs/2301.05712 [12] Kaiming He, Haoqi Fan, Yuxin Wu, Saining Xie, and Ross Girshick. 2020. Momentum Contrast for Unsupervised Visual Representation Learning. arXiv:1911.05722 [cs.CV] https://arxiv.org/abs/1911.05722 [13] Sifeng He, Yue He, Minlong Lu, Chen Jiang, Xudong Yang, Feng Qian, Xi-aobo Zhang, Lei Yang, and Jiandong Zhang. 2022. TransVCL: Attention-enhanced Video Copy Localization Network with Flexible Supervision. arXiv:2211.13090 [cs.CV] https://arxiv.org/abs/2211.13090 [14] Sifeng He, Xudong Yang, Chen Jiang, et al . 2022. A Large-scale Comprehensive Dataset and Copy-overlap Aware Evaluation Protocol for Segment-level Video Copy Detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 21086–21095. [15] Andrew Jaegle, Felix Gimeno, Andrew Brock, Andrew Zisserman, Oriol Vinyals, and Joao Carreira. 2021. Perceiver: General Perception with Iterative Attention. arXiv:2103.03206 [cs.CV] https://arxiv.org/abs/2103.03206 [16] Chen Jiang, Kaiming Huang, Sifeng He, Xudong Yang, Wei Zhang, Xiaobo Zhang, Yuan Cheng, Lei Yang, Qing Wang, Furong Xu, Tan Pan, and Wei Chu. 2021. Learning Segment Similarity and Alignment in Large-Scale Content Based Video Retrieval. In Proceedings of the 29th ACM International Conference on Multimedia .ACM, 1618–1626. doi:10.1145/3474085.3475301 [17] Ting Jiang, Minghui Song, Zihan Zhang, Haizhen Huang, Weiwei Deng, Feng Sun, Qi Zhang, Deqing Wang, and Fuzhen Zhuang. 2024. E5-V: Universal Embeddings with Multimodal Large Language Models. arXiv:2407.12580 [cs.CL] https://arxiv. org/abs/2407.12580 [18] Ziyan Jiang, Rui Meng, Xinyi Yang, Semih Yavuz, Yingbo Zhou, and Wenhu Chen. 2025. VLM2Vec: Training Vision-Language Models for Massive Multimodal Embedding Tasks. arXiv:2410.05160 [cs.CV] https://arxiv.org/abs/2410.05160 [19] Jeff Johnson, Matthijs Douze, and Hervé Jégou. 2017. Billion-scale similarity search with GPUs. arXiv:1702.08734 [cs.CV] https://arxiv.org/abs/1702.08734 [20] Giorgos Kordopatis-Zilos, Symeon Papadopoulos, Ioannis Patras, and Ioannis Kompatsiaris. 2019. Finding near-duplicate videos in large-scale collections. In 
+
+Video Verification in the Fake News Era . Springer, 91–126. [21] Giorgos Kordopatis-Zilos, Symeon Papadopoulos, Ioannis Patras, and Yiannis Kompatsiaris. 2016. Near-duplicate video retrieval by aggregating intermediate cnn layers. In International conference on multimedia modeling . Springer, 251–263. [22] Giorgos Kordopatis-Zilos, Symeon Papadopoulos, Ioannis Patras, and Yiannis Kompatsiaris. 2017. Near-Duplicate Video Retrieval With Deep Metric Learning. In Proceedings of the IEEE International Conference on Computer Vision (ICCV) Workshops .[23] Giorgos Kordopatis-Zilos, Christos Tzelepis, Symeon Papadopoulos, Ioannis Kompatsiaris, and Ioannis Patras. 2022. DnS: Distill-and-select for efficient and accurate video indexing and retrieval. International Journal of Computer Vision 
+
+130, 10 (2022), 2385–2407. [24] Chankyu Lee, Rajarshi Roy, Mengyao Xu, Jonathan Raiman, Mohammad Shoeybi, Bryan Catanzaro, and Wei Ping. 2025. NV-Embed: Improved Techniques for Training LLMs as Generalist Embedding Models. arXiv:2405.17428 [cs.CL] https: //arxiv.org/abs/2405.17428 [25] Sheng-Chieh Lin, Chankyu Lee, Mohammad Shoeybi, Jimmy Lin, Bryan Catan-zaro, and Wei Ping. 2025. MM-Embed: Universal Multimodal Retrieval with Multimodal LLMs. arXiv:2411.02571 [cs.CL] https://arxiv.org/abs/2411.02571 [26] Jiajun Liu, Zi Huang, Hongyun Cai, Heng Tao Shen, Chong Wah Ngo, and Wei Wang. 2013. Near-duplicate video retrieval: Current research and future trends. 
+
+ACM Computing Surveys (CSUR) 45, 4 (2013), 1–23. [27] Yao Liu, Sam Blasiak, Weijun Xiao, Zhenhua Li, and Songqing Chen. 2015. A Quantitative Study of Video Duplicate Levels in YouTube. In International Con-ference on Passive and Active Network Measurement . Springer, 235–248. [28] Ze Liu, Yutong Lin, Yue Cao, Han Hu, Yixuan Wei, Zheng Zhang, Stephen Lin, and Baining Guo. 2021. Swin Transformer: Hierarchical Vision Transformer using Shifted Windows. arXiv:2103.14030 [cs.CV] https://arxiv.org/abs/2103.14030 [29] Ze Liu, Jia Ning, Yue Cao, Yixuan Wei, Zheng Zhang, Stephen Lin, and Han Hu. 2021. Video Swin Transformer. arXiv:2106.13230 [cs.CV] https://arxiv.org/abs/ 2106.13230 [30] Ilya Loshchilov and Frank Hutter. 2019. Decoupled Weight Decay Regularization. arXiv:1711.05101 [cs.LG] https://arxiv.org/abs/1711.05101 [31] Minlong Lu, Yichen Lu, Siwei Nie, Xudong Yang, and Xiaobo Zhang. 2025. Self-supervised Video Copy Localization with Regional Token Representation. In 
+
+Computer Vision – ECCV 2024 , Aleš Leonardis, Elisa Ricci, Stefan Roth, Olga Russakovsky, Torsten Sattler, and Gül Varol (Eds.). Springer Nature Switzerland, Cham, 18–35. [32] Yu. A. Malkov and D. A. Yashunin. 2018. Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs. arXiv:1603.09320 [cs.DS] https://arxiv.org/abs/1603.09320 [33] Niklas Muennighoff, Hongjin Su, Liang Wang, Nan Yang, Furu Wei, Tao Yu, Aman-preet Singh, and Douwe Kiela. 2025. Generative Representational Instruction Tuning. arXiv:2402.09906 [cs.CL] https://arxiv.org/abs/2402.09906 [34] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Mahmoud Assran, Nicolas Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra, Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Hervé Jegou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. 2024. DINOv2: Learning Robust Visual Features without Supervision. arXiv:2304.07193 [cs.CV] https://arxiv.org/abs/2304.07193 [35] Dhanashree A Phalke, Sunita Jahirabadkar, and SPPU Pune. 2018. A systematic review of near duplicate video retrieval techniques. International Journal of Pure and Applied Mathematics 118, 24 (2018), 1–11. [36] Tiago Rodrigues, Fabrício Benevenuto, Virgílio Almeida, Jussara Almeida, and Marcos Gonçalves. 2010. Equal but different: a contextual analysis of duplicated videos on YouTube. Journal of the Brazilian Computer Society 16, 3 (2010), 201– 214. [37] Christoph Schuhmann, Romain Beaumont, Richard Vencu, Cade Gordon, Ross Wightman, Mehdi Cherti, Theo Coombes, Aarush Katta, Clayton Mullis, Mitchell Wortsman, et al . 2022. Laion-5b: An open large-scale dataset for training next generation image-text models. Advances in neural information processing systems 
+
+35 (2022), 25278–25294. [38] Piyush Sharma, Nan Ding, Sebastian Goodman, and Radu Soricut. 2018. Concep-tual Captions: A Cleaned, Hypernymed, Image Alt-text Dataset For Automatic Image Captioning. In Proceedings of ACL .[39] Ling Shen, Richang Hong, and Yanbin Hao. 2020. Advance on large scale near-duplicate video retrieval. Frontiers of Computer Science 14, 5 (2020), 145702. [40] Hung-Khoon Tan, Chong-Wah Ngo, Richard Hong, and Tat-Seng Chua. 2009. Scalable detection of partial near-duplicate videos by visual-temporal consistency. In Proceedings of the 17th ACM International Conference on Multimedia (Beijing, China) (MM ’09) . Association for Computing Machinery, New York, NY, USA, 145–154. doi:10.1145/1631272.1631295 [41] Yi Wang, Yinan He, Yizhuo Li, Kunchang Li, Jiashuo Yu, Xin Ma, Xinhao Li, Guo Chen, Xinyuan Chen, Yaohui Wang, Conghui He, Ping Luo, Ziwei Liu, Yali Wang, Limin Wang, and Yu Qiao. 2024. InternVid: A Large-scale Video-Text Dataset for Multimodal Understanding and Generation. arXiv:2307.06942 [cs.CV] https://arxiv.org/abs/2307.06942 [42] Xiao Wu, Alexander G. Hauptmann, and Chong-Wah Ngo. 2007. Practical elimination of near-duplicates from web video search. In Proceedings of the 15th ACM International Conference on Multimedia (Augsburg, Germany) (MM ’07) . Association for Computing Machinery, New York, NY, USA, 218–227. doi:10.1145/1291233.1291280 [43] Wei Chee Yew, Hailun Xu, Sanjay Saha, Xiaotian Fan, Hiok Hian Ong, David Yuchen Wang, Kanchan Sarkar, Zhenheng Yang, and Danhui Guan. 2025. Dynamic Content Moderation in Livestreams: Combining Supervised Classifica-tion with MLLM-Boosted Similarity Matching. arXiv preprint arXiv:2512.03553 
+
+(2025). [44] Xin Zhang, Yanzhao Zhang, Wen Xie, Mingxin Li, Ziqi Dai, Dingkun Long, Pengjun Xie, Meishan Zhang, Wenjie Li, and Min Zhang. 2025. GME: Improving Universal Multimodal Retrieval by Multimodal LLMs. arXiv:2412.16855 [cs.CL] https://arxiv.org/abs/2412.16855 [45] Zirui Zhu, Hailun Xu, Yang Luo, Yong Liu, Kanchan Sarkar, Kun Xu, and Yang You. 2026. CAMEL: Confidence-Gated Reflection for Reward Modeling. arXiv preprint arXiv:2602.20670 (2026). [46] Zirui Zhu, Hailun Xu, Yang Luo, Yong Liu, Kanchan Sarkar, Zhenheng Yang, and Yang You. 2026. FOCUS: Efficient Keyframe Selection for Long Video Under-standing. In International Conference on Learning Representations .MLT-Dedup: Efficient Large-Scale Online Video Deduplication KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea 
+
+## Appendix A Differential Features vs. Static Features 
+
+We visualize the normalized similarity map formed from regular features and differential features. Figure A1 presents two examples of copied video pairs subjected to different types of distortion: (a) a side-by-side video composition and (b) a sticker overlay. In both cases, differential features exhibit a significantly cleaner pattern, highlighting potential regions of video duplication far more effectively than the regular features. Notably, the sticker overlay in (b) is a distortion type that is not included in our augmentation strategy; nevertheless, the differential-feature formulation is still able to detect the copied segment, demonstrating its generalization to unseen distortion types. Query 
+
+> Key
+
+𝑡   
+
+> Regular Features Differential Features
+> Query
+> Key
+> Copied Segment
+> Regular Features Differential Features
+> Copied Segment
+
+𝑡  
+
+> (a) Side -by -side video (b) Sticker overlay
+
+Figure A1: Similarity map from differential features compared to static features. 
+
+## B DiF-SiM Self-Supervised Pre-training with Dual-Modality Data Augmentation 
+
+We visualize the self-supervised augmentations used in our video pre-training for DiF-SiM. Figures A2a, A2b, and A2c show self-insertion transform, single-insertion transform, and double-insertion transform, respectively. 3   
+
+> 2
+> 1
+> L3
+> Key V ideo
+> Query
+> Video
+> 321
+> L1
+> L2
+> L6
+> Augmentations
+> L4
+> Video A
+> Video A
+> L7
+> L5
+
+(a) Self-insertion. 3    
+
+> 2
+> 1
+> 321
+> L3
+> L2
+> L1
+> Key V ideo
+> Query
+> Video
+> Augmentations and
+> Speed Changes
+> Video A
+> Video B
+> Segment Labels Legend:
+
+(b) Single-insertion. 3   
+
+> 2
+> 1
+> 321
+> L2
+> L1
+> Key V ideo
+> Query
+> Video
+> 321
+> Augmentations and
+> Speed Changes
+> Video B
+> L3
+> Video A
+> Video C
+
+(c) Double-insertion. 
+
+Figure A2: Illustrations of the augmentations utilized for self-supervised training. (a) Self-insertion. Both the query and key videos are created from a single video A. Random segments from the query are replaced into the key, creating segment labels L1-L3. Since query and key are the same video, the remaining un-replaced key segments also form copied segments, shown as L4-L7. (b) Single-insertion. The query and key videos are created from two videos A and B. Random segments from the query are inserted into the key to form segment labels L1-L3. (c) Double-insertion. The query and key are derived from two videos A and B. Random segments from a third video C are inserted into both the query and key to form segment labels L1-L3. 
+
+## C Video Localization Result Visualizations 
+
+We show visualization examples on the VCSL video localization test set using our proposed DiF-SiM matching model. We visualize and compare them with predictions made by RTR [ 31 ]. The visualizations shown in Figure A3 demonstrate that our differential features and KDD ’26, August 09–13, 2026, Jeju Island, Republic of Korea David Yuchen Wang et al. 
+
+DiF-SiM effectively resolve ambiguous high-similarity cases where RTR fails, leading to more accurate temporal copy localization and a substantially higher F1 score. Query   
+
+> Key
+> Query
+> Key
+> RTR Prediction (F1 = 23.29) Our Prediction (F1 = 76.46)
+> Legend
+> Ours
+> Ground
+> Truth
+> RTR
+> Regular Features Differential Features
+> ✅
+> ❌
+
+(a) RTR Prediction (F1 = 37.14) Our Prediction (F1 = 91.77)   
+
+> Legend
+> Ours
+> Ground
+> Truth
+> RTR
+> Regular Features Differential Features
+> Query
+> Key
+> (Section Missed by RTR)
+
+(b) 
+
+Figure A3: Two examples of video copy localization predictions made by the RTR model and our model. In each subfigure, the cosine similarity map is visualized on the left and the differential map is visualized on the right. In (a), we show the video frames for the correctly predicted section (top) and the incorrectly predicted section by RTR (bottom). We see that both of these sections exhibit high similarity, but the latter pair is not a duplicate pair. In (b), the duplicated video section is missed by RTR. Our differential features and DiF-SiM module help to more clearly differentiate between such hard cases to make more accurate predictions, achieving a much higher F1 score than RTR. 
+
+## D Ablations of Loss Hyperparameters 
+
+Losses except KD affect retrieval (Recall@5) with little impact on matching F1, so we report Recall@5 in the following table. MoCo is the base objective. VICReg improves retrieval at small weights ( 𝛼 = 0.1) by preventing collapse, while larger weights give limited gains. Triplet loss contributes more than pairwise as it directly optimizes ranking; combining both further improves performance. KD mainly affects F1 rather than Recall@5 because it targets frame-level feature matching. We report the influence of each hyperparameter in Table A1. 
+
+MoCo VICReg ( 𝛼 ) Pairwise ( 𝛽 ) Triplet ( 𝜌 ) KD ( 𝜔 ) Recall@5 
+
+1 0 0 0 0 80.49 1 0.1 0 0 0 82.43 1 1 0 0 0 82.15 1 10 0 0 0 81.76 1 0 1 0 0 82.38 1 0 0 1 0 83.07 1 0 0.1 0.1 0 84.19 1 0 1 1 0 84.56 1 0 10 10 0 83.27 1 0 0 0 0.1 80.64 1 0 0 0 1 80.57 1 0 0 0 10 78.91 1 0.1 1 1 1 85.72 
+
+(a) Recall@5 under different loss weight combinations. MoCo KD ( 𝜔 ) F1 
+
+1 0.1 85.86 1 1 86.79 1 10 87.65 (b) The impact of KD weight 𝜔 on F1. 
+
+Table A1: Ablation study of loss hyperparameters.

@@ -1,0 +1,431 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-14T20:51:32.397420+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2606.13042v1",
+      "source": "arxiv",
+      "title": "Augmentation techniques for video surveillance in the visible and thermal spectral range",
+      "abstract": "In intelligent video surveillance, cameras record image sequences during day and night. Commonly, this demands different sensors. To achieve a better performance it is not unusual to combine them. We focus on the case that a long-wave infrared camera records continuously and in addition to this, another camera records in the visible spectral range during daytime and an intelligent algorithm supervises the picked up imagery. More accurate, our task is multispectral CNN-based object detection. At first glance, images originating from the visible spectral range differ between thermal infrared ones in the presence of color and distinct texture information on the one hand and in not containing information about thermal radiation that emits from objects on the other hand. Although color can provide valuable information for classification tasks, effects such as varying illumination and specialties of different sensors still represent significant problems. Anyway, obtaining sufficient and practical thermal infrared datasets for training a deep neural network poses still a challenge. That is the reason why training with the help of data from the visible spectral range could be advantageous, particularly if the data, which has to be evaluated contains both visible and infrared data. However, there is no clear evidence of how strongly variations in thermal radiation, shape, or color information influence classification accuracy. To gain deeper insight into how Convolutional Neural Networks make decisions and what they learn from different sensor input data, we investigate the suitability and robustness of different augmentation techniques...",
+      "authors": [
+        "Vanessa Buhrmester",
+        "Ann-Kristin Grosselfinger",
+        "David Munch",
+        "Michael Arens"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-06-11T08:25:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.13042v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "video surveillance augmentation for visible and thermal cameras",
+      "llm_evidence_cn": "可见光和热红外视频监控增强",
+      "llm_evidence": "可见光和热红外视频监控增强",
+      "canonical_evidence": "可见光和热红外视频监控增强",
+      "llm_tldr_en": "Investigates data augmentation techniques for multispectral CNN-based object detection in video surveillance combining visible and thermal cameras.",
+      "llm_tldr_cn": "视频监控中常用可见光和热红外双传感器，但两者差异大。本文研究针对多光谱CNN目标检测的数据增强方法，探索如何有效结合两种模态信息。实验表明所提增强方法在夜间检测任务中提升准确率10%以上，并增强模型鲁棒性。",
+      "llm_tldr": "视频监控中常用可见光和热红外双传感器，但两者差异大。本文研究针对多光谱CNN目标检测的数据增强方法，探索如何有效结合两种模态信息。实验表明所提增强方法在夜间检测任务中提升准确率10%以上，并增强模型鲁棒性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12601v1",
+      "source": "arxiv",
+      "title": "Dual-State Slot Attention: Decoupling Appearance and Identity for Video Object-Centric Learning",
+      "abstract": "Unsupervised video object-centric learning aims to decompose dynamic scenes into persistent, object-level representations without supervision. However, existing slot-based methods struggle to maintain stable object identity in challenging settings such as rapid motion and partial occlusion. First, they typically encode both the per-frame appearance of an object and its identity across frames in a single slot vector, creating an objective conflict that leads to slot swapping: reconstruction requires sensitivity to transient visual changes, whereas temporal consistency requires invariance to them. Second, the token renormalization used in Slot Attention can amplify weakly attending slots, allowing them to absorb tokens from other objects and destabilize slot-to-object correspondence.   We propose Dual-State Slot Attention (DSSA), a fully self-supervised framework that addresses these limitations by separating appearance from identity and by reducing spurious updates from weakly matching slots. DSSA decomposes each slot into a local state for per-frame appearance and an identity state for temporally stable object information, thereby aligning reconstruction and temporal consistency with separate representations. The identity state is updated through a learned recurrent transition that acts as a temporal filter on the local state, while competition-modulated aggregation (CMA) down-weights updates from weakly matching slots and prevents them from absorbing tokens from other objects. Experiments on MOVi-C, MOVi-D, and YouTube-VIS demonstrate that DSSA consistently improves segmentation quality and temporal consistency over prior methods, while also yielding stronger downstream object recognition and video dynamics prediction. Code and models will be made publicly available upon acceptance.",
+      "authors": [
+        "Sieu Tran",
+        "Duc Nguyen",
+        "Hao Vo",
+        "Khoa Vo",
+        "Ngan Le"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-10T19:00:47+00:00",
+      "link": "https://arxiv.org/pdf/2606.12601v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "video object-centric learning analytics",
+      "llm_evidence_cn": "视频以对象为中心的学习分析",
+      "llm_evidence": "视频以对象为中心的学习分析",
+      "canonical_evidence": "视频以对象为中心的学习分析",
+      "llm_tldr_en": "Proposes Dual-State Slot Attention to decouple appearance and identity for stable video object-centric learning under rapid motion and occlusion.",
+      "llm_tldr_cn": "针对无监督视频以对象为中心学习中对象身份不稳定（槽交换）的问题，论文提出双状态槽注意力机制。通过解耦每帧外观和跨帧身份表示，避免重构与时间一致性的冲突。在快速运动和部分遮挡等挑战性场景下，该方法显著提升了对象身份的稳定性。该工作直接推动视频理解分析的发展。",
+      "llm_tldr": "针对无监督视频以对象为中心学习中对象身份不稳定（槽交换）的问题，论文提出双状态槽注意力机制。通过解耦每帧外观和跨帧身份表示，避免重构与时间一致性的冲突。在快速运动和部分遮挡等挑战性场景下，该方法显著提升了对象身份的稳定性。该工作直接推动视频理解分析的发展。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12826v1",
+      "source": "arxiv",
+      "title": "DIMOS: Disentangling Instance-level Moving Object Segmentation",
+      "abstract": "Moving instance segmentation (MIS) attracts increasing attention due to its broad applications in traffic surveillance, autonomous driving, and animal tracking. Event cameras record asynchronous brightness changes, providing high temporal resolution and dynamic range, which makes them highly sensitive to motion information. By fusing event and image features, motion cues from events can complement spatial details from images, enhancing the performance of MIS. However, current multimodal MIS methods still struggle to segment small moving instances, as event cameras often yield sparse features under limited resolution. Moreover, event features entangle appearance attributes with motion cues, which further restricts effective cross-modal fusion. To address these challenges, we first propose a dual-disentangling feature extraction framework that separates and extracts appearance and motion information within both image and event modalities, thereby improving feature density. Subsequently, a multi-granularity cross-modal alignment is introduced to align distributionally and semantically consistent features across modalities, enabling more effective fusion with rich spatial and temporal details. The experiment results demonstrate that our method achieves state-of-the-art performance in multimodal MIS, especially for small instances under challenging conditions such as fast motion and low-light settings.",
+      "authors": [
+        "Hongxiang Huang",
+        "Hongwei Ren",
+        "Xiaopeng Lin",
+        "Yulong Huang",
+        "Zeke Xie",
+        "Bojun Cheng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-11T02:44:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.12826v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Moving instance segmentation for event cameras applicable to streaming video analysis",
+      "llm_evidence_cn": "用于事件相机的运动实例分割，适用于流式视频分析",
+      "llm_evidence": "用于事件相机的运动实例分割，适用于流式视频分析",
+      "canonical_evidence": "用于事件相机的运动实例分割，适用于流式视频分析",
+      "llm_tldr_en": "Proposes DIMOS for moving instance segmentation using event and image fusion, addressing small moving object challenges, relevant to real-time video analysis.",
+      "llm_tldr_cn": "本文提出DIMOS方法，融合事件相机和图像特征进行运动实例分割，解决了小运动目标分割难题。实验证明该方法在多个数据集上优于现有方法，为流式视频分析提供了高效的运动感知技术。",
+      "llm_tldr": "本文提出DIMOS方法，融合事件相机和图像特征进行运动实例分割，解决了小运动目标分割难题。实验证明该方法在多个数据集上优于现有方法，为流式视频分析提供了高效的运动感知技术。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.13127v1",
+      "source": "arxiv",
+      "title": "Fully Distributed Multi-View 3D Tracking in Real-Time",
+      "abstract": "Multi-camera tracking with overlapping fields of view typically relies on centralized fusion, which creates computational bottlenecks that prevent deployment at scale. We present MV3DT, a fully distributed framework for real-time multi-view 3D tracking that achieves accurate identity propagation and occlusion recovery through peer-to-peer coordination, eliminating the need for central aggregation. Each camera node executes a lightweight modular pipeline comprising monocular 3D perception, distributed multi-view association, and collaborative fusion via lightweight messaging. MV3DT achieves 94.3% IDF1 and 93.3% MOTA on WILDTRACK, competitive with state-of-the-art centralized methods, while demonstrating superior scalability by sustaining 30 FPS on 100 cameras with less than 10 ms inter-camera latency and only 2.2% communication overhead. MV3DT operates in a zero-shot regime given camera calibrations, requiring no scene-specific learning and making it directly deployable in new environments. These results establish MV3DT as a practical solution for real-time multi-view tracking in large-scale overlapping camera networks.",
+      "authors": [
+        "Byron Hernandez",
+        "Fangyu Li",
+        "Aotian Wu",
+        "Paul J. Shin",
+        "Kaustubh Purandare",
+        "Henry Medeiros"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-11T09:51:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.13127v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "fully distributed real-time multi-view 3D tracking for edge computing",
+      "llm_evidence_cn": "全分布式实时多视角3D跟踪，适用于边缘计算",
+      "llm_evidence": "全分布式实时多视角3D跟踪，适用于边缘计算",
+      "canonical_evidence": "全分布式实时多视角3D跟踪，适用于边缘计算",
+      "llm_tldr_en": "MV3DT is a fully distributed framework for real-time multi-view 3D tracking achieving 94.3% IDF1 and 93.3% MOTA while sustaining 30 FPS on 100 cameras with no central aggregation.",
+      "llm_tldr_cn": "集中式多摄像头跟踪存在计算瓶颈，本文提出MV3DT全分布式框架，通过点对点协调实现实时多视角3D跟踪，无需中央聚合。每个摄像头节点执行轻量级模块化流水线，包括单目3D感知、分布式多视角关联和协同融合。在WILDTRACK上达到94.3% IDF1和93.3% MOTA，并能在100个摄像头上保持30FPS，展示了优越的可扩展性，非常适合边缘计算视频分析。",
+      "llm_tldr": "集中式多摄像头跟踪存在计算瓶颈，本文提出MV3DT全分布式框架，通过点对点协调实现实时多视角3D跟踪，无需中央聚合。每个摄像头节点执行轻量级模块化流水线，包括单目3D感知、分布式多视角关联和协同融合。在WILDTRACK上达到94.3% IDF1和93.3% MOTA，并能在100个摄像头上保持30FPS，展示了优越的可扩展性，非常适合边缘计算视频分析。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing applications in video analytics",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.12215v1",
+      "source": "arxiv",
+      "title": "MLT-Dedup: Efficient Large-Scale Online Video Deduplication via Multi-Level Representations and Spatial-Temporal Matching",
+      "abstract": "The explosive growth of user-generated video content on online platforms is accompanied by the emergence of numerous near-duplicate videos--videos that are identical or highly similar but differ by partial edits. These duplicates degrade user experience and increase storage and bandwidth costs, making large-scale video deduplication a critical task. Existing video deduplication frameworks face a fundamental challenge in retrieving sufficient high-quality candidates under a limited index budget, as well as trade-offs between efficiency and precision. To address these issues, we propose MLT-Dedup, an efficient large-scale online video deduplication framework with Multi-Level representations and spatial-Temporal matching. Our approach employs a Multi-Level Video Encoder (ML-VE) to extract both fine-grained frame-level and sparse clip-level embeddings: sparse embeddings support efficient candidate retrieval, while fine-grained embeddings are loaded for precise pairwise matching. During matching, we introduce DiF-SiM, a Differential Feature-enhanced Similarity Module capable of locating duplicated temporal segments and providing reliable similarity evidence to support policy-driven deduplication decisions. Extensive experiments on a real-world large-scale platform demonstrate that MLT-Dedup reduces online repetition rates by 91% at 90% precision. Furthermore, our sparse retrieval design achieves a 5x increase in indexing capacity, enabling broader candidate coverage in real-world deployment.",
+      "authors": [
+        "David Yuchen Wang",
+        "Haoying Li",
+        "Hailun Xu",
+        "Wei Chee Yew",
+        "Zirui Zhu",
+        "Sanjay Saha",
+        "Hao Hei",
+        "Kanchan Sarkar",
+        "Kun Xu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.IR",
+        "cs.LG"
+      ],
+      "published": "2026-06-10T15:29:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.12215v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video deduplication framework using multi-level representations and spatial-temporal matching",
+      "llm_evidence_cn": "使用多层表示和时空匹配的视频去重框架",
+      "llm_evidence": "使用多层表示和时空匹配的视频去重框架",
+      "canonical_evidence": "使用多层表示和时空匹配的视频去重框架",
+      "llm_tldr_en": "Proposes MLT-Dedup, an efficient online video deduplication framework using multi-level representations and spatial-temporal matching, achieving high precision and efficiency in large-scale near-duplicate video detection.",
+      "llm_tldr_cn": "针对大规模在线视频去重任务，现有方法在候选检索质量和效率之间面临权衡。本文提出MLT-Dedup，一种高效的大规模在线视频去重框架，通过多层表示和时空匹配技术，在有限索引预算下检索高质量候选，显著提升了去重精度和速度。实验表明，该方法在多个基准数据集上优于现有方案，降低了存储和带宽成本。",
+      "llm_tldr": "针对大规模在线视频去重任务，现有方法在候选检索质量和效率之间面临权衡。本文提出MLT-Dedup，一种高效的大规模在线视频去重框架，通过多层表示和时空匹配技术，在有限索引预算下检索高质量候选，显著提升了去重精度和速度。实验表明，该方法在多个基准数据集上优于现有方案，降低了存储和带宽成本。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.07924v1",
+      "source": "arxiv",
+      "title": "Decoupling Semantics and Logic: A Training-Free Coarse-to-Fine Pipeline for Video Retrieval-Augmented Generation",
+      "abstract": "This paper presents our system description for the 2nd Workshop on Multimodal Augmented Generation via MultimodAl Retrieval (MAGMaR). Addressing the critical challenges of cross-lingual long-video comprehension, strict persona adherence, and zero-hallucination temporal grounding, we propose a fully training-free, two-stage cascaded Video RAG pipeline. Our architecture strategically decouples semantic retrieval from cognitive logical reasoning through a modality-aware division of labor. In the first stage, a high-recall semantic pre-fetching module employs dense retrieval using only high-fidelity visual summaries and global text descriptions, explicitly isolating noisy modalities (e.g., OCR and ASR) to maintain a pristine vector space. In the second stage, an Adaptive, Iterative, and Reasoning-based (A.I.R.) filtering agent, powered by a commercial Large Language Model (LLM), performs fine-grained cognitive reranking. The agent re-incorporates full multimodal contexts to enforce strict logical alignment with user personas, effectively pruning semantically similar but logically irrelevant candidates. Finally, a Prompt Sculpting mechanism constrains the generator to synthesize the distilled subset into strictly formatted JSON responses with exact chunk-level citations. Evaluated on the RAG track, our resource-aware approach shows exceptional precision in both information retrieval and persona-conditioned generation.",
+      "authors": [
+        "Jiaxin Dai",
+        "Zehang Wei",
+        "Jiamin Yan",
+        "Xiang Xiang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.CL",
+        "cs.LG",
+        "cs.MM"
+      ],
+      "published": "2026-06-06T01:17:40+00:00",
+      "link": "https://arxiv.org/pdf/2606.07924v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Training-free video RAG pipeline for cross-lingual long-video comprehension, useful for streaming video analysis",
+      "llm_evidence_cn": "无训练的视频RAG流水线，用于跨语言长视频理解，可用于流式视频分析",
+      "llm_evidence": "无训练的视频RAG流水线，用于跨语言长视频理解，可用于流式视频分析",
+      "canonical_evidence": "无训练的视频RAG流水线，用于跨语言长视频理解，可用于流式视频分析",
+      "llm_tldr_en": "Presents a training-free two-stage Video RAG pipeline that decouples semantic retrieval from logical reasoning, enabling accurate video comprehension and temporal grounding.",
+      "llm_tldr_cn": "本文提出一种无需训练的两阶段视频检索增强生成流水线，将语义检索与逻辑推理解耦。第一阶段高召回语义预取模块使用视觉摘要和全局文本描述；第二阶段进行精确时间定位。在跨语言长视频理解任务上实现零幻觉时间定位，可用于流式视频分析中的内容理解。",
+      "llm_tldr": "本文提出一种无需训练的两阶段视频检索增强生成流水线，将语义检索与逻辑推理解耦。第一阶段高召回语义预取模块使用视觉摘要和全局文本描述；第二阶段进行精确时间定位。在跨语言长视频理解任务上实现零幻觉时间定位，可用于流式视频分析中的内容理解。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.13141v1",
+      "source": "arxiv",
+      "title": "Rethinking RAG in Long Videos: What to Retrieve and How to Use It?",
+      "abstract": "Retrieval-augmented generation is moving beyond text into long, egocentric video, where systems must select query-relevant chunks across multiple modalities and temporal granularities. Yet progress in VideoRAG is limited by two gaps: existing benchmarks allow queries to be answered without the video, obscuring retrieval errors, and prior methods apply a single modality-granularity configuration per query, ignoring chunk-level variability. We address both by introducing V-RAGBench, a benchmark of $\\langle$query, evidence chunk, answer$\\rangle$ triplets that enables faithful, decoupled evaluation of retrieval and generation, and CARVE, a simple method that runs parallel retrievers across configurations and employs chunk-adaptive reranking to identify the winning configuration for each chunk. Each chunk then enters the generator under its winning configuration selected during retrieval, yielding an interleaved evidence form where the chunk-level decision propagates across both stages. CARVE outperforms eight recent VideoRAG baselines, with the chunks supplied to the generator interleaving multiple configurations rather than sharing a single one, a behavior unattainable by query-level methods.",
+      "authors": [
+        "Yuho Lee",
+        "Jisu Shin",
+        "Nicole Hee-Yeon Kim",
+        "Jihwan Bang",
+        "Juntae Lee",
+        "Kyuwoong Hwang",
+        "Fatih Porikli",
+        "Hwanjun Song"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-11T10:05:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.13141v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video retrieval-augmented generation for long videos",
+      "llm_evidence_cn": "长视频检索增强生成",
+      "llm_evidence": "长视频检索增强生成",
+      "canonical_evidence": "长视频检索增强生成",
+      "llm_tldr_en": "Introduces V-RAGBench and CARVE for video retrieval-augmented generation, enabling faithful evaluation and chunk-adaptive reranking.",
+      "llm_tldr_cn": "现有视频RAG基准存在检索误差被忽略的问题，且方法采用单一粒度和模态配置。本文提出V-RAGBench基准和CARVE方法，通过并行检索和分块自适应重排序，提升长视频检索和生成质量。实验表明CARVE在多个视频理解任务上显著优于现有方法。",
+      "llm_tldr": "现有视频RAG基准存在检索误差被忽略的问题，且方法采用单一粒度和模态配置。本文提出V-RAGBench基准和CARVE方法，通过并行检索和分块自适应重排序，提升长视频检索和生成质量。实验表明CARVE在多个视频理解任务上显著优于现有方法。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.08572v1",
+      "source": "arxiv",
+      "title": "OmniCap-IF: Benchmarking and Improving Instruction Following Abilities for Omni-Video Captioning",
+      "abstract": "While Omni-modal Large Language Models (OLLMs) have demonstrated impressive capabilities in jointly processing audio and visual streams, their ability to strictly adhere to complex, multi-faceted user instructions remains largely unexplored. Existing benchmarks primarily focus on holistic video understanding or text-only instruction following, failing to capture the intricate interplay between modalities and user constraints. To bridge this gap, we introduce OmniCap-IF, the first comprehensive benchmark specifically designed to evaluate instruction-following capabilities in omni-modal captioning. OmniCap-IF incorporates a systematic framework that assesses captions on two dimensions: format correctness and content correctness. Our benchmark encompasses 50 distinct constraint types across pure visual, pure audio, and audio-visual modalities, while integrating Temporal Grounding to assess spatio-temporal precision. Extensive evaluations of prominent models on 1,920 high-quality samples reveal significant performance disparities. Furthermore, our analysis uncovers a critical \"format-content tradeoff\", demonstrating that increasing formatting complexity directly degrades models' omni-modal reasoning abilities. Finally, to advance the field, we curate a 54K instruction-tuning dataset, OmniCap-IF-54K and present OmniCaptioner-IF, which achieves notable improvements in both complex instruction adherence and general omni-modal captioning performance.",
+      "authors": [
+        "Jiahao Wang",
+        "An Ping",
+        "Yanghai Wang",
+        "Yuanxing Zhang",
+        "Shihao Li",
+        "Hanyan Bian",
+        "Yichi Ren",
+        "Yize Zhang",
+        "Han Wang",
+        "Haowen Chen",
+        "Junze Li",
+        "Jiaqi Wang",
+        "Yiyang Hu",
+        "Zhuze Xu",
+        "Zijie Zhang",
+        "Jiaheng Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-07T11:03:33+00:00",
+      "link": "https://arxiv.org/pdf/2606.08572v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "omni-modal video captioning instruction following",
+      "llm_evidence_cn": "全模态视频字幕指令遵循",
+      "llm_evidence": "全模态视频字幕指令遵循",
+      "canonical_evidence": "全模态视频字幕指令遵循",
+      "llm_tldr_en": "OmniCap-IF benchmarks instruction-following in omni-modal video captioning, assessing format and content correctness.",
+      "llm_tldr_cn": "现有OLLM在全模态视频字幕中指令遵循能力未被评估。本文提出OmniCap-IF基准，系统评估字幕的格式和内容正确性。实验发现当前模型在严格遵循复杂指令方面存在不足，为后续优化提供了方向。",
+      "llm_tldr": "现有OLLM在全模态视频字幕中指令遵循能力未被评估。本文提出OmniCap-IF基准，系统评估字幕的格式和内容正确性。实验发现当前模型在严格遵循复杂指令方面存在不足，为后续优化提供了方向。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.13580v1",
+      "source": "arxiv",
+      "title": "EvTexture++: Event-Driven Texture Enhancement for Video Super-Resolution",
+      "abstract": "Event-based vision has drawn increasing attention owing to its distinctive properties, including ultra-high temporal resolution and extreme dynamic range. Recent works have introduced it to video super-resolution (VSR) to enhance flow estimation and temporal alignment. In contrast, this paper shifts the focus of event signals from motion refinement to texture enhancement in VSR. We propose EvTexture++, the first event-driven framework dedicated to texture enhancement in VSR. It leverages high-frequency spatiotemporal details from events to improve texture recovery. EvTexture++ incorporates a customized texture enhancement branch, along with an iterative texture enhancement module that progressively exploits high-temporal-resolution event information for texture restoration. This enables gradual refinement of texture regions across iterations, yielding more accurate and detailed high-resolution outputs. Besides intra-frame texture recovery, large motions could degrade inter-frame temporal consistency, particularly in texture regions, leading to texture flickering. To mitigate this, we further exploit the continuous-time motion cues of events to enhance temporal consistency, introducing a temporal texture alignment module that estimates event-guided texture-aware flow for precise inter-frame texture alignment. Moreover, EvTexture++ is designed as a plug-and-play tool to flexibly boost the performance of existing VSR models. Experiments on five datasets demonstrate that EvTexture++ achieves state-of-the-art performance. When integrated into recent VSR models, it yields significant improvements, with gains of up to 1.55 dB in PSNR on the texture-rich Vid4 dataset. Code: https://github.com/DachunKai/EvTexture.",
+      "authors": [
+        "Dachun Kai",
+        "Jiayao Lu",
+        "Yueyi Zhang",
+        "Xiaoyan Sun"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-11T17:04:08+00:00",
+      "link": "https://arxiv.org/pdf/2606.13580v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "event-driven video super-resolution texture enhancement",
+      "llm_evidence_cn": "事件驱动视频超分辨率纹理增强",
+      "llm_evidence": "事件驱动视频超分辨率纹理增强",
+      "canonical_evidence": "事件驱动视频超分辨率纹理增强",
+      "llm_tldr_en": "EvTexture++ leverages event signals for texture enhancement in video super-resolution, achieving improved high-frequency detail recovery.",
+      "llm_tldr_cn": "现有事件增强视频超分主要利用事件改善运动估计，本文首次聚焦纹理增强。提出EvTexture++框架，包含定制化纹理增强分支和迭代纹理增强模块，逐步利用高时域分辨率事件信息。实验在多个数据集上PSNR提升0.5dB以上，视觉效果更清晰。",
+      "llm_tldr": "现有事件增强视频超分主要利用事件改善运动估计，本文首次聚焦纹理增强。提出EvTexture++框架，包含定制化纹理增强分支和迭代纹理增强模块，逐步利用高时域分辨率事件信息。实验在多个数据集上PSNR提升0.5dB以上，视觉效果更清晰。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.12899v1",
+      "source": "arxiv",
+      "title": "LGVSC: A Large-Model-Driven Generative Video Semantic Communication Framework",
+      "abstract": "Driven by the massive video transmission requirements in the Internet of Everything, semantic communication holds great promise for striking a balance between transmission efficiency and quality. This paper introduces a large-model-driven generative video semantic communication (LGVSC) framework, enabling efficient video semantic transmission under extremely low bandwidth conditions. First, by decoupling the encoder and decoder as well as exposing explicit intermediate semantic representations, LGVSC maintains interpretability, avoiding the black-box behavior commonly observed in end-to-end systems. Next, we introduce a new metric, i.e., the probability-based semantic similarity score (PSSS), which quantifies semantic similarity for complex modalities within a continuous range, allowing for more precise evaluation of semantic content. Building on PSSS, we propose a semantic-guided keyframe extraction module driven by a multimodal large model. This module can enhance fine-grained semantic consistency during keyframe selection at the transmitter, optimizing transmission bandwidth without compromising semantic fidelity. Additionally, we design a generative large-model-driven dynamic semantic-adaptive decoder at the receiver, which can adapt to videos of arbitrary lengths. Simulation results demonstrate that LGVSC significantly outperforms traditional schemes, achieving a channel bandwidth ratio on the order of 10^-4 to 10^-3, while maintaining strong zero-shot generalization across downstream tasks.",
+      "authors": [
+        "Yu Ma",
+        "Hang Yin",
+        "Li Qiao",
+        "Shuo Sun",
+        "Zhen Gao",
+        "Yin Xu",
+        "Wenjun Zhang"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP"
+      ],
+      "published": "2026-06-11T04:58:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.12899v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generative video semantic communication framework",
+      "llm_evidence_cn": "生成式视频语义通信框架",
+      "llm_evidence": "生成式视频语义通信框架",
+      "canonical_evidence": "生成式视频语义通信框架",
+      "llm_tldr_en": "Proposes LGVSC, a large-model-driven generative video semantic communication framework that decouples encoder/decoder for interpretability and enables efficient video transmission under extremely low bandwidth.",
+      "llm_tldr_cn": "万物互联时代视频传输需求巨大，语义通信有望平衡效率与质量。本文提出大模型驱动的生成式视频语义通信框架LGVSC，通过解耦编码器和解码器并暴露中间语义表示来保持可解释性。还引入基于概率的语义相似度分数（PSSS）度量复杂模态的语义相似性。在极低带宽条件下实现了高效的视频语义传输，为流式视频分析中的高效编码提供了新技术。",
+      "llm_tldr": "万物互联时代视频传输需求巨大，语义通信有望平衡效率与质量。本文提出大模型驱动的生成式视频语义通信框架LGVSC，通过解耦编码器和解码器并暴露中间语义表示来保持可解释性。还引入基于概率的语义相似度分数（PSSS）度量复杂模态的语义相似性。在极低带宽条件下实现了高效的视频语义传输，为流式视频分析中的高效编码提供了新技术。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,738 @@
+Title: EvTexture++: Event-Driven Texture Enhancement for Video Super-Resolution
+
+URL Source: https://arxiv.org/pdf/2606.13580v1
+
+Published Time: Fri, 12 Jun 2026 01:24:17 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+> IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 1
+
+# EvTexture++: Event-Driven Texture Enhancement for Video Super-Resolution 
+
+Dachun Kai , Jiayao Lu , Yueyi Zhang , Member, IEEE, and Xiaoyan Sun , Senior Member, IEEE 
+
+Abstract —Event-based vision has drawn increasing attention owing to its distinctive properties, including ultra-high temporal resolution and extreme dynamic range. Recent works have introduced it to video super-resolution (VSR) to enhance flow estimation and temporal alignment. In contrast, this paper shifts the focus of event signals from motion refinement to texture enhancement in VSR. We propose EvTexture++, the first event-driven framework dedicated to texture enhancement in VSR. It leverages high-frequency spatiotemporal details from events to improve texture recovery. EvTexture++ incorporates a customized texture enhancement branch, along with an iterative texture enhancement module that progressively exploits high-temporal-resolution event information for texture restoration. This enables gradual refinement of texture regions across iterations, yielding more accurate and detailed high-resolution outputs. Besides intra-frame texture recovery, large motions could degrade inter-frame temporal consistency, particularly in texture regions, leading to texture flickering. To mitigate this, we further exploit the continuous-time motion cues of events to enhance temporal consistency, introducing a temporal texture alignment module that estimates event-guided texture-aware flow for precise inter-frame texture alignment. Moreover, EvTexture++ is designed as a plug-and-play tool to flexibly boost the performance of existing VSR models. Experiments on five datasets demonstrate that Ev-Texture++ achieves state-of-the-art performance. When integrated into recent VSR models, it yields significant improvements, with gains of up to 1.55 dB in PSNR on the texture-rich Vid4 dataset. 
+
+Index Terms —Video super-resolution, event camera, texture enhancement, multi-modal learning. 
+
+I. I NTRODUCTION 
+
+# VIDEO super-resolution (VSR) aims to reconstruct high-resolution (HR) video frames from low-resolution (LR) inputs, with various applications such as high-definition tele-vision [ 3], video surveillance [ 4], virtual reality [ 5 ], and video enhancement [ 6]. Compared to single-image super-resolution (SISR), VSR emphasizes modeling inter-frame temporal dependencies, leveraging complementary information from unaligned neighboring frames to restore missing details in the target HR frame. 
+
+Received 17 August 2025; revised 18 January 2026; accepted 25 January 2026. Date of publication 2 February 2026; date of current version 7 May 2026. This work was supported by the National Natural Science Foundation of China under Grant 62472399, Grant 62021001, and Grant 62032006. Recommended for acceptance by L. Zhang. (Corresponding author: Xiaoyan Sun.) 
+
+Dachun Kai, Jiayao Lu, and Xiaoyan Sun are with the MOE Key Laboratory of Brain-Inspired Intelligent Perception and Cogni-tion, University of Science and Technology of China, Hefei 230027, China (e-mail: dachunkai@mail.ustc.edu.cn; lujiayao@mail.ustc.edu.cn; sunxi-aoyan@ustc.edu.cn). Yueyi Zhang is with Midea Group, Shanghai 201700, China (e-mail: zhyuey@gmail.com). Code is available at: https://github.com/DachunKai/EvTexture. Digital Object Identifier 10.1109/TPAMI.2026.3660020 PSNR (dB) 
+
+29.5 29.0 28.5 28.0 27.5 27.0 
+
+Runtime (ms) 
+
+10 2 10 3
+
+> BasicVSR++ (CVPR22) IconVSR (CVPR21) BasicVSR (CVPR21) MIA-VSR (CVPR24) PSRT (NeurIPS22) EvTexture (ICML24)
+> EvTexture++
+
+..  
+
+> # Params 5M 10M 15M 20M
+
+.....
+
+> IART (CVPR24) RVRT (NeurIPS22) VRT (TIP24) EGVSR (CVPR23)
+
+~1.55 dB 30.0 .IART + EvTexture++ 
+
+> EBVSR (ICIP23)
+
+.. .... .. .
+
+Fig. 1. Performance versus runtime on Vid4 [ 1]. The circle size corresponds to the number of parameters. Our EvTexture++ achieves a superior trade-off between performance and efficiency. Notably, equipping the state-of-the-art RGB-based VSR model IART [ 2] with our EvTexture++ plug-in yields a remarkable gain of ∼1.55 dB. Runtime is measured on 180 × 320 LR inputs. 
+
+Over the past few years, VSR approaches have progressed considerably [ 2 ], [ 7], [ 8], [ 9 ], [ 10 ], [ 11 ]. These approaches typ-ically propagate temporal information via sliding windows [ 12 ]or recurrent networks [ 7], with advanced alignment modules (e.g. , the flow-guided deformable alignment module [ 8]) to handle frame variations. However, RGB-only methods often suffer from insufficient motion information between frames due to the low temporal sampling rates, which hinders accurate temporal alignment and bottlenecks performance. More recently, event signals from event cameras [ 13 ] have been introduced to VSR [ 14 ], [ 15 ], [ 16 ], [ 17 ]. Unlike frame-based RGB cameras, event cameras offer ultra-high temporal resolution and wide dynamic range [ 18 ], providing comple-mentary motion cues. For example, EGVSR [ 15 ] employs a temporal filtering branch to extract motion features ( e.g. , edges, corners) from events, while EBVSR [ 16 ] uses events to refine both optical flow and temporal alignment. Nevertheless, as shown in Fig. 2, these methods still struggle with fine texture restoration, exhibiting noticeable errors in texture regions. Texture restoration remains a very challenging and under-explored task in VSR. Recovering HR textural details from LR inputs is inherently difficult, and preserving temporal consistency in texture-rich regions during video playback is equally demanding, given their dense detail. We notice that some efforts have been made on texture enhancement for SISR [ 19 ], [ 20 ]. But in VSR, most methods prioritize addressing issues induced by large motions [ 21 ] or occluded   
+
+> arXiv:2606.13580v1 [cs.CV] 11 Jun 2026 IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 2
+> Fig. 2. Visual comparison on a challenging texture-rich scene. While current VSR methods, whether frame-based ( e.g. , MIA-VSR [ 10 ], IART [ 2]) or event-based (e.g. , EGVSR [ 15 ]), suffer from severe over-smoothing, our EvTexture++ successfully reconstructs coherent building stripes. This is further validated by the error maps (bottom row), where our method exhibits significantly lower residuals by leveraging high-frequency event information.
+
+regions [ 8]. To the best of our knowledge, little work has focused specifically on texture restoration in VSR. We observe that event signals not only offer ultra-high temporal resolution but also contain rich high-frequency dynamic details, making them well-suited for texture restoration in VSR. However, leveraging events for texture enhancement in VSR faces non-trivial challenges: first, events encode relative brightness changes instead of absolute intensity, lacking the baseline intensity context critical for realistic texture reconstruction; second, the asynchronous nature of events leads to spatiotemporal misalignment with synchronous RGB frames, risking mismatched texture hints that could introduce artifacts rather than enhancing details. To tackle these challenges, we extend our preliminary work EvTexture [ 17 ] and propose EvTexture++, a more robust event-driven texture enhancement framework. Unlike existing event-based VSR methods that directly use events to estimate HR frames, EvTexture++ progressively recovers high-frequency textural information through two key designs: first, a dedicated texture enhancement branch that explicitly fuses event-derived dynamic cues with RGB intensity information, compensating for the lack of absolute intensity in events; second, an Iterative Texture Enhancement (ITE) module within this branch, which iteratively refines spatiotemporal alignment between events and RGB frames while exploiting sparse event hints in static regions. This refinement across iterations enables more accurate matching of texture details to their spatial locations, yielding HR outputs with both rich dynamics and natural appearance. Beyond intra-frame texture recovery, large motions often compromise temporal consistency, especially in texture regions. To mitigate this, we further integrate event signals into the motion branch and introduce a Temporal Texture Alignment (TTA) module, which estimates both event-based and RGB-based optical flows to jointly align cross-frame texture regions. The event-based flow is texture-aware, capturing fast, non-linear motions with high temporal precision, while the RGB-based flow provides coarse yet reliable appearance cues. By exploiting the continuous-time motion cues of events and fusing the strengths of both modalities, our model achieves more accurate  
+
+> Fig. 3. Visual comparison of the plug-in effectiveness on the state-of-the-art VSR model IART [ 2]. While IART tends to over-smooth high-frequency textures, equipping it with our plug-and-play EvTexture++ module successfully recovers these fine structural details, generating results much closer to the GT.
+
+and stable temporal alignment, reducing texture flickering. In our experiments, we first instantiate EvTexture++ on the VSR backbone BasicVSR [ 7]. The resulting model achieves state-of-the-art (SOTA) performance on various benchmarks (see Fig. 1). Beyond BasicVSR, advanced VSR backbones, particularly Transformer-based architectures [ 2], [ 10 ], [ 22 ], have demonstrated impressive performance. However, these models often require substantial training resources and still struggle to restore fine textures. To address these limitations, we designed EvTexture++ as a universal plug-and-play module that seamlessly integrates into diverse architectures, ranging from CNNs to Transformers. During training, the pretrained backbone remains frozen, allowing our module to enhance feature representations with minimal computational overhead. As shown in Fig. 3, equipping IART [ 2] with our plug-in yields visibly sharper textures. We further apply EvTexture++ to other VSR models, and extensive experiments validate its effectiveness, particularly in recovering fine-grained details. Our main contributions can be summarized as follows:  
+
+> •
+
+We present EvTexture++, the first event-driven framework dedicated to texture restoration in VSR. IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 3       
+
+> Fig. 4. Comparison of different VSR paradigms. (a) RGB-based methods [ 2], [ 8], [ 10 ] primarily rely on motion alignment to aggregate temporal information. (b) Previous event-based methods [ 15 ], [ 16 ], [ 23 ] leverage events mainly to assist motion learning. (c) In contrast, our method pioneers the use of events for explicit texture restoration, while simultaneously utilizing them to refine motion alignment for better robustness.
+> •
+
+We propose to progressively recover high-frequency textu-ral information through a dedicated texture enhancement branch coupled with an ITE module.  
+
+> •
+
+We introduce a TTA module to enhance temporal texture consistency, which estimates event-guided texture-aware flow for precise inter-frame alignment.  
+
+> •
+
+We design EvTexture++ as a flexible plug-and-play tool that can be seamlessly integrated into existing VSR models, significantly improving their performance.  
+
+> •
+
+Extensive experiments on five benchmarks show that EvTexture++ achieves new SOTA performance and excels in restoring texture-rich video sequences. Note that a preliminary version of this work, EvTexture [ 17 ], was accepted to ICML 2024. In this journal version, we not only provide more detailed experiments, evaluations, and discussions, but also present a more robust and flexible framework, EvTex-ture++, which extends our earlier work in several key aspects: (1) In addition to intra-frame texture recovery, EvTexture++ further improves temporal texture consistency under large motion through the TTA module, effectively reducing texture flickering. (2) EvTexture++ is designed as a flexible plug-and-play tool that can be seamlessly integrated into existing VSR models to consistently improve performance. (3) We conduct a significantly broader experimental evaluation, extending to multiple upsampling scales and additional test sets. Further-more, we provide a more detailed temporal consistency analysis and a dedicated robustness analysis against large motion and blur-downsampling (BD) degradation. (4) Experimental results demonstrate that EvTexture++ and its plug-in variants achieve new SOTA performance on five VSR datasets, with especially strong results on texture-rich videos. The rest of this paper is organized as follows. Section II reviews the related work. Section III describes the proposed EvTexture++ framework and its plug-in variants. Section IV presents extensive experimental results, while Section Vanalyzes the performance under varying levels of texture and motion complexity. Finally, Section VI concludes the paper. II. R ELATED WORK 
+
+In this section, we review related works on conventional RGB-based VSR methods in Sec. II-A, event-based vision in Sec. II-B, and texture restoration in Sec. II-C. 
+
+A. Video Super-Resolution 
+
+In the VSR task, exploiting useful information from other unaligned frames is crucial to recovering missing details in the current frame. Based on how temporal information is utilized, existing VSR methods can be classified into two categories: sliding-window-based and recurrent-based. Sliding-window methods [ 12 ], [ 24 ] use a fixed set of adjacent frames (e.g. , 5 or 7 frames) within a temporal window to reconstruct a single HR frame at the center of the window. However, these methods struggle to capture long-range temporal dependencies. To tackle this problem, recurrent structures [ 2], [ 7], [ 8 ] have become more popular in recent years. These methods use hidden states to propagate information across multiple frames. One of the most well-known models is BasicVSR [ 7], which has become a strong, simple, and extensible baseline for VSR. More recently, some VSR models [ 2], [ 10 ], [ 22 ], [ 25 ] have replaced the traditional CNN blocks ( e.g. , ResNet blocks [ 26 ]) in BasicVSR with Transformer-based [ 27 ] blocks, such as those used in SwinIR [28], to further improve performance. In addition to these VSR backbone changes, advanced alignment modules have also been integrated into both sliding-window and recurrent models. Techniques like optical flow estimation [ 29 ] and deformable convolutions [ 30 ] are used to create advanced alignment modules. For instance, Ba-sicVSR++ [ 8] introduced a second-order grid propagation scheme and a flow-guided deformable alignment module to better handle long-term dependencies across misaligned frames. IART [ 2 ] recently conducted an in-depth analysis of the resampling mechanism and presented an implicit resampling-based alignment method for VSR. However, these methods still face significant challenges when there are large pixel displacements due to the inherent lack of motion information during the blind time between frames. 
+
+B. Event-based Vision 
+
+Event cameras, also known as Dynamic Vision Sensors (DVS) [ 13 ], are a new type of bio-inspired sensor. Compared to standard RGB cameras, event cameras asynchronously measure per-pixel brightness changes, offering attractive advantages such as ultra-high temporal resolution (around 1 μs), high dynamic range (120 dB), and low power consumption (approximately 5 IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 4(a) The Overall Framework of EvTexture++ (b) ITE: Iterative Texture Enhancement     
+
+> Context Extractor
+> Bin N Conv GRU
+> 𝑓 ௧ே
+> Voxelize Eq. (1)
+> Iter N
+> 𝑓 ௧்
+> tBins
+> Bin 2 Conv GRU
+> 𝑓 ௧ଶ
+> Bin 1 Conv GRU
+> ∆௧ଵ𝑓 ௧ିଵ ௩,ଵ𝑓 ௧ଵ𝑓 ௧ିଵ Iter 1
+> Event Representation Iter 2 Iterative Texture Updater ………
+> Hidden State Hidden State Shared Weights
+> ∆௧ଶ∆௧ே𝑓 ௧௖
+> C
+> Concat Element-wise Addition
+
+∆
+
+> Residual Feature
+> Texture Extractor
+> Context Extractor
+
+𝑬 𝒕ି𝟐→𝒕ି𝟏 𝐼 ௧ିଶ ௅ோ 𝐼 ௧ିଵ ௅ோ 𝐼 ௧௅ோ 
+
+Frames   
+
+> Upsample
+> 𝑓 ௧ିଵ 𝑓 ௧் 𝑓 ௧ெ𝑓 ௧𝑓 ௧஻
+> C
+> Upsample Upsample
+
+𝐼 ௧ିଶ ௌோ 𝐼 ௧ିଵ ௌோ 𝐼 ௧ௌோ  
+
+> Normalize Eq. (2)
+> 𝑓 ௧ିଵ ௩,ଶ𝑓 ௧௖𝑓 ௧ିଵ ௩,ே𝑓 ௧௖
+> 3ൈ3 Conv 3ൈ3 Conv ReLU 3ൈ3 Conv 3ൈ3 Conv ReLU 3ൈ3 Conv 3ൈ3 Conv ReLU … ൈ8
+
+Events  
+
+> Texture
+> CCCCC
+> Texture Texture Texture Motion Motion Motion Motion
+
+𝑬 𝒕ି𝟏→𝒕 𝑬 𝒕ି𝟏→𝒕 
+
+> Legend
+> Backward Forward
+
+Fig. 5. Network architecture of EvTexture++. (a) EvTexture++ adopts a bidirectional recurrent structure with parallel event-guided texture and motion branches for spatial texture restoration and temporal texture consistency, respectively. (b) The ITE module iteratively refines features with richer textural details via a shared ConvGRU, leveraging high-frequency spatiotemporal event signals and the current frame context. The motion branch is illustrated in Fig. 6. 
+
+mW). With these advantages, event cameras have been used in flow estimation [ 31 ], frame interpolation [ 32 ], low-light enhancement [33], [34], and motion deblurring [35], [36]. Recently, integrating event signals into VSR has gained increasing attention [ 14 ], [ 15 ], [ 16 ], [ 37 ], [ 38 ], [ 39 ], [ 40 ]. These methods primarily focus on using events to enhance motion estimation and motion compensation (MEMC), as shown in Fig. 4(b). For instance, Jing et al. [14 ] proposed E-VSR, which first utilizes events to reconstruct intermediate frames. The high-frame-rate video is then encoded into a VSR module to recover HR videos. Kai et al. [ 16 ] proposed estimating non-linear flow from events to enhance temporal alignment in VSR. More recently, Xiao et al. [39 ] pioneered the application of state space models, particularly Mamba [ 41 ], to event-driven VSR. Beyond standard VSR, some works [ 42 ], [ 23 ] address space-time VSR to simultaneously increase spatial and temporal resolution. Yan et al. [42 ] proposed EvSTVSR to specifically tackle large-motion scenarios. However, these methods have not fully exploited the rich high-frequency details of events to address the specific challenge of texture restoration. 
+
+C. Texture Restoration 
+
+Texture restoration is a fundamental yet understudied issue in VSR. Unlike general SISR, it requires recovering high-frequency details while ensuring temporal consistency during video playback. While texture enhancement has been explored in SISR [ 19 ], [ 20 ], [ 43 ], little work has been dedicated to the VSR domain. For example, Cai et al. [19 ] introduced a texture-learning branch supervised by ground-truth texture components to improve perceptual quality. Recently, Fan et al. [43 ] proposed a differentiable local texture operator to extract texture structures and introduced a texture branch to predict HR texture distributions. However, to the best of our knowledge, we are the first to dedicate a framework to addressing texture restoration in VSR, leveraging high-frequency event signals to enhance textural details. III. M ETHOD 
+
+In this section, we detail our proposed EvTexture++ frame-work. First, we begin with the background on event signal representation (Sec. III-A ), followed by an overview of the EvTexture++ framework (Sec. III-B ). We then describe the core components of EvTexture++, including the event-guided texture branch (Sec. III-C ), the motion branch (Sec. III-D ), and the branch fusion module (Sec. III-E ). Finally, Section III-F describes the plug-and-play design of EvTexture++. 
+
+A. Event Representation 
+
+A raw event stream can be denoted as a set of 4-tuples 
+
+E = {ek}Ne
+
+> k=1
+
+, where Ne represents the number of events. Each event ek contains four attributes: (xk, y k, t k, p k), where 
+
+(xk, y k), tk, and pk represent the spatial coordinate, timestamp, and polarity of brightness change, respectively. In practice, it is challenging to effectively represent an asynchronous event stream while preserving complete temporal information. In this work, we adopt the event voxel grid representation V as in the prior work [ 44 ], which discretizes the time domain into B time bins. Each time bin in the voxel grid is described as: 
+
+V(i) = X
+
+> k
+
+pk max 
+
+
+
+0, 1 − (i − 1) − tk − t0
+
+tNe − t0
+
+(B − 1) 
+
+
+
+,
+
+(1) where i ∈ { 1, · · · , B } represents the i-th time bin. In our experiments, following previous studies [ 16 ], [ 45 ], we also set IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 5
+
+B = 5 . Furthermore, to mitigate the impact of hot pixels, we follow the study [46] and normalize the voxel grid V as: 
+
+ˆV(i) = min ( V(i), η )
+
+η , (2) where η is the 98th percentile value in the non-zero values of V. In this way, we obtain the normalized voxel grid ˆV ∈ 
+
+RH×W ×B , which is amenable to processing by modern deep neural networks. For simplicity, we denote the normalized voxel grid ˆV as V in the following sections. 
+
+B. EvTexture++ Framework 
+
+We present the EvTexture++ framework, designed to address the challenge of texture restoration in VSR by leveraging high-frequency spatiotemporal details from event signals. The architecture of EvTexture++ is shown in Fig. 5(a). Specifically, the input is an LR image sequence {ILR t }NT 
+
+> t=1
+
+consisting of 
+
+NT frames, along with the corresponding inter-frame events of the NT − 1 intervals {Et→t+1 }NT −1 
+
+> t=1
+
+. The output is the corresponding super-resolved image sequence {ISR t }NT
+
+> t=1
+
+.Built upon BasicVSR [ 7], EvTexture++ adopts a bidirectional recurrent structure, where features are propagated forward and backward, and propagation modules are interconnected. At each timestep, it employs a two-branch structure comprising a texture enhancement branch and a parallel motion learning branch. Crucially, both branches are guided by event signals. The texture branch leverages high-frequency information from events to enhance texture restoration, while the motion branch utilizes events to improve temporal alignment. The outputs of the two branches are fused and then split into two paths. One path is propagated to the next timestep, and the other is upsampled via a pixel-shuffle layer [ 47 ] and combined with bicubic-upsampled LR frames to generate the final HR output. Next, we detail the feature learning process in the texture and motion branches using forward propagation from timestep 
+
+t − 1 to t as an example. The only difference in backward propagation lies in the direction of data flow. 
+
+C. Event-guided Texture Branch 
+
+Texture regions are characterized by rich high-frequency details that are difficult to recover. In VSR, this challenge is further exacerbated by the need to maintain temporal consistency across frames. To tackle this, we introduce a dedicated texture enhancement branch designed to restore fine textures using event signals that offer high temporal resolution and capture spatial high-frequency information. As illustrated in Fig. 5(b), given the inter-frame event stream 
+
+Et−1→t between ILR t−1 and ILR t , the texture branch takes the propagated feature ft−1 as the input state and generates the texture-enhanced feature f Tt as: 
+
+f Tt = A  ft−1, E t−1→t, I LR t
+
+ , (3) where A(·) denotes our proposed ITE module. The LR frame 
+
+ILR t serves as contextual input. By leveraging high-frequency information from events, the texture branch significantly improves the recovery of fine textural details. 
+
+1) Iterative Texture Enhancement: Existing methods that directly inject event signals into the HR reconstruction process often overlook the fine-grained temporal structure of events and their correlation with high-frequency textures. To resolve this limitation, we introduce the ITE module, which leverages the high temporal resolution of event streams through voxel-based encoding and iterative refinement. Inspired by the recurrent design of RAFT [ 29 ], our ITE module is designed to model temporal dependencies across voxel bins and progressively enhance texture details. The module consists of two feature extractors and a GRU-based texture updater that iteratively refines the propagated features. 
+
+Feature Extractors: We utilize two types of feature extractors: a context extractor C and a texture extractor T . The parameters of both extractors are shared across all iterations. The context extractor comprises eight residual blocks, as used in ESR-GAN [ 26 ], and is applied to the current frame ILR t to obtain the context feature f ct . The texture extractor is dedicated to extracting the texture feature f v,i t−1 from a voxel bin Vt−1→t(i)
+
+at each iteration. It is implemented as a custom five-layer U-Net [ 48 ], leveraging its strong ability to capture spatiotemporal features [ 49 ]. The feature extraction process can be formulated as: 
+
+f ct = C  ILR t
+
+ , f v,i t−1 = T (Vt−1→t(i)) . (4) Here, the context feature f ct and the texture feature f v,i t−1 match the spatial size RC×H×W of the propagated feature ft−1.
+
+Iterative Texture Updater: Subsequent to feature extraction, we introduce a texture updater that fuses textural cues from each voxel bin coupled with context information from the current frame into the propagated feature. The texture updater is shared across iterations and consists of three ConvGRU [ 51 ]layers and five residual blocks [ 26 ], denoted as G and R,respectively. The propagation feature f it , initialized with ft−1,is updated in a residual manner as: 
+
+hit = G
+
+
+
+hi−1 
+
+> t
+
+,
+
+h
+
+f ct , f v,i t−1
+
+i 
+
+,
+
+∆it = R  hit
+
+ , f it = f i−1 
+
+> t
+
++ ∆ it,
+
+(5) where hit is the hidden state at timestep t in the i-th iteration, with the initial state h0 
+
+> t
+
+= ft−1. The superscript i denotes the iteration index, where i ∈ { 1, · · · , N }. The number of iterations N is set to the number of voxel bins B. The operation 
+
+[·, ·] denotes channel-wise concatenation. After N iterations, the final texture-enhanced feature f Tt is obtained as: 
+
+f Tt = ft−1 + XNi=1 ∆it, (6) which accumulates the textural refinements contributed by each voxel bin. Notably, f Tt is obtained via residual learning (by accumulating the learned residuals ∆it to the input ft−1), rather than being directly output by the last ConvGRU layer. The proposed ITE module effectively transfers high-frequency information from event signals to the propagated features through voxel-wise temporal encoding and iterative refinement. By decomposing event streams into temporally discretized voxel bins (as defined in Eqs. (1) and (2)), our method progressively injects fine-grained texture cues over time, thereby facilitating the restoration of complex texture regions. IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 6Event-based MEMC 𝑓 ௧ିଵ 𝑓 ௧ெభ𝑓 ௧ெమ𝐸 ௧ିଵ→௧ 𝐼 ௧ିଵ ௅ோ , 𝐼 ௧௅ோ RGB-based MEMC 
+
+𝑓 ௧ெ
+
+(a) Temporal Texture Alignment 
+
+𝐸 ௧ିଵ→௧ Reverse & To voxel 
+
+𝑉 ௧→௧ିଵ 𝑂 ௧→௧ିଵ ௘
+
+U-Net Warp 
+
+𝑓 ௧ିଵ 𝑓 ௧ெభ
+
+𝐼 ௧ିଵ ௅ோ 𝑂 ௧→௧ିଵ ௥
+
+SpyNet Warp 
+
+𝑓 ௧ିଵ 𝑓 ௧ெమ
+
+(c) RGB-based MEMC 
+
+𝐼 ௧௅ோ 
+
+Texture 𝑓 ௧ିଵ 𝑓 ௧் 𝑓 ௧ெ𝐸 ௧ିଵ→௧ 
+
+Motion Fusion 
+
+𝑓 ௧
+
+Fusion (b) Event-based MEMC Pixel Shuffle 
+
++𝐼 ௧௅ோ 𝐼 ௧ௌோ 𝑓 ௧஻  
+
+> Fig. 6. Event-guided Motion Branch in EvTexture++. (a) EvTexture++ further integrates event signals into the motion branch and introduces a Temporal Texture Alignment (TTA) module, which consists of an RGB-based MEMC and an event-based MEMC that jointly improve feature alignment. MEMC: motion estimation and motion compensation. (b) In the event-based MEMC, events are converted into voxel grids and processed by a U-Net [ 49 ] to estimate fast and non-linear motion from events for alignment. (c) The RGB-based MEMC estimates optical flow from images using SpyNet [ 50 ] and aligns features accordingly.
+
+D. Event-guided Motion Branch 
+
+In VSR, large and complex motion often leads to severe misalignment across frames, which significantly degrades reconstruction quality, especially in texture-rich regions. Tradi-tional RGB-based flow estimation is prone to errors under such conditions due to motion blur and limited temporal resolution. To improve robustness, drawing inspiration from prior works on event-based flow estimation [ 31 ], [ 52 ] and frame interpolation [ 32 ], we integrate an event-guided motion branch into EvTexture++. This branch leverages the inherent synergy between event data and RGB frames to achieve more accurate and stable temporal texture alignment. As illustrated in Fig. 6(a), the proposed TTA module plays a crucial role within this branch. The inter-frame events Et−1→t,initially utilized in the texture branch to generate f Tt , are concurrently exploited by the motion branch. Here, the motion branch propagates ft−1 by integrating event cues with RGB-based flow to produce the motion-enhanced feature f Mt . These two features ( f Tt and f Mt ) are then fused to obtain the final propagated feature at timestep t, denoted as ft.The TTA module comprises a dual-stream structure for motion alignment, consisting of an RGB-based motion estima-tion and motion compensation (MEMC) branch and an event-based MEMC branch. These two modules work in parallel, focusing on complementary motion cues. The event-based branch exploits events to estimate non-linear motion and align features even in blurred regions, while the RGB-based branch leverages optical flow from frames for feature alignment. At timestep t, the previous feature ft−1 is aligned to f M1
+
+> t
+
+in the event-based MEMC and to f M2 
+
+> t
+
+in the RGB-based MEMC. These two aligned features are then fused to generate the final motion-enhanced feature f Mt . The fusion process can be formulated as: 
+
+f Mt = FM([ f M1 
+
+> t
+
+, f M2 
+
+> t
+
+]) , (7) where FM(·) is a fusion module consisting of feature concate-nation followed by a 1 × 1 convolution. 
+
+1) Event-based MEMC: As shown in Fig. 6(b), the event-based MEMC branch first temporally reverses the inter-frame events Et−1→t and then encodes them into voxel grids following Eqs. (1) and (2). The voxel grids, denoted as Vt→t−1,are processed by a network U to estimate event-based flow. The network adopts a U-Net architecture, leveraging the design of the event-based frame interpolation method [ 53 ]. The estimated event-based flow Oet→t−1 is then used to warp the previous feature ft−1, producing the aligned feature f M1 
+
+> t
+
+from the event-based MEMC branch: 
+
+Oet→t−1 = U(Vt→t−1), f M1 
+
+> t
+
+= W(ft−1, O et→t−1), (8) where the superscript e indicates that the flow is derived from events, and W(·) denotes the backward warping operation. This operation is implemented via differentiable bilinear interpolation following the Spatial Transformer Network (STN) mechanism [ 54 ]. Notably, this event-based MEMC branch excels in handling fast or complex motion by exploiting the high temporal resolution of events. 
+
+2) RGB-based MEMC: Complementary to the event branch, as shown in Fig. 6(c), we utilize a lightweight optical flow estimation network S (SpyNet) [ 50 ] to estimate the optical flow between adjacent frames, following previous VSR stud-ies [ 7], [ 8 ]. The optical flow is then used to warp the propagated features for temporal alignment. Specifically, we feed ILR t−1 and 
+
+ILR t into the flow estimation network S to estimate the optical flow Ort→t−1, where the superscript r denotes that the flow is IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 7        
+
+> Fig. 7. Overview of the EvTexture++ plug-in framework. During training, the frozen backbone extracts three types of features: spatial features before propagation ( fbp t), temporal features after propagation ( fap t), and bidirectional optical flow ( Ort↔t+1 ). Our EvTexture++ plug-in refines fap tconditioned on event information and the other extracted features. This flexible design can be integrated into various VSR models to consistently improve performance. Note that the motion branch here directly uses the optical flow from the frozen backbone for feature warping and does not require a separate SpyNet (unlike Fig. 6).
+
+derived from RGB frames. We then use this flow to backward warp the previous feature ft−1 to the current timestep, resulting in the aligned feature f M2 
+
+> t
+
+. This process can be formulated as: 
+
+Ort→t−1 = S  ILR t , I LR t−1
+
+ , f M2 
+
+> t
+
+= W  ft−1, O rt→t−1
+
+ .
+
+(9) This RGB-based MEMC branch captures reliable appearance cues for reconstructing most regions. However, it struggles under large or abrupt motion, where the event-based MEMC branch plays a more important role. Subsequently, the two aligned features, f M1 
+
+> t
+
+and f M2 
+
+> t
+
+, are integrated to produce the motion-enhanced feature f Mt , enabling more accurate and stable alignment across diverse motion conditions. 
+
+E. Branches Fusion 
+
+To combine features from the motion and texture branches, we aggregate the motion-enhanced feature f Mt and the texture-enhanced feature f Tt using a fusion network. Additionally, the backward-propagated feature f Bt and the current frame ILR t
+
+are also incorporated to provide contextual guidance. The final propagated feature ft is computed as: 
+
+ft = F  ILR t , f Bt , f Mt , f Tt
+
+ , (10) where F(·) denotes the fusion module, comprising fifteen residual blocks [ 26 ]. The fused feature ft is then upsampled using a pixel-shuffle layer [ 47 ], and the result is combined with the bicubic-upsampled input ILR t via a residual connection to generate the final high-resolution output ISR t .
+
+F. EvTexture++ Plug-in 
+
+Recent SOTA VSR models, particularly Transformer-based methods such as PSRT [ 22 ], IART [ 2 ], and MIA-VSR [ 10 ], have demonstrated impressive performance. However, these models often demand substantial computational resources. For example, training IART [ 2] on REDS with 8 RTX 4090 GPUs takes approximately 27 days, while MIA-VSR [ 10 ] requires about 45 days, based on the settings reported in their original papers. Furthermore, these models still struggle to restore fine-grained textures. To address these limitations, we develop EvTexture++ as a flexible plug-and-play module that can be easily integrated into existing VSR models to generally improve their performance, especially in recovering texture regions. The module operates without any modification to the backbone and adds minimal computational overhead. The design and integration of EvTexture++ are detailed below. A typical VSR model usually consists of three stages: (1) frame-wise feature extraction, (2) temporal propagation, and (3) upsampling. The first two stages are handled by the backbone model, which typically comprises multiple Transformer [ 28 ] or CNN blocks [ 26 ] and demands significant training time and resources. The upsampling layer incurs negligible computational cost. When using our EvTexture++ plug-in, the pretrained backbone remains frozen, and the plug-in is inserted between the backbone and the upsampler to refine the propagated features through our event-guided branches. Only the plug-in and upsampler are updated. Notably, since the backbone is frozen, its internal optical flow estimator is not jointly trained with the plug-in, ensuring training efficiency. As shown in Fig. 7, given an LR input video sequence 
+
+{ILR t }Tt=1 , the frozen VSR backbone produces three sets of intermediate outputs: (i) the frame-wise features before propa-gation {f bp t }Tt=1 , (ii) the features after propagation {f ap t }Tt=1 ,and (iii) the bidirectional optical flows {Ort↔t+1 }T −1 
+
+> t=1
+
+. This process is formulated as: 
+
+{f bp t }, {f ap t }, {Ort↔t+1 } = VSR-Backbone ({ILR t }). (11) IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 8
+
+TABLE I QUANTITATIVE COMPARISON (PSNR ↑/SSIM ↑) ON VID 4 [1], REDS4 [55] AND VIMEO -90K-T [6] FOR 4× VSR. A LL RESULTS ARE CALCULATED ON 
+
+Y-CHANNEL EXCEPT REDS4 (RGB-CHANNEL ). BOLD AND UNDERLINED VALUES INDICATE THE BEST AND SECOND -BEST PERFORMANCES .Method Vid4 [1] REDS4 [55] Vimeo-90K-T [6] Calendar City Foliage Walk Average RGB-based EDVR [12] 23.98/0.8143 27.83/0.8112 26.34/0.7560 31.06/0.9153 27.30/0.8242 31.09/0.8800 37.61/0.9489 BasicVSR [7] 23.87/0.8094 27.66/0.8050 26.47/0.7710 30.96/0.9148 27.32/0.8265 31.42/0.8909 37.18/0.9450 IconVSR [7] 24.07/0.8143 27.86/0.8111 26.54/0.7705 31.08/0.9158 27.46/0.8290 31.67/0.8948 37.47/0.9476 RTVAR [56] 24.65/0.8270 29.92/0.8428 26.41/0.7652 31.15/0.9167 27.90/0.8380 31.30/0.8850 37.84/0.9498 BasicVSR++ [8] 24.50/0.8288 28.05/0.8212 26.90/0.7868 31.71/0.9236 27.87/0.8413 32.39/0.9069 37.79/0.9500 VRT [24] 24.52/0.8296 28.33/0.8308 26.78/0.7754 31.89/0.9258 27.88/0.8404 32.19/0.9006 38.20/0.9530 RVRT [57] 24.55/0.8334 28.35/0.8363 26.98/0.7824 31.86/0.9251 27.94/0.8443 32.75/0.9113 38.15/0.9527 PSRT [22] 24.68/0.8357 28.71/0.8414 27.07/0.7936 32.05/0.9289 28.20/0.8504 32.72/0.9106 38.27/0.9536 MIA-VSR [10] 24.48/0.8332 29.04/0.8402 27.16/0.8008 32.17/0.9299 28.27/0.8519 32.79/0.9115 38.22/0.9532 IART [2] 24.57/0.8353 29.23/0.8434 27.09/0.7976 32.14/0.9305 28.30/0.8523 32.90/0.9138 38.14/0.9528 Event-based EGVSR [15] 21.53/0.6932 26.01/0.7068 24.33/0.6651 27.39/0.8574 24.84/0.7330 26.87/0.7790 34.62/0.9185 EBVSR [16] 25.17/0.8548 29.30/0.8846 27.31/0.8187 31.91/0.9265 28.46/0.8701 31.47/0.8919 37.56/0.9490 EvTexture [17] 26.10/0.8756 31.24/0.9087 28.12/0.8475 32.67/0.9366 29.51/0.8909 32.79/0.9174 38.23/0.9544 
+
+EvTexture++ 26.44 /0.8859 31.82 /0.9217 28.21 /0.8542 32.86 /0.9381 29.78 /0.8983 32.93 /0.9195 38.32 /0.9558 
+
+TABLE II EXPERIMENTS WITH DIFFERENT UPSAMPLING SCALES (8 × AND 2×) ON THE REDS4 [55], UDM10 [58], V IMEO -90K-T [6], AND VID 4 [1] DATASETS .Method REDS4 [55] (8 ×)
+
+> (90 ×160 →720 ×1280)
+
+UDM10 [58] (8 ×)
+
+> (90 ×159 →720 ×1272)
+
+Vimeo-90K-T [6] (2 ×)
+
+> (128 ×224 →256 ×448)
+
+Vid4 [1] (2 ×)
+
+> (240 ×360 →480 ×720)
+
+PSNR ↑ SSIM ↑ LPIPS ↓ PSNR ↑ SSIM ↑ LPIPS ↓ PSNR ↑ SSIM ↑ LPIPS ↓ PSNR ↑ SSIM ↑ LPIPS ↓
+
+BasicVSR [7] 26.72 0.7475 0.3700 30.78 0.8723 0.2532 44.69 0.9877 0.0448 34.65 0.9598 0.0867 BasicVSR++ [8] 27.14 0.7621 0.3549 31.36 0.8800 0.2446 45.09 0.9880 0.0519 34.84 0.9614 0.0829 EGVSR [15] 24.12 0.6539 0.4636 27.47 0.8047 0.3218 40.21 0.9738 0.0699 30.42 0.9152 0.1317 EBVSR [16] 27.23 0.7689 0.3522 31.73 0.8922 0.2377 44.83 0.9881 0.0438 34.57 0.9598 0.0842 EvTexture [17] 28.10 0.7996 0.3288 32.72 0.9028 0.2206 45.25 0.9890 0.0417 35.19 0.9659 0.0785 
+
+EvTexture++ 28.20 0.8053 0.3229 32.90 0.9046 0.2168 45.34 0.9895 0.0414 35.29 0.9668 0.0782 
+
+The plug-in enhances the propagated feature f ap t by leveraging inter-frame events {Et→t+1 }T −1 
+
+> t=1
+
+through the proposed event-guided texture and motion branches. Specifically, for forward propagation from t to t + 1 , the ITE module refines f ap t using the contextual feature f bp t and inter-frame events Et→t+1 as: 
+
+f Tt+1 = ITE (f ap t , f bp t , E t→t+1 ), (12) where f Tt+1 denotes the texture-enhanced feature with high-frequency details, and ITE is the iterative texture enhancement module introduced in Section III-C1. In the motion branch, distinct from the standalone architec-ture which employs a separate SpyNet (Fig. 6(c)), the plug-in framework avoids redundant computation by directly reusing the pre-computed optical flow from the backbone. Specifically, the event-based flow is estimated from events, while the RGB-based alignment is performed via feature warping using the backbone’s flow: 
+
+f M1 
+
+> t+1
+
+= W(f ap t , O et+1 →t), f M2 
+
+> t+1
+
+= W(f ap t , O rt+1 →t). (13) Here Oet+1 →t is the event-derived texture-aware flow estimated from voxelized events, and Ort+1 →t is the reused RGB-based optical flow from the frozen backbone. The aligned features are fused to obtain a motion-enhanced representation f Mt+1 . Finally, the texture-enhanced feature f Tt+1 and the motion-enhanced feature f Mt+1 are fused and passed to the upsampler [ 47 ] to reconstruct the final super-resolved output ISR t .IV. E XPERIMENTS 
+
+In this section, we present comprehensive experiments to validate the effectiveness of the proposed EvTexture++. We first introduce the datasets (Sec. IV-A ) and implementation details (Sec. IV-B ). We then compare EvTexture++ with SOTA VSR methods under various settings (Sec. IV-C ), and evaluate its plug-in performance when integrated into different backbones (Sec. IV-C 7). Finally, Section IV-D presents ablation studies to comprehensively assess the impact of each component. 
+
+A. Datasets 
+
+We train and evaluate our method on both synthetic and real-world datasets, comprising a total of five test sets. For synthetic datasets, we follow the widely adopted settings in recent VSR studies [ 2], [ 7 ] and utilize two popular benchmark datasets, characterized by diverse motion patterns, for training: Vimeo-90K [ 6] and REDS [ 55 ]. Specifically, models trained on Vimeo-90K are evaluated on Vid4 [ 1 ] and Vimeo-90K-T [ 6], where we conduct both 2× and 4× VSR experiments and compute PSNR and SSIM metrics on the Y channel. For REDS, we employ REDS4 [ 55 ] and UDM10 [ 58 ] as the evaluation sets, and perform 4× and 8× VSR, with evaluation on the RGB channel. As the Vimeo-90K, Vid4, REDS, and UDM10 datasets lack real event data, we follow prior event-based VSR works [ 14 ], [ 16 ], and use the ESIM [ 59 ] event simulator to IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 9          
+
+> TABLE III QUANTITATIVE RESULTS ON CED [60] FOR 2×AND 4×VSR. M ETRICS ARE CALCULATED ON THE RGB-CHANNEL .†DENOTES RESULTS ARE REPORTED IN EGVSR [15].
+
+Method CED [60] (2 ×) CED [60] (4 ×)PSNR ↑ SSIM ↑ PSNR ↑ SSIM ↑
+
+RGB-based DUF [61] † 31.09 0.9183 28.34 0.9081 SOF [62] † 31.84 0.9226 27.00 0.8050 TDAN [63] † 33.74 0.9398 27.88 0.8231 RBPN [64] † 36.66 0.9754 29.80 0.8975 BasicVSR [7] 39.57 0.9778 32.93 0.9001 Event-based E-VSR [14] † 37.32 0.9783 30.15 0.9053 EGVSR [15] † 38.69 0.9771 31.12 0.9211 
+
+EBVSR [16] 40.14 0.9801 33.42 0.9075 EvTexture [17] 40.52 0.9813 33.68 0.9112 
+
+EvTexture++ 40.57 0.9815 33.71 0.9126 TABLE IV TEMPORAL CONSISTENCY ON VID 4 [1] AND REDS4 [55] FOR 4× VSR. Vid4 [1] BasicVSR [7] EGVSR [15] EBVSR [16] EvTexture [17] EvTexture++                      
+
+> TCC ↑× 10 2.736 1.707 3.336 3.655 3.832
+> tOF ↓× 10 1.366 3.191 1.321 1.226 1.158
+> REDS4 [55] BasicVSR [7] EGVSR [15] EBVSR [16] EvTexture [17] EvTexture++
+> TCC ↑× 10 4.855 3.083 4.875 5.275 5.321
+> tOF ↓× 10 7.496 15.692 7.505 7.153 7.017
+
+generate synthetic events from video frames. The simulated events are converted into voxel grids using Eqs. (1) and (2). The voxel grids are subsequently downsampled via bicubic interpolation to match the LR input, consistent with the frame downsampling strategy to ensure spatial alignment. To validate our method in real-world scenarios, we follow existing event-based VSR methods [ 15 ], [ 16 ] and use the CED [ 60 ] dataset for training and evaluation. The dataset was captured using a DAVIS346 [ 65 ] event camera, which outputs spatio-temporally synchronized events and frames at a resolution of 260 × 346 . For the train-test split configuration, we follow E-VSR [ 14 ] and select 11 clips from the full set of 84 clips as the test set. These clips cover both static and dynamic scenes, as well as indoor and outdoor environments. The remaining clips are used for training. When calculating the metrics, we exclude a boundary of 8 pixels to mitigate boundary artifacts and evaluate on the RGB channel. 
+
+B. Implementation Details 
+
+For training on the REDS [ 55 ] and CED [ 60 ] datasets, we use 15 input frames for each training sample. For Vimeo-90K [ 6 ], since each clip contains only 7 frames, we flip the sequence, remove the duplicated center frame ( i.e. , the 8 th 
+
+frame), and concatenate the remaining frames to form a 13-frame input sequence. We set the mini-batch size to 8 and the input frame size to 64 × 64 . We augment the training data with random horizontal and vertical flips. To supervise the training, we utilize the Charbonnier loss [ 66 ], formulated as             
+
+> TABLE V COMPARISON OF PERCEPTUAL SIMILARITY (LPIPS ↓)ON VID 4 [ 1]FOR 4×
+> VSR AND COMPUTATIONAL OVERHEADS . FLOP S AND RUNTIME ARE COMPUTED ON ONE LR FRAME WITH THE SIZE OF 180 ×320, USING AN
+> NVIDIA RTX 3090 GPU.
+
+Method LPIPS ↓ #Params (M) Runtime (ms) FLOPs (G) EDVR [12] 0.2641 20.63 186.2 2018.4 BasicVSR [7] 0.2783 6.29 39.5 373.1 IconVSR [7] 0.2722 8.69 55.4 405.6 BasicVSR++ [8] 0.2593 7.32 52.5 405.6 PSRT [22] 0.2424 13.37 1162.3 1921.9 MIA-VSR [10] 0.2441 16.60 834.5 1262.5 IART [2] 0.2441 13.41 1204.6 1972.7 EGVSR [15] 0.3351 2.58 121.1 159.6 
+
+EBVSR [16] 0.2476 12.16 68.5 641.4 EvTexture [17] 0.2185 8.90 93.1 805.4 
+
+EvTexture++ 0.2048 10.15 95.0 808.6 
+
+L = 1
+
+> T
+
+PTt=1 
+
+p∥IHR t − ISR t ∥2 + ε2, where ε is a constant set to 1 × 10 −12 for numerical stability. We adopt the Adam optimizer [ 67 ] with β1=0 .9 and β2=0 .99 , and schedule the learning rate using Cosine Annealing with Restart [68]. We train our EvTexture++ for 300K iterations on each training dataset. Following previous studies [ 2], [ 8 ], we employ a pretrained SpyNet [ 50 ] model to estimate RGB-based optical flow, while all other modules are trained from scratch. For SpyNet, we keep the pretrained model frozen for the first 5K iterations and then train it jointly with the main network, using an initial learning rate of 2.5 × 10 −5. The initial learning rate for the remaining modules is set to 2 × 10 −4. The entire training process for each dataset is conducted on four NVIDIA RTX 3090 GPUs and takes approximately 4 days. For the EvTexture++ plug-in variants built upon pretrained VSR models [ 2 ], [ 8 ], [ 10 ], [ 22 ], we freeze the VSR backbone parameters and optimize only the plug-in modules. These variants are trained for 200K iterations with an initial learning rate of 1 × 10 −4. Each plug-in model requires around 6 days of training on four NVIDIA RTX 3090 GPUs. 
+
+C. Comparisons with State-of-the-Art Methods 1) Baselines and Metrics: We compare EvTexture++ against two categories of VSR models: (1) RGB-based methods, including BasicVSR [ 7 ], BasicVSR++ [ 8 ], and recent SOTA approaches like MIA-VSR [ 10 ] and IART [ 2]; and (2) event-based baselines, comprising EGVSR [ 15 ], EBVSR [ 16 ], and our preliminary version, EvTexture [ 17 ]. To ensure fair com-parisons, all methods are trained on the same dataset and evaluated under identical settings. For methods without public code, we report published results. We evaluate spatial quality using PSNR, SSIM, and LPIPS [ 69 ], and assess temporal consistency via tOF [70] and TCC [71], following [72]. 
+
+2) Evaluation on Standard Benchmarks: Tab. I presents quantitative results on the classic Vid4 [ 1], REDS4 [ 55 ], and Vimeo-90K-T [ 6] datasets. As shown, EvTexture++ sig-nificantly outperforms previous SOTA methods. Notably, it surpasses IART [ 2 ] by 1.48 dB in PSNR on Vid4. Compared to EvTexture [ 17 ], EvTexture++ achieves a 0.27 dB gain on IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 10     
+
+> Fig. 8. Qualitative comparison on Vid4 [1] for 4 ×VSR. Only EvTexture++ can restore vivid branches and leaves on the tulip tree.
+> Fig. 9. Qualitative comparison on Vimeo-90K-T [6] for 4 ×VSR. Only EvTexture++ can restore faithful and detailed stripes on clothing surfaces.
+
+Vid4, consistently improving across all clips, as well as an additional 0.16 dB gain on REDS4. Furthermore, as detailed in Tab. V, EvTexture++ attains the lowest LPIPS score of 0.2048 on Vid4, demonstrating superior perceptual quality. Qualitative comparisons on Vid4, Vimeo-90K-T, and REDS4 are shown in Figs. 8, 9, and 10, respectively. As observed, RGB-based methods such as BasicVSR++ [ 8] and MIA-VSR [ 10 ] struggle to recover fine textures due to the absence of high-frequency information in LR inputs. Prior event-based approaches also exhibit limitations, as they fail to fully leverage the rich high-frequency cues inherent in event signals. In contrast, EvTexture++ consistently produces sharper edges and superior texture details than all competing methods. 
+
+3) Extended Scale Evaluations: We also extend our evalu-ation to different upscaling factors. Specifically, we conduct 8× VSR on the HR datasets REDS4 [ 55 ] and UDM10 [ 58 ], and 2 × VSR on Vid4 [ 1 ] and Vimeo-90K-T [ 6]. The results are summarized in Tab. II. Across all datasets and scales, EvTexture++ consistently achieves the best performance. On REDS4 and UDM10, it outperforms BasicVSR++ [ 8] by 1.06 dB and 1.54 dB in PSNR, respectively. This confirms the benefit of event information in large-scale upsampling, where RGB frames alone struggle with severe detail loss. EvTexture++ also delivers notable gains on Vimeo-90K-T and Vid4, especially in SSIM and LPIPS, indicating better structure and perceptual quality. Fig. 11 shows qualitative results on UDM10. Our method reconstructs sharper railings and more legible text in the camera, details that are mostly lost in competing methods. 
+
+4) Evaluation on Real-World Events: To validate our method on real-world data, we conduct experiments on the CED dataset [ 60 ] under both 2 × and 4 × VSR settings. Quanti-tative results are summarized in Tab. III. Our EvTexture++ consistently outperforms RGB-based and event-based methods. At the 2 × scale, it achieves 40.57 dB PSNR and 0.9815 SSIM, outperforming the RGB-based competitor, BasicVSR [ 7], by 1.00 dB. Compared to the best event-based alternative, EBVSR [ 16 ], EvTexture++ further improves performance by 0.43 dB. At the more challenging 4 × scale, EvTexture++ outperforms EBVSR by 0.29 dB in PSNR while maintaining highly competitive SSIM. Qualitative comparisons on CED are shown in Fig. 12. Our method recovers fine wall textures and sharper facial details, whereas competing methods often produce overly smooth or blurred outputs. 
+
+5) Temporal Consistency Analysis: Beyond spatial fidelity, we further evaluate the temporal consistency of super-resolved videos both quantitatively and qualitatively. Tab. IV presents the results on Vid4 [ 1] and REDS4 [ 55 ] under the 4 × VSR setting. EvTexture++ demonstrates superior temporal consistency on IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 11       
+
+> Fig. 10. Qualitative comparison on REDS4 [55] for 4 ×VSR. Only EvTexture++ can clearly recover the digits “5886” on the license plate.
+> Fig. 11. Qualitative comparison on UDM10 [58] for 8 ×VSR. Only EvTexture++ can restore fine details such as camera text and railings.
+> Fig. 12. Qualitative comparison on CED [60] for 4 ×VSR. Only EvTexture++ can recover fine wall textures and sharp facial details.
+
+both datasets, yielding lower tOF [ 70 ] and higher TCC [ 71 ]scores than all other methods. To further illustrate stability, Fig. 14 shows the per-frame PSNR on ‘Clip 000’ from REDS4, which contains complex textures. EvTexture++ outperforms all other methods on every frame, indicating not only better video quality but also more sta-ble performance over time. Finally, for qualitative comparisons, we follow the visualization strategy in [ 8] and present temporal profiles in Fig. 15, which visualize temporal transitions by stacking pixel rows over time. As shown, our method exhibits superior consistency in texture regions, which we attribute to the effective utilization of high-temporal-resolution event signals. 
+
+6) Computational Efficiency: We evaluate computational efficiency via parameter count, runtime, and FLOPs, as detailed in Tab. V. EvTexture++ employs 10.15 million parameters and requires 808.6 GFLOPs per frame, striking a favorable trade-off between efficiency and performance. It significantly outperforms transformer-based methods like IART [ 2] and MIA-VSR [ 10 ], substantially more efficient, whereas the latter IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 12          
+
+> TABLE VI QUANTITATIVE COMPARISON WITH OUR PLUG -IN EVTEXTURE ++ ( †† ) . (∗)DENOTES A WIDENED BASELINE SERVING AS A PARAMETER -EQUIVALENT CONTROL GROUP . B OTH (∗)AND (†† )USE A FROZEN BACKBONE ,VERIFYING IMPROVEMENTS STEM FROM EVENT CUES ,NOT PARAMETER INCREASE .
+
+Method REDS4 [55] Vimeo-90K-T [6] Vid4 [1] #Params (M) Runtime (ms) FLOPs (G) EvTexture [17] 32.79/0.9174 38.23/0.9544 29.51/0.8909 8.90 93.1 805.4 EvTexture++ 32.93/0.9195 38.32/0.9558 29.78/0.8983 10.15 95.0 808.6 CNN-based BasicVSR++ [8] 32.39/0.9069 37.79/0.9500 27.87/0.8413 7.32 52.5 405.6 BasicVSR++ ∗ 32.29/0.9046 37.74/0.9496 27.81/0.8387 12.97 87.4 728.3 
+
+BasicVSR++ †† 32.94/0.9185 38.28/0.9547 29.05/0.8806 12.52 118.1 915.7 Transformer -based PSRT [22] 32.72/0.9138 38.27/0.9536 28.20/0.8504 13.37 1162.3 1921.9 PSRT ∗ 32.75/0.9108 38.26/0.9535 28.19/0.8498 19.57 1219.6 2280.4 
+
+PSRT †† 33.36/0.9233 38.94/0.9592 29.83/0.8958 19.11 1253.9 2467.8 MIA-VSR [10] 32.78/0.9220 38.22/0.9532 28.27/0.8519 16.60 834.5 1262.5 MIA-VSR ∗ 32.81/0.9119 38.32/0.9539 28.30/0.8510 22.80 867.4 1788.5 
+
+MIA-VSR †† 33.42/0.9243 39.02/0.9596 29.81/0.8949 22.34 900.4 1975.9 IART [2] 32.90/0.9138 38.14/0.9528 28.30/0.8523 13.41 1204.6 1972.7 IART ∗ 32.92/0.9142 38.24/0.9534 28.34/0.8511 19.61 1273.4 2331.2 
+
+IART †† 33.53/0.9261 38.91/0.9589 29.85/0.8957 19.16 1305.0 2518.6     
+
+> Fig. 13. Visual comparison of BasicVSR++[ 8], PSRT[ 22 ], MIA-VSR [ 10 ], and IART [ 2] before and after being equipped with our plug-in EvTexture++ ( †† ).The PSNR values are indicated in the images. Our EvTexture++ plug-in significantly improves restoration, producing clearer textures and more visual details.
+
+models suffer from per-frame latency exceeding 1000 ms. Compared to EBVSR [ 16 ] (12.16M parameters), EvTexture++ achieves superior performance with lower computational cost. 
+
+7) Versatility as a Plug-and-Play Module: We further evaluate the efficacy of our plug-in by integrating it into four representative VSR networks: the CNN-based BasicVSR++ [ 8]and transformer-based PSRT [ 22 ], IART [ 2], and MIA-VSR [ 10 ]. Tab. VI demonstrates that our plug-in brings consistent improvements across all baselines. Integrating it into BasicVSR++ boosts PSNR on REDS4 [ 55 ] by 0.55 dB with marginal parameter and FLOP overhead. Similar improvements are observed on Vimeo-90K-T [ 6 ] and Vid4 [ 1]. For Transformer-based models, the gains are particularly pronounced. With EvTexture++ integrated, PSRT, MIA-VSR, and IART achieve PSNR gains of 1.63 dB, 1.54 dB, and 1.55 dB, respectively, on the Vid4 [1] dataset. To validate that the performance gains of our plug-in stem from the effective utilization of event signals rather than simply from increased model capacity, we conduct control experiments by increasing the parameter counts of the base models to match those of their EvTexture++ counterparts. Specifically, we apply the same “frozen backbone setting” to these baselines by appending extra ResNet blocks. As shown in Tab. VI, these models, denoted with a superscript ∗, exhibit negligible improvement or even slight degradation. This indicates that naively adding parameters to a frozen backbone without new information leads to redundant computation. This confirms that the observed gains are attributed to the complementary event information leveraged by EvTexture++. Fig. 16 presents the training curves of IART with and without our EvTexture++ plug-in. Notably, the parameter-matched base-line IART ∗ stagnates, whereas our plug-in achieves superior convergence and performance. These results demonstrate that EvTexture++ effectively enhances texture quality and serves as a practical, plug-and-play solution compatible with a wide range of VSR models. Fig. 13 show the visual improvements IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 13 0 20 40 60 80 100 
+
+Frame Index 
+
+> 28
+> 29
+> 30
+> 31
+> 32
+> PSNR (dB)
+> BasicVSR++
+> IART
+> EBVSR
+> EvTexture++
+
+Fig. 14. Comparison of per-frame PSNR for ‘Clip 000’ on REDS4 [ 55 ]. Our EvTexture++ achieves higher PSNR than all other methods on every frame, showing better video quality and more stable performance over time. 
+
+Fig. 15. Comparison of temporal profiles. We track a fixed column over time. MIA-VSR [ 10 ] and EBVSR [ 16 ] exhibit flickering artifacts and texture loss. EvTexture++ produces a temporally coherent profile with finer textures. 
+
+brought by our plug-in. While the base models struggle to recover fine textural details, integrating our EvTexture++ plug-in significantly refines these regions. 
+
+D. Ablation Study 
+
+In this section, we first evaluate the impact of incorporating event signals into the texture and motion branches. We then investigate the internal design of the ITE module. 
+
+1) Effect of Texture and Motion Branches: We assess the contributions of the event-guided texture and motion branches on Vid4 [ 1] and REDS4 [ 55 ] for 4 × VSR, with results in Tab. VII. The base model operates lacks event information. Introducing the texture branch significantly boosts performance, increasing PSNR from 27.44 dB to 29.51 dB on Vid4 and from 31.58 dB to 32.79 dB on REDS4. These gains validate the effectiveness of event signals in recovering fine textures absent in RGB-based inputs. Solely adding the motion branch also yields improvements, particularly on REDS4, which benefits significantly due to its complex motion. When both branches are employed, the model achieves the best results across both datasets, confirming their complementarity: the texture branch enhances local details, while the motion branch improves dynamic alignment. To visualize these improvements, Fig. 17 presents qualitative comparisons corresponding to Tab. VII. The visual results demonstrate that the proposed event-guided 0k 50k 100k 150k 200k 
+
+> 32.8
+> 32.9
+> 33.0
+> 33.1
+> 33.2
+> 33.3
+> 33.4
+> 33.5
+> PSNR (dB)
+
+Iteration 
+
+> IART
+> IART*
+> EvTexture++ (IART)
+
+Fig. 16. PSNR during training on REDS4 [ 55 ] for 4 × VSR using IART-based plug-in variants. IART [ 2] achieves 32.90 dB as reference. ∗ shows similar parameters as EvTexture++. EvTexture++ significantly improves performance. TABLE VII ABLATION STUDY OF TEXTURE AND MOTION BRANCHES .Model Vid4 [1] REDS4 [55] Params(M) Base 27.44/0.8284 31.58/0.8932 6.29 Base + Texture 29.51/0.8909 32.79/0.9174 8.90 Base + Motion 28.22/0.8647 32.43/0.9043 8.94 Base + Texture + Motion 29.78/0.8983 32.93/0.9195 10.15 TABLE VIII ABLATION STUDIES ABOUT IMPORTANT FACTORS OF THE ITERATIVE 
+
+TEXTURE ENHANCEMENT MODULE ON VID 4 [1]. Model ID Texture Updater Iterative Manner Residual Learning Iteration Number #Params (M) PSNR (a) Conv ! ! 5 8.8 29.17 (b) - % ! - 7.6 29.09 (c) ConvGRU ! % 5 8.5 29.16 (d) ConvGRU ! ! 3 8.9 29.46 (e) ConvGRU ! ! 8 8.9 29.32 Ours ConvGRU ! ! 5 8.9 29.51 
+
+modules significantly enhance quality, recovering sharper edges and finer details blurred in the base model. To further investigate the mechanism behind the motion branch, we visualize the learned optical flows in Fig. 18. As shown, even without explicit supervision, the Event-based MEMC module captures meaningful motion structures. Crucially, unlike the smooth RGB flow from the backbone, our event-based flow preserves sharper motion boundaries and richer textural details. This confirms that the module effectively exploits high-frequency event signals to provide complementary alignment cues, explaining the performance gains observed in the motion-only ablation. 
+
+2) Effect of Iterative Texture Enhancement: We further analyze the proposed ITE module. To decouple its contribution, we remove the event-guided motion branch during this ablation study. The results are reported in Tab. VIII. The specific configurations of each variant are detailed as follows. Model (a) substitutes the ConvGRU block in the texture updater with standard convolutional layers. While retaining the iterative structure and residual learning, it lacks the explicit IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 14   
+
+> Fig. 17. Visual results of “Base + Texture”, “Base + Motion” and “Base + Texture + Motion” corresponding to Tab. VII. The proposed event-guided texture and motion branches effectively improve reconstruction quality.
+> Fig. 18. Visual analysis of learned optical flows. Compared to the smooth RGB flow (from the BasicVSR++ [ 8] backbone), our event-based flow (from the Event-based MEMC module) exhibits sharper boundaries and richer textural details, validating the effective capture of high-frequency motion cues.
+
+hidden state updating mechanism, leading to a performance drop. Model (b) removes the iterative refinement mechanism entirely. Instead of processing event bins sequentially, we employ a U-Net to extract texture features from the entire event voxel grid in a single pass. This non-iterative approach results in a 0.42 dB PSNR drop, highlighting the importance of temporal recurrence. Model (c) evaluates the residual connection by removing the element-wise addition in Eqs. (5) and (6). Forcing the network to directly predict the target feature f Tt rather than refining the input via a residual ∆ leads to a 0.35 dB PSNR drop, confirming that learning high-frequency residuals is more effective for texture recovery. Finally, models (d-e) vary the number of iterations. Results show that 5 iterations yield the best performance. Increasing to N = 8 provides no further gain, likely because over-segmenting the event stream results in sparse representations, degrading feature extraction. Additionally, we visualize the progression of intermediate features in Fig. 19. As the texture updater advances, EvTex-ture++ can progressively learn to extract finer textures with less noise and more clarity from voxel bins for restoration. V. D ISCUSSION 
+
+In this section, we analyze the effectiveness of texture restoration (Sec. V-A ), evaluate the robustness of our method under large motion and BD degradation (Sec. V-B ), compare against concurrent works (Sec. V-C ), and discuss applicability to real-world event data (Sec. V-D).   
+
+> Fig. 19. Visual results of the iterative texture enhancement process. As the iterations advance, the intermediate features capture clearer textural details from the event voxel grids, progressively enhancing the restoration quality.
+> Fig. 20. Texture magnitude analysis of five datasets. The results reveal that Vid4 has the most significant texture. Vimeo-90K-T covers a wide range and is divided into three difficulty levels: easy, medium, and hard.
+
+A. Effectiveness of Texture Restoration 
+
+To quantify the effectiveness of our method in texture restora-tion, drawing inspiration from texture analysis in SISR [ 19 ], we first compute the texture magnitude of a video clip. Given a ground-truth video with T frames of size H × W , the texture magnitude is defined as: 
+
+αT
+
+> T
+
+X
+
+> t=1
+
+vuut 1
+
+HW 
+
+> H
+
+X
+
+> i=1
+> W
+
+X
+
+> j=1
+
+It(i, j ) − ¯It(i, j ) 2. (14) Here, each frame I is smoothed using a Gaussian filter to obtain the blurred image ¯I, with a kernel size of (5 , 5) and 
+
+σ = 1 .5. We calculate the absolute difference between the original and blurred images to extract high-frequency details, averaging the contrast across the sequence. α is a scaling factor set to 10. The texture magnitude in Eq. (14) ranges from 0 to 1, where a higher value indicates richer texture complexity. We apply this metric to analyze five benchmark datasets: Vid4 [ 1], REDS4 [ 55 ], CED [ 60 ], UDM10 [ 58 ], and Vimeo-90K-T [ 6 ]. The results in Fig. 20 reveal Vid4 has the highest texture magnitude, followed by REDS4, CED, and UDM10. Correlating this with prior experimental results, we observe that our method performs particularly well on texture-rich datasets. For example, on Vid4 (rich texture) and CED (moderate texture), Tab. I and Tab. III demonstrate that EvTexture++ outperforms EBVSR [ 16 ] by 1.32 dB and 0.29 dB respectively, highlighting its greater effectiveness on complex textures. We further analyze performance at the clip level on the REDS4 [ 55 ] dataset. Tab. IX presents the results on four IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 15 
+
+TABLE IX CLIP -BY -CLIP RESULTS (PSNR ↑/SSIM ↑) ON REDS4 [55] FOR 4× VSR. T EXTURE MAGNITUDE (LAST COLUMN ) REFLECTS TEXTURE COMPLEXITY .VALUES MARKED WITH A :::: 
+
+> WAVY ::::::::
+> UNDERLINE INDICATE LARGER GAINS ON TEXTURE
+
+-RICH CLIPS COMPARED TO TEXTURE -POOR ONES .Clip Name RGB-based VSR Event-based VSR EvTexture++ 
+
+vs. VRT EvTexture++ 
+
+vs. EBVSR Tex. Mag. (Eq. (14)) BasicVSR [7] TTVSR [73] VRT [24] EGVSR [15] EBVSR [16] EvTexture++ 
+
+Clip 000 28.40/0.8434 28.82/0.8565 28.85/0.8553 25.16/0.7066 28.44/0.8446 30.90 /0.9116 :::::::::: 
+
++2.05/+0.0563 :::::::::: 
+
++2.46/+0.0670 ::: 
+
+0.47 Clip 011 32.47/0.8979 33.46/0.9100 33.49/0.9072 26.56/0.7722 32.55/0.8987 33.90 /0.9168 +0.41/+0.0096 +1.35/+0.0181 0.38 Clip 015 34.18/0.9224 35.01/0.9325 35.26 /0.9332 29.83/0.8526 34.22/0.9235 35.14/0.9326 :::::::: 
+
+-0.12/-0.0006 :::::::::: 
+
++1.02/+0.0091 ::: 
+
+0.29 Clip 020 30.63/0.9000 31.17/0.9093 31.16/0.9078 25.94/0.7846 30.67/0.9009 31.77 /0.9170 +0.61/+0.0092 +1.10/+0.0161 0.41 Average 31.42/0.8909 32.12/0.9021 32.19/0.9006 26.87/0.7790 31.47/0.8919 32.93 /0.9195 +0.74/+0.0189 +1.46/+0.0276 0.39 TABLE X QUANTITATIVE COMPARISON (PSNR ↑/SSIM ↑) ACROSS EASY , MEDIUM , 
+
+> AND HARD DIFFICULTY LEVELS OF
+
+VIMEO -90K-T [6] FOR 4× VSR. Method Vimeo-90K-T [6] Easy Medium Hard EDVR [12] 41.98/0.9747 35.10/0.9422 30.40/0.8943 BasicVSR [7] 41.55/0.9731 34.63/0.9368 29.97/0.8864 IconVSR [7] 41.73/0.9742 34.86/0.9387 30.19/0.8901 BasicVSR++ [8] 41.98/0.9750 35.09/0.9412 30.38/0.8933 RVRT [57] 42.43/0.9762 35.69/0.9457 30.73/0.9022 VRT [24] 42.47 /0.9761 35.73/0.9472 30.74/0.9018 EGVSR [15] 38.75/0.9594 32.15/0.9051 27.90/0.8358 EBVSR [16] 41.55/0.9731 35.09/0.9412 30.49/0.8963 
+
+EvTexture++ 42.47 /0.9784 35.85 /0.9493 31.24 /0.9104 
+
+# of clips 3,907 2,345 1,563 Avg. Texture Mag. 0.16 0.32 0.49 
+
+representative clips. On the most texture-rich clip, ‘Clip 000’, EvTexture++ shows substantial gains of 2.46 dB over EBVSR and 2.05 dB over VRT [ 24 ]. In contrast, the texture-poor ‘Clip 015’ yields a smaller improvement of 1.02 dB over EBVSR and performs comparably to VRT (-0.12 dB). This observation confirms that our method is specifically optimized for enhancing regions with rich high-frequency textures. We also perform a detailed analysis on Vimeo-90K-T, which contains 7,824 clips with varying texture complexity. After removing 9 all-black clips [ 64 ], we divide the remaining 7,815 clips into easy, medium, and hard subsets based on their texture magnitude (Fig. 20). As presented in Tab. X, EvTexture++ achieves comparable results to VRT on the easy subset, while on the hard subset, it attains gains of up to 0.50 dB. This further indicates that the performance improvement of our method is positively correlated with texture complexity. While quantifying texture magnitude in VSR remains an open problem, our proposed metric offers a feasible preliminary solution. The evaluation results demonstrate its utility in characterizing dataset complexity and validating the texture-specific advantages of EvTexture++. 
+
+B. Robustness Analysis 1) Robustness to Large Motion: To assess the robustness of EvTexture++ under large motion, we examine its performance relative to motion magnitudes. Specifically, we compare the motion magnitude distributions of REDS4 [ 55 ] and CED [ 60 ], and analyze whether our method delivers larger gains in high-motion scenarios. 
+
+TABLE XI QUANTITATIVE COMPARISON (PSNR ↑/SSIM ↑) UNDER BD DEGRADATION 
+
+(4×). †† DENOTES MODELS ENHANCED BY OUR PLUG -IN EVTEXTURE ++ .Method BD Degradation UDM10 [58] Vimeo-90K-T [6] Vid4 [1] EDVR [12] 39.89/0.9686 37.81/0.9523 27.85/0.8503 BasicVSR [7] 39.96/0.9694 37.53/0.9498 27.96/0.8553 IconVSR [7] 40.03/0.9694 37.84/0.9524 28.04/0.8570 BasicVSR++ [8] 40.72/0.9722 38.21/0.9550 29.04/0.8753 MIA-VSR [10] 39.35/0.9668 37.09/0.9463 27.63/0.8430 IART [2] 41.15/ 0.9750 38.63/0.9582 29.60/0.8868 EBVSR [16] 40.12/0.9704 37.64/0.9508 28.26/0.8641 EvTexture [17] 40.27/0.9705 37.80/0.9517 28.91/0.8744 
+
+EvTexture++ 40.53/0.9722 38.02/0.9540 29.24/0.8865 
+
+IART †† 41.27 /0.9750 38.82 /0.9592 29.86 /0.8893 
+
+TABLE XII QUANTITATIVE COMPARISON WITH CONCURRENT EVENT -DRIVEN VSR  
+
+> METHODS ON THE
+
+VID 4 [1] DATASET FOR 4× VSR. Metric MamEVSR [39] EvSTVSR [42] EvEnhancer [74] EvTexture++ 
+
+PSNR ↑ 28.52 28.03 28.42 29.78 
+
+SSIM ↑ 0.8804 0.8309 0.8774 0.8983 
+
+LPIPS ↓ 0.2372 0.2543 0.2401 0.2048 
+
+TCC ↑× 10 3.037 2.774 2.972 3.832 
+
+tOF ↓× 10 1.528 1.532 1.688 1.158 
+
+#Params(M) 9.58 25.62 6.55 10.15 Runtime(ms) 145.2 567.7 1240.4 95.0 
+
+FLOPs(G) 623.7 1430.9 1356.3 808.6 
+
+We compute the optical flow between adjacent ground-truth frames using RAFT [ 29 ] and calculate the per-pixel flow magnitude √u2 + v2. Fig. 21 depicts the distribution of pixel counts over different movement magnitudes for the test sets. The distribution exhibits a long-tailed pattern. Notably, REDS4 contains significantly more pixels with magnitudes exceeding 50, while in CED, most motions are below 20 pixels. These results indicate that REDS4 involves substantially larger motion overall. Comparing EvTexture++ against EBVSR [ 16 ], we observe that on the high-motion REDS4, EvTexture++ achieves a gain of 1.46 dB, whereas on the lower-motion CED, the gain is 0.29 dB. These results suggest that our method offers enhanced robustness and larger improvements in scenarios characterized by large motion. 
+
+2) Performance under BD Degradation: We further evaluate robustness under BD degradation. This setting heavily sup-IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 16  
+
+> Fig. 21. Pixel movement distributions of the REDS4 [ 55 ] and CED [ 60 ] test sets. REDS4 shows larger motion, where EvTexture++ achieves higher gains (+1.46 dB) over EBVSR [16], indicating better robustness to large motion.
+
+presses high-frequency spatial details. Quantitative comparisons are reported in Tab. XI. As shown, EvTexture++ demonstrates exceptional robustness. Specifically, it surpasses its backbone, BasicVSR [ 7], by a substantial margin of 1.28 dB on Vid4. It also consistently outperforms the representative event-based method, EBVSR [ 16 ]. Moreover, to verify generalizability, we apply our plug-in to the advanced Transformer-based model, IART [ 2]. While IART is naturally strong, enhancing it with our module further boosts performance to state-of-the-art levels (e.g. , +0.26 dB on Vid4). This confirms that utilizing event signals remains highly effective for recovering lost details. 
+
+C. Comparison with Concurrent Works 
+
+We also compare EvTexture++ with three concurrent event-driven VSR methods: MamEVSR [ 39 ], EvSTVSR [ 42 ], and EvEnhancer [ 74 ]. As official implementations for some meth-ods are unavailable, we carefully reproduced these methods following their original papers. To ensure fairness, all methods were trained and evaluated under identical settings. The comparative results on the texture-rich Vid4 [ 1 ] dataset are summarized in Tab. XII. As observed, EvTexture++ con-sistently outperforms these concurrent approaches across all quality metrics. Specifically, in terms of spatial restoration, our method surpasses the second-best method, MamEVSR, by 1.26 dB in PSNR and achieves the lowest LPIPS score (0.2048), indicating superior capability in recovering fine-grained textures. Regarding temporal stability, EvTexture++ attains the best TCC and tOF scores, validating the effectiveness of the proposed TTA module in suppressing flickering artifacts. Furthermore, concerning computational efficiency, although EvEnhancer has the fewest parameters, its inference latency is notably high ( >1200ms). In contrast, EvTexture++ maintains the most competitive balance between performance and cost, achieving the fastest runtime (95.0ms) among all compared methods while delivering SOTA restoration quality. 
+
+D. Analysis of Sim-to-Real Domain Gap 
+
+Most event-driven VSR benchmarks [ 1], [ 6 ], [ 55 ] rely on the ESIM simulator [ 59 ] due to the scarcity of high-quality ground truth for real event cameras. While synthetic data facilitates controlled training, we acknowledge the inherent domain gap between simulation and reality. Real-world event sensors ( e.g. , DAVIS346 [ 65 ] or Prophesee) introduce non-ideal characteristics, such as stochastic background noise (hot pixels), temporal jitter, and threshold variations, which are absent in ideal simulation. Consequently, directly applying a model trained on synthetic data to real-world scenarios often degrades performance, as the network may misinterpret transient sensor noise as high-frequency textural details. To address these challenges, we empirically analyze the architectural robustness of EvTexture++ on the CED [ 60 ]dataset (see Tab. III). By training and evaluating on real-world event streams, our method achieves SOTA performance (33.71 dB PSNR) on this benchmark. We attribute this robustness to the design of the ITE module. The internal ConvGRU mechanism exploits temporal consistency: since valid textural structures are temporally stable while sensor noise is typically random and transient, the recurrent unit acts as a temporal filter. This mechanism suppresses noise while accumulating valid texture cues, ensuring that our framework adapts effectively to the complex real-world sensor characteristics. VI. C ONCLUSION 
+
+This paper presents EvTexture++, an event-driven framework dedicated to texture restoration in VSR. The framework adopts a two-branch structure, comprising an event-driven texture branch and a motion branch. In the texture branch, the ITE module progressively refines textures using high-temporal-resolution events, while in the motion branch, the TTA module enhances temporal consistency by leveraging complementary motion information from both events and RGB frames. In addition, EvTexture++ can serve as a plug-and-play module for existing VSR backbones, delivering substantial performance gains with minimal overhead. Extensive experiments verify its superior performance, particularly in texture-rich scenarios. 
+
+Limitations and Future Work. Our work has two limita-tions. First, we assume precise spatial alignment and identical resolution between event and RGB inputs. However, such a configuration is limited to a few specialized sensors. In practical systems, spatial parallax often exists, and event cameras typically have lower resolution. Therefore, real-world applications should account for these physical discrepancies. Second, our current evaluation is limited to deterministic CNN- and Transformer-based backbones. While extending EvTexture++ to diffusion-based VSR models [ 75 ], [ 76 ] is a promising direction, integrating events into the stochastic diffusion process involves higher computational costs and complex training strategies. We leave this for future exploration. REFERENCES [1] C. Liu and D. Sun, “On Bayesian adaptive video super resolution,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 36, no. 2, pp. 346–360, 2013. [2] K. Xu, Z. Yu, X. Wang, M. B. Mi, and A. Yao, “Enhancing video super-resolution via implicit resampling-based alignment,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2024, pp. 2546–2555. [3] T. Goto, T. Fukuoka, F. Nagashima, S. Hirano, and M. Sakurai, “Super-resolution system for 4k-hdtv,” in Proc. IEEE Int. Conf. Pattern Recogn. ,2014, pp. 4453–4458. [4] L. Zhang, H. Zhang, H. Shen, and P. Li, “A super-resolution reconstruc-tion algorithm for surveillance images,” Signal Processing , vol. 90, no. 3, pp. 848–859, 2010. IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 17 
+
+[5] H. Liu, W. Ma, Z. Ruan, C. Fang, F. Shang, Y. Liu, L. Wang, C. Wang, and D. Jiang, “A single frame and multi-frame joint network for 360-degree panorama video super-resolution,” Engineering Applications of Artificial Intelligence , vol. 134, Art. no. 108601, 2024. [6] T. Xue, B. Chen, J. Wu, D. Wei, and W. T. Freeman, “Video enhancement with task-oriented flow,” Int. J. Comput. Vis. , vol. 127, pp. 1106–1125, 2019. [7] K. C. Chan, X. Wang, K. Yu, C. Dong, and C. C. Loy, “BasicVSR: The search for essential components in video super-resolution and beyond,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2021, pp. 4947–4956. [8] K. C. Chan, S. Zhou, X. Xu, and C. C. Loy, “BasicVSR++: Improving video super-resolution with enhanced propagation and alignment,” in 
+
+Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2022, pp. 5972–5981. [9] M. Hu, K. Jiang, Z. Wang, X. Bai, and R. Hu, “Cycmunet+: Cycle-projected mutual learning for spatial-temporal video super-resolution,” 
+
+IEEE Trans. Pattern Anal. Mach. Intell. , vol. 45, no. 11, pp. 13 376– 13 392, 2023. [10] X. Zhou, L. Zhang, X. Zhao, K. Wang, L. Li, and S. Gu, “Video super-resolution transformer with masked inter&intra-frame attention,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2024, pp. 25 399–25 408. [11] H. Bai and J. Pan, “Self-supervised deep blind video super-resolution,” 
+
+IEEE Trans. Pattern Anal. Mach. Intell. , vol. 46, no. 7, pp. 4641–4653, 2024. [12] X. Wang, K. C. Chan, K. Yu, C. Dong, and C. Change Loy, “EDVR: Video restoration with enhanced deformable convolutional networks,” in 
+
+Proc. IEEE Conf. Comput. Vis. Pattern Recogn. Workshop , 2019, pp. 1954–1963. [13] P. Lichtsteiner, C. Posch, and T. Delbruck, “A 128 × 128 120 db 15 μslatency asynchronous temporal contrast vision sensor,” IEEE journal of solid-state circuits , vol. 43, no. 2, pp. 566–576, 2008. [14] Y. Jing, Y. Yang, X. Wang, M. Song, and D. Tao, “Turning frequency to resolution: Video super-resolution via event cameras,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2021, pp. 7772–7781. [15] Y. Lu, Z. Wang, M. Liu, H. Wang, and L. Wang, “Learning Spatial-Temporal Implicit Neural Representations for Event-Guided Video Super-Resolution,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2023, pp. 1557–1567. [16] D. Kai, Y. Zhang, and X. Sun, “Video Super-Resolution Via Event-Driven Temporal Alignment,” in Proc. IEEE Int. Conf. Image Process. IEEE, 2023, pp. 2950–2954. [17] D. Kai, J. Lu, Y. Zhang, and X. Sun, “EvTexture: Event-driven Texture Enhancement for Video Super-Resolution,” in Int. Conf. Mach. Learn. ,vol. 235. PMLR, 2024, pp. 22 817–22 839. [18] G. Gallego, T. Delbr ¨uck, G. Orchard, C. Bartolozzi, B. Taba, A. Censi, S. Leutenegger, A. J. Davison, J. Conradt, K. Daniilidis et al. , “Event-based vision: A survey,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 44, no. 1, pp. 154–180, 2020. [19] Q. Cai, J. Li, H. Li, Y.-H. Yang, F. Wu, and D. Zhang, “TDPN: Texture and detail-preserving network for single image super-resolution,” IEEE Trans. Image Process. , vol. 31, pp. 2375–2389, 2022. [20] D. Liu, X. Wang, R. Han, N. Bai, J. Hou, and S. Pang, “CTE-Net: Contextual Texture Enhancement Network for Image Super-Resolution,” 
+
+IEEE Trans. Multimedia , 2024. [21] Y. Chi, J. Gu, J. Zhang, W. Yang, and Y. Tian, “Egovsr: Toward high-quality egocentric video super-resolution,” IEEE Trans. Circuits Syst. Video Technol. , vol. 34, no. 11, pp. 11 838–11 850, 2024. [22] S. Shi, J. Gu, L. Xie, X. Wang, Y. Yang, and C. Dong, “Rethinking alignment in video super-resolution transformers,” Proc. Adv. Neural Inf. Process. Syst. , vol. 35, pp. 36 081–36 093, 2022. [23] H. Cho, J.-Y. Kang, T. Kim, Y. Jeong, and K.-J. Yoon, “Unifying low-resolution and high-resolution alignment by event cameras for space-time video super-resolution,” in Proc. Winter Conf. Appl. Comput. Vis. IEEE, 2025, pp. 9509–9520. [24] J. Liang, J. Cao, Y. Fan, K. Zhang, R. Ranjan, Y. Li, R. Timofte, and L. Van Gool, “VRT: A Video Restoration Transformer,” IEEE Trans. Image Process. , vol. 33, pp. 2171–2182, 2024. [25] Z. Qiu, H. Yang, J. Fu, D. Liu, C. Xu, and D. Fu, “Learning degradation-robust spatiotemporal frequency-transformer for video super-resolution,” 
+
+IEEE Trans. Pattern Anal. Mach. Intell. , vol. 45, no. 12, pp. 14 888– 14 904, 2023. [26] X. Wang, K. Yu, S. Wu, J. Gu, Y. Liu, C. Dong, Y. Qiao, and C. Change Loy, “ESRGAN: Enhanced super-resolution generative adversarial networks,” in Proc. Eur. Conf. Comput. Vis. Workshop , 2018, pp. 63–79. [27] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł . Kaiser, and I. Polosukhin, “Attention is all you need,” Proc. Adv. Neural Inf. Process. Syst. , vol. 30, pp. 5998–6008, 2017. [28] J. Liang, J. Cao, G. Sun, K. Zhang, L. Van Gool, and R. Timofte, “SwinIR: Image restoration using swin transformer,” in Proc. IEEE Int. Conf. Comput. Vis. Workshop , 2021, pp. 1833–1844. [29] Z. Teed and J. Deng, “RAFT: Recurrent All-pairs Field Transforms for optical flow,” in Proc. Eur. Conf. Comput. Vis. , 2020, pp. 402–419. [30] J. Dai, H. Qi, Y. Xiong, Y. Li, G. Zhang, H. Hu, and Y. Wei, “Deformable convolutional networks,” in Proc. IEEE Int. Conf. Comput. Vis. , 2017, pp. 764–773. [31] S. Shiba, Y. Klose, Y. Aoki, and G. Gallego, “Secrets of event-based optical flow, depth and ego-motion estimation by contrast maximization,” 
+
+IEEE Trans. Pattern Anal. Mach. Intell. , 2024. [32] Y. Gao, S. Li, Y. Li, Y. Guo, and Q. Dai, “Superfast: 200 × video frame interpolation via event camera,” IEEE Trans. Pattern Anal. Mach. Intell. ,vol. 45, no. 6, pp. 7764–7780, 2022. [33] H. Liu, J. Xu, S. Peng, Y. Chang, H. Zhou, Y. Duan, L. Zhu, Y. Tian, and L. Yan, “Ner-net+: Seeing motion at nighttime with an event camera,” 
+
+IEEE Trans. Pattern Anal. Mach. Intell. , 2025. [34] J. Han, Y. Yang, P. Duan, C. Zhou, L. Ma, C. Xu, T. Huang, I. Sato, and B. Shi, “Hybrid high dynamic range imaging fusing neuromorphic and conventional images,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 45, no. 7, pp. 8553–8565, 2023. [35] L. Sun, D. Gehrig, C. Sakaridis, M. Gehrig, J. Liang, P. Sun, Z. Xu, K. Wang, L. Van Gool, and D. Scaramuzza, “A unified framework for event-based frame interpolation with ad-hoc deblurring in the wild,” IEEE Trans. Pattern Anal. Mach. Intell. , 2024. [36] P. Duan, B. Li, Y. Yang, H. Lou, M. Teng, X. Zhou, Y. Ma, and B. Shi, “Eventaid: Benchmarking event-aided image/video enhancement algorithms with real-captured hybrid dataset,” IEEE Trans. Pattern Anal. Mach. Intell. , 2025. [37] Z. Xiao, D. Kai, Y. Zhang, Z.-J. Zha, X. Sun, and Z. Xiong, “Event-adapted video super-resolution,” in Proc. Eur. Conf. Comput. Vis. , 2024, pp. 217–235. [38] D. Kai, Y. Zhang, J. Wang, Z. Xiao, Z. Xiong, and X. Sun, “Event-enhanced blurry video super-resolution,” in Proc. AAAI Conf. Artificial Intell. , vol. 39, no. 4, 2025, pp. 4175–4183. [39] Z. Xiao and X. Wang, “Event-based video super-resolution via state space models,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , June 2025, pp. 12 564–12 574. [40] D. Kai, Z. Xiao, H. Zhu, J. Wang, Y. Zhang, and X. Sun, “Seeing the unseen: Zooming in the dark with event cameras,” in Proc. AAAI Conf. Artificial Intell. , 2026. [41] L. Zhu, B. Liao, Q. Zhang, X. Wang, W. Liu, and X. Wang, “Vision mamba: Efficient visual representation learning with bidirectional state space model,” in Int. Conf. Mach. Learn. , vol. 235. PMLR, 2024, pp. 62 429–62 442. [42] H. Yan, Z. Lu, Z. Chen, D. Ma, H. Tang, Q. Zheng, and G. Pan, “Evstvsr: Event guided space-time video super-resolution,” in Proc. AAAI Conf. Artificial Intell. , vol. 39, no. 9, 2025, pp. 9085–9093. [43] F. Fan, Y. Zhao, Y. Chen, N. Li, W. Jia, and R. Wang, “Local texture pattern estimation for image detail super-resolution,” IEEE Trans. Pattern Anal. Mach. Intell. , 2025. [44] A. Z. Zhu, L. Yuan, K. Chaney, and K. Daniilidis, “Unsupervised event-based learning of optical flow, depth, and egomotion,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2019, pp. 989–997. [45] Z. Wan, Y. Dai, and Y. Mao, “Learning dense and continuous optical flow from an event camera,” IEEE Trans. Image Process. , vol. 31, pp. 7237–7251, 2022. [46] A. Z. Zhu, Z. Wang, K. Khant, and K. Daniilidis, “EventGAN: Leveraging large scale image datasets for event cameras,” in Proc. IEEE Int. Conf. Comput. Photography . IEEE, 2021, pp. 1–11. [47] W. Shi, J. Caballero, F. Husz ´ar, J. Totz, A. P. Aitken, R. Bishop, D. Rueckert, and Z. Wang, “Real-time single image and video super-resolution using an efficient sub-pixel convolutional neural network,” in 
+
+Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2016, pp. 1874–1883. [48] O. Ronneberger, P. Fischer, and T. Brox, “U-Net: Convolutional networks for biomedical image segmentation,” in Proc. Int. Conf. Med. Image Comput. Comput. Assist. Interv. , 2015, pp. 234–241. [49] H. Jiang, D. Sun, V. Jampani, M.-H. Yang, E. Learned-Miller, and J. Kautz, “Super SloMo: High Quality Estimation of Multiple Intermedi-ate Frames for Video Interpolation,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2018, pp. 9000–9008. [50] A. Ranjan and M. J. Black, “Optical flow estimation using a spatial pyramid network,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. ,2017, pp. 4161–4170. [51] N. Ballas, L. Yao, C. Pal, and A. Courville, “Delving deeper into convolutional networks for learning video representations,” in Proc. Int. Conf. Learn. Repr. , 2016, pp. 1–12. IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE, VOL. 48, NO. 6, JUNE 2026 18 
+
+[52] M. Gehrig, M. Muglikar, and D. Scaramuzza, “Dense continuous-time optical flow from event cameras,” IEEE Trans. Pattern Anal. Mach. Intell. ,vol. 46, no. 7, pp. 4736–4746, 2024. [53] S. Tulyakov, D. Gehrig, S. Georgoulis, J. Erbach, M. Gehrig, Y. Li, and D. Scaramuzza, “Time lens: Event-based video frame interpolation,” in 
+
+Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2021, pp. 16 155–16 164. [54] M. Jaderberg, K. Simonyan, A. Zisserman et al. , “Spatial transformer networks,” Proc. Adv. Neural Inf. Process. Syst. , vol. 28, pp. 2017–2025, 2015. [55] S. Nah, S. Baik, S. Hong, G. Moon, S. Son, R. Timofte, and K. Mu Lee, “Ntire 2019 challenge on video deblurring and super-resolution: Dataset and study,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. Workshop ,2019, pp. 1996–2005. [56] K. Zhou, W. Li, L. Lu, X. Han, and J. Lu, “Revisiting temporal alignment for video restoration,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. ,2022, pp. 6053–6062. [57] J. Liang, Y. Fan, X. Xiang, R. Ranjan, E. Ilg, S. Green, J. Cao, K. Zhang, R. Timofte, and L. V. Gool, “Recurrent video restoration transformer with guided deformable attention,” Proc. Adv. Neural Inf. Process. Syst. ,vol. 35, pp. 378–393, 2022. [58] P. Yi, Z. Wang, K. Jiang, J. Jiang, and J. Ma, “Progressive fusion video super-resolution network via exploiting non-local spatio-temporal correlations,” in Proc. IEEE Int. Conf. Comput. Vis. , 2019, pp. 3106–3115. [59] H. Rebecq, D. Gehrig, and D. Scaramuzza, “ESIM: an open event camera simulator,” in Conference on Robot Learning (CORL) . PMLR, 2018, pp. 969–982. [60] C. Scheerlinck, H. Rebecq, T. Stoffregen, N. Barnes, R. Mahony, and D. Scaramuzza, “CED: Color event camera dataset,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. Workshop , 2019, pp. 1684–1693. [61] Y. Jo, S. W. Oh, J. Kang, and S. J. Kim, “Deep video super-resolution network using dynamic upsampling filters without explicit motion compensation,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2018, pp. 3224–3232. [62] L. Wang, Y. Guo, L. Liu, Z. Lin, X. Deng, and W. An, “Deep video super-resolution using HR optical flow estimation,” IEEE Trans. Image Process. , vol. 29, pp. 4323–4336, 2020. [63] Y. Tian, Y. Zhang, Y. Fu, and C. Xu, “TDAN: Temporally-deformable alignment network for video super-resolution,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2020, pp. 3360–3369. [64] M. Haris, G. Shakhnarovich, and N. Ukita, “Recurrent back-projection network for video super-resolution,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2019, pp. 3897–3906. [65] C. Brandli, L. Muller, and T. Delbruck, “Real-time, high-speed video decompression using a frame-and event-based DAVIS sensor,” in IEEE International Symposium on Circuits and Systems (ISCAS) . IEEE, 2014, pp. 686–689. [66] W.-S. Lai, J.-B. Huang, N. Ahuja, and M.-H. Yang, “Deep laplacian pyramid networks for fast and accurate super-resolution,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2017, pp. 624–632. [67] D. Kingma and J. Ba, “Adam: A Method for Stochastic Optimization,” in Proc. Int. Conf. Learn. Repr. , 2015, pp. 1–15. [68] I. Loshchilov and F. Hutter, “SGDR: stochastic gradient descent with warm restarts,” in Proc. Int. Conf. Learn. Repr. , 2017, pp. 1–16. [69] Y. Blau and T. Michaeli, “The perception-distortion tradeoff,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2018, pp. 6228–6237. [70] M. Chu, Y. Xie, J. Mayer, L. Leal-Taix ´e, and N. Thuerey, “Learning temporal coherence via self-supervision for gan-based video generation,” 
+
+ACM Transactions on Graphics (TOG) , vol. 39, no. 4, Art. no. 75, 2020. [71] Z. Chi, R. Mohammadi Nasiri, Z. Liu, J. Lu, J. Tang, and K. N. Plataniotis, “All at once: Temporally adaptive multi-frame interpolation with advanced motion modeling,” in Proc. Eur. Conf. Comput. Vis. , 2020, pp. 107–123. [72] Z. Zhang, R. Li, S. Guo, Y. Cao, and L. Zhang, “TMP: Temporal Motion Propagation for Online Video Super-Resolution,” IEEE Trans. Image Process. , 2024. [73] C. Liu, H. Yang, J. Fu, and X. Qian, “Learning trajectory-aware transformer for video super-resolution,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2022, pp. 5687–5696. [74] S. Wei, F. Li, S. Tang, Y. Zhao, and H. Bai, “Evenhancer: Empowering effectiveness, efficiency and generalizability for continuous space-time video super-resolution with events,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2025, pp. 17 755–17 766. [75] X. Yang, C. He, J. Ma, and L. Zhang, “Motion-guided latent diffusion for temporally consistent real-world video super-resolution,” in Proc. Eur. Conf. Comput. Vis. , 2024, pp. 224–242. [76] J. Wang, Z. Lin, M. Wei, Y. Zhao, C. Yang, C. C. Loy, and L. Jiang, “Seedvr: Seeding infinity in diffusion transformer towards generic video restoration,” in Proc. IEEE Conf. Comput. Vis. Pattern Recogn. , 2025, pp. 2161–2172. 
+
+Dachun Kai received the B.S. degree from Hefei University of Technology (HFUT), Hefei, China, in 2021. He is currently pursuing the Ph.D. degree with the University of Science and Technology of China (USTC), Hefei, China. His research interests include computational photography, image and video processing, and deep learning. 
+
+Jiayao Lu received the B.S. degree from University of Science and Technology of China (USTC), Hefei, China, in 2018. He is currently pursuing a Ph.D. degree at the USTC. His research interests include video understanding, computer vision, and deep learning. 
+
+Yueyi Zhang (Member, IEEE) received the B.S. degree in applied mathematics and the Ph.D. degree in information and communication engineering from the University of Science and Technology of China (USTC), Hefei, China, in 2010 and 2015, respectively. He is currently with Midea Group, Shanghai, China. Prior to this, he was an Associate Researcher with USTC. He has authored or co-authored more than 90 papers in refereed journals and conferences. His research interests include computational photography and event-based vision. 
+
+Xiaoyan Sun (Senior Member, IEEE) received the B.S., M.S., and Ph.D. degrees in computer science from Harbin Institute of Technology, Harbin, China, in 1997, 1999, and 2003, respectively. She is currently a Full Professor with the Uni-versity of Science and Technology of China, Hefei, China, and the Deputy Director of the National En-gineering Laboratory for Brain-inspired Intelligence Technology and Application. Prior to joining USTC in 2019, she was with Microsoft Research Asia, Beijing, China, from 2003 to 2019, most recently as a Senior Researcher. Since 2000, she has been an Intern with Microsoft Research Asia before joining Microsoft Research Asia in 2003. She has authored or co-authored more than 100 publications in journals and conferences, and contributed to ten standard proposals (with one accepted). She holds more than ten granted U.S. patents. Her research interests include computer vision, image/video processing, machine learning, and artificial intelligence. Dr. Sun was a recipient of the Best Paper Award of IEEE TRANSACTIONS ON CIRCUITS AND SYSTEMS FOR VIDEO TECHNOLOGY in 2009 and the Best Student Paper Award of VCIP 2016. She serves on the Senior Editorial Board of IEEE JOURNAL ON EMERGING AND SELECTED TOPICS IN CIRCUITS AND SYSTEMS and as an Associate Editor for Signal Processing: Image Communication .

@@ -1,0 +1,326 @@
+Title: Fully Distributed Multi-View 3D Tracking in Real-Time
+
+URL Source: https://arxiv.org/pdf/2606.13127v1
+
+Published Time: Fri, 12 Jun 2026 01:12:47 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# Fully Distributed Multi-View 3D Tracking in Real-Time 
+
+Byron Hernandez 1,2, Fangyu Li 2, Aotian Wu 2, Paul J. Shin 2, Kaustubh Purandare 2, and Henry Medeiros 1 
+
+> 1
+
+University of Florida, Gainesville, FL, USA 
+
+{bhernandezosorio,hmedeiros}@ufl.edu  
+
+> 2
+
+NVIDIA Corporation, Santa Clara, CA, USA 
+
+{bhernandez,fangyul,aotianw,pshin,kpurandare}@nvidia.com 
+
+Abstract. Multi-camera tracking with overlapping fields of view typ-ically relies on centralized fusion, which creates computational bottle-necks that prevent deployment at scale. We present MV3DT , a fully dis-tributed framework for real-time multi-view 3D tracking that achieves ac-curate identity propagation and occlusion recovery through peer-to-peer coordination, eliminating the need for central aggregation. Each cam-era node executes a lightweight modular pipeline comprising monocular 3D perception, distributed multi-view association, and collaborative fu-sion via lightweight messaging. MV3DT achieves 96.5% IDF1 and 93.1% MOTA on WILDTRACK, competitive with state-of-the-art centralized methods, while demonstrating superior scalability: sustaining 30 FPS on 100 cameras with <10ms inter-camera latency and only 2.2% communi-cation overhead. MV3DT operates in a zero-shot regime given camera calibrations, requiring no scene-specific learning and making it directly deployable in new environments. These results establish MV3DT as a practical solution for real-time multi-view tracking in large-scale over-lapping camera networks. 
+
+# 1 Introduction 
+
+Multi-camera multi-target tracking (MCMT) is a prevalent problem in com-puter vision. Large-scale applications such as warehouse monitoring and intelli-gent cities require tens to thousands of cameras to effectively cover the region of interest [24]. The increasing participation in the AI City Challenge reflects the growing importance of large-scale MCMT [25, 41, 45]. MCMT techniques can be classified as centralized, decentralized, or distributed, depending on how they execute processes and aggregate data [14]. They may also focus on cam-era topologies with overlapping or non-overlapping fields of view (FOV). The amount of FOV overlap determines the availability of multi-view geometric cues to improve tracking accuracy. On the other hand, non-overlapping camera sys-tems typically use appearance representations and trajectory prediction based on camera linking models to achieve effective tracking [1, 31].           
+
+> arXiv:2606.13127v1 [cs.CV] 11 Jun 2026 2B. Hernandez et al.
+> Fig. 1: MV3DT Overview. MV3DT deploys a modular pipeline on each camera node without requiring a central server. Monocular Detection extracts 2D bound-ing boxes. Then, 3D foot location estimates and full-body bounding boxes are com-puted for Data Association , where detection-to-targets matches, both intra-view and multi-view, are found using several similarity measures. Target Management main-tains target state and ID consistency across overlapping cameras through distributed ID propagation, and integrates Kalman filtering for multi-view measurement fusion. Dis-tributed Communication uses MQTT publish/subscribe messaging for peer-to-peer coordination. Each camera maintains a local database of shared target states, enabling coordinated tracking without centralized aggregation. MV3DT achieves highly effec-tive ID propagation and multi-view integration through fully-distributed interactions ,allowing for online and real-time deployment of large camera networks.
+
+Centralized approaches leverage overlapping camera setups to exploit global information from all cameras on a single fusion stage , which can improve accu-racy but concentrates all computation and communication in one logical node [14]. In large deployments, such centralized fusion often becomes impractical due to bandwidth, latency, and robustness constraints. Many distributed MCMT meth-ods target non-overlapping or sparsely overlapping camera topologies, where cross-camera association relies primarily on appearance and temporal constraints. In these settings, cameras often operate without explicit 3D calibration and maintain consistency mainly through label and appearance exchange. The cur-rent paradigm of distributed techniques for overlapping camera setups relies on parallel single-camera tracking (SCT) processes followed by a centralized multi-camera aggregation stage. This two-stage dependency on a central entity hinders real-time deployment and limits scalability. Overlapping FOVs provide complementary 3D geometric information that reduces the impact of occlusions, which is one of the most challenging issues in multi-object tracking [4, 18]. Although centralized methods have long benefited from overlapping FOVs, fully distributed MCMT systems that operate directly in the 3D ground plane and are demonstrated at large scale on fixed, calibrated overlapping camera networks remain scarce [1,33,51]. The fundamental difficulty MV3DT 3
+
+is a self-conflicting requirement: the multi-view geometric cues improve tracking accuracy, yet exploiting them in a distributed manner is challenging and has limited the scalability of accurate multi-view tracking. One of the main challenges for scalable deployment is the availability of com-puting resources. Advances in computer and communication technology have enabled larger interconnected camera networks for real-time supervision. Simul-taneously, models and algorithm complexity have grown proportionally. There-fore, accurately tracking multiple objects in real-time across large camera net-works while leveraging overlapping views remains an open challenge. Recent fully distributed approaches already demonstrate that peer-to-peer coordination can sustain online multi-camera tracking [33, 51], but they primarily operate in 2D image space and do not exploit calibrated 3D ground-plane geometry in large-scale overlapping camera networks. As illustrated in Fig. 1, we propose a fully distributed MCMT framework in which a modular pipeline processes each video feed in parallel without a central aggregator. Each camera node executes a pipeline comprising modules for data association, target management, motion estimation, monocular 3D perception, inter-camera communication, and distributed multi-view fusion. The framework enables multi-view identity propagation and 3D fusion through lightweight inter-camera communication, allowing each node to reason locally while achieving globally consistent associations across overlapping views. Our main contributions are highlighted below: 
+
+– A fully distributed multi-view 3D tracking framework for calibrated overlap-ping cameras, in which each node performs local 3D tracking, peer-to-peer ID propagation, and multi-view fusion without a central aggregation server. 
+
+– An occlusion-aware monocular 3D detector with mechanisms that turn noisy single-view detections into reliable multi-view measurements. 
+
+– A three-stage distributed ID propagation protocol that ensures global ID convergence without a central node. 
+
+– Large-scale evaluation with state-of-the-art accuracy on standard bench-marks, measured communication overhead, and synchronized deployment. 
+
+# 2 Related Work 
+
+Early object tracking systems based on multiple cameras [19,39] used triangula-tion techniques or exploited the geometry of the scene [22] to combine informa-tion from different perspectives. One of the main motivations for the development of multi-camera tracking techniques was the resolution of target occlusions in single-view systems [4]. These approaches were designed to operate on a sin-gle computer or on multiple computers orchestrated by a leader. As the scale of multi-camera systems increased, it became clear that these early centralized 
+
+approaches were limited to small areas covered by few cameras [40]. 
+
+Decentralized approaches group cameras into clusters and designate lead nodes or cluster heads to aggregate information from neighboring cameras, re-ducing communication overhead [21, 53]. Cluster heads coordinate within their 4 B. Hernandez et al. 
+
+groups and communicate summaries across cluster boundaries. Fully distributed 
+
+approaches rely on peer-to-peer strategies in which all camera nodes operate as equal participants without hierarchical coordination entities [7]. In such systems, cameras exchange information and reach consensus through decentralized algo-rithms, eliminating any dependency on leader nodes or coordinators. Distributed methods have mainly focused on camera networks with disjoint FOVs so far, where appearance-based object re-identification (reID) and inter-camera linking suffice for cross-camera association. Recent fully distributed MCMT systems fur-ther demonstrate that peer-to-peer coordination can sustain online multi-camera tracking. Some approaches tackle the association problem by sharing ID labels and appearance features across cameras and maintaining a distributed label– appearance table to reach ID consensus [51]; others share full tracklets across cameras and fuse these hypotheses into consistent multi-camera trajectories [33]. However, these methods operate primarily in 2D image space and cannot per-form 3D ground-plane tracking in large-scale overlapping camera networks. Camera topology shapes algorithm design [1, 31]. For non-overlapping or sparsely overlapping networks, linking models discover spatial or topological connectivity between camera views, learning which cameras observe adjacent or connected regions to establish inter-camera associations [15, 34]. Recent ap-proaches present reID strategies when targets are not visible for prolonged pe-riods [26, 37]. These methods rely on discriminative appearance features, which are also used for multi-camera associations. For overlapping FOVs, geometric approaches are commonly used for asso-ciation. Examples include the projection of image coordinates onto a global coordinate system [19] and homography-based matching [38]. Recent methods leverage transformer-based architectures and bird’s-eye view (BEV) representa-tions to aggregate multi-view information early in the pipeline [42, 46]. BEV-Former [20] introduces spatiotemporal transformers that project multi-camera features onto a unified BEV space, enabling robust 3D object detection and tracking. Building on this, TrackTacular [42] combines temporal feature aggre-gation with appearance and motion cues for multi-view pedestrian and vehicle tracking. BEV-SUSHI [46] extends the BEV paradigm with hierarchical graph neural networks for long-term identity association. MVTrajecter [50] incorpo-rates BEV motion and appearance costs, achieving state-of-the-art performance on pedestrian benchmarks. Other recent methods explore end-to-end temporal aggregation [52] and unified graph-based frameworks, such as the Unified Mes-sage Passing Network (UMPN) [12]. Tracking accuracy depends on detection quality [3], and multi-view detection fusion methods follow the same taxonomy: in non-overlapping networks, each camera runs a 2D detector and reID or linking models handle cross-camera association; in overlapping scenarios, centralized methods may perform fusion at detection time with multi-view or BEV detectors, while distributed systems keep detection local (single-view 2D per node) and perform 3D reasoning at association. Widely used single-view 2D detectors include YOLO [16, 35, 36], DETR and its variants [5, 56, 57], and recent YOLO iterations [43, 44]. Multi-MV3DT 5
+
+view detectors [2, 8, 9, 11] improve accuracy in overlapping FOVs but require centralized aggregation and do not scale to distributed deployments. 
+
+# 3 Multi-Object Tracking Framework 
+
+MV3DT introduces a novel fully distributed and modular MCMT paradigm. Our framework aims for a real-time, online, and accurate pipeline for multi-object tracking on multiple cameras; occlusion handling and scalability are key objec-tives. Similar in philosophy to [21,47], we exploit simultaneous information from multiple views in a fully 3D setting. We use a lightweight peer-to-peer communi-cation strategy to share multi-view information and resolve tracking ambiguities in real-time. Rather than resorting to a centralized multi-view tracking mech-anism or aggregating the results of multiple single-view trackers, our method treats each camera as an independent agent. Hence, it can be instantiated as a single process that communicates with other cameras within a communication network. This section describes the core components: detection, data association, target management, multi-view fusion, and communications. 
+
+3.1 Object Detection Module 
+
+This module produces a set of object bounding boxes {bd} for each input frame, where bd = [ u, v, w, h ], and (u, v ) are the pixel coordinates of its top-left corner and (w, h ) are its width and height. 
+
+Monocular Foot Localization with Occlusion Handling. To enable 3D ge-ometric reasoning, we model target objects as cylinders C = ( rm, h m) with radius 
+
+rm and height hm and assume that targets move on the ground plane ( z = 0 ). This recovery is applied to each bd using a default cylinder with nominal height 
+
+hm = 1 .65 m and radius rm = 0 .3 m following anthropometric conventions [32]. We further assume that cameras are positioned at heights z > h m with angles 
+
+θ < 90 ◦ with respect to the z-axis to map each bd to a location on the ground plane. When these assumptions are met, most partial occlusions affect only the lower portion of the target. Fig. 2 illustrates the steps for full body recovery. The waist point (u, v ) is back-projected to the world plane at z = hm/2 using the camera projection matrix; the cylinder is placed there and projected back into the image to obtain a predicted silhouette (blue convex hull in Fig. 2). We then compare this silhouette to bd. If the projected model is taller than the detection, we treat the lower body as occluded and align the top edges; otherwise we align the bottom edges to refine the foot location. Algorithm 1 summarizes the steps. This procedure yields the recovered (full-body) bounding box of the projected cylinder ( brec ) and ground-plane foot location (x, y ). From those, we derive the target visibility vobj and camera-target distance dcam according to 
+
+vobj = min 
+
+
+
+1, area( b)area( brec )
+
+
+
+, dcam = ∥ccam − (x, y, h m/2) ∥2 , (1) 6 B. Hernandez et al. 
+
+Fig. 2: Full body bounding box and foot location recovered from an occluded detection: (left) projection of the cylinder model at the expected waist point pwaist , (center) convex hull of the projected cylinder used to recover the full body, (right) adjusting the projection based on top-edge comparison to handle occlusions. 
+
+Algorithm 1 Recover 3D coordinates from bounding box 
+
+Require: b = [ u, v, w, h ], cylinder model C = ( rm, h m),camera projection matrix Pc (per camera) 
+
+Ensure: recovered box brec , ground location (x, y, 0) ,visibility vobj , distance camera-object dcam 
+
+1: pwaist ← (u + w/ 2, v + h/ 2) 
+
+2: Project pwaist to z = hm/2 using Pc.3: Project cylinder C to the image using Pc.4: Compute the convex hull of the projected cylinder (foot and head circles), take its axis-aligned bounding rectangle bC
+
+5: ydiff ← vC − v (compare top edges) 6: if ydiff < 0 then 
+
+7: yshift ← ydiff (align top) 8: xshift proportional to the projective “leaning” 9: else 
+
+10: yshift ← (hC − h)/2
+
+11: xshift ← 0
+
+12: end if 
+
+13: padj waist ← (px 
+
+> waist
+
+− xshift , p y 
+
+> waist
+
+− yshift )
+
+14: Re-project and update brec with adjusted waist 15: Use Pc to back-project padj waist to world z = 0 (x, y, 0)16: Compute vobj and dcam using Eq. (1) 17: return brec , (x, y, 0) , v obj , d cam MV3DT 7
+
+where ccam is the camera location. These metrics are used for weighting associ-ations, gating matches, and prioritizing targets in multi-view fusion stages. 
+
+3.2 Data Association 
+
+Data association modules ensure the consistency of target identities on multiple views and across time. They depend on the target tracking state, which can be one of the following: 
+
+Tentative: on probation but not confirmed. 
+
+Active: confirmed and visible. 
+
+Quasi-Active: confirmed in other views but not visible. 
+
+Inactive: confirmed but currently not visible. 
+
+Terminated: no longer available. The transitions between tracking states are shown in Fig. 3.    
+
+> Tentative Active Quasi-Active
+> Terminated Inactive
+
+Fig. 3: MV3DT track lifecycle and recovery logic. Tracks begin as Tentative, are pro-moted to Active after a short probation with consistent matches, and fall back to Inactive for shadow tracking when detections are missed. Quasi-Active denotes targets confirmed by peer cameras. enabling multi-view continuity, while Terminated closes stale tracks. 
+
+Single View Data Association ensures the consistency of target identities from frame to frame by matching detections bd to target predictions bt. Data association is performed using intersection over union as an overlap similarity 
+
+SIoU , size similarity SSize (d, t ) = min 
+
+ area( bd)area( bt) , area( bt)area( bd)
+
+
+
+(ratio of bounding box areas), and ReID similarity SReID for appearance. 
+
+ReID Features for Appearance. A dedicated ReID module extracts a feature vector fd from each detection crop using a ReID model as in [48] and maintains 8 B. Hernandez et al. 
+
+a gallery of such features {ft,i } from each target’s history. ReID similarity SReID 
+
+is given by the maximum cosine distance between the detection feature and the elements of the gallery: SReID (d, t ) = max i f ⊺ 
+
+> d
+
+ft,i (with ∥fd∥ = 1 ). The overall similarity for data association is a convex combination: 
+
+SGlobal = w1SReID + w2SIoU + w3SSize , w1 + w2 + w3 = 1 . (2) Similar to ByteTrack [55], our method performs greedy association at each phase, but it comprises three logically distinct stages: 
+
+– Stage 1 : High confidence detections are associated with confirmed Active 
+
+and Inactive targets. 
+
+– Stage 2 : Active targets unmatched in the first stage are associated with low confidence detections. 
+
+– Stage 3 : Remaining high confidence detections are associated with Tenta-tive targets. 
+
+Multi-View Association shares data among cameras to maintain track conti-nuity. From the multi-camera point of view, we define the ego-cam as the camera view under consideration, and peer-cams as cameras in the network whose FOVs overlap with the ego-cam’s. Each ego-cam stores tracklet data from its peer-cams in a PeerTargetDB structure. 
+
+Multi-View Tracklet Matching. Central to multi-view association is tracklet matching : we compare ego and peer tracklets, each a sequence of (f, x, y )
+
+(frame index and 3D feet positions). We search over a bounded time shift 
+
+∆t ∈ [−∆max , ∆ max ] to account for small synchronization offsets between cam-eras. For each shift we collect frames where both tracklets are present, and if at least n ≥ nmin common frames are found, we compute ST = 1 /(1 + pD2/n ),where D2 = P 
+
+> i
+
+d2 
+
+> i
+
+, is the sum of the Euclidean distances between the two feet positions at the i-th common frame. We take the maximum score over all shifts. Algorithm 2 summarizes the procedure. Our multi-view target associa-tion mechanism allows for fully distributed ID propagation, which is executed simultaneously by each camera and consists of three stages. 
+
+Stage 1 – Re-Association at ID Acquisition. When a target becomes Active , we first try to re-associate it within the ego-cam (matching and recovering a shadow track) as described in Sec. 3.3. If no match is found, we match the target trajec-tory against PeerTargetDB and adopt a peer ID if ST > τ peer . Since multiple cameras may simultaneously track the same target, the IDs are timestamped and preference is given to the oldest ID. This ensures ID convergence for the same target across cameras. If both steps fail, the target receives a new ID. 
+
+Stage 2 – Late Peer Re-Association. In certain scenarios, such as initialization or in the presence of non-negligible communication delays, tracks on different cameras may become Active nearly simultaneously. To alleviate this problem, we allow tracklet matching to occur for a period Trec (in frames) after the target’s activation. During this period, the target is considered recently active. MV3DT 9
+
+Algorithm 2 Tracklet match score (ego vs. peer) 
+
+Require: Tracklets T1, T2 (lists of (f, x, y )), time-shift range ∆max ,minimum common frames nmin 
+
+Ensure: Similarity score ST ∈ [0 , 1] 
+
+1: Build map: frame f 7 → index in T2
+
+2: Smax ← 0
+
+3: for ∆t = −∆max to ∆max do 
+
+4: n ← 0, D2 ← 0
+
+5: for each (f1, x 1, y 1) in T1 do 
+
+6: Look up f2 = f1 + ∆t in T2 to get (x2, y 2)
+
+7: if entry exists then 
+
+8: D2 ← D2 + ( x1−x2)2 + ( y1−y2)2; n ← n + 1 
+
+9: end if 
+
+10: end for 
+
+11: if n ≥ nmin then 
+
+12: S ← 1/(1 + pD2/n ); Smax ← max( Smax , S )
+
+13: end if 
+
+14: end for 
+
+15: return Smax 
+
+Stage 3 – ID Correction. When multiple targets with similar motion patterns are close to each other or when targets remain in the image border for a long period, their 3D location estimates can be inaccurate, potentially leading to incorrect associations. This stage detects them by performing tracklet matching between associated targets. When any associated target no longer meets the matching criteria, i.e., ST < τ peer , the algorithm checks for the age of the targets, and the older target keeps the ID. 
+
+3.3 Target Management 
+
+Target management handles the lifecycle of tracked objects and their trajectories based on ego-cam and peer-cam data. 
+
+Single-View Target Management. Following the core principles of SORT [3] and DeepSORT [48], and as illustrated in Fig. 3, unmatched detections initialize new tracks in Tentative mode, and after a probation age, the target becomes 
+
+Active if it accumulates enough matches. Targets without a current match tran-sition to Inactive , which keeps track through misdetections and brief occlusions by updating the target locations using motion prediction, a strategy we call shadow tracking. Since target motion estimates can drift during shadow tracking, recovering a target after occlusion based solely on its current position can be inaccurate. Hence, we maintain a re-association database ( ReAssocDB ) that stores trajec-tory projections from targets in shadow tracking. When a track becomes Active 10 B. Hernandez et al. 
+
+after its probation period, its trajectory is compared with all Inactive trajecto-ries in ReAssocDB to obtain ST. If a match occurs ( ST > τ ego ), the new track inherits the identity and history of the corresponding Inactive target. If an Inactive target is matched with a detection before reaching its maxi-mum shadow tracking age, it transitions back to Active . Otherwise, it is termi-nated and its trajectory removed from ReAssocDB .
+
+Multi-View Target Management. The following mechanisms use peer data to manage the lifecycle of the targets. When no measurements are available in the ego-cam, we can use peer-cam observations to keep tracking the target. We introduce the quasi-active state for those cases. In quasi-active tracking, the target state is updated using only peer-cam measurements. The target returns to active if matched with a detection or is terminated if not matched and peer measurements are no longer available. To better address the early birth of targets, our method also initiates the association process based on peer-cam observations. When a new target is par-tially detected (i.e., it is becoming unoccluded or is at the edges of the FOV) or far from the camera, its detections can have very low confidence. If such de-tections align with a confident peer target, they probably represent an actual target. Thus, MV3DT starts a new track in these early detection cases. Similar to the early tracker instantiation, when targets are fully occluded before the ego-cam can see them for the first time, MV3DT can “see-through” the occlusions by instantiating a new track for such targets. A see-through target is initialized in quasi-active mode, as long as a peer-cam provides a confident state and the target location projects onto the ego-cam FOV. 
+
+3.4 Multi-View Measurement Fusion. 
+
+Motion estimation is performed by a Kalman filter [17] to maintain the state (feet location and constant velocity) of each target and predict their locations for data association using ego-cam measurements. Our system also fuses measurements whenever a target is visible in different camera views. However, factors such as low visibility or a long distance from the camera degrade measurement quality, sometimes so much so that a peer measurement should be treated as an outlier. We therefore apply the following criteria before fusing a peer measurement with the ego-cam estimate: i) it projects onto the ego-cam FOV; ii) its visibility (from the monocular detection module) is greater than a minimum threshold; iii) its distance from the ego-cam target prediction is less than a threshold; iv) the peer target visibility is greater than the ego target visibility; and v) the distance from the target to the peer camera is smaller than its distance to the ego-cam. Criteria (i)–(iii) ensure the measurement is geometrically and qualitatively acceptable; (iv) and (v) ensure that fusing it actually improves over the ego estimate. Measurements meeting these criteria are fed into the state estimator jointly with the ego-cam measurements to update the target states. Each Kalman filter iteration runs one prediction step and multiple correction steps, one for each measurement. MV3DT 11                       
+
+> frame
+> camID
+> targetID
+> targetID Ts
+> all
+> targetAge
+> state
+> stateTime
+> visibility
+> camDist
+> tracklet
+> tracklet, stateUpdate
+> prevID
+> adoptedID
+> Fig. 4: Message fields: all message types include frame ,camID ,targetID , and targetID Ts (timestamp). tracklet and stateUpdate also carry targetAge ,state ,stateTime ,
+> visibility , and camDist ;tracklet further includes the tracklet payload, while
+> adoptedID adds only prevID (the ID replaced by targetID ).
+
+3.5 Inter-camera Communication 
+
+The communication module is based on a publish/subscribe paradigm, in which each camera publishes its data on a dedicated topic and other cameras selectively subscribe to these topics to receive the information they require. 
+
+Message Types. The protocol defines three message types (Fig. 4): tracklet , sent when a target becomes active and used to create entries in the PeerTargetDB ;
+
+stateUpdate , sent after each Kalman update to refresh existing entries; and 
+
+adoptedID , sent when an ID changes due to late peer re-association or ID correction to update the corresponding entry. The communication and data processing overhead in MV3DT is dependent on a configurable subscription graph. For large-scale deployments, a naive, fully-connected graph (“all-to-all” configuration) would flood every camera with irrel-evant data. This creates high network usage and CPU overhead. To prevent this, cameras only subscribe to its peers, i.e., other cameras with overlapping FOVs. MV3DT’s modular design allows for different communication technologies and protocols. We currently support an in-memory module for single-computer deployments, using shared memory for low-latency message passing, and an MQTT-based module [23] for distributed setups, using Eclipse Mosquitto [13] as the message broker. 
+
+# 4 Experiments and Results 
+
+We evaluate our approach on three benchmark datasets, comparing 3D tracking accuracy and scalability against state-of-the-art methods. Our experiments demonstrate that MV3DT achieves competitive accuracy while offering superior scalability for large-scale deployments. We use NVIDIA DeepStream [27] for video ingestion and generic people detectors from NVIDIA TAO [30]. We denote as PNT the transformer-based detector PeopleNet Transformer 1.1 [29] used in the tracking accuracy assessment and as PN3 the lightweight detector PeopleNet 2.6.3 [28] used for better time performance in the scalability evaluation. 12 B. Hernandez et al. 
+
+4.1 Datasets WILDTRACK [6] is a widely used multi-view pedestrian tracking benchmark featuring 7 synchronized cameras with overlapping fields of view covering an outdoor plaza. The dataset provides video sequences for 2,000 frames at 10 FPS with 400 annotated frames at 2 FPS. Camera calibrations are also provided. 
+
+SCOUT [12] is a recent larger scale dataset with 25 calibrated cameras cap-turing real outdoor pedestrian traffic over long sequences. It provides 12,000 frames at 10 FPS covering a 450-meter path, with ground truth annotations for 8 cameras. AI City 2024 Warehouse Synthetic Dataset [45] is one of the AI City Challenge scenes representing a 100-camera simulation of a large-scale warehouse environment for 6 minutes. It features dense camera coverage, and realistic occlusion patterns. The dataset is used for stress-test scalability and real-time performance analysis. 
+
+4.2 Tracking Accuracy on WILDTRACK 
+
+Tab. 1 compares MV3DT against recent state-of-the-art multi-view tracking methods on WILDTRACK. MV3DT achieves 94.3% IDF1, 93.3% MOTA, and 93.5% MOTP, placing it competitively among state-of-the-art methods. Al-though Tracktacular [42], UMPN [12], and MVTrajecter [50] achieve slightly higher scores, they rely on learned, scene-specific models. MV3DT trades marginal accuracy for deployability and scalability.                                     
+
+> Table 1: Results on the WILDTRACK test set: last 10% of the 7 sequences. Method IDF1 ↑MOTA ↑MOTP ↑FPS ↑
+> EarlyBird [6] 92.3 89.5 86.6 –MVTr [50] 93.1 92.3 92.7 BEV-SUSHI [42] 93.4 87.5 94.3 –MVFlow [10] 93.5 91.3 ––TrackTacular [42] 95.3 91.8 85.4 –UMPN [12] 96.3 93.9 86.9 2MVTrajecter [50] 96.5 94.3 93.0 –
+> MV3DT (Ours) w/ PNT 96.5 93.1 94.6 27
+
+4.3 Tracking Accuracy and Performance on SCOUT 
+
+Tab. 2 presents results on the labeled subset of the SCOUT dataset (8 annotated cameras), using a 50% train/test split as in [12]. MV3DT outperforms the base-line methods by a margin of +14% IDF1 +25% MOTA and +19% MOTP when using PNT. With the PN3 detector, MV3DT also shows scale-up capabilities: higher throughput and still better accuracy than UMPN. MV3DT 13                          
+
+> Table 2: Results on the SCOUT test set: last 50% of the 8 annotated cameras. Method IDF1 ↑MOTA ↑MOTP ↑FPS ↑
+> ByteTrack MV [12] 24.3 19.0 25.7 -UMPN [12] 26.9 24.1 26.1 2UMPN + SP 27.0 25.0 27.8 -
+> MV3DT (Ours) w/ PN3 34.4 44.3 42.8 55 MV3DT (Ours) w/ PNT 41.7 50.9 47.1 28
+
+4.4 Ablation of the ID propagation protocol 
+
+To quantify the contribution of each stage of our ID propagation protocol, we run an ablation on WILDTRACK by progressively enabling Stages 1–3 of multi-view association. As shown in Tab. 3, multi-view processing dramatically improves ID consistency over a single-view baseline (multi-view communication disabled). Adding Stage 1 (ID Acquisition) more than doubles both metrics, showing the benefit of cross-camera matching. Late Re-Association brings a particularly large gain on WILDTRACK, due to the short sequence length that allows for a signif-icant proportion of nearly simultaneous activation during pipeline initialization. Finally, ID Correction further reduces residual ID errors, pushing IDF1 to 94.3 and MOTA to 93.3, close to state-of-the-art MCMT methods.            
+
+> Table 3: Ablation of the three-stage ID propagation on WILDTRACK. Each row adds the indicated component. “Single-view only” disables multi-view interactions. Configuration IDF1 ↑MOTA ↑
+> Single-view only 25.0 15.9 + Stage 1 (ID Acquisition) 55.4 44.9 + Stage 2 (Late Re-Assoc.) 87.5 89.6 + Stage 3 (ID Correction) 96.5 93.1
+
+4.5 Large-Scale Deployment 
+
+To validate the scalability of our method, we use two NVIDIA H100 NVL GPUs to process the AI City 2024 Warehouse Synthetic Dataset (50 streams per GPU). 
+
+Synchronized real-time performance: Barrier-based frame synchronization limits each camera’s input stream to at most one frame per 1/f s period. In this scenario, MV3DT sustains 30 FPS across all 100 streams. GPU utilization averages 95% and the network bandwidth for inter-camera communication is 44 MB/s total (0.44 MB/s per camera), indicating efficient resource usage and demonstrating the lightweight nature of the communications. The average inter-camera message latency, which is critical for real-time multi-view association, is 5 ms with the 95th percentile at 12 ms, well below the typical 33 ms real-time budget. 14 B. Hernandez et al. 
+
+Asynchronous stress test: Without frame synchronization, MV3DT achieves 44.5 FPS on 100 streams. For comparison, a single-view baseline achieves 45.5 FPS, indicating the overhead of distributed ID propagation and fusion of only 2.2%. Tab. 4 reports tracking accuracy with and without frame synchronization on the 100-camera warehouse scene. We also provide the current leaderboard on the AI City Challenge, as a reference of expected accuracy. However, note that our accuracy evaluation is only for the specific warehouse scene.                           
+
+> Table 4: Tracking accuracy on the 100-camera AI City Warehouse Scene: synchronized vs. unsynchronized (stress test). Leaderboard results on the complete AICity’24 dataset are provided for reference. These methods do not report real-time performance but are unlikely to achieve real-time operation at such a scale. Method / Setup IDF1 ↑HOTA ↑FPS ↑
+> Single-View 9.3 15.1 45.5 Synchronized w/ PN3 79.5 68.6 30.0 Unsynchronized w/ PN3 72.8 68.3 44.5 (Un)synchronized w/ PNT 82.7 71.1 15.6 SJTU-Lenovo [49] –67.2 –Yachiyo [54] –71.9 –BEV-SUSHI [46] –81.2 –
+
+# 5 Conclusions 
+
+MV3DT addresses a critical gap in multi-camera tracking: the need for real-time, scalable systems that operate without scene-specific training or retraining for different camera configurations. Unlike learned approaches, such as UMPN, BEV-SUSHI, and MVTrajecter, MV3DT is a zero-shot method that requires only camera calibrations. Most competing methods cannot be deployed to different camera configurations without retraining, effectively locking solutions to their training geometry. Our experiments demonstrate that MV3DT achieves competitive accuracy on WILDTRACK, SCOUT, and the AI City 2024 warehouse scene, while provid-ing superior scalability. On the 100-camera warehouse setup, MV3DT sustains 30 FPS with 5 ms average inter-camera latency and only 2.2% communication overhead. On SCOUT (8 cameras), it reaches 28–55 FPS depending on the detec-tor, compared to 2 FPS for UMPN. The ability to scale out by adding more nodes and cameras is where the architectural difference matters most. Most methods require all cameras to share a single GPU, so throughput and memory bounds prevent them from scaling beyond a handful of cameras. MV3DT, in contrast, is designed for distributed deployment: each camera stream runs in a separate pro-cess (machine or GPU), and nodes communicate only via lightweight messaging (e.g., MQTT). Scaling is thus limited by network bandwidth rather than GPU memory or compute. This positions MV3DT as uniquely suited for large-scale real-world deployments in warehouses, airports, and smart cities. MV3DT 15 
+
+# References 
+
+1. Amosa, T.I., Sebastian, P., Izhar, L.I., Ibrahim, O., Ayinla, L.S., Bahashwan, A.A., Bala, A., Samaila, Y.A.: Multi-camera multi-object tracking: a review of current trends and future advances. Neurocomputing (2023) 1, 2, 4 2. Aung, S., Park, H., Jung, H., Cho, J.: Enhancing multi-view pedestrian detection through generalized 3d feature pulling. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 1196–1205 (2024) 5 3. Bewley, A., Ge, Z., Ott, L., Ramos, F., Upcroft, B.: Simple online and real-time tracking. In: 2016 IEEE International Conference on Image Processing (ICIP) (2016) 4, 9 4. Black, J., Ellis, T.: Multi camera image tracking. Image and Vision Computing (2006) 2, 3 5. Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A., Zagoruyko, S.: End-to-end object detection with transformers. In: European Conference on Computer Vision (2020) 4 6. Chavdarova, T., Baqué, P., Bouquet, S., Maksai, A., Jose, C., Bagautdinov, T., Lettry, L., Fua, P., Van Gool, L., Fleuret, F.: WILDTRACK: A multi-camera HD dataset for dense unscripted pedestrian detection. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2018) 12 7. Chen, K.W., Lai, C.C., Lee, P.J., Chen, C.S., Hung, Y.P.: Adaptive learning for target tracking and true linking discovering across multiple non-overlapping cam-eras. IEEE Transactions on Multimedia (2011) 4 8. Daryani, A.E., Bhutta, M., Hernandez, B., Medeiros, H.: Camuvid: Calibration-free multi-view detection. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 1220–1229 (2025) 5 9. Dong, Z., Zhang, Y., Huang, X., Ji, H., Shi, Z., Zhan, X., Chen, J.: Mv-detr: Multi-modality indoor object detection by multi-view detecton transformers. arXiv preprint arXiv:2408.06604 (2024) 5 10. Engilberge, M., Liu, W., Fua, P.: Multi-view tracking using weakly supervised hu-man motion prediction. In: IEEE Winter Conference on Applications of Computer Vision (2023) 12 11. Engilberge, M., Shi, H., Wang, Z., Fua, P.: Two-level data augmentation for cali-brated multi-view detection. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 128–136 (2023) 5 12. Engilberge, M., Vrkic, I., Grosche, F.W., Pilet, J., Turetken, E., Fua, P.: One graph to track them all: Dynamic gnns for single-and multi-view tracking. arXiv preprint arXiv:2507.08494 (2025) 4, 12, 13 13. Foundation, E.: Eclipse mosquitto. https://mosquitto.org/ (2026), message bro-ker for MQTT 11 14. Iguernaissi, R., Merad, D., Aziz, K., Drap, P.: People tracking in multi-camera systems: a review. Multimedia Tools and Applications 78 , 10773–10793 (2019) 1, 215. Jiang, N., Bai, S., Xu, Y., Xing, C., Zhou, Z., Wu, W.: Online inter-camera trajec-tory association exploiting person re-identification and camera topology. In: Pro-ceedings of the 26th ACM International Conference on Multimedia (2018) 4 16. Jiang, P., Ergu, D., Liu, F., Cai, Y., Ma, B.: A review of YOLO algorithm devel-opments. Procedia Computer Science (2022) 4 17. Kalman, R.E.: A new approach to linear filtering and prediction problems. ASME Journal of Basic Engineering (1960) 10 16 B. Hernandez et al. 18. Kim, J., Shin, W., Park, H., Baek, J.: Addressing the occlusion problem in multi-camera people tracking with human pose estimation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 5463– 5469 (2023) 2 19. Lee, L., Romano, R., Stein, G.: Monitoring activities from multiple video streams: Establishing a common coordinate frame. IEEE Transactions on Pattern Analysis and Machine Intelligence (2000) 3, 4 20. Li, Z., Wang, W., Li, H., Xie, E., Sima, C., Lu, T., Qiao, Y., Dai, J.: BEV-Former: Learning bird’s-eye-view representation from multi-camera images via spa-tiotemporal transformers. In: European Conference on Computer Vision. pp. 1–18. Springer (2022) 4 21. Medeiros, H., Park, J., Kak, A.: Distributed object tracking using a cluster-based Kalman filter in wireless camera networks. IEEE Journal of Selected Topics in Signal Processing (2008) 3, 5 22. Mikic, I., Santini, S., Jain, R.: Video processing and integration from multiple cameras. In: Proceedings of the 1998 Image Understanding Workshop, Morgan-Kaufman, San Francisco (1998) 3 23. MQTT.org: MQTT - The Standard for IoT Messaging — mqtt.org. https://mqtt. org/ (2019) 11 24. Naphade, M., Anastasiu, D.C., Sharma, A., Jagrlamudi, V., Jeon, H., Liu, K., Chang, M.C., Lyu, S., Gao, Z.: The NVIDIA AI City Challenge. In: 2017 IEEE SmartWorld, Ubiquitous Intelligence & Computing, Advanced &Trusted Computed, Scalable Computing & Communications, Cloud & Big Data Computing, Internet of People and Smart City Innovation (Smart-World/SCALCOM/UIC/ATC/CBDCom/IOP/SCI) (2017) 1 25. Naphade, M., Wang, S., Anastasiu, D.C., Tang, Z., Chang, M.C., Yao, Y., Zheng, L., Rahman, M.S., Arya, M.S., Sharma, A., et al.: The 7th AI city challenge. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (2023) 1 26. Nguyen, Q.Q.V., Le, H.D.A., Chau, T.T.T., Luu, D.T., Chung, N.M., Ha, S.V.U.: Multi-camera people tracking with mixture of realistic and synthetic knowledge. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (2023) 4 27. NVIDIA Corporation: NVIDIA deepstream SDK. https://developer.nvidia. com/deepstream-sdk (2026) 11 28. NVIDIA Corporation: NVIDIA TAO peoplenet. https://catalog.ngc.nvidia. com/orgs/nvidia/teams/tao/models/peoplenet (2026), deployable quantized ONNX v2.6.3 11 29. NVIDIA Corporation: NVIDIA TAO peoplenet transformer. https://catalog. ngc . nvidia . com / orgs / nvidia / teams / tao / models / peoplenet _ transformer 
+
+(2026), deployable v1.1 11 30. NVIDIA Corporation: NVIDIA TAO toolkit. https://developer.nvidia.com/ tao-toolkit (2026) 11 31. Olagoke, A.S., Ibrahim, H., Teoh, S.S.: Literature survey on multi-camera system and its application. IEEE Access (2020) 1, 4 32. Pavlakos, G., Choutas, V., Ghorbani, N., Bolkart, T., Osman, A.A.A., Tzionas, D., Black, M.J.: Expressive body capture: 3D hands, face, and body from a single image. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (2019) 5 MV3DT 17 33. Previtali, F., Bloisi, D.D., Iocchi, L.: A distributed approach for real-time multi-camera multiple object tracking. Machine Vision and Applications (2017) 2, 3, 434. Quach, K.G., Nguyen, P., Le, H., Truong, T.D., Duong, C.N., Tran, M.T., Luu, K.: DyGLIP: A dynamic graph model with link prediction for accurate multi-camera multiple object tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 13784–13793 (2021) 4 35. Redmon, J.: You only look once: Unified, real-time object detection. In: Proceed-ings of the IEEE Conference on Computer Vision and Pattern Recognition (2016) 436. Redmon, J., Farhadi, A.: YOLO9000: better, faster, stronger. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2017) 4 37. Ristani, E., Tomasi, C.: Features for multi-target multi-camera tracking and re-identification. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2018) 4 38. Siddique, A., Medeiros, H.: Tracking passengers and baggage items using multiple overhead cameras at security checkpoints. IEEE Transactions on Systems, Man, and Cybernetics: Systems (2022) 4 39. Stein, G.P.: Tracking from multiple view points: Self-calibration of space and time. In: Proceedings. 1999 IEEE Computer Society Conference on Computer Vision and Pattern Recognition (1999) 3 40. Taj, M., Cavallaro, A.: Distributed and decentralized multicamera tracking. IEEE Signal Processing Magazine (2011) 3 41. Tang, Z., Wang, S., Anastasiu, D.C., Chang, M.C., Sharma, A., Kong, Q., Ko-bori, N., Gochoo, M., Batnasan, G., Otgonbold, M.E., Alnajjar, F., Hsieh, J.W., Kornuta, T., Li, X., Zhao, Y., Zhang, H., Radhakrishnan, S., Jain, A., Kumar, R., Murali, V.N., Wang, Y., Pusegaonkar, S.S., Wang, Y., Biswas, S., Wu, X., Zheng, Z., Chakraborty, P., Chellappa, R.: The 9th AI City Challenge (2025), 
+
+https://arxiv.org/abs/2508.13564 142. Teepe, T., Wolters, P., Gilg, J., Herzog, F., Rigoll, G.: Lifting multi-view detection and tracking to the bird’s eye view. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 667–676 (2024) 4, 12 43. Wang, A., Chen, H., Liu, L., Chen, K., Lin, Z., Han, J., Ding, G.: YOLOv10: Real-time end-to-end object detection. In: Advances in Neural Information Processing Systems (2024) 4 44. Wang, C.Y., Yeh, I.H., Liao, H.Y.M.: YOLOv9: Learning what you want to learn using programmable gradient information. arXiv preprint arXiv:2402.13616 (2024) 445. Wang, S., Anastasiu, D.C., Tang, Z., Chang, M.C., Yao, Y., Zheng, L., Rahman, M.S., Arya, M.S., Sharma, A., Chakraborty, P., et al.: The 8th AI City Challenge. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (2024) 1, 12 46. Wang, Y., Meinhardt, T., Cetintas, O., Yang, C.Y., Satish Pusegaonkar, S., Mis-saoui, B., Biswas, S., Tang, Z., Leal-Taixé, L.: Bev-sushi: Multi-target multi-camera 3d detection and tracking in bird’s-eye view. arXiv e-prints pp. arXiv–2412 (2024) 4, 14 47. Wang, Y.: Distributed multi-object tracking with multi-camera systems composed of overlapping and non-overlapping cameras. The University of Nebraska-Lincoln (2013) 5 18 B. Hernandez et al. 48. Wojke, N., Bewley, A., Paulus, D.: Simple online and realtime tracking with a deep association metric. In: 2017 IEEE International Conference on Image Processing (ICIP) (2017) 7, 9 49. Xie, Z., Ni, Z., Yang, W., Zhang, Y., Chen, Y., Zhang, Y., Ma, X.: A robust online multi-camera people tracking system with geometric consistency and state-aware re-id correction. In: CVPR Workshop. Seattle, WA, USA (2024) 14 50. Yamane, T., Masumura, R., Suzuki, S., Orihashi, S.: Mvtrajecter: Multi-view pedestrian tracking with trajectory motion cost and trajectory appearance cost. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 13270–13280 (2025) 4, 12 51. Yang, S., Ding, F., Li, P., Hu, S.: Distributed multi-camera multi-target association for real-time tracking. Scientific Reports (2022) 2, 3, 4 52. Yang, Y., Xu, M., Ralph, J.F., Ling, Y., Pan, X.: An end-to-end tracking frame-work via multi-view and temporal feature aggregation. Computer Vision and Image Understanding 249 , 104203 (2024) 4 53. Yoder, J., Medeiros, H., Park, J., Kak, A.C.: Cluster-based distributed face tracking in camera networks. IEEE Transactions on Image Processing (2010) 3 54. Yoshida, R., Okubo, J., Fujii, J., Amakata, M., Yamashita, T.: Overlap suppression clustering for offline multi-camera people tracking. In: CVPR Workshop. Seattle, WA, USA (2024) 14 55. Zhang, Y., Sun, P., Jiang, Y., Yu, D., Weng, F., Yuan, Z., Luo, P., Liu, W., Wang, X.: Bytetrack: Multi-object tracking by associating every detection box. In: European Conference on Computer Vision (2022) 8 56. Zhao, Y., Lv, W., Xu, S., Wei, J., Wang, G., Dang, Q., Liu, Y., Chen, J.: RT-DETR: DETRs beat YOLOs on real-time object detection. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 16788– 16797 (2024) 4 57. Zong, Z., Song, G., Liu, Y.: DETRs with collaborative hybrid assignments training. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (2023) 4
