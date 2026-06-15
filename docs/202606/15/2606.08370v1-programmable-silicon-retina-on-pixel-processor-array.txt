@@ -1,0 +1,751 @@
+Title: Programmable Silicon Retina on Pixel Processor Array
+
+URL Source: https://arxiv.org/pdf/2606.08370v1
+
+Published Time: Tue, 09 Jun 2026 01:08:38 GMT
+
+Number of Pages: 25
+
+Markdown Content:
+# PROGRAMMABLE SILICON RETINA ON PIXEL PROCESSOR 
+
+# ARRAY 
+
+Maciej Lewandowski 
+
+Department of Electrical and Electronic Engineering University of Manchester, UK 
+
+maciej.lewandowski@postgrad.manchester.ac.uk 
+
+Prince Philip 
+
+Department of Electronic Systems Engineering, Indian Institute of Science, Bangalore, India 
+
+princephilip@iisc.ac.in 
+
+Alexandre Marcireau 
+
+Department of Computer Science University of Manchester, UK 
+
+alexandre.marcireau@manchester.ac.uk 
+
+Chetan Singh Thakur 
+
+Department of Electronic Systems Engineering Indian Institute of Science, Bangalore, India 
+
+csthakur@iisc.ac.in 
+
+André van Schaik 
+
+Department of Computer Science University of Manchester, UK 
+
+andre.vanschaik@manchester.ac.uk 
+
+Piotr Dudek 
+
+Department of Electrical and Electronic Engineering University of Manchester, UK 
+
+p.dudek@manchester.ac.uk 
+
+June 9, 2026 
+
+## ABSTRACT 
+
+Standard dynamic vision sensors approximate retinal processing by detecting temporal contrast changes, offering high speed and high dynamic range. In this work, we explore whether incorporating additional biologically inspired processing stages - specifically spatial filtering and gain control -can offer advantages for certain downstream tasks such as saliency prediction. We present the first implementation of a multi-stage Silicon Retina model on the SCAMP-5 Pixel Processor Array, along with a GPU-based simulation framework. We evaluate the performance of our model on Video Intensity Reconstruction and Video Saliency Prediction. While the bio-inspired model is less effective at reconstructing absolute intensity frames, it achieves a 13% reduction in saliency prediction loss in comparison to standard DVS event representation, while reducing the event rate by approximately 47%. These experiments are obtained using a lightweight ≈ 100 k-parameter FireNet-style network, adapted from event-based reconstruction to saliency prediction. These results suggest that the silicon retina’s "information distillation" mechanism can achieve a more efficient representation for downstream neural networks, particularly in bandwidth-constrained edge applications. 
+
+## 1 Introduction 
+
+Conventional frame-based CMOS image sensors have achieved remarkable advances in resolution and cost efficiency. However, they remain poorly suited for high-speed (>1k FPS) or low-power vision applications [1, 2, 3, 4]. Streaming full-resolution frames at kilohertz rates imposes severe bandwidth and latency constraints, often requiring energy-intensive GPUs to process the vast amount of data. In resource-constrained environments, such as high-speed robotics, these limitations often require trade-offs, such as frame downsampling or algorithmic simplification, which introduces latency or degrades performance. Furthermore, for battery-constrained systems such as monitoring or video analytics, analysing static scenes is often inefficient, as the primary information of interest lies in dynamic changes and movement. In contrast, Dynamic Vision Sensors (DVS) offer a biologically inspired alternative [5, 4, 6]. Rather than capturing complete frames, these sensors encode visual input as sparse, asynchronous streams of brightness changes (polarity events) [4, 7]. When transmitted sparsely, these event streams inherently minimise bandwidth and latency, offering 
+
+> arXiv:2606.08370v1 [eess.IV] 6 Jun 2026
+
+A PREPRINT - J UNE 9, 2026 high temporal resolution. Consequently, event cameras have been successfully applied in domains including space imaging [8], satellite observation [9], high-speed robotics [4, 10, 11], autonomous driving [1], and high-framerate video reconstruction [12, 2]. Furthermore, the asynchronous nature of events aligns naturally with emerging neural architectures such as Spiking Neural Networks [13, 14] or asynchronous event-based graph neural networks [15, 16]. Assuming no noise, it is possible to recover full frames from events using simple filtering or classical methods [17, 11]. Most commercially available event cameras [18, 19, 20] implement a relatively simplified model of retinal processing. They primarily mimic thresholded photoreceptor derivatives, and skip key biological features such as spatial filtering, contrast gain control and retinal adaptation mechanisms [21, 22, 23]. To address the need for more sophisticated in-sensor processing, Pixel-Processor Arrays (PPAs) offer a fundamentally different paradigm. PPAs integrate programmable Processing Elements (PEs) directly into the imaging array, integrating sensing and processing at the pixel level [24, 25]. Similar to DVS, PPAs can reduce power consumption by transmitting sparse feature data instead of raw frames. PPAs also enable the execution of complex visual pipelines, such as feature tracking [26], gaze tracking [27] or running a small neural network creating an embedding [28] —all at kilohertz frame rates with sub-watt power budgets. In this work, we present an implementation of a biologically inspired silicon retina model on the SCAMP-5 PPA [24, 25]. Unlike standard event sensors, our implementation captures a richer approximation of retinal dynamics, incorporating stages that resemble the Outer Plexiform Layer (OPL), Contrast Gain Control and spiking Ganglion Cells [22, 6]. We map these stages onto the SCAMP-5 hardware using analog operations and superpixel memory layout [29]. Deploying such a complex model on SCAMP-5 poses significant challenges due to per-pixel memory limits and arithmetic noise. Given these constraints and the limited commercial availability of PPA hardware, we also provide a complementary digital simulation framework. This setup utilises a high-speed commercial image sensor and custom CUDA kernels to emulate the retinal model on a GPU. Having demonstrated that the proposed silicon retina can be implemented both on analog hardware (PPA) and in a CUDA-based simulation framework, we next investigate whether its additional biological complexity provides any advantage over a standard DVS representation in downstream vision tasks. We therefore compare Retina Events and DVS Events under a controlled evaluation setting, using the same source videos, network architecture [2], data augmentation and training procedure. We evaluate two complementary tasks: video intensity reconstruction, which tests how much intensity information is preserved, and video saliency prediction, which tries to predict the saliency map derived from human eye-fixation data. Our results show that Retina Events are less suitable for reconstructing absolute intensity frames, indicating that the model discards intensity information through its filtering stages. However, this loss of photometric detail appears to act as an information distillation: on video saliency prediction, Retina Events achieve a 13% lower validation loss than DVS Events while using the same preprocessing, network, and training setup. The key contributions of this work are: • A complete mapping of a multi-stage silicon retina model onto the SCAMP-5 pixel-processor array, incorpo-rating biologically motivated functions such as center-surround filtering and spike-based encoding. To the best of our knowledge, this is the first implementation of a multi-stage silicon retina model with center-surround filtering, contrast gain control, and spike-based ON/OFF output on a Pixel Processor Array. • An implementation strategy to mitigate SCAMP-5 constraints, using a superpixel memory architecture to increase memory depth and a 5-bit fixed-point multiplication scheme using analog operations. • A novel, accessible simulation framework combining an off-the-shelf high-speed sensor (VD55G0) with CUDA acceleration. This allows for the simulation of silicon retina dynamics on standard hardware, enabling easier, further research at the cost of reduced power efficiency in comparison to PPA solution. • An empirical evaluation of biologically inspired event representations on downstream reconstruction and saliency-prediction tasks. We show that DVS outperforms silicon retina on the video reconstruction task, however, on video saliency prediction, silicon retina events achieve a loss 13 % lower than standard DVS events while being 47% sparser. Code, models, implementation details, and demonstration videos are currently being prepared for release and will be made available in a cleaned and documented repository here https://github.com/mlewandowski0/sillicon-retina. 2A PREPRINT - J UNE 9, 2026 
+
+Figure 1: Visual summary of the proposed framework. (a) Standard intensity frames captured by a digital camera. (b) The Dynamic Vision Sensor (DVS) approach, which generates a stream of temporal events (x, y, p, t ). (c) The bio-inspired Silicon Retina model investigated in this work. (d) Simulated output of a conventional DVS (temporal contrast only) using the method from [30]. (e) Simulated output from the proposed Silicon Retina model. (f) The SCAMP-5 Pixel Processor Array (analog hardware) utilized to implement the silicon retina directly at the focal plane. (g) The downstream evaluation pipeline (Section 4), which investigates the benefits of the retinal events for semantic computer vision tasks using large-scale synthetic data. 
+
+## 2 Silicon Retina Model 
+
+Existing retinal models range from highly detailed biophysical simulations to efficient functional approximations [23, 31, 32]. Biophysical models often capture non-trivial connectivity, cellular operations and synaptic interactions at the cost of high computational complexity. On the other side, functional models typically use a sequence of filtering stages to efficiently reproduce experimentally observed outputs. Many functional approaches follow a Linear-Nonlinear (LN) architecture, consisting of linear filtering of the visual stimulus, a static nonlinearity, and a spike-generation stage. In this work, we implement the biologically plausible retina model proposed in [22]. This functional model extends standard LN architectures by incorporating a biologically plausible Contrast Gain Control mechanism. While it abstracts away specific cellular details and non-trivial topology, it captures essential retinal dynamics - particularly adaptation to varying light conditions - better than static LN models [22]. We selected this model because it balances biological fidelity with computational efficiency, making it suitable for acceleration on hardware such as FPGAs [6], analog implementations [33] or, as in this work, Pixel Processor Arrays. 3A PREPRINT - J UNE 9, 2026 The model implements three sequential stages : 1. Outer Plexiform Layer (OPL): Models photoreceptors and horizontal cells using spatio-temporal filtering to extract edges and motion (center-surround dynamics). 2. Bipolar Cell Layer: Implements a non-linear feedback mechanism to achieve local contrast gain control. 3. Inner Plexiform Layer (IPL) and Ganglion Cells: Converts the analog currents into discrete spike events using Leaky Integrate-and-Fire (LIF) neurons. 
+
+2.1 Outer Plexiform Layer (OPL) 
+
+The OPL mimics the synaptic interactions between photoreceptors, horizontal cells, and bipolar cells [22]. It transforms the input luminance L into a center-surround signal by computing the difference between a narrow (pixel) "center" current IC and a wider (neighborhood) "surround" current, IS . Functionally, this stage behaves as a spatio-temporal band-pass filter: spatially, it acts as a Difference of Gaussians (DoG) to detect edges; temporally, the delay between center and surround integration allows the system to respond to motion. The dynamics are modelled by the following equations: 
+
+IC = TC ∗ EC ∗ GC ∗ L (1) 
+
+IS = ES ∗ GS ∗ IC (2) 
+
+IOPL = λ(IC − ωOP L IS) (3) where L is the input luminance, while GC and GS denote spatial (Gaussian) filters applied to the center and surround areas, respectively. TC denotes a high-pass temporal filter, while EC and ES represent low-pass temporal filters. The asterisk symbol (*) represents the convolution operation. λ is a scalar signifying amplification and ωOP L denotes how much surround is removed from the center signal. 
+
+2.2 Contrast Gain Control in Bipolar Cells 
+
+Biological vision must operate across light intensities spanning approximately 14 orders of magnitude. Photoreceptors alone cannot cover this range, so the visual system must adapt continuously to changes in illumination. This adaptation is achieved through multiple gain-control mechanisms, including iris constriction, photoreceptor adaptation, and cortical lateral inhibition [22, 34, 31]. In the retina, this adaptive regulation is implemented partly through contrast gain control between bipolar and amacrine cells, whereby local stimulus contrast dynamically adjusts the gain of the bipolar-cell response. Experimental evidence for this mechanism was obtained by presenting stimuli with different contrasts across a cell’s receptive field and measuring the resulting input-output relationship [22]. This mechanism is modeled as a non-linear feedback loop. The bipolar cell membrane potential VBIP is governed by a leaky integration, with the leak conductance gA varying per pixel. The following equation captures this: 
+
+IBIP = C dV BIP 
+
+dt = IOP L − gAVBIP (4) Here IOP L acts as the driving current. The variable conductance gA acts as a divisive feedback term, effectively changing the input gain. The conductance gA is derived from a spatially ( GA) and temporally ( EA) filtered state of the cell, passed through a non-linear function Q.
+
+gA = GA ∗ EA ∗ Q(VBIP ) (5) The function Q(VBIP ) defines how the system adapts to contrast. It is modelled as a parabolic function: 
+
+Q(VBIP ) = g0 
+
+> A
+
++ λAV 2 
+
+> BIP
+
+(6) In regions of high contrast (large VBIP ), function output Q(VBIP ) increases, causing gA to rise. A larger gA increases the "leak" in equation 4, which reduces the gain and prevents saturation. For low contrast, gA remains near its resting value g0 
+
+> A
+
+which maintains high sensitivity. The parameter λA controls the strength of this feedback loop. 
+
+2.3 Inner Plexiform Layer and Ganglion cells 
+
+The final stage converts the analog bipolar signals into a stream of spikes by modeling the output of the Retinal Ganglion Cells. This is achieved by sending current from non-spiking bipolar and amacrine cells from the previous stage to a spiking ganglion cell model. This behaviour is captured by: 
+
+Igang = N (T2 ∗ VBIP ) (7) 4A PREPRINT - J UNE 9, 2026 
+
+Figure 2: Visualisation of the multi-stage retinal processing pipeline. (a) Input stimulus: Frame from a 100 FPS recording captured via the VD55G0 sensor ( 640 × 600 pixels). (b) Center current ( IC ) and (c) Surround current (IS ) computed in the Outer Plexiform Layer. (d) The resulting OPL difference current ( IOP L ), highlights edges and movements. (e) The Bipolar Cell membrane potential ( VBIP ), which is modulated by (f) the adaptive local gain (gA). (g) The membrane potential of the Leaky Integrate-and-Fire (LIF) ganglion layer. (h) The final asynchronous spike output generated by complementary ON/OFF LIF neurons ( V + 
+
+> LIF
+
+and V − 
+
+> LIF
+
+) provides a sparse, event-based representation of the scene. where T2 is a temporal filter and N (·) is a rectification function used by Wohrer et al [22], and models the nonlinear synaptic transmission from bipolar to ganglion cells. 
+
+N (V ) = 
+
+( i0 
+
+> G
+> 1−λG(V−v0
+> G)/i 0
+> G
+
+if V < v 0
+
+> G
+
+i0 
+
+> G
+
++ λG(V − v0
+
+> G
+
+) if V > v 0
+
+> G
+
+(8) where the parameters from equation 8 ( i0
+
+> G
+
+, λ G, v 0
+
+> G
+
+) enable modelling of the specific ganglion cell responses [22], and change depending on what subtype of ganglion cell is modelled. The current drives a Leaky Integrate-and-Fire (LIF) neuron, as follows: 
+
+τm
+
+dV LIF 
+
+dt = −(VLIF − Vrest ) + R · Igang (9) The spiking and reset dynamics are defined as : 
+
+spike( t) = 
+
+1, VLIF (t) ≥ Vth ,
+
+0, VLIF (t) < V th , (10) 
+
+VLIF (t+) = 
+
+VLIF (t) − Vreset , VLIF (t) ≥ Vth ,VLIF (t), VLIF (t) < V th . (11) If the threshold Vth is not reached, spike (t) = 0 . This mechanism produces an asynchronous event stream similar to that of a DVS, but derived from a richer, spatio-temporal dynamics of the retinal layer. In this section, we described a model producing a single event stream. However, standard event-based processing relies on complementary ON and OFF polarity events. The extension to dual-polarity output involves a hardware-specific approximation and is described in Section 2.3.1. The model, as well as some of the outputs from the described layers, can be seen in Fig. 2. 
+
+2.3.1 Generating ON/OFF Polarity Events in Retina Model 
+
+Standard event-based algorithms and hardware rely on signed polarity updates (ON and OFF events). In the model described so far, we only generate a single polarity stream of events. To support this, and to mirror the parallel ON/OFF 5A PREPRINT - J UNE 9, 2026 streams, we extend the Ganglion layer to two complementary Leaky-Integrate-Fire neuron channels. These channels are driven by rectified versions of the bipolar output, effectively splitting the signal into positive and negative signals. More particularly, we modify the equation 7 and define the separate driving currents for the ON and OFF channels as : 
+
+I+ 
+
+> gang
+
+= N ′(+1 , T 2 ∗ VBIP ) = N (T2 ∗ VBIP ) (12) 
+
+I− 
+
+> gang
+
+= N ′(−1, T 2 ∗ VBIP ) = N (−T2 ∗ VBIP ) (13) These currents drive two independent LIF neuron populations : 
+
+τ +
+
+> m
+
+dV +
+
+> LIF
+
+dt = −(V + 
+
+> LIF
+
+− V +
+
+> rest
+
+) + R+ · I+ 
+
+> gang
+
+(14) 
+
+τ −
+
+> m
+
+dV −
+
+> LIF
+
+dt = −(V − 
+
+> LIF
+
+− V −
+
+> rest
+
+) + R− · I− 
+
+> gang
+
+(15) This configuration produces two "complementary" event streams (positive and negative polarity), which makes the output compatible with standard event-processing algorithms. In this work, we assume that τ + 
+
+> m
+
+= τ − 
+
+> m
+
+, V + 
+
+> rest
+
+= V − 
+
+> rest
+
+and 
+
+R+ = R− for simplicity; however, this can be changed easily in the SCAMP-5 implementation and digital simulation framework. 
+
+## 3 Implementation of Silicon Retina Model on Pixel-Processor Array 
+
+3.1 SCAMP-5 Pixel Processor Array 
+
+In this section, we describe briefly the capabilities of the Pixel Processor Array used in this work. Instead of streaming full raw frames off-chip to an external host for processing, PPA performs massively parallel computation at the point where light is captured. The chip has a 256 × 256 grid of heterogeneous Processing Elements (PEs), where each PE corresponds to a single pixel ( Fig. 1 d) ). Each PE is an analog "microprocessor" containing: 1. a photodiode for light acquisition, 2. an analog Arithmetic Logic Unit (ALU) capable of basic arithmetic (addition, subtraction, division by 2) and logic operations. 3. six general-purpose analog registers (labelled A through F) for storing continuous variables (which can be discretized to 8-bit signed integers). 4. seven single-bit, volatile digital registers (DREGs) for local logic, and a few more for conditional execution. 5. a local interconnect network allowing data exchange with the four immediate neighbors (North, East, South, West). By operating entirely within the pixel array, SCAMP-5 can compute at kilohertz framerates while consuming just under 1 watt of power. This efficiency has enabled applications and algorithms infeasible with conventional camera sensors, including gaze tracking [27] at 10,000 frames per second (FPS), low-bandwidth feature descriptors and tracking [35, 26] at a few thousand FPS, and real-time passive depth estimation from depth-from-focus [36]. Despite hardware constraints, it was also possible to run small neural networks [28], producing compact latent representations for transmission. While SCAMP-5 is not an event camera in the conventional sense, as it does not contain asynchronous, hard-wired intensity-change detection circuits, it can produce event-like outputs with greater flexibility. For example, values stored in analog registers can be thresholded to trigger sparse readouts, effectively generating programmable events. In contrast to a DVS, whose event-generation circuitry is dedicated to detecting logarithmic brightness changes, SCAMP-5 allows the event-generation criterion to be defined by the programmed pixel-level computation. This makes it possible to emit sparse events from more complex analog processing pipelines, including the retinal model proposed in this work. However, it is important to note that the SCAMP-5 photodiodes operate with a linear response, and thus do not inherently possess the high dynamic range (HDR) characteristic of logarithmic DVS pixels. 
+
+3.2 Pixel Processor Array Programming and Constraints 
+
+Implementing a retinal model on SCAMP-5 requires more than a direct translation of the equations in Section 2. Although the architecture enables massively parallel focal-plane computation, its Single Instruction, Multiple Data (SIMD) execution model, local communication, limited analog memory, and noisy arithmetic impose constraints that strongly influence the algorithm design. The main constraints are: 6A PREPRINT - J UNE 9, 2026 1. Analog Arithmetic and Noise: majority of the model computation is performed in the analog domain. Unlike digital logic, these operations are subject to noise and variability. Furthermore, precision is effectively limited to approximately 8 bits, and errors accumulate with each sequential operation. While it is possible to develop well-working algorithms, this becomes problematic for DSP-heavy algorithms, which require many multiplication/division operations. 2. Volatile Analog Storage: The six analog registers per PE rely on capacitors to store charge. Consequently, the data is volatile and subject to change over time. While this decay is negligible over micro- or millisecond timescales, it becomes significant over longer timescales, posing a challenge for algorithms that require persistent state variables, such as temporal filters or differential equations used in retinal modelling. 3. Neighborhood communication only: SCAMP-5 follows a SIMD programming model, which means that the same instruction is broadcast to all pixels simultaneously. Data exchange is local: a pixel can communicate directly only with its four immediate neighbors. While some global operations are supported (e.g. summing all pixels), efficient implementations rely on neighbor-to-neighbor interactions. 4. I/O bottleneck : while the internal array communication is very fast (due to massive parallelism), the interface to the external world is relatively slow. Offloading full frames at 8 bit resolution is limited to approximately 60 FPS. To achieve efficient algorithms and maintain kilohertz operating speeds, algorithms must process data internally and transmit only sparse results to the host. 5. MCU-PPA Co-design: The system architecture of the PPA includes a standard microcontroller (MCU) acting as a controller for the parallel PPA accelerator. The programmer writes a single C++ application where standard logic runs on the MCU, while SIMD kernels are dispatched to the PPA. This offers a unique opportunity to offload scalar operations to the MCU while performing parallel operations on the PPA. In this section, we describe the implementation of the silicon retina model (Section 2) under these constraints. More particularly, we provide details on how we addressed the limited memory via a superpixel architecture and approximated the required dynamics using analog primitives. This allowed for a low-power, analog, high-framerate simulation of the retina. 
+
+3.3 SCAMP-5 Implementation 
+
+To simplify the implementation, we consider only a single class of bipolar cells ( V + 
+
+> BIP
+
+= V − 
+
+> BIP
+
+[6]) and assume symmetric processing of surround signals. The complete computational pipeline is outlined in Algorithm 1. 
+
+Implementation Challenges 
+
+Directly mapping Algorithm 1 to the SCAMP-5 PPA is challenging. As detailed in section 3.2, each PE contains only six analog registers. A naive count of the state variables required by the filters and differential equations indicates at least 7 persistent (frame-to-frame) registers per pixel. This exceeds the physical capacity of a single PE. Furthermore, the algorithm relies heavily on global scalar multiplication ( λ, ω, R, ∆tτm ) and per-pixel multiplication (every PE has its own gA). Since SCAMP-5 lacks a hardware multiplier, these operations must be approximated using the limited ALU instruction set (addition, subtraction, division-by-two, and binary operations). Finally, the deep pipeline of sequential operations makes the system susceptible to noise accumulation, particularly in the non-trivial contrast gain control layer. To resolve the lack of memory and enable complex arithmetic, we introduce a superpixel memory layout and a fixed-point analog approximation scheme, described below. 
+
+3.4 Superpixel memory architecture and multiplication approximation 3.4.1 Memory architecture 
+
+To increase the memory per pixel, we logically partition the 256 × 256 physical array into 2 × 2 blocks, creating a 
+
+128 × 128 array of "superpixels" (Fig. 3). In this configuration, the four physical PEs within a block act as a single logical unit with shared resources. One PE is designated as the processor ( PROC ), responsible for active computation and image capturing. The remaining three PEs serve as Storage Units ( STO1 , STO2 , STO3 ), effectively increasing the available analog memory from 6 to 24 registers per logical pixel. This allows us to persist the multiple filter states ( EC , T C , E S ) and membrane voltage values ( VBIP ,
+
+VLIF ), required by Algorithm 1, at the cost of halving the spatial resolution. 7A PREPRINT - J UNE 9, 2026 
+
+Algorithm 1: Silicon Retina Model on SCAMP-5 
+
+Input: Current image Lt; previous states Et−1 
+
+> C
+
+, T t−1 
+
+> C
+
+, Et−1 
+
+> S
+
+, V t−1BIP , Et−1 
+
+> A
+
+, T t−12 , V +,t −1LIF , V −,t −1LIF 
+
+Output: ON/OFF event maps S+,t , S−,t ; updated states at time t
+
+1. Outer Plexiform Layer (OPL) ;
+
+GtC ← blur( Lt) ; // Spatial smoothing 
+
+EtC ← low _pass _filter( Et−1 
+
+> C
+
+, G tC ) ; // Temporal smoothing 
+
+T tC ← high _pass _filter( T t−1 
+
+> C
+
+, E tC ) ; // Temporal high-pass response 
+
+GtS ← blur( T tC ) ; // Surround pathway 
+
+EtS ← low _pass _filter( Et−1 
+
+> S
+
+, G tS );
+
+It 
+
+> OPL
+
+← λ (T tC − ωOPL EtS ) ; // Center-surround current 
+
+2. Contrast Gain Control in Bipolar Cells ;
+
+EtA ← low _pass _filter  Et−1 
+
+> A
+
+, Q (V t−1BIP ) ; // Feedback state 
+
+gtA ← blur( EtA) ; // Local gain conductance 
+
+V t 
+
+> BIP
+
+← V t−1BIP + ∆ t  It 
+
+> OPL
+
+− gtAV t−1BIP 
+
+ ; // Euler integration 
+
+3. Ganglion Cells and ON/OFF Spike Generation ;
+
+T t 
+
+> 2
+
+← high _pass _filter( T t−12 , V t
+
+> BIP
+
+) ; // Bipolar temporal response 
+
+for p ∈ { +1 , −1} do 
+
+Ip,t  
+
+> gang
+
+← N ′ (p, T t 
+
+> 2
+
+) ; // ON for p = +1 , OFF for p = −1
+
+V p,t  
+
+> LIF
+
+← V p,t −1LIF + ∆tτm
+
+
+
+R · Ip,t  
+
+> gang
+
+−
+
+
+
+V p,t −1LIF − Vrest 
+
+ 
+
+; // Euler integration 
+
+if V p,t  
+
+> LIF
+
+≥ Vth then 
+
+V p,t  
+
+> LIF
+
+← V p,t  
+
+> LIF
+
+− Vreset ;
+
+Sp,t ← 1 ; // Spike generated 
+
+else 
+
+Sp,t ← 0;Data transfer between PROC and STO units is handled via local North/East/West/South (NEWS) communication instructions. Spatial operations (e.g. Gaussian blur via the resistive network) require more consideration for these superpixels: we replicate the value of the active register (for example, for Et−1 
+
+> A
+
+) from the PROC unit to all three STO 
+
+units prior to the spatial operation. This ensures that the hardware’s resistive grid operates correctly across the active register plane. 
+
+3.4.2 Fixed-point analog multiplication 
+
+The retinal model requires two distinct forms of multiplication: 1. Global Scaling: Multiplying an image by a global constant α (e.g., resistance R)2. Local modulation: Multiplying an image by a spatially varying map (e.g, gain gA). Since SCAMP-5 lacks a hardware multiplier, we approximate these operations using 5-bit fixed-point arithmetic. We define a scalar multiplier α as a binary fraction: 
+
+α ≈
+
+> 4
+
+X
+
+> i=0
+
+bi · 2−i = b0 + b1
+
+2 + b2
+
+4 + b3
+
+8 + b4
+
+16 (16) where bi ∈ { 0, 1}. The product A′ = α · A is computed by accumulating progressively halved versions of the register 
+
+A:
+
+A′ =
+
+> 4
+
+X
+
+> i=0
+
+bi
+
+ A
+
+2i
+
+
+
+(17) In hardware, the division by powers of 2 is implemented efficiently using the SCAMP-5 diva instruction (division by 2) sequentially. The binary coefficients bi gate the addition of these partial terms. For global constants, the coefficients bi are stored in the microcontroller. For spatially varying maps, like the gain gA,the coefficients are firstly digitized into four single-bit planes (where the most significant bit is always zero) stored in 8A PREPRINT - J UNE 9, 2026 
+
+Figure 3: Superpixel architecture on SCAMP-5. The physical array is partitioned into 2 × 2 blocks. The top-left PE( PROC ) performs computation, while the other three ( STO ) act as extended analog memory. This almost quadruples the available register count per effective pixel, enabling the computation of retina dynamics. the local digital registers (DREGs). These local bits then serve as the coefficients bi for each pixel, enabling parallel multiplication with pixel-wise multiplicand. For amplification factors where α > 1 (e.g., gain λ), we utilize repeated addition ( A ← A+A) to perform multiplication by 2 prior to the accumulation of fractions. 
+
+Tradeoff in Precision vs Noise 
+
+Despite its simplicity and compatibility with the SCAMP-5 instruction set, the fixed-point multiplication scheme introduces significant amount of noise due to repeated analog operations. This degradation of signal is particularly visible when input signals are weak (e.g. at a very high frame rate) or when the multiplier α is small (requiring many division operations). Empirical analysis indicated that a 5-bit representation offers the optimal balance for this architecture. Lower bitwidths fail to capture the necessary range, while higher bitwidths result in too much degradation of the signal-to-noise ratio. 
+
+3.5 Mapping the algorithm to SCAMP-5 
+
+Leveraging the superpixel memory architecture and the fixed-point arithmetic scheme, we map the functional com-ponents of the retina model (Algorithm 1) to the hardware. Below, we detail the specific SCAMP-5-compatible approximations used for every step of the algorithm. 1. Low-Pass Temporal Filters (IIR Approximation): We implement low-pass filtering using a discretized Infinite Impulse Response (IIR) structure: 
+
+A[t] ← A[t − 1] + α(B[t] − A[t − 1]) (18) Where register A holds the persistent filter state and B is the current input. The decay coefficient α is applied using the fixed-point multiplication strategy described in equation 17. 2. High-Pass Temporal Filters (Differencing): A standard IIR high-pass response is derived by computing an IIR low-pass state and subtracting it from the input signal: 
+
+AHP F 2[t] = B[t] −  ALP F [t − 1] + α(B[t] − ALP F [t − 1])  = (1 − α)( B[t] − ALP F [t − 1]) (19) 9A PREPRINT - J UNE 9, 2026 This approach proved problematic : the OPL stage required to compute two filters (LPF and HPF) sequentially, which produced excessively noisy output. We therefore use a simpler frame-differencing scheme that yields qualitatively better results. Given an input B and output A:
+
+A[t] ← B[t] − B[t − 1] (20) Although this is a large simplification of the model, it minimizes the accumulation of analog noise across time steps, providing more stable behaviour. 3. Spatial Blur (Resistive Grid): SCAMP-5 hardware natively supports spatial smoothing via a resistive network. We utilize this to implement the Gaussian kernels ( GC , G S , G A efficiently). This operation is asynchronous and introduces negligible noise [25]. 4. Feedback Nonlinearity ( Q-function): The biological model specifies a quadratic dependence on the bipolar potential ( V 2 
+
+> BIP
+
+). While SCAMP-5 does have a squarer circuit, it has relatively large spatial non-uniformity. We approximate this non-linearity using an absolute value function : 
+
+Q(VBIP ) ≈ g0 
+
+> A
+
++ λ′ 
+
+> A
+
+· | VBIP | (21) This linear rectification simplifies the contrast gain control mechanism. In Section 4, we demonstrate that replacing the quadratic form with this absolute value approximation does not negatively impact performance on video saliency tasks. 5. Differential Equations (Euler Integration): We solve the ordinary differential equations governing the Bipolar and Ganglion layers using an explicit forward Euler method. The update rule for the bipolar membrane potential is implemented as : 
+
+VBIP [t] ← VBIP [t − 1] + p1 · (IOP L − gA · VBIP [t − 1]) (22) Similarly, the Leaky Integrate-and-Fire (LIF) neuron state is updated as: 
+
+VLIF [t] ← VLIF [t − 1] + p2 · Igang − p3 · | VLIF [t − 1] − Vrest | (23) Here, the parameters p1, p 2, p 3 absorb the time step ∆t and capacitance C, and are applied using fixed-point multiplication. 6. Nonlinearity N (·): The complex function N (·), defined in [22, 6], was approximated using a simple rectification: 
+
+N (x) ≈ max(0 , x ) + Ibias (24) This approximation roughly preserves the shape of the original function while remaining implementable with basic SCAMP-5 primitives. 
+
+3.5.1 Performance 
+
+The performance of the implemented system is determined by the I/O and lighting conditions. In a purely internal model, where processing occurs without external readout, the retina model executes at approximately 10,000 FPS. However, when streaming binary spike frames off-chip (effectively single-bit images), the frame rate is bottlenecked by the digital interface to approximately 580 FPS for single channel of events. For a pair of 2 LIF neurons (ON/OFF), as described in algorithm 1 we can achieve at most 280 FPS. In practical scenarios (indoor ambient light without artificial lighting), the system performs reasonably well in the 100-200 FPS range, with a sub-watt power consumption. Higher framerates are possible, however at very high framerates the photodiode integration time decreases, producing weaker input signals. When processed through the multi-stage analog pipeline, these weak signals are more susceptible to arithmetic noise accumulation which degrades the final output quality. Rather than streaming full binary spike maps, SCAMP-5 can transmit only the coordinates of active (spiking) pixels, reducing output bandwidth in sparse scenes. However the effective framerate of this event-based readout is highly dependent on scene activity, lighting and motion. Furthermore, the SCAMP-5 event output is much slower than from standard DVS cameras. 
+
+3.6 Simulation Framework and Digital Capture 
+
+While pixel-processor arrays offer unparalleled power efficiency and low latency, their specialized programming model and limited availability can hinder widespread experimentation. To enable broader exploration of silicon retina models, we developed a complementary digital simulation framework, based on off-the-shelf sensor and popular GPU-accelerated framework (CUDA). This tool allows researchers to experiment with retinal dynamics using standard hardware, enabling easier debugging, parameter tuning and large-scale data generation. One of the fundamental challenges in simulating retinal dynamics is the requirement for high temporal resolution input. Conventional CMOS image sensors typically operate at 30-120 FPS and fail to capture the fast transient dynamics necessary for accurate modeling. We address this limitation through two complementary approaches : direct high-speed capture and neural temporal upsampling. 10 A PREPRINT - J UNE 9, 2026 
+
+Figure 4: Overview of the SCAMP-5 silicon retina software interface. a) and b) show the host control GUI used to configure and monitor the retina model in real-time. b) Detailed view of the parameter configuration panel : filter coefficients are adjustable as fixed-point integers (e.g., Low Pass Filter coefficients) and individual pipeline stages can be toggled for debugging. Due to readout bandwidth and memory constraints, visualisation is limited to a single target register at a time. However, higher frame rates can be achieved by streaming only events using the display_events 
+
+flag. (c) Visualisation of the intermediate OPL current ( IOP L ). (d) visualisation of the Ganglion Layer output, showing the membrane potential V + 
+
+> LIF
+
+and the resulting binary spike map ( S+) for the ON neurons. 
+
+3.6.1 Direct Capture via High-Speed CMOS sensor 
+
+To obtain real-world high-speed data without PPA hardware we utilize the VD55G0 sensor, which is a recent low-cost, high-sensitivity global shutter CMOS image sensor. Although it lacks in-sensor processing capabilities, it supports frame rates and resolutions comparable to our SCAMP-5 implementation. Specifically, the sensor can capture 160 × 120 
+
+frames at 760 FPS or 128 × 128 frames at 640 FPS. This performance closely aligns with the performance achieved by SCAMP-5 in this work, which is approximately 580 FPS for binary frames. By streaming these high-speed raw frames to a GPU, we can run the retinal model in software (implemented in CUDA) to produce event streams that closely approximate the output of the physical silicon retina. This provides an accessible alternative to the hardware system for algorithm development. 
+
+3.6.2 Synthetic Data via Neural Upsampling 
+
+To enable scalable training of downstream neural networks, we require large, high framerate videos, beyond what is currently available or can be easily captured. We adopt the video interpolation strategy introduced by Gehrig et al. [30]. This method uses a neural network to temporally upsample standard low-framerate videos, generating high-framerate sequences with smooth, sub-pixel optical flow. While the original work utilized these interpolated frames to generate standard DVS events, we can repurpose the pipeline to drive our CUDA-based silicon retina model. This allows us to convert existing large-scale video datasets into synthetic "retina events" streams, which allow the training and evaluation of event-based algorithms without the need for new physical recordings. 11 A PREPRINT - J UNE 9, 2026 
+
+Simulation Implementation and Performance 
+
+We implemented a modular simulation of the retina model using C++ with CUDA acceleration. This software provides a Python interface for easy integration with other frameworks and supports extensive parameterisation, including kernel sizes, different filter approximations and layer-specific constants. Benchmarks were conducted on a laptop equipped with mid-range, modern NVIDIA GPU (RTX 5070, 70W power limit) using 8-bit grayscale videos of resolution 256 × 256 and containing 300 frames. The simulator allows for three operational scenarios : 1. All States Output: Returns all states of every layer (OPL, Bipolar, Ganglion) for visualization and debugging. This is computed for input video. 2. Events Only: Returns only the sparse binary spike map for whole input video. 3. Online Mode: instead of processing whole video, this mode simulates frame-by-frame processing typical of a live camera feed. This mode was intended to use with VD55G0 or other camera, example visualization code is provided. As detailed in Table 1, the simulator achieves high throughput. In "Events Only" mode, the kernel executes at over 30,000 FPS, demonstrating that the computational load of this particular retina model is negligible for modern GPUs. Even with full memory transfers overheads, the system sustains over 11,000 FPS, making it highly efficient for generating large-scale synthetic datasets from upsampled video. For real-time applications, the online mode comfortably supports 500-800 FPS output of high-speed sensors like VD55G0, which matches the SCAMP-5 framerates, although the CPU/GPU consumes approximately 80 times more power. Table 1: Performance Benchmarks of the CUDA Retina Simulator ( 256 × 256 input). 
+
+Operation Mode Full State Output (FPS) Events Only (FPS) Online (Frame-by-Frame) 
+
+Kernel Compute Only 14,152 30,439 6,057 + Host/Device Transfer 1,283 11,383 800 * 
+
+> *Includes disk I/O overhead. Otherwise, the images were in CPU memory and transfer is done from CPU to GPU and back.
+
+3.6.3 Comparison to other work 
+
+In this work, we presented two distinct hardware approaches for generating biologically plausible retinal events [22, 6]. The SCAMP-5 PPA implementations offers extreme power efficiency (sub-watt) and low-latency processing directly at the focal plane, at the cost of analog noise and more complex programming model. Conversely, the digital simulation framework (VD55G0 and GPU) allows for greater flexibility and easier development, utilizing standard CUDA C++ and Python at the cost of 2-3 orders of magnitude higher power consumption. Table 2 contextualizes our contributions against other silicon retina implementations. Unlike standard temporal contrast sensors (i.e. event-camera, DVS) which lack spatial processing, our implementation enable full spatio-temporal dynamics, including center-surround filtering, contrast gain control and leaky-integrate-fire neurons. Notably, the PPA implementation is the first to achieve this programmability within the analog domain, allowing for software-defined control of retina parameters. 
+
+## 4 Benchmarking Spatio-Temporal Retina Events 
+
+4.1 Introduction 
+
+Having established an analog-based implementation (SCAMP-5) and a flexible digital simulation (CUDA), we now address the research question: Can the richer spatiotemporal representation of the biological retina model offer advantages over standard DVS representation in downstream computer vision tasks ? Standard event cameras primarily encode temporal contrast, whereas the proposed silicon retina model incorporates spatial filtering, temporal dynamics, contrast gain control, and spike generation directly into the event formation process. To evaluate whether these additional mechanisms are useful, we compare the proposed “Retina Events” against standard “DVS Events” on neural-network-based downstream tasks. 12 A PREPRINT - J UNE 9, 2026 Table 2: Comparison of the proposed systems with existing Silicon Retina implementations.                                                                                                                                                                                                 
+
+> Parameter Lichtsteiner Costas-Santos Posch Leñero-Bardallo Brandli (DAVIS) Hayashida This Work This Work [37] [38] [39] [40] [41] [42] (SCAMP-5 PPA) (Digital Sim)
+> Year 2006 2007 2010 2010 2014 2017 2026 2026
+> Functionality Temporal Spatial Temporal Spatial Temporal + APS Spatio-temp. Spatio-temp. Spatio-temp.
+> Programmable No No No No No Yes (FPGA/HDL) Yes (C++/SCAMP-5 ISA) Yes (CUDA C++/Python) Hardware Analog Analog Analog Analog Analog Analog+FPGA mixed signal Analog + Digital readout/processing Technology 0.35 μm0.35 μm0.18 μm0.35 μm0.18 μm—a0.18 μmVD55G0 : 45nm, GPU : 5nm Array size 128 ×128 32 ×32 304 ×240 32 ×32 240 ×180 (DVS)
+> 240 ×180 (APS) 128 ×128 256 ×256 (PEs)
+> 128 ×128 (retina)
+> 644 ×604 (185-210FPS)
+> 128 ×128 (max 640 FPS) Pixel Pitch ( μm) 40 ×40 58 ×56 30 ×30 81 .5×76 .518 .5×18 .5178 ×154 32 ×32 2.61 ×2.61
+> Performance
+> Throughput / Mode Event Event Event Event, 22 Meps Event, 12-50 Meps 200 fps 10,000 FPS (no output) 580 FPS (binary map) 100-200fps (without art. light) b
+> 185 −210 f ps @ 644 ×604 c
+> 640 f ps @ 128 ×128 c
+> 430 f ps c@ 320 ×240 c
+> Power/Pixel 400 nW 9.7 μW1.3 μW264 nW 347 nW 21.7 μW18.7 μWdHigh (GPU) Dyn. Range (dB) >120 —>120 —>120 —≈60 (Linear) ≈60 (Linear)
+> Biological Features
+> Spatial Filtering No Diffusive grid No Diffusive grid No Diffusive grid Diffusive grid Digital filter Contrast gain control No No No No No No Yes eYes Luminescence adaptation No No No No No No Yes Yes Tonic and phasic cells No No No No No No Yes Yes
+> aValues not reported in the original publication.
+> bWithout artificial lighting, measured in office with few windows ( natural lighting). Higher framerates are achievable; however, the output quality degrades
+> cValues from datasheet. With the USB-C evaluating development kit it is possible to obtain 200 FPS at 322x302, and its possible to obtain higher framerates using MIPI CSI-2 board
+> dTypically 1-2W of total system power when outputting frames which is most expensive operation int terms of power.
+> eImplemented on SCAMP-5, though requires tuning as it is sensitive to ambient lighting levels.
+
+A direct hardware-only evaluation is difficult for this comparison. Although the SCAMP-5 implementation demonstrates that the model can be executed on-sensor, the exploration of usefulness of this model requires paired input sequences, ground-truth task labels, and matched event streams generated from the same visual input. This is particularly challenging for the tasks considered in this work. For intensity reconstruction, a hardware comparison would require synchronized intensity frames, DVS events, and retina events from the same scene. For saliency prediction, it would additionally require human eye-fixation annotations for the recorded sequences. Collecting such large-scale, labeled datasets with both DVS and SCAMP-5 retina outputs would be impractical. We therefore use synthetic data generation to isolate the effect of the event representation itself: for each task, the same source videos are used to generate both DVS and Retina events, while the downstream recurrent FireNet backbone, training schedule, and event-grid data augmentation procedure are kept fixed. Across tasks, only the task-specific target, output activation/head, and loss function are changed. 
+
+4.2 Synthetic Data Generation and Task Selection 
+
+Event-based vision has been successfully applied to Visual-Inertial Odometry (VIO) [12, 4], optical flow estimation [11, 43] and object tracking [44]. To evaluate the benefits of the event streams, we utilise a neural network-based benchmark. We use the synthetic data generation pipeline described in section 3.6.2 to generate event streams for both models. Although recent works have extended event simulation to include sensor noise modelling [45], we deliberately exclude noise from this evaluation. Modelling the noise arising from transistor mismatch and thermal effects of SCAMP-5 is very non-trivial, and including noise for DVS but not for SCAMP-5 would introduce an unfair asymmetry. By comparing idealized noiseless DVS models with idealized noiseless Retina models, we aim to isolate the algorithmic/computational contribution of the Retina model relative to the DVS. We evaluate performance on two distinct tasks (Fig. 5): 1. Video Intensity Reconstruction: This task involves recovering original grayscale frames solely from the event stream. Since DVS events are generated via log-intensity differencing, reconstruction is a well-studied problem for DVS data. We investigate whether the complex retinal model preserves sufficient information to allow for similar reconstruction, effectively testing the compression of the encoding. 2. Video Saliency Prediction: This task involves predicting human attention (saliency) maps from the event stream. Unlike reconstruction, this requires extracting multiple cues for higher-level understanding rather than low-level pixel-intensity information. We use this task to evaluate the Retina model’s ability to perform "filtering" and redundant-information rejection. 13 A PREPRINT - J UNE 9, 2026 
+
+Figure 5: Overview of the experimental pipeline and evaluation benchmarks. (a) Input video sequence. (b, c) Frame upsampling stage utilizing neural networks: the DVS pipeline (b) uses an optical-flow-based approach [30], whereas the Silicon Retina pipeline (c) uses a network to upsample frames to a fixed 200 FPS. (d, e) Event generation: the upsampled frames drive the simulators to produce spatiotemporal event streams (x, y, p, t ) for the standard DVS model (d) and our proposed Silicon Retina (e). (f) Evaluation methodology: we investigate how different event representations affect downstream neural network performance, keeping the network architecture and training procedure identical across comparisons. (g, h) Ground truth targets for the two evaluation tasks: (g) Video Intensity Reconstruction , which aims to recover grayscale images from the event streams, and (h) Video Saliency Prediction , where the model predicts human gaze attention maps (color overlay) [46]. 
+
+4.3 Intensity reconstruction 4.3.1 Task Definition 
+
+A fundamental task for event-based vision is the reconstruction of full-intensity frames from the sparse event stream. For standard DVS sensors, this is a tractable problem: since events represent the changes in logarithmic intensity, this is essentially an integration task. This can be achieved via variational optimization [11, 47], simple filters [17] or lightweight neural networks [48, 2]. We selected this task because we believe it serves as a strong measure of encoding capacity. If the sensor output captures the complete visual signal, perfect reconstruction of the original signal should be possible. We hypothesize that the silicon retina model will struggle with this task compared to DVS. The OPL stage functions as a spatio-temporal band-pass filter, removing the intensity component to prioritise edges and movements. In this experiment, we want to quantify this information loss. 
+
+4.3.2 Experimental Setup 
+
+We utilize the FireNet architecture proposed by Scheerlinck et al. [2] due to its high efficiency, low parameter count (≈ 38k) and demonstrated suitability for event-based intensity reconstruction. We train the network on the Event-MS-COCO dataset [2], which consists of static images (from MS-COCO) mapped to a 3D plane and subjected to a random 6-DOF camera motion. To simulate the sensor data, we modify the pipeline from [30]: • DVS Simulation: We use the approach proposed by Gehrig et al. [30] of upsampling images to achieve sub-pixel optical flow, generating events based on log-intensity changes. • Retina Simulation: Unlike DVS, the retina model relies heavily on temporal dynamics (e.g. filter decay rates, solving differential equations). Therefore, we upsample the dataset to a fixed temporal resolution (200 FPS) before processing it with the Retina CUDA kernels. 
+
+4.3.3 Model Optimization 
+
+To ensure a fair comparison, we optimized hyperparameters of the Silicon Retina Model. The digital simulation framework of the biological model contains over 30 tunable parameters, such as filter formulations, filter coefficients, and kernel sizes. We selected few key parameters governing LIF dynamics and low-pass filter time constants and manually tweaked the pipeline. 14 A PREPRINT - J UNE 9, 2026 We trained FireNet for 150–200 epochs using the Adam optimiser and a perceptual similarity loss function (LPIPS) [49] and temporal consistency loss using predicted optical flow [30]. The learning rate was scheduled with a decay factor ( γ = 0 .9) every 10 epochs. 
+
+4.3.4 Results and Discussion 
+
+The training and validation loss curves are presented in Fig. 6. Unlike DVS, the Retina model has significant internal state (filter histories, membrane states) that must settle before any meaningful output is produced. To account for this, we implemented a "burn-in" stage during training: sampled video sequences are run through the model for a fixed number of initial frames to initialize the retinal states without computing the loss. After the burn-in stage, the network is tasked to reconstruct next fixed number of intensity frames. Fig. 6 compares DVS performance against several Retina configurations with varying burn-in durations. As hypothesized, the network trained on standard DVS events significantly outperforms the Retina-based models. The DVS baseline achieves a best loss value of 0.345 whereas the best retina configuration achieves ≈ 0.448 (configurations with burnin set to 0 and 10). This represents a performance gap of ≈ 0.103 , or a 30% relative increase in reconstruction error for the Retina model. 
+
+Figure 6: Performance on Video Intensity Reconstruction. (a) Training loss and (b) Validation loss over epochs. The standard DVS model consistently achieves lower reconstruction error, confirming that the Retina model discards absolute intensity information to prioritize edge and motion features. The "seq" value defined the total length of video in frames, while the "burnin" period represents the number of first N frames, for which we don’t compute the loss. This performance gap confirms the theoretical properties of the retinal model. The OPL layer functions as a spatial high-pass filter, effectively discarding the low-frequency absolute intensity information required for accurate image reconstruction. While this makes intensity recovery an ill-posed problem for the Silicon Retina, it is not a system failure. Rather, it demonstrates that the sensor successfully performs desired information filtering — removing static intensity data to prioritize the edge and motion features relevant for dynamic vision. 
+
+4.4 Video Saliency Prediction 4.4.1 Task Definition and Motivation 
+
+While the previous experiment demonstrated that the Silicon Retina struggles to preserve absolute intensity, we argue that for many biological and robotic tasks, intensity reconstruction is computationally inefficient and unnecessary. It involves sparse events and interpolating it back to dense frames for easy human interpretation. While this is beneficial in, for example, high-speed video reconstruction [12], this "information interpolation" removes the benefits of sparsity processing. In contrast, Video Saliency Prediction represents "information distillation". The goal is to identify and focus on the most relevant regions of the scene, discarding the noise or irrelevant information. This aligns closely with the functional role of the biological retina, which processes visual signal before transmission to the brain. Saliency prediction is inherently more complex than reconstruction, as ground truth is not defined by simple pixel mechanics but by human gaze behavior. This often includes high-level semantic understanding: for example, in one of the dataset videos, the saliency is focused on the instructor doing various movements. 15 A PREPRINT - J UNE 9, 2026 
+
+4.4.2 Dataset Curation and Processing 
+
+To evaluate this task, we utilize the Dynamic Human Fixation 1K (DHF1K) dataset [46], which contains diverse video sequences paired with human eye-fixation maps. However adapting this dataset for high-speed event simulation presented specific challenges. The provided videos exhibit extreme variance in duration (ranging from 900 to 5000 frames after upsampling). These long sequences present significant challenge particularly given the memory constraints of batch training. Therefore, we selected a subset of the data by filtering out sequences with excessive duration. Furthermore, we also removed the videos which had unreliable optical flow : for example in a single data point where multiple, unrelated videos are showed. This resulted in a final dataset of 541 videos, split into 441 for training and 100 validation, stratified by their duration. The sequences were processed using the same synthetic pipeline described in Section 4.3. 
+
+4.4.3 Experimental Setup 
+
+We trained a lightweight Convolutional Neural Network (a FireNet with larger number of convolutional filters then original, ≈100k parameters) to predict saliency maps from the event streams. The loss function was a weighted combination of Kullback-Leibler (KL) divergence and the Pearson Correlation Coefficient (CC) (similarly to the dataset [46] ). Our goal was not to surpass state-of-the-art saliency models, but to perform a relative comparison between the retina and DVS events using a fixed, proven and efficient neural network architecture. 
+
+4.4.4 Results and Discussion 
+
+The plot for training and validation results are in Fig. 7. In contrast to the intensity reconstruction, the Silicon Retina outperforms the standard DVS. In sparsity experiments, we define the event density using the average voxel-grid occupancy. For an event tensor G ∈ RT ×B×H×W , we define it as the fraction of time-bin/pixel entries whose absolute value is non-zero, averaged over all sequences in the dataset. • Performance: The Retina model achieves a best validation loss of 0.695, compared to 0.799 for the DVS baseline. This represents a robust improvement in predictive capability. • Sparsity Efficiency: the performance is achieved with significantly less data. The Retina model generates events with an average grid occupancy of ≈ 5.7% , whereas the DVS baseline has ≈ 10 .8% . The parameters of retina model are very similar to the ones used in intensity reconstruction, while the DVS is the same. Increasing sparsity of retina and decreasing sparsity of DVS is discussed in section 4.5, however, for reasonable values, the Retina overall outperforms the DVS. These results support the hypothesis that the bio-inspired model suppresses redundant or weakly informative events, producing a filtered event stream that is more useful for saliency prediction. Retina events remove information needed for photometric reconstruction, as shown by the higher intensity-reconstruction loss. However, for saliency prediction, this representation preserves or enhances task specific information, allowing the network to achieve lower validation loss while emitting substantially fewer events than the DVS baseline. 
+
+4.5 Effect of Retinal Model Parameters on Saliency Prediction 
+
+The results in Section 4.4 show that Retina events can improve saliency prediction while producing a sparser event stream than the DVS baseline. However, unlike a standard DVS, the silicon retina model is not controlled by a single threshold parameter. The SCAMP-5 implementation exposes approximately 20 tunable parameters, while the digital simulator supports more than 30, including temporal filter coefficients, feedback gains, spatial kernel sizes, and LIF neuron constants. This makes it important to understand how different parameters and modelling choices affect the event representation, the resulting event density, and the downstream saliency prediction performance. In this section, we therefore study a small set of parameters and design choices that are most relevant to the behaviour of the retina model and its implementation on a PPA. Specifically, we examine the contrast gain control formulation, the relationship between event density and saliency performance, the use of simplified high-pass filtering and the effect of the kernel-size in the contrast gain control. These experiments allow us to identify which aspects of the model are responsible for the observed sparsity, what performance trade-off and hardware-oriented approximations can be made without removing the advantage of Retina events over standard DVS events. 16 A PREPRINT - J UNE 9, 2026 
+
+Figure 7: Performance on Video Saliency Prediction. (a) Training loss and (b) Validation loss over epochs ( the measurements were quite noisy, most likely to very small batch size of 2). Unlike intensity reconstruction, the Retina model achieves lower loss than the DVS baseline, despite generating significantly fewer events. 
+
+4.5.1 Feedback formulation 
+
+One of the key features of the model proposed by Wohrer [22] is the inclusion of non-linear contrast adaptation mechanism which in its initial formulation, has quadratic form, as in equation 6. In our SCAMP-5 implementation we simplified this equation, due to hardware constraints. The equation uses absolute value rather than quadratic formulation, as in equation 21. In this subsection we study how this mechanism affects the performance of the neural network. We consider 3 cases : 1. No Feedback : turning this stage off (feeding the outer plexiform layer current directly the retinal ganglion cell), 2. Abs. Feedback : absolute value formulation ( equation 21), 3. Quad. Feedback : quadratic formulation (equation 6) Most of the parameters are the same, with the main difference being g0 
+
+> A
+
+and λA vary in quadratic and absolute value cases. The results can be seen in Fig. 8. An important observation here, is that the feedback limits the amount of events significantly: the grid occupancy with no feedback is ≈ 16 .8% , whereas the absolute value feedback reduces grid occupancy to less than 4%, and the quadratic feedback yields 6.83 %. When evaluating on the validation portion of data, the absolute-value feedback formulation slightly outperforms the other variants (0.700 against 0.714 for Quadratic feedback and 0.724 for No Feedback). 
+
+4.5.2 High pass formulation 
+
+A major challenge in implementing recursive temporal filters on analog processing arrays like SCAMP-5 is the accumulation of noise. Standard Infinite Impulse Response (IIR) formulations require multiple sequential analog operations per pixel. Specifically, the analog division operation is highly susceptible to noise amplification. When cascaded through the Outer Plexiform Layer (OPL) and Contrast Gain Control stages, this noise accumulation severely degrades the visual signal quality, rendering complex IIR implementations impractical on this hardware. Consequently, our proposed pipeline utilizes a hardware-efficient "Simple Differencing" scheme, as it preserves most of the signal. 
+
+AHP F 1[t] = B[t] − B[t − 1] (25) We contrast this with a standard tunable IIR high-pass formulation, presented in equation 19. To validate our design choice and determine if utilizing using simple frame difference scheme (referred to as "Simple") incurs a significant performance penalty compared to standard high pass formulation ( referred to as "IIR"), we evaluated four configurations across the two temporal filtering stages (OPL, Ganglion cell): (Simple, Simple), (Simple, IIR), (IIR, Simple), and (IIR, IIR). We assessed these configurations under two operating regimes: a high occupancy regime (p2 = 1 .2) and a low occupancy regime ( p2 = 1 .0). The results are summarized in Fig, 9. The key findings are : 17 A PREPRINT - J UNE 9, 2026 
+
+Figure 8: Performance (Training and Validation loss) and grid occupancy of FIRENet on video saliency reconstruction dependent on different feedback modes. • High Occupancy Regime: When the event density is sufficient,temporal filter formulation does not affect network performance . The maximum loss difference between configurations is negligible ( ≈ 0.008 ), indicating that the precise mathematical shape of the temporal transient is irrelevant when the overall event volume is high. • Low Occupancy Regime: At lower data rates, the network is sensitive to the filter formulation, primarily because the filter choice directly alters the baseline event generation rate. While the mixed configuration (Simple, IIR) achieves the absolute lowest loss (0.702), the fully simplified hardware baseline (Simple, Simple) remains highly competitive (0.714) and explicitly outperforms the full IIR configuration (IIR, IIR), which scores 0.720. These results confirm that the simplified frame differencing formulation does not impose a critical bottleneck on downstream saliency prediction. It provides sufficient temporal acuity while circumventing the noise accumulation issues inherent to complex recursive filtering on an analog array. 
+
+4.5.3 Kernel size 
+
+One of the key differences between the silicon retina and DVS is the spatial aspect of the retina. In this subsection we study the performance of the neural network against the size of the kernel in contrast gain control stage. The results are summarized in Fig. 10 . Contrary to the expectation that wider biological receptive fields would significantly enhance performance, the performance of the system depends only weakly on the kernel size. The validation loss remains stable within a narrow band (0.70 – 0.72) across all configurations. These findings are highly favorable for hardware implementation. They suggest that the lightweight spatial filtering (or even purely local pixel processing) is sufficient to achieve better performance, without the need for complex, large-kernel operations. 18 A PREPRINT - J UNE 9, 2026 
+
+Figure 9: Impact of high-pass filter formulations on training loss and grid occupancy. Performance is evaluated across two grid occupancy regimes (low p2 and high p2) mapping the filter choice across the OPL (Stage 1) and Ganglion Cell (Stage 2). 
+
+Figure 10: Impact of spatial kernel size on neural network performance during the contrast gain control stage. Validation loss remains stable (0.70–0.72) across configurations, demonstrating that lightweight, localized spatial filtering is sufficient and complex large-kernel operations are unnecessary for hardware implementation. 19 A PREPRINT - J UNE 9, 2026 
+
+4.5.4 Retina and DVS sparsity 
+
+Silicon retina has the ability to carefully tune the event rate. This can be achieved by tuning the parameters of LIF neurons and could be tuned adaptively. An easy and direct method in our model is modulating the coefficient p2 in the Ganglion Layer (Equation 23), which scales the current injected into the Leaky Integrate and Fire (LIF) neurons In this experiment, we investigate the relationship between the grid occupancy and saliency prediction performance by sweeping p2. The results are presented in Fig. 11. We evaluate a range of sparsity levels from ≈ 1% to ≈ 15% .As illustrated in Fig. 11, the system exhibits following behaviour: 1. The optimal performance is obtained at ≈ 3.5 − 10% . We observe a sharp performance improvement for grid occupancies higher than ≈ 3.5% . The validation loss stabilizes in this region (when keeping other parameters fixed). 2. The training loss continues to decrease monotonically as data density increased, validation performance plateaus or slightly degrades, suggesting that additional events contribute primarily redundant information or noise. The Retina model consistently outperforms the obtained DVS baseline across all density levels. For instance, at ≈ 10% 
+
+occupancy—which corresponds to the default threshold configuration for DVS in [30]—the Retina model achieves a loss of ≈ 0.70 , whereas the DVS baseline sits at ≈ 0.80 .
+
+Figure 11: Saliency prediction performance as a function of grid occupancy. The plot illustrates the Sparsity-Performance tradeoff, where the data rate is modulated by the coupling parameter p2. The secondary top axis indicates the specific p2 coefficient corresponding to the measured grid occupancy. 
+
+4.6 DVS event generation on silicon retina upsampling 
+
+In the previous experiments, the Silicon Retina model demonstrated lower loss than the standard DVS baseline. However, the data generation pipelines for the two models differed: the standard DVS benchmark utilized an optical-flow-based upsampling approach [30] to simulate asynchronous operation of the DVS, whereas the Silicon Retina relied on a fixed 200 FPS upsampling to mimic the time-stepped execution of the SCAMP-5 hardware. 20 A PREPRINT - J UNE 9, 2026 This discrepancy raises an important question, especially in the context of obtained results: does the Silicon Retina’s performance gain come from its bio-inspired architecture, or does the fixed-rate upsampling create an "easier" data distribution for the saliency network? We perform the following experiment to answer that question: we fed the exact same fixed-framerate (200 FPS) input data used by the Silicon Retina into the DVS simulator. This effectively isolates the sensor model (DVS vs. Silicon Retina) as the sole difference between the generated event streams. The convergence results are presented in Fig. 12. Curves show the mean and shaded min-max range across many trainings: "DVS (Optical Flow)" over 7 different seeds, "DVS (Fixed 200 FPS)" over 3 different seeds and "Silicon Retina (Fixed 200 FPS)" over 4 different model configurations. The DVS model evaluated on the fixed-framerate data achieves a significantly higher loss than the DVS baseline utilizing optical flow. This confirms that the fixed 200 FPS upsampling used by Silicon Retina model does not provide an unfair advantage for the saliency task. Silicon Retina (orange) achieves the lowest loss across all evaluated configurations, indicating that advantage comes from the retinal processing model. 
+
+Figure 12: Training and validation convergence curves isolating the upsampling methodology. Forcing the DVS model to use the fixed 200 FPS data (gray trace) degrades its performance compared to its standard optical-flow baseline (blue trace), confirming that the fixed-rate upsampling is a handicap for the DVS model. The Silicon Retina (orange trace) achieves the lowest loss despite this constraint, validating the performance of the retinal model. By demonstrating that the fixed-rate upsampling actively degrades standard event generation rather than enhancing it, this experiment confirms that the Silicon Retina’s better performance is due to its internal processing mechanisms. The DVS using a fixed framerate approach achieves a significantly lower performance than the DVS using an optical flow based method. This is perhaps not surprising: the DVS relies heavily on its asynchronous nature. 
+
+## 5 Discussion and Conclusions 
+
+In this work, we investigated a bio-inspired alternative to standard event-based sensing, implementing a multistage retina model on Pixel Processor Array (PPA). By leveraging the parallel processing capabilities and near-photodiode computing of the SCAMP-5 system, we incorporated important biological mechanisms - specifically center-surround spatial filtering and contrast gain control - directly at the focal plane. To facilitate further research, we also introduced a GPU-based simulation framework capable of generating these retinal events from video data or high-speed camera inputs. 21 A PREPRINT - J UNE 9, 2026 We evaluated the implications of this added complexity on two fundamental tasks: Video Intensity Reconstruction and Video Saliency Prediction. In the reconstruction task, the Silicon Retina model struggled to preserve luminance information compared to the standard DVS baseline. This confirms that the Outer Plexiform Layer effectively filters absolute intensity data, and the network was not capable of reconstruction. However this loss of photometric fidelity proved somewhat advantageous for high-level semantic processing. In the Video Saliency Prediction task, the Silicon Retina model demonstrated improved performance over the DVS baseline, achieving a 13% relative reduction in validation loss. In our experimentation, the Silicon Retina achieved this lower loss while generating approximately 47% fewer events than the standard DVS baseline. Our retina parameter studies confirmed that the bio-inspired Gain Control mechanism is the main mechanism of the data reduction. Furthermore, we validated that hardware-efficient approximations of biological functions, such as absolute-value feedback and simple differencing filters yield good performance comparable to their more complex mathematical counterparts. While standard event cameras are highly effective for a wide range of applications, our results suggest that for some applications, there are benefits of models which go beyond simple temporal difference. By mimicking the retina’s ability to pre-filter and distill visual information, we can achieve a favorable trade-off between data sparsity and predictive performance. 
+
+## 6 Acknowledgment 
+
+This work was initiated during the Bangalore Neuromorphic Engineering Workshop 2025. The authors would like to acknowledge the assistance given by Research IT and the use of the Computational Shared Facility at The University of Manchester for providing high-performance computing resources used for the simulations reported in this work. 
+
+## References 
+
+[1] Ana I. Maqueda et al. “Event-Based Vision Meets Deep Learning on Steering Prediction for Self-Driving Cars”. In: 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition . 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Salt Lake City, UT: IEEE, June 2018, pp. 5419–5427. 
+
+> DOI
+
+: 10.1109/CVPR.2018.00568 . URL : https://ieeexplore.ieee.org/document/8578666/ (visited on 12/07/2025). [2] Cedric Scheerlinck et al. “Fast Image Reconstruction with an Event Camera”. In: 2020 IEEE Winter Conference on Applications of Computer Vision (WACV) . 2020 IEEE Winter Conference on Applications of Computer Vision (WACV). Snowmass Village, CO, USA: IEEE, Mar. 2020, pp. 156–163. DOI : 10.1109/WACV45572.2020. 9093366 . URL : https://ieeexplore.ieee.org/document/9093366/ (visited on 12/06/2025). [3] Gabriele Magrini et al. “Drone Detection with Event Cameras”. In: (). URL : https://arxiv.org/abs/2508. 04564 .[4] Guillermo Gallego et al. “Event-based Vision: A Survey”. In: IEEE Transactions on Pattern Analysis and Machine Intelligence 44.1 (Jan. 1, 2022), pp. 154–180. DOI : 10.1109/TPAMI.2020.3008413 . arXiv: 1904.08405[cs] .
+
+> URL
+
+: http://arxiv.org/abs/1904.08405 (visited on 12/06/2025). [5] Christoph Posch et al. “Retinomorphic Event-Based Vision Sensors: Bioinspired Cameras With Spiking Output”. In: Proceedings of the IEEE 102.10 (Oct. 2014), pp. 1470–1484. DOI : 10.1109/JPROC.2014.2346153 . URL :
+
+https://ieeexplore.ieee.org/document/6887319/ (visited on 12/06/2025). [6] Prince Philip et al. Neuromorphic Retina: An FPGA-based Emulator . Jan. 15, 2025. DOI : 10.48550/arXiv. 2501 . 08943 . arXiv: 2501 . 08943[eess] . URL : http : / / arxiv . org / abs / 2501 . 08943 (visited on 12/06/2025). [7] Bharatesh Chakravarthi et al. Recent Event Camera Innovations: A Survey . Aug. 27, 2024. DOI : 10.48550/ arXiv.2408.13627 . arXiv: 2408.13627[cs] . URL : http://arxiv.org/abs/2408.13627 (visited on 12/06/2025). [8] Nicholas Owen Ralph et al. “Astrometric calibration and source characterisation of the latest generation neu-romorphic event-based cameras for space imaging”. In: Astrodynamics 7.4 (Dec. 1, 2023), pp. 415–443. DOI :
+
+10.1007/s42064- 023- 0168- 2 . URL : https://doi.org/10.1007/s42064- 023- 0168- 2 (visited on 12/06/2025). [9] Sami Arja et al. Noise Filtering Benchmark for Neuromorphic Satellites Observations . Nov. 18, 2024. DOI :
+
+10.48550/arXiv.2411.11233 . arXiv: 2411.11233[cs] . URL : http://arxiv.org/abs/2411.11233 
+
+(visited on 12/09/2025). 22 A PREPRINT - J UNE 9, 2026 [10] Hongmin Li and Luping Shi. “Robust Event-Based Object Tracking Combining Correlation Filter and CNN Representation”. In: Frontiers in Neurorobotics 13 (Oct. 10, 2019). DOI : 10 . 3389 / fnbot . 2019 . 00082 .
+
+> URL
+
+: https://www.frontiersin.org/journals/neurorobotics/articles/10.3389/fnbot.2019. 00082/full (visited on 12/06/2025). [11] Patrick Bardow, Andrew J. Davison, and Stefan Leutenegger. “Simultaneous Optical Flow and Intensity Estima-tion from an Event Camera”. In: 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR) .2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). Las Vegas, NV, USA: IEEE, June 2016, pp. 884–892. DOI : 10.1109/CVPR.2016.102 . URL : http://ieeexplore.ieee.org/document/ 7780471/ (visited on 12/06/2025). [12] Henri Rebecq et al. High Speed and High Dynamic Range Video with an Event Camera . June 15, 2019. DOI :
+
+10.48550/arXiv.1906.07165 . arXiv: 1906.07165[cs] . URL : http://arxiv.org/abs/1906.07165 
+
+(visited on 12/06/2025). [13] Amélie Gruel and Jean Martinet. Bio-inspired visual attention for silicon retinas based on spiking neural networks applied to pattern classification . Issue: arXiv:2105.14753. May 31, 2021. DOI : 10.48550/arXiv.2105.14753 .arXiv: 2105.14753[cs] . URL : http://arxiv.org/abs/2105.14753 (visited on 12/06/2025). [14] Sirine Arfa et al. Efficient Deployment of Spiking Neural Networks on SpiNNaker2 for DVS Gesture Recognition Using Neuromorphic Intermediate Representation . Issue: arXiv:2504.06748. Apr. 9, 2025. DOI : 10.48550/ arXiv.2504.06748 . arXiv: 2504.06748[cs] . URL : http://arxiv.org/abs/2504.06748 (visited on 12/08/2025). [15] Simon Schaefer, Daniel Gehrig, and Davide Scaramuzza. AEGNN: Asynchronous Event-based Graph Neural Networks . Issue: arXiv:2203.17149. Nov. 1, 2022. DOI : 10 . 48550 / arXiv . 2203 . 17149 . arXiv: 2203 . 17149[cs] . URL : http://arxiv.org/abs/2203.17149 (visited on 12/06/2025). [16] Yufeng Yang, Adrian Kneip, and Charlotte Frenkel. “EvGNN: An Event-driven Graph Neural Network Ac-celerator for Edge Vision”. In: IEEE Transactions on Circuits and Systems for Artificial Intelligence 2.1 (Mar. 2025), pp. 37–50. DOI : 10 . 1109 / TCASAI . 2024 . 3520905 . arXiv: 2404 . 19489[cs] . URL : http : //arxiv.org/abs/2404.19489 (visited on 12/06/2025). [17] Cedric Scheerlinck, Nick Barnes, and Robert Mahony. Continuous-time Intensity Estimation Using Event Cam-eras . Issue: arXiv:1811.00386. Nov. 1, 2018. DOI : 10.48550/arXiv.1811.00386 . arXiv: 1811.00386[cs] .
+
+> URL
+
+: http://arxiv.org/abs/1811.00386 (visited on 12/06/2025). [18] Metavision® Sensors . PROPHESEE. URL : https://www.prophesee.ai/event-based-sensors/ (visited on 02/09/2026). [19] Buy – iniVation . URL : https://inivation.com/buy/ (visited on 02/09/2026). [20] Thomas Finateu et al. “5.10 A 1280×720 Back-Illuminated Stacked Temporal Contrast Event-Based Vision Sensor with 4.86μm Pixels, 1.066GEPS Readout, Programmable Event-Rate Controller and Compressive Data-Formatting Pipeline”. In: 2020 IEEE International Solid-State Circuits Conference - (ISSCC) . 2020, pp. 112–114. 
+
+> DOI
+
+: 10.1109/ISSCC19947.2020.9063149 .[21] Misha A. Mahowald and Carver Mead. “The Silicon Retina”. In: Scientific American 264.5 (1991), pp. 76–83. 
+
+> URL
+
+: http://www.jstor.org/stable/24936904 (visited on 06/04/2026). [22] Adrien Wohrer and Pierre Kornprobst. “Virtual Retina: A biological retina model and simulator, with contrast gain control”. In: Journal of Computational Neuroscience 26.2 (Apr. 1, 2009), pp. 219–249. DOI : 10.1007/s10827-008-0108-4 . URL : https://doi.org/10.1007/s10827-008-0108-4 (visited on 12/06/2025). [23] G.D. Field and E.J. Chichilnisky. “Information Processing in the Primate Retina: Circuitry and Coding”. In: 
+
+Annual Review of Neuroscience 30.1 (July 1, 2007), pp. 1–30. DOI : 10.1146/annurev.neuro.30.051606. 094252 . URL : https://www.annualreviews.org/doi/10.1146/annurev.neuro.30.051606.094252 
+
+(visited on 12/06/2025). [24] Piotr Dudek et al. “Sensor-level computer vision with pixel processor arrays for agile robots”. In: Science Robotics 7.67 (June 29, 2022), eabl7755. DOI : 10 . 1126 / scirobotics . abl7755 . URL : https : / / www . science.org/doi/10.1126/scirobotics.abl7755 (visited on 12/06/2025). [25] Stephen J. Carey et al. “A 100,000 fps vision sensor with embedded 535GOPS/W 256×256 SIMD processor array”. In: 2013 Symposium on VLSI Circuits . 2013 Symposium on VLSI Circuits. June 2013, pp. C182–C183. 
+
+> URL
+
+: https://ieeexplore.ieee.org/document/6578654 (visited on 12/06/2025). [26] Laurie Bose, Jianing Chen, and Piotr Dudek. “Descriptor-In-Pixel : Point-Feature Tracking For Pixel Processor Arrays”. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .June 2025, pp. 5392–5400. 23 A PREPRINT - J UNE 9, 2026 [27] Laurie Bose et al. “Pixel Processor Arrays For Low Latency Gaze Estimation”. In: 2022 IEEE Conference on Virtual Reality and 3D User Interfaces Abstracts and Workshops (VRW) . 2022 IEEE Conference on Virtual Reality and 3D User Interfaces Abstracts and Workshops (VRW). Christchurch, New Zealand: IEEE, Mar. 2022, pp. 970– 971. DOI : 10.1109/VRW55335.2022.00336 . URL : https://ieeexplore.ieee.org/document/9757572/ 
+
+(visited on 12/06/2025). [28] Haley M. So et al. PixelRNN: In-pixel Recurrent Neural Networks for End-to-end-optimized Perception with Neural Sensors . Apr. 11, 2023. DOI : 10.48550/arXiv.2304.05440 . arXiv: 2304.05440[cs] . URL : http: //arxiv.org/abs/2304.05440 (visited on 12/06/2025). [29] Julien N. P. Martel et al. “Pixel interlacing to trade off the resolution of a cellular processor array against more registers”. In: 2015 European Conference on Circuit Theory and Design (ECCTD) . 2015, pp. 1–4. DOI :
+
+10.1109/ECCTD.2015.7300011 .[30] Daniel Gehrig et al. Video to Events: Recycling Video Datasets for Event Cameras . Apr. 1, 2020. DOI : 10. 48550/arXiv.1912.03095 . arXiv: 1912.03095[cs] . URL : http://arxiv.org/abs/1912.03095 (visited on 12/06/2025). [31] Stephen A. Baccus and Markus Meister. “Fast and Slow Contrast Adaptation in Retinal Circuitry”. In: Neuron 
+
+36.5 (Dec. 2002), pp. 909–919. DOI : 10.1016/S0896- 6273(02)01050- 4 . URL : https://linkinghub. elsevier.com/retrieve/pii/S0896627302010504 (visited on 12/06/2025). [32] Tianruo Guo et al. “Understanding the Retina: A Review of Computational Models of the Retina from the Single Cell to the Network Level”. In: Critical Reviews in Biomedical Engineering 42.5 (2014), pp. 419–436. 
+
+> DOI
+
+: 10.1615/CritRevBiomedEng.2014011732 . URL : http://www.dl.begellhouse.com/journals/ 4b27cbfc562e21b8,64a3e6f7290a8a6e,64cd0e236c1f5579.html (visited on 12/06/2025). [33] Prince Philip et al. “Tau-Cell-Based Analog Silicon Retina With Spatio-Temporal Filtering and Contrast Gain Control”. In: IEEE Transactions on Biomedical Circuits and Systems 18.2 (2024), pp. 423–437. DOI : 10.1109/ TBCAS.2023.3332117 .[34] R M Shapley and J D Victor. “The effect of contrast on the transfer properties of cat retinal ganglion cells.” In: 
+
+The Journal of Physiology 285 (Dec. 1978), pp. 275–298. DOI : 10.1113/jphysiol.1978.sp012571 . URL :
+
+https://pmc.ncbi.nlm.nih.gov/articles/PMC1281756/ (visited on 12/09/2025). [35] Jianing Chen, Stephen J Carey, and Piotr Dudek. “Feature Extraction using a Portable Vision System”. In: (). [36] Julien N. P. Martel et al. “Real-Time Depth From Focus on a Programmable Focal Plane Processor”. In: IEEE Transactions on Circuits and Systems I: Regular Papers 65.3 (Mar. 2018), pp. 925–934. DOI : 10.1109/TCSI. 2017.2753878 . URL : https://ieeexplore.ieee.org/document/8071011/ (visited on 12/06/2025). [37] Patrick Lichtsteiner, Christoph Posch, and Tobi Delbruck. “A 128 × 128 120 dB 15 μs Latency Asynchronous Temporal Contrast Vision Sensor”. In: IEEE Journal of Solid-State Circuits 43.2 (2008), pp. 566–576. DOI :
+
+10.1109/JSSC.2007.914337 .[38] Jess Costas-Santos et al. “A Spatial Contrast Retina With On-Chip Calibration for Neuromorphic Spike-Based AER Vision Systems”. In: IEEE Transactions on Circuits and Systems I: Regular Papers 54.7 (July 2007), pp. 1444–1458. DOI : 10.1109/TCSI.2007.900179 . URL : https://ieeexplore.ieee.org/document/ 4268401 (visited on 12/14/2025). [39] Christoph Posch et al. “Live demonstration: Asynchronous time-based image sensor (ATIS) camera with full-custom AE processor”. In: Proceedings of 2010 IEEE International Symposium on Circuits and Systems . 2010 IEEE International Symposium on Circuits and Systems. May 2010, pp. 1392–1392. DOI : 10.1109/ISCAS. 2010.5537265 . URL : https://ieeexplore.ieee.org/document/5537265 (visited on 12/14/2025). [40] Juan Antonio Leñero-Bardallo, Teresa Serrano-Gotarredona, and Bernabé Linares-Barranco. “A Five-Decade Dynamic-Range Ambient-Light-Independent Calibrated Signed-Spatial-Contrast AER Retina With 0.1-ms Latency and Optional Time-to-First-Spike Mode”. In: IEEE Transactions on Circuits and Systems I: Regular Papers 57.10 (Oct. 2010), pp. 2632–2643. DOI : 10.1109/TCSI.2010.2046971 . URL : https://ieeexplore. ieee.org/abstract/document/5460900 (visited on 12/14/2025). [41] C. Brandli et al. “Live demonstration: The “DAVIS” Dynamic and Active-Pixel Vision Sensor”. In: 2014 IEEE International Symposium on Circuits and Systems (ISCAS) . 2014 IEEE International Symposium on Circuits and Systems (ISCAS). June 2014, pp. 440–440. DOI : 10.1109/ISCAS.2014.6865163 . URL : https: //ieeexplore.ieee.org/document/6865163/ (visited on 12/14/2025). [42] Yuki Hayashida et al. “Retinal Circuit Emulator With Spatiotemporal Spike Outputs at Millisecond Resolution in Response to Visual Events”. In: IEEE transactions on biomedical circuits and systems 11.3 (June 2017), pp. 597–611. DOI : 10.1109/TBCAS.2017.2662659 .24 A PREPRINT - J UNE 9, 2026 [43] Xinglong Luo et al. “Efficient Meshflow and Optical Flow Estimation from Event Cameras”. In: 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Seattle, WA, USA: IEEE, June 16, 2024, pp. 19198–19207. DOI :
+
+10 . 1109 / CVPR52733 . 2024 . 01816 . URL : https : / / ieeexplore . ieee . org / document / 10655490/ 
+
+(visited on 12/06/2025). [44] Sachin Shah et al. CodedEvents: Optimal Point-Spread-Function Engineering for 3D-Tracking with Event Cameras . Issue: arXiv:2406.09409. June 13, 2024. DOI : 10 . 48550 / arXiv . 2406 . 09409 . arXiv: 2406 . 09409[cs] . URL : http://arxiv.org/abs/2406.09409 (visited on 12/06/2025). [45] Yuhuang Hu, Shih-Chii Liu, and Tobi Delbruck. “v2e: From Video Frames to Realistic DVS Events”. In: (). [46] Wenguan Wang et al. “Revisiting Video Saliency Prediction in the Deep Learning Era”. In: IEEE Transactions on Pattern Analysis and Machine Intelligence 43.1 (Jan. 2021), pp. 220–237. DOI : 10.1109/TPAMI.2019.2924417 .
+
+> URL
+
+: https://ieeexplore.ieee.org/document/8744328 (visited on 01/05/2026). [47] Christian Reinbacher, Gottfried Graber, and Thomas Pock. Real-Time Intensity-Image Reconstruction for Event Cameras Using Manifold Regularisation . Aug. 4, 2016. DOI : 10.48550/arXiv.1607.06283 . arXiv: 
+
+1607.06283[cs] . URL : http://arxiv.org/abs/1607.06283 (visited on 12/06/2025). [48] Henri Rebecq et al. “Events-To-Video: Bringing Modern Computer Vision to Event Cameras”. In: 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Long Beach, CA, USA: IEEE, June 2019, pp. 3852–3861. 
+
+> DOI
+
+: 10.1109/CVPR.2019.00398 . URL : https://ieeexplore.ieee.org/document/8953722/ (visited on 12/06/2025). [49] Richard Zhang et al. The Unreasonable Effectiveness of Deep Features as a Perceptual Metric . Apr. 10, 2018. DOI :
+
+10.48550/arXiv.1801.03924 . arXiv: 1801.03924[cs] . URL : http://arxiv.org/abs/1801.03924 
+
+(visited on 12/06/2025). 25

@@ -1,0 +1,260 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-15T22:52:04.484133+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2606.14356v1",
+      "source": "arxiv",
+      "title": "PLAIground: SLO-Driven Runtime Model Selection for Compound AI Systems in the Edge-Cloud-Space Continuum",
+      "abstract": "Applications in the 3D Computing Continuum, which unifies edge, cloud, and space, require combining multiple AI tasks such as object detection, time-series analytics, and natural language processing into Compound AI systems. These systems must satisfy stringent Service Level Objectives (SLOs) on accuracy, latency, and cost. A key mechanism for maintaining SLO compliance of Compound AI systems is runtime model selection, where AI models are dynamically switched for each workflow task. However, existing distributed and compound AI frameworks do not natively support runtime model selection. We present PLAIground, a framework that enables runtime model selection for Compound AI systems. PLAIground introduces Compoundable AI Model (CAIM) abstraction, which decouples task semantics from AI model implementations via Task and Data Contracts, enabling model switching without workflow changes. Additionally, PLAIground introduces Pixie, an SLO-driven runtime model selection algorithm, which dynamically selects the most suitable model for each task during execution. Our evaluation on two realistic Compound AI workflows demonstrates that Pixie achieves up to 91.3% accuracy while maintaining SLO compliance where fixed-model strategies either violate cost and latency budgets up to 21x or miss accuracy targets by 4%.",
+      "authors": [
+        "Milos Gravara",
+        "Cynthia Marcelino",
+        "Andrija Stanisic",
+        "Stefan Nastic"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC",
+        "cs.AI"
+      ],
+      "published": "2026-06-12T11:34:51+00:00",
+      "link": "https://arxiv.org/pdf/2606.14356v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "runtime model selection in edge-cloud-space continuum for compound AI systems",
+      "llm_evidence_cn": "边缘-云-天连续体中的运行时模型选择，适用于复合AI系统",
+      "llm_evidence": "边缘-云-天连续体中的运行时模型选择，适用于复合AI系统",
+      "canonical_evidence": "边缘-云-天连续体中的运行时模型选择，适用于复合AI系统",
+      "llm_tldr_en": "PLAIground enables SLO-driven runtime model selection for compound AI systems in the edge-cloud-space continuum, optimizing accuracy, latency, and cost.",
+      "llm_tldr_cn": "复合AI系统在边缘-云-天连续体中需满足严格SLO。现有框架不支持运行时模型选择。PLAIground提出可组合AI工作流，支持动态切换模型以维持SLO。在多个任务上验证了延迟和精度权衡的有效性。该框架对边缘计算中视频分析等实时应用有重要价值。",
+      "llm_tldr": "复合AI系统在边缘-云-天连续体中需满足严格SLO。现有框架不支持运行时模型选择。PLAIground提出可组合AI工作流，支持动态切换模型以维持SLO。在多个任务上验证了延迟和精度权衡的有效性。该框架对边缘计算中视频分析等实时应用有重要价值。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.14631v1",
+      "source": "arxiv",
+      "title": "SED:Lightweight Saliency prediction for Event-based data via Distillation",
+      "abstract": "Event-based saliency prediction has gained attention recently, as combining event cameras with saliency estimation can act as an upstream stage that naturally improves the efficiency of downstream eventbased perception at the edge. However, current approaches are either neuromorphic, underperforming on event-based saliency benchmarks, or too heavy for resource-constrained edge applications due to their reliance on transformers or 3D convolutions. Drawing inspiration from efficient convolutional modules, SED and aiming to exploit the temporal information in event data, we propose a lightweight network, trained through knowledge distillation, built on a Depthwise Spatio-Temporal Block (DSTconv) -- a factorization of the 3D depthwise separable convolution. Relative to its teacher, our model reduces the model size from 180 MB to 0.32 MB (562x) and the parameter count from 45M to 81k (554x), while matching or outperforming it on the N-DHF1K and N-UCF Sports datasets. Moreover, it generalizes strongly beyond its training distribution, transferring from synthetic to real event data where a model trained from scratch fails.",
+      "authors": [
+        "Romaric Mazna",
+        "Jean Martinet",
+        "Michele Magno"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-12T16:59:10+00:00",
+      "link": "https://arxiv.org/pdf/2606.14631v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "lightweight model for edge via distillation",
+      "llm_evidence_cn": "通过蒸馏实现边缘轻量化模型选择",
+      "llm_evidence": "通过蒸馏实现边缘轻量化模型选择",
+      "canonical_evidence": "通过蒸馏实现边缘轻量化模型选择",
+      "llm_tldr_en": "Proposes SED, a lightweight network for event-based saliency prediction at the edge using knowledge distillation, achieving efficiency suitable for resource-constrained applications.",
+      "llm_tldr_cn": "针对事件相机在边缘设备上的显著性预测任务，现有方法要么性能不足要么过于庞大。本文提出SED轻量级网络，通过知识蒸馏和深度可分离时空卷积模块实现高效推理，在保持性能的同时大幅降低计算开销，适合边缘实时应用。",
+      "llm_tldr": "针对事件相机在边缘设备上的显著性预测任务，现有方法要么性能不足要么过于庞大。本文提出SED轻量级网络，通过知识蒸馏和深度可分离时空卷积模块实现高效推理，在保持性能的同时大幅降低计算开销，适合边缘实时应用。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.10135v1",
+      "source": "arxiv",
+      "title": "BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression",
+      "abstract": "Transitioning bidirectional video diffusion models into an autoregressive paradigm improves the interactivity of video world models, but existing causal pipelines need many stages (control fine-tuning, autoregressive training, causal initialization, few-step distillation) and still trail bidirectional models in quality due to error accumulation. Recent world models such as Yume-1.5 and Matrix-Game-3.0 instead adopt a bidirectional autoregressive approach, gaining fidelity and stable long-horizon rollout from self-correcting error propagation, yet open-source frameworks (e.g., minWM) support only causal models. We present BiWM, the first full-stack framework for interactive video world models under the bidirectional autoregressive paradigm, jointly optimizing generation quality and inference speed. From a pretrained video backbone, BiWM injects camera control by fine-tuning, then runs a few-step Distribution Matching Distillation (DMD) stage that turns the backbone into an action/camera-controllable world model: just two training stages instead of four in minWM, converging in a few hundred steps on 8xH200 GPUs. A single recipe spans Wan2.1-1.3B, Wan2.2-5B, HunyuanVideo-1.5-8B, and LTX-2.3-22B, and also supports secondary fine-tuning of existing bidirectional models. BiWM enables real-world camera control where minWM loses controllability, integrates pluggable history compression (FramePack-style and PackForcing-style) for long rollouts, and offers an optional NVFP4 4-bit training/inference pipeline. To counter DMD's mode-seeking degradation, we add GAN and mass-covering forward-KL objectives that preserve scene dynamics. We open-source BiWM for resource-constrained research and high-fidelity environment simulation.",
+      "authors": [
+        "Shaohao Rui",
+        "Xiaofeng Mao",
+        "Zhanyu Zhang",
+        "Peijia Lin",
+        "Yansong Zhu",
+        "Yibo Zhang",
+        "Haibin Wan",
+        "Weijie Ma"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T20:08:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.10135v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "interactive video world models with bidirectional autoregression",
+      "llm_evidence_cn": "双向自回归的交互式视频世界模型",
+      "llm_evidence": "双向自回归的交互式视频世界模型",
+      "canonical_evidence": "双向自回归的交互式视频世界模型",
+      "llm_tldr_en": "BiWM is the first full-stack framework for interactive video world models under bidirectional autoregression, improving fidelity and stable long-horizon rollout.",
+      "llm_tldr_cn": "针对现有因果视频世界模型质量差和误差积累问题，本文提出BiWM，首个开源双向自回归交互式视频世界模型框架，通过自校正误差传播实现高保真度和稳定长程展开，为视频交互与预测提供新工具。",
+      "llm_tldr": "针对现有因果视频世界模型质量差和误差积累问题，本文提出BiWM，首个开源双向自回归交互式视频世界模型框架，通过自校正误差传播实现高保真度和稳定长程展开，为视频交互与预测提供新工具。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.08370v1",
+      "source": "arxiv",
+      "title": "Programmable Silicon Retina on Pixel Processor Array",
+      "abstract": "Standard dynamic vision sensors approximate retinal processing by detecting temporal contrast changes, offering high speed and high dynamic range. In this work, we explore whether incorporating additional biologically inspired processing stages - specifically spatial filtering and gain control - can offer advantages for certain downstream tasks such as saliency prediction. We present the first implementation of a multi-stage Silicon Retina model on the SCAMP-5 Pixel Processor Array, along with a GPU-based simulation framework. We evaluate the performance of our model on Video Intensity Reconstruction and Video Saliency Prediction. While the bio-inspired model is less effective at reconstructing absolute intensity frames, it achieves a 13\\% reduction in saliency prediction loss in comparison to standard DVS event representation, while reducing the event rate by approximately 47\\%. These experiments are obtained using a lightweight $\\approx 100$k-parameter FireNet-style network, adapted from event-based reconstruction to saliency prediction. These results suggest that the silicon retina's \"information distillation\" mechanism can achieve a more efficient representation for downstream neural networks, particularly in bandwidth-constrained edge applications.",
+      "authors": [
+        "Maciej Lewandowski",
+        "Prince Philip",
+        "Alexandre Marcireau",
+        "Chetan Singh Thakur",
+        "André van Schaik",
+        "Piotr Dudek"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "published": "2026-06-06T23:10:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.08370v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "biologically inspired video saliency prediction as streaming video analysis technique",
+      "llm_evidence_cn": "生物启发的视频显著性预测，属于流式视频分析技术",
+      "llm_evidence": "生物启发的视频显著性预测，属于流式视频分析技术",
+      "canonical_evidence": "生物启发的视频显著性预测，属于流式视频分析技术",
+      "llm_tldr_en": "Programmable Silicon Retina on pixel processor array for video saliency prediction, achieving 13% reduction in saliency prediction error.",
+      "llm_tldr_cn": "标准动态视觉传感器仅检测时间对比度变化，本文探索加入空间滤波和增益控制等生物处理阶段对下游任务的影响。首次在SCAMP-5像素处理器阵列上实现了多级硅视网膜模型，评估了视频强度重建和视频显著性预测两项任务。结果表明，虽然生物启发模型在强度重建上效果不佳，但在显著性预测上误差降低了13%。",
+      "llm_tldr": "标准动态视觉传感器仅检测时间对比度变化，本文探索加入空间滤波和增益控制等生物处理阶段对下游任务的影响。首次在SCAMP-5像素处理器阵列上实现了多级硅视网膜模型，评估了视频强度重建和视频显著性预测两项任务。结果表明，虽然生物启发模型在强度重建上效果不佳，但在显著性预测上误差降低了13%。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.10135v2",
+      "source": "arxiv",
+      "title": "BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression",
+      "abstract": "Transitioning bidirectional video diffusion models into an autoregressive paradigm improves the interactivity of video world models, but existing causal pipelines need many stages (control fine-tuning, autoregressive training, causal initialization, few-step distillation) and still trail bidirectional models in quality due to error accumulation. Recent world models such as Yume-1.5 and Matrix-Game-3.0 instead adopt a bidirectional autoregressive approach, gaining fidelity and stable long-horizon rollout from self-correcting error propagation, yet open-source frameworks (e.g., minWM) support only causal models. We present BiWM, the first full-stack framework for interactive video world models under the bidirectional autoregressive paradigm, jointly optimizing generation quality and inference speed. From a pretrained video backbone, BiWM injects camera control by fine-tuning, then runs a few-step Distribution Matching Distillation (DMD) stage that turns the backbone into an action/camera-controllable world model: just two training stages instead of four in minWM, converging in a few hundred steps on 8xH200 GPUs. A single recipe spans Wan2.1-1.3B, Wan2.2-5B, HunyuanVideo-1.5-8B, and LTX-2.3-22B, and also supports secondary fine-tuning of existing bidirectional models. BiWM enables real-world camera control where minWM loses controllability, integrates pluggable history compression (FramePack-style and PackForcing-style) for long rollouts, and offers an optional NVFP4 4-bit training/inference pipeline. To counter DMD's mode-seeking degradation, we add GAN and mass-covering forward-KL objectives that preserve scene dynamics. We open-source BiWM for resource-constrained research and high-fidelity environment simulation.",
+      "authors": [
+        "Shaohao Rui",
+        "Xiaofeng Mao",
+        "Zhanyu Zhang",
+        "Peijia Lin",
+        "Yansong Zhu",
+        "Yibo Zhang",
+        "Haibin Wan",
+        "Weijie Ma"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T20:08:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.10135v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "interactive video world models with bidirectional autoregression",
+      "llm_evidence_cn": "双向自回归的交互式视频世界模型",
+      "llm_evidence": "双向自回归的交互式视频世界模型",
+      "canonical_evidence": "双向自回归的交互式视频世界模型",
+      "llm_tldr_en": "BiWM is the first full-stack framework for interactive video world models under bidirectional autoregression, improving fidelity and stable long-horizon rollout.",
+      "llm_tldr_cn": "针对现有因果视频世界模型质量差和误差积累问题，本文提出BiWM，首个开源双向自回归交互式视频世界模型框架，通过自校正误差传播实现高保真度和稳定长程展开，为视频交互与预测提供新工具。",
+      "llm_tldr": "针对现有因果视频世界模型质量差和误差积累问题，本文提出BiWM，首个开源双向自回归交互式视频世界模型框架，通过自校正误差传播实现高保真度和稳定长程展开，为视频交互与预测提供新工具。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.13376v1",
+      "source": "arxiv",
+      "title": "MoVerse: Real-Time Video World Modeling with Panoramic Gaussian Scaffold",
+      "abstract": "We present MoVerse, a real-time video world model that creates an interactively navigable scene from a single narrow-field-of-view image. This setting is challenging because the input observes only a small fraction of the environment, while interactive roaming requires a complete surrounding world, persistent geometry, controllable camera motion, and temporally coherent high-fidelity observations. MoVerse addresses this problem by separating world construction from observation rendering. It first expands the input into a gravity-aligned 360$^\\circ$ panorama with topology-aware diffusion, closing the missing field of view before 3D reasoning. It then lifts the panorama into a persistent 3D Gaussian scaffold using panoramic geometry-aware residual prediction, yielding a dense and directly renderable spatial memory. Finally, a Gaussian-conditioned video renderer translates scaffold renderings along user-specified camera trajectories into photorealistic video. To make this renderer practical for interaction, we train a bidirectional diffusion teacher for high-quality conditional rendering and distill it into a causal autoregressive student for bounded-latency streaming. This design combines the controllability and long-range consistency of explicit 3D representations with the perceptual quality of generative video models. MoVerse supports real-time scene roaming at 8~FPS on a single NVIDIA RTX~4090 GPU, demonstrating a practical path toward single-image world creation with interactive video output.",
+      "authors": [
+        "Yang Zhou",
+        "Ziheng Wang",
+        "Yuqin Lu",
+        "Haofeng Liu",
+        "Jun Liang",
+        "Shengfeng He",
+        "Jing Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-11T14:01:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.13376v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "real-time video world modeling from single image",
+      "llm_evidence_cn": "从单张图像进行实时视频世界建模",
+      "llm_evidence": "从单张图像进行实时视频世界建模",
+      "canonical_evidence": "从单张图像进行实时视频世界建模",
+      "llm_tldr_en": "MoVerse creates real-time interactive 3D scenes from a single narrow-FoV image using panorama diffusion and Gaussian scaffold, achieving high-fidelity novel view synthesis.",
+      "llm_tldr_cn": "该论文提出MoVerse，一种实时视频世界模型，从单张窄视野图像生成可交互探索的360度场景。方法先扩散补全全景图，再提升为3D高斯支架。虽非传统视频分析，但涉及实时视频渲染与处理，与实时视频处理需求有一定关联。",
+      "llm_tldr": "该论文提出MoVerse，一种实时视频世界模型，从单张窄视野图像生成可交互探索的360度场景。方法先扩散补全全景图，再提升为3D高斯支架。虽非传统视频分析，但涉及实时视频渲染与处理，与实时视频处理需求有一定关联。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -6,52 +6,38 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-14
-- 运行时间：2026-06-14 20:58:04 UTC
+- 最新运行日期：2026-06-15
+- 运行时间：2026-06-15 22:55:04 UTC
 - 运行状态：成功
-- 本次总论文数：10
-- 精读区：4
-- 速读区：6
+- 本次总论文数：6
+- 精读区：2
+- 速读区：4
 
 ### 今日简报（AI）
-1) 今日精读视频监控增强和物体中心学习两大方向，速读视频去重、长视频RAG及事件驱动超分。  
-2) 最值得看：9.0分的《Augmentation techniques for video surveillance》与7.0分的《Rethinking RAG in Long Videos》分别聚焦监控数据增强和长视频检索策略。  
-3) 建议普通读者优先关注视频监控增强方法，并思考如何将检索技术融入长视频分析流程。
-- 详情：[/202606/14/README](/202606/14/README)
+今日推荐6篇论文，精读聚焦于AI系统模型选择与事件相机轻量化处理。最值得看的是PLAIground的SLO驱动运行时模型选择（10分）与BiWM的双向自回归视频世界模型（7分）。建议优先精读PLAIground，掌握复合AI系统在边缘-云-空间连续体中的优化策略。
+- 详情：[/202606/15/README](/202606/15/README)
 
 ### 精读区论文标签
-1. [Augmentation techniques for video surveillance in the visible and thermal spectral range](/202606/14/2606.13042v1-augmentation-techniques-for-video-surveillance-in-the-visible-and-thermal-spectral-range)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：可见光和热红外视频监控增强
-2. [Dual-State Slot Attention: Decoupling Appearance and Identity for Video Object-Centric Learning](/202606/14/2606.12601v1-dual-state-slot-attention-decoupling-appearance-and-identity-for-video-object-centric-learning)  
+1. [PLAIground: SLO-Driven Runtime Model Selection for Compound AI Systems in the Edge-Cloud-Space Continuum](/202606/15/2606.14356v1-plaiground-slo-driven-runtime-model-selection-for-compound-ai-systems-in-the-edge-cloud-space-continuum)  
+   标签：评分：10.0/10、query:mec-video
+   evidence：边缘-云-天连续体中的运行时模型选择，适用于复合AI系统
+2. [SED:Lightweight Saliency prediction for Event-based data via Distillation](/202606/15/2606.14631v1-sedlightweight-saliency-prediction-for-event-based-data-via-distillation)  
    标签：评分：8.0/10、query:mec-video
-   evidence：视频以对象为中心的学习分析
-3. [DIMOS: Disentangling Instance-level Moving Object Segmentation](/202606/14/2606.12826v1-dimos-disentangling-instance-level-moving-object-segmentation)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：用于事件相机的运动实例分割，适用于流式视频分析
-4. [Fully Distributed Multi-View 3D Tracking in Real-Time](/202606/14/2606.13127v1-fully-distributed-multi-view-3d-tracking-in-real-time)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：全分布式实时多视角3D跟踪，适用于边缘计算
+   evidence：通过蒸馏实现边缘轻量化模型选择
 
 ### 速读区论文标签
-1. [MLT-Dedup: Efficient Large-Scale Online Video Deduplication via Multi-Level Representations and Spatial-Temporal Matching](/202606/14/2606.12215v1-mlt-dedup-efficient-large-scale-online-video-deduplication-via-multi-level-representations-and-spatial-temporal-matching)  
+1. [BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression](/202606/15/2606.10135v1-biwm-advancing-open-source-interactive-video-world-models-with-bidirectional-autoregression)  
    标签：评分：7.0/10、query:mec-video
-   evidence：使用多层表示和时空匹配的视频去重框架
-2. [Rethinking RAG in Long Videos: What to Retrieve and How to Use It?](/202606/14/2606.13141v1-rethinking-rag-in-long-videos-what-to-retrieve-and-how-to-use-it)  
+   evidence：双向自回归的交互式视频世界模型
+2. [BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression](/202606/15/2606.10135v2-biwm-advancing-open-source-interactive-video-world-models-with-bidirectional-autoregression)  
    标签：评分：7.0/10、query:mec-video
-   evidence：长视频检索增强生成
-3. [EvTexture++: Event-Driven Texture Enhancement for Video Super-Resolution](/202606/14/2606.13580v1-evtexture-event-driven-texture-enhancement-for-video-super-resolution)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：事件驱动视频超分辨率纹理增强
-4. [Decoupling Semantics and Logic: A Training-Free Coarse-to-Fine Pipeline for Video Retrieval-Augmented Generation](/202606/14/2606.07924v1-decoupling-semantics-and-logic-a-training-free-coarse-to-fine-pipeline-for-video-retrieval-augmented-generation)  
+   evidence：双向自回归的交互式视频世界模型
+3. [Programmable Silicon Retina on Pixel Processor Array](/202606/15/2606.08370v1-programmable-silicon-retina-on-pixel-processor-array)  
    标签：评分：6.0/10、query:mec-video
-   evidence：无训练的视频RAG流水线，用于跨语言长视频理解，可用于流式视频分析
-5. [OmniCap-IF: Benchmarking and Improving Instruction Following Abilities for Omni-Video Captioning](/202606/14/2606.08572v1-omnicap-if-benchmarking-and-improving-instruction-following-abilities-for-omni-video-captioning)  
+   evidence：生物启发的视频显著性预测，属于流式视频分析技术
+4. [MoVerse: Real-Time Video World Modeling with Panoramic Gaussian Scaffold](/202606/15/2606.13376v1-moverse-real-time-video-world-modeling-with-panoramic-gaussian-scaffold)  
    标签：评分：6.0/10、query:mec-video
-   evidence：全模态视频字幕指令遵循
-6. [LGVSC: A Large-Model-Driven Generative Video Semantic Communication Framework](/202606/14/2606.12899v1-lgvsc-a-large-model-driven-generative-video-semantic-communication-framework)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：生成式视频语义通信框架
+   evidence：从单张图像进行实时视频世界建模
 
 
 <div class="dpr-home-promo-card">
