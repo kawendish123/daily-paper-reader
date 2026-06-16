@@ -1,0 +1,283 @@
+Title: High-Fidelity Video Compression based on Invertible Neural Transform and Implicit Conditioning
+
+URL Source: https://arxiv.org/pdf/2606.13957v1
+
+Published Time: Mon, 15 Jun 2026 00:18:19 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# High-Fidelity Video Compression based on Invertible Neural Transform and Implicit Conditioning 
+
+Siyue Teng ∗
+
+, Ho Man Kwan ∗
+
+, Yuxuan Jiang, Fan Zhang, David Bull 
+
+Visual Information Lab, University of Bristol, UK 
+
+{siyue.teng, hm.kwan, yuxuan.jiang, fan.zhang, dave.bull}@bristol.ac.uk 
+
+## Abstract 
+
+Learning-based video compression has recently achieved competitive rate-distortion performance compared to conventional video codecs. However, most existing methods rely on non-invertible analysis-synthesis transforms, with recon-struction quality subject to both quantization and transform approximation errors. This limitation becomes particularly restrictive at higher quality points, where quan-tization errors are small and transform-induced distortion dominates. To address this, we propose InnVC , an Invertible neural network based Video Codec for wide-range and high-fidelity compression. The core idea is to preserve an invertible main transform path prior to quantization, while injecting content-adaptive context through a compact implicit conditioning field. This decouples strongly correlated video content from harder-to-model fine details, allowing different components to specialize in complementary reconstruction tasks for more efficient compression. To further improve compressibility, we introduce a scheduled masking strategy that progressively concentrates informative content into fewer latent channels for more effective entropy coding. Experiments on the UVG and MCL-JCV benchmarks show that InnVC achieves strong compression performance over a broad quality range, being particularly effective in the high-quality regime, yielding BD-rate reductions of 21.66% in PSNR and 46.06% in MS-SSIM relative to x265 on UVG. To the best of our knowledge, InnVC is the first neural video codec covers op-erating poins from low bitrate to high fidelity within a single architecture scale, spanning more than 20 dB in PSNR. 
+
+## 1 Introduction 
+
+Video compression underpins modern visual communication and media delivery, enabling appli-cations such as streaming, video conferencing, cloud gaming, and immersive media [ 11 ]. The continual demand for increased spatial resolution, frame rate, dynamic range, and visual fidelity further increases the demand for efficient, high-quality video coding [ 58 , 60 ]. For decades, this problem has been addressed by traditional video compression standards, including H.264/AVC [ 65 ], H.265/HEVC [ 57 ], H.266/VVC [ 10 ], and AV1 [ 24 ]. These methods combine prediction, transform coding, quantization and entropy coding, refined with sophisticated tools [ 16 , 23 ] that achieve strong performance [ 69 , 2]. By controlling quantization strength and coding modes, such approaches are effective across a wide quality range, from high compression to high-fidelity configurations. Neural video compression has recently emerged as a strong alternative to conventional hybrid video codecs and has demonstrated competitive, and in some cases, superior rate-distortion perfor-mance [ 19 ]. Early learned video compression methods were based on autoencoder-based architectures, where learnable analysis and synthesis transforms are combined with temporal prediction, context modeling, and entropy models [ 46 , 41 ] to enable efficient video coding. In parallel, recent research has               
+
+> ∗Equal contribution. Preprint.
+> arXiv:2606.13957v1 [eess.IV] 11 Jun 2026 0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5
+> BPP
+> 25
+> 30
+> 35
+> 40
+> 45
+> 50
+> 55
+> PSNR (dB)
+> NVRC
+> 6.4 dB DCVC-RT
+> 11.9 dB
+> Ours
+> 22.3 dB
+> UVG - YachtRide
+> NVRC
+> DCVC-RT
+> Ours
+> P1
+> P2
+> P3
+> P1
+> P2
+> P3
+> P1: low quality P2: mid quality P3: high quality
+> Ours
+> 0.03924 bpp / 30.80 dB 0.4381 bpp / 41.99 dB 3.277 bpp / 53.12 dB
+> NVRC
+> 0.0096 bpp / 30.67 dB 0.0377 bpp / 34.31 dB 0.0892 bpp / 37.11 dB
+
+Figure 1: Left: RD curve of the YachtRide sequence in UVG. The shaded RD background provides a qualitative visual guide to lower, medium, and higher BPP regions from left to right. 
+
+Right: Visual comparisons sampled from each method’s attainable quality range, from low to middle to highest available quality. Ours spans a significantly wider quality range. focused on video representations using an overfitted model, such as an implicit neural representation (INR) [ 15 , 36 , 20 ]. Unlike autoencoder-based codecs, that encode videos into latent representations, INR-based methods model a video as a continuous neural function parameterized by network weights, which can offer compact sequence-specific representations and flexible scalability. A key challenge in learned video compression is to maintain strong performance across a wide bitrate/quality range. Low-bitrate coding requires the effective exploitation of spatio-temporal redun-dancy, whereas high-bitrate coding demands a transform path with minimal intrinsic information loss. Although neural video compression has substantially improved coding efficiency, existing approaches have primarily focused on the low- to medium-bitrate regime. While some works attempt to broaden the supported quality range through carefully designed training and rate-control strategies [ 44 , 68 ], these approaches have yet to reach the high-fidelity or near-lossless range consistently. As a result, wide quality coverage, especially at the high-quality end, remains underexplored in current learned video codecs. Existing learned video compression methods generally attain higher reconstruction quality by using low quantization steps. However, reconstruction distortion stems not only from quantization error but also from inherent defects of learned transforms. Typical learned transforms, such as autoencoders, fail to perfectly recover input images and video frames, thereby introducing intrinsic distortion. This bottleneck becomes particularly prominent in high-quality coding scenarios, where, with fine-grained quantization, transform-induced distortion becomes predominant, severely limiting overall reconstruction quality. This motivates us to develop a neural codec that maintains invertibility before quantization, which is consistent with conventional codecs, through optimized transform design rather than introducing additional architectural complexity. Invertible neural networks (INN) provide a natural foundation for this goal, since they are based on bijective transformations with exact inverses by design. Some related work has already shown promise in image compression [ 67 , 12 , 61 , 21 ]; however, their application to video compression has been limited [ 52 , 22 ]. Directly applying a bijective transform to video does not automatically yield a compression-friendly representation, because a bijective transform preserves dimensionality -spatial squeezing mainly reorganizes information into the channel dimension - rather than removing redundancy. Hence, for videos, where strong spatio-temporal correlation is prevalent, additional structure may still be needed to make the latent representation efficient for compression. In this context, we propose a multi-stage invertible backbone with a compact implicit conditioning field that provides content-adaptive modulation. The key idea is to decouple strongly correlated spatio-temporal content from less correlated fine details. The spatio-temporal redundancy is captured via the implicit conditioning field and injected into the invertible transform with multi-scale modulation. Meanwhile, the hard-to-capture details are modeled directly by the invertible backbone. In this way, the model preserves a truly invertible transform path prior to quantization, while still exploiting rich video-dependent context for efficient compression. To further make the resulting high-dimensional 2latent representation compression-friendly, we avoid squeezing all information into a narrow feature subset. Instead, we induce a regularization technique that leverages masking to enhance the high-dimensional latent representation, making it more amenable to entropy modeling and more suitable for channel-dependent quantization. Figure 1 highlights the two main properties of the proposed design. First, removing the INN backbone causes the reconstruction quality to saturate even when the bitrate continues to increase, showing that the invertible transform is essential for reaching the high-fidelity regime. Second, compared with existing codecs, InnVC covers a much broader rate-distortion range. The main contributions of this work are summarized as follows. • We propose InnVC , an invertible neural video compression method for wide-range and high-fidelity compression . It employs a multi-stage invertible backbone to remove transform approximation error from the main coding path, thereby alleviating a key bottleneck in the high-quality regime. • We introduce a multi-scale modulation design that couples the invertible backbone with an 
+
+implicit conditioning field . This design decouples strongly correlated spatio-temporal content from less correlated fine details, improving redundancy modeling efficiently. • We propose a scheduled masking strategy combined with a channel autoregressive model that improves latent channel organization for more effective entropy coding. Experiments on the UVG and MCL-JCV benchmarks show that InnVC achieves competitive coding performance across a broad quality range and performs particularly well in the high-quality regime, consistently outperforming x265 on both datasets under PSNR and MS-SSIM, achieving average BD-rate reductions of 24.90% on UVG and 22.38% on MCL-JCV in terms of PSNR. 
+
+## 2 Related Work 
+
+Learned Video Compression. Autoencoder-based transform architectures have been widely adopted in learned video codecs, including early residual-coding frameworks [ 46 , 3, 29 , 28 ] and more recent conditional-coding variants [ 41 , 42 , 43 , 44 , 30 ]. These methods improve coding efficiency through learned motion compensation, temporal priors, context propagation, and stronger entropy models [ 54 , 66 , 59 , 31 , 42 ]. Some recent works further broaden the quality range of a single model through quantization scaling, parameter sampling, or rate-control mechanisms [ 44 , 30 ]. Despite their diversity, these approaches still rely on lossy analysis-synthesis transforms, so reconstruction quality is affected by both quantization and transform approximation errors. A complementary line of work represents each video with an overfitted neural representation, typically an INR [ 15 , 14 , 6, 40 ]. These methods provide compact, sequence-specific representations with strong reconstruction quality and efficient decoding, and recent works further improve parameter compression through better quantization and entropy coding [ 55 ]. In particular, multi-scale spatio-temporal grids and related structured representations compactly represent a large amount of correlated video content [ 40 , 36 , 49 , 38 , 37 ]. However, bitrate and quality control in this family are often realized through model scaling or parameter compression, so different operating points typically correspond to representations of different sizes, and the supported quality range of a single configuration is often limited. 
+
+Invertible Network Based Compression. Invertible neural networks define bijective mappings between the input and latent spaces, making the transform stage information-preserving prior to quantization. They are most widely studied in normalizing flows [ 35 ], but have also been explored as learnable transforms for compression: coupling-based invertible architectures were popularized by NICE [ 17 ] and RealNVP [ 18 ], and several later works extended these to image compression. In particular, [ 25 ] first applied normalizing flows to lossy image compression, while later methods improved practical rate-distortion performance through augmented flows, channel squeeze, feature enhancement, variable-rate invertible transforms, or approximately invertible formulations [ 26 , 67 ,12 , 61 , 21 ]. Related ideas have also been explored with trainable wavelet-like invertible transforms for lossy and lossless image compression [ 48 , 47 ]. Collectively, these works show that invertibility can reduce transform-side information loss, but also that exact reversibility alone does not necessarily produce a latent representation that is easy to compress. Only a limited number of works have extended invertible compression to learned video coding. CANF-VC [ 27 ] uses conditional augmented normalizing flows for conditional video coding, where 3Figure 2: Left: Overview of the proposed InnVC framework. The INN backbone encodes and decodes the input video patches, and the implicit conditioning field provides multi-scale features for modulation. Q denotes quantization, and AE/AD denote arithmetic encoding and arithmetic decoding, respectively. Right: The modulation mechanism, where the conditioning feature is transformed into channel-wise scale and shift parameters and applied to the backbone feature. invertibility mainly serves probabilistic modeling. Other recent works explore invertible encoding more directly for video compression [ 52 , 22 ], but still rely on auxiliary designs such as channel squeeze or conditional motion coding to make the representation practically compressible. In contrast, our work places exact invertibility of the main transform path prior to quantization at the center of the codec design, and combines it with an implicit conditioning field to make such a transform practical for high-fidelity video compression. 
+
+## 3 Method 
+
+3.1 Preliminaries Implicit neural representations. Implicit neural representations (INRs) model a visual signal as a coordinate-conditioned neural function parameterized by a compact set of learnable parameters [ 15 ]. In video representation, an INR takes spatio-temporal coordinates as input and predicts the corre-sponding content, often together with structured feature grids to improve representation capacity and decoding efficiency [ 40 , 36 ]. In this work, we adopt this paradigm only for conditioning: the INR-style module generates multi-scale modulation features for the invertible backbone rather than reconstructing video pixels directly. 
+
+Invertible neural networks. An invertible neural network (INN) defines a bijective mapping 
+
+h : x ↔ y [17, 18], such that both the forward transform and its inverse are tractable: 
+
+y = h(x), x = h−1(y). (1) A common invertible design is based on affine coupling layers [ 18 ], where the input is partitioned into two parts - with one being transformed conditional on the other. This yields an analytically invertible mapping and forms the basis of many INN architectures used in generative modeling and compression. In this work, we build on this principle to construct an invertible transform backbone for video compression. 
+
+3.2 Framework 
+
+We propose InnVC , an instance-adaptive video codec based on invertible neural networks, as illustrated in Figure 2. The framework consists of two core components: an INN-based transform backbone (subsection 3.4) and an implicit conditioning field (subsection 3.3). The conditioning field produces multi-scale modulation features, while the INN backbone performs the main analysis and synthesis transforms. 4Given an input video V ∈ RT ×H×W ×3, we randomly sample overlapping patches and denote the sampled patch tensor as X. The INN backbone maps each patch to a latent representation through a multi-stage forward transform conditioned on the modulation features {Fs}Ss=1 , while the reconstruction ˆX is obtained from the quantized latent ˆz through the inverse transform: 
+
+z = h(X; {Fs}Ss=1 ), ˆX = h−1(ˆ z; {Fs}Ss=1 ). (2) The modulation features are generated by the implicit conditioning field from the patch coordinate and a compact learned feature grid G. Specifically, for a patch located at the spatio-temporal coordinate 
+
+(i, j, t ), the conditioning field takes (i, j, t ) together with the quantized feature grid parameters ˆG as input and outputs the multi-scale features: 
+
+{Fs}Ss=1 = C
+
+
+
+(i, j, t ), ˆG
+
+
+
+. (3) Here, we adopt grid-based INRs - influenced by recent works that have shown that structured feature grids provide stronger representation capacity and decoding efficiency than purely coordinate-driven designs [39, 40, 36]. The overall decoding process is therefore determined by the quantized conditioning representation 
+
+ˆG and the quantized INN latent ˆz. Unlike existing INR-based codecs that rely on separate encoder-decoder transforms [ 14 ], our method uses an invertible backbone as the main transform path, with an INR-style module only for conditioning. This design combines exact invertibility before quantization with strong content-adaptive modulation. Since a naïve invertible transform produces a channel-heavy latent that is difficult to compress efficiently, we further introduce a scheduled masking strategy to organize the latent channels into a more compression-friendly structure; details are provided in subsection 3.5. 
+
+3.3 Implicit Conditioning Field 
+
+We model the implicit conditioning field C(·) using a compact feature representation together with a multi-scale decoder {D s}Ss=1 . The base representation is parameterized by a learnable feature grid 
+
+G [40 , 39 , 36 ] of size TG × HG × WG × CG, whose spatio-temporal resolution is only a fraction of that of the full video. Given a video patch located at spatio-temporal coordinate (i, j, t ), we extract a patch-specific base feature from ˆG using trilinear interpolation, and then feed it to the decoder to progressively generate multi-scale modulation features: 
+
+Fbase = Interp(( i, j, t ), ˆG), F1 = D1(Fbase ), Fs = Ds(Fs−1), s = 2 , . . . , S. (4) The resulting features are configured to match the resolutions of the corresponding stages in the invertible backbone: the decoder progressively upsamples its features, while the backbone reduces spatial resolution through successive squeeze operations. Following prior INR-based video represen-tations [ 40 , 39 , 36 ], we implement G as a multi-resolution feature grid to improve representation capacity while remaining compact. The overall design of the conditioning field is mainly based on [36]. Additional implementation details are provided in the supplementary material. 
+
+3.4 Modulated Invertible Backbone 
+
+The forward and inverse paths of the invertible backbone serve as the analysis and synthesis transforms, conditioned on the multi-scale features {Fs}Ss=1 produced by the implicit conditioning field. The backbone maps an input patch to a latent representation through S stages of reversible transforms operating at progressively lower spatial resolutions. In each stage, let z(0) = X and z(S) = z.The backbone contains S − 1 multi-resolution stages followed by a final refinement stage. Each multi-resolution stage applies Conv 1×1, feature modulation, affine coupling, and spatial squeeze in sequence, while the final stage omits the coupling and squeeze operation. As successive squeeze operations reduce spatial resolution and increase channel capacity, the rep-resentation becomes increasingly channel-heavy at deeper stages. Since the transform is invertible, information is preserved prior to quantization, but the resulting latent is also more difficult to com-press efficiently. The conditioning field alleviates this by injecting structured spatio-temporal context at each stage. 5Invertible Convolution. For channel mixing, we adopt a learned orthogonal Conv 1×1 layer [ 34 ]. The orthogonal weight matrix is parameterized through the Cayley transform [ 13 ] of a skew-symmetric matrix, which guarantees invertibility by construction and avoids explicit matrix inversion during decoding. 
+
+Modulation Layer. The conditioning feature Fs modulates the output of Conv 1×1. Specifically, Fs
+
+is processed by LayerNorm and a linear layer to produce channel-wise scale and shift parameters 
+
+(γs, βs), which are then applied through an affine modulation operation. 
+
+Coupling Layer. Following standard invertible architectures [ 18 , 34 ], we adopt an affine coupling layer as the nonlinear transform at each stage. Concretely, we use a two-sided coupling design in which both channel partitions are updated sequentially using two lightweight subnetworks. In our implementation, the subnetworks are instantiated with ConvNeXt blocks [ 45 ] for parameter efficiency. For stages s = 1 , . . . , S − 1, the forward transform applies an invertible Conv 1×1 layer, feature modulation, affine coupling, and squeeze, where (βs, γs) = Linear(LayerNorm( Fs)) :
+
+¯z(s) = Conv 1×1
+
+
+
+z(s−1) 
+
+, q(s) = ¯ z(s) ⊙ exp( γs) + βs, (5) 
+
+z(s) = Squeeze 
+
+
+
+Coupling 
+
+
+
+q(s) 
+
+. (6) The final stage serves as a refinement stage at the deepest resolution and omits the coupling and squeeze operations. 
+
+¯z(S) = Conv 1×1
+
+
+
+z(S−1) 
+
+, z(S) = ¯ z(S) ⊙ exp( γS ) + βS . (7) Given the decoded conditioning features Fss = 1 S , the squeeze operation, the orthogonal Conv 1×1
+
+layer, the affine modulation, and the coupling transform are all bijective. Therefore, each stage remains invertible, and so does the overall mapping h(·; {Fs}Ss=1 ).
+
+3.5 Scheduled Masking for Channel Organization 
+
+Although the invertible backbone preserves information, the resulting latent representation z is high-dimensional and heavily distributed across channels. To make this representation more amenable to compression, we introduce a scheduled masking strategy that progressively regularizes the latent channels, encouraging more informative content to concentrate in the earlier channels. Additional implementation details are provided in the supplementary material. Let z ∈ RT ×H′×W ′×C denote the latent produced by the INN encoder. During training, we partition the channel dimension into ordered groups and assign each group g a time-dependent activation schedule ρg (τ ) ∈ [0 , 1] , where τ ∈ [0 , 1] denotes the normalized training progress and ρg (τ ) controls the probability that group g becomes active at training progress τ . At the beginning of training, all latent channels are masked, so reconstruction mainly relies on the conditioning branch. This prevents the invertible branch from dominating reconstruction too early and allows the conditioning branch to first learn a strong content representation. As training proceeds, channel groups are progressively activated from early to late. Moreover, once a later group is activated, all preceding groups are also activated. This cumulative activation causes earlier channels to participate in training more frequently and therefore encourages informative content to concentrate in the leading channels, in contrast to standard dropout, which mainly serves as a regularizer rather than explicitly learning ordered representations [ 53 , 56 ]. As a result, the latent channels become progressively organized by importance, making the representation easier to model with an entropy coder and better suited to channel-dependent quantization. 
+
+3.6 Entropy Coding and Rate-Distortion Optimization Entropy coding. All transmittable variables in InnVC are quantized and entropy coded, including the primary latent ˆz produced by the invertible backbone, the parameters of the implicit conditioning field and the invertible backbone, denoted by ˆθinr and ˆθinn , and the side parameters of the quantization and entropy models, denoted by ˆθside . The quantized feature grid ˆG is included in ˆθinr .6For the INN latent ˆz, we adopt a channel autoregressive entropy model [ 51 ] with conditional Gaussian distributions. The latent channels are organized into ordered groups, and earlier groups are encoded and decoded before later ones, so that they can serve as context for subsequent groups. We implement this channel autoregressive model using a lightweight masked convolutional network [ 62 ]. Compared with commonly used spatial autoregressive models, the channel-wise design is better aligned with the channel-organized latent produced by the invertible backbone and enables more efficient entropy coding. For the remaining parameters, including ˆθinr , ˆθinn , and ˆθside , we follow the compression framework of NVRC [ 37 ]. Additional details of the entropy models are provided in the supplementary material. At encoding time, the input patch is first mapped to the latent representation z using the invertible backbone conditioned on the decoded features from the implicit conditioning field. The latent is then quantized to obtain ˆz, which is entropy coded together with the quantized model parameters into the final bitstream. 
+
+Rate-distortion optimization. InnVC is optimized in an instance-adaptive manner for each input video under a standard Lagrangian rate-distortion objective: 
+
+L = D(X, ˆX) + λR, (8) where D(X, ˆX) measures the reconstruction distortion, R denotes the estimated total bitrate [ 7 ], and 
+
+λ controls the rate-distortion trade-off. The total bitrate is given by R = Rz + Rinn + Rinr + Rside ,where Rz, Rinn , Rinr , and Rside denote the rates of ˆz, ˆθinn , ˆθinr , and ˆθside , respectively. During training, quantization is approximated by a differentiable soft-rounding scheme together with a straight-through estimator [ 33 , 4, 8], allowing gradients to propagate through both the latent representation and the conditioning parameters. At inference time, actual quantization is used for entropy coding and exact decoding. 
+
+## 4 Experimental Setup 
+
+Datasets. We evaluate InnVC on two widely used video compression benchmarks, UVG [ 50 ] and MCL-JCV [ 63 ]. UVG contains 7 videos at 1920 × 1080 resolution, each with either 300 or 600 frames. MCL-JCV contains 30 video clips, each with 120 to 150 frames at the same resolution. 
+
+Baselines. We compare InnVC against seven representative baselines from three categories. Conven-tional codecs: x265 [ 1 ] with the veryslow preset, and HM 18.0 [ 32 ], both under the Random Access (RA) configuration. We also include Apple ProRes [5] as a practical high-quality intra/intermediate codec reference, since its frame-independent coding structure provides a useful comparison point in the high-fidelity regime. Learned video codecs: DCVC-FM [ 44 ] and DCVC-RT [ 30 ]. INR-based codecs: HiNeRV [ 36 ] and NVRC [ 37 ]. This setting enables comparison with both classical codecs and recent neural video compression methods. 
+
+Evaluation metrics. We use Bjøntegaard Delta rate (BD-rate) [ 9] as the primary metric for rate-distortion comparison, with x265 as the anchor. Bitrate is measured in bits per pixel (bpp), while reconstruction quality is evaluated using PSNR and MS-SSIM [ 64 ]. These metrics are typical in the learned and INR-based video compression literature. 
+
+Implementation details. Following common practice in INR-based compression, InnVC is trained independently for each video and each rate point, without large-scale offline pretraining. We use a 4-stage multi-scale ConvNeXt-based conditioning decoder together with a 4-stage invertible backbone. The model is trained for 360 epochs on UVG and 720 epochs on MCL-JCV using randomly sampled 
+
+120 × 120 patches with a batch size of 144. Optimization is performed using the Adam optimizer (β1 = 0 .9, β2 = 0 .999 , ϵ = 10 −6), with a base learning rate of 2 × 10 −3, and cosine annealing with warmup. We evaluate rate-distortion trade-offs with λ ∈ { 1, 4, 8, 16 , 32 , 64 , 96 , 128 }. The distortion loss is defined as 0.7L1 + 0 .3(1 − MS -SSIM) . Training uses mixed precision, while the INN is computed in FP32 for numerical stability. For the proposed scheduled masking, the 256 INN latent channels are divided into 20 groups and progressively activated from 40% to 80% of training. Additional architectural and training details are provided in the supplementary material. 7Table 1: BD-rate results on the UVG [ 50 ] and MCL-JCV [ 63 ] datasets, with x265 as the anchor. Negative values indicate better compression performance. Results are reported separately for the low-bitrate regime (BPP < 0.6) and the high-bitrate regime (BPP ≥ 0.6) to better match overlapping rate ranges for BD-rate calculation. − indicates that BD-rate cannot be reliably computed due to limited overlap between the corresponding R-D curves. Category Dataset Metric x265 NVRC HiNeRV DCVC-FM DCVC-RT HM ( RA ) ProRes Ours Low-bitrate UVG PSNR 0.0 % -72.78% -38.66% -55.20% -59.86% -34.61% − -28.14% MS-SSIM 0.0% -83.65% -62.70% -62.04% -65.60% -35.23% − -61.50% MCL-JCV PSNR 0.0% -51.61% -23.39% -51.79% -48.49% -37.47% − -26.74% MS-SSIM 0.0% -66.83% -44.12% -56.42% -57.09% -38.88% − -35.11% High-bitrate UVG PSNR 0.0% − − − − -18.16% 137.64% -21.66%                                  
+
+> MS-SSIM 0.0% −−−−-9.91% 73.25% -46.06%
+> MCL-JCV PSNR 0.0% −−−−-19.41% 159.06% -18.01% MS-SSIM 0.0% −−−−-10.21% 112.34% -28.73% 125
+> Bits per pixel (BPP)
+> 40
+> 45
+> 50
+> 55
+> PSNR (dB)
+> UVG dataset (BPP >= 0.6)
+> 125
+> Bits per pixel (BPP)
+> 0.980
+> 0.985
+> 0.990
+> 0.995
+> 1.000
+> MS-SSIM
+> UVG dataset (BPP >= 0.6)
+> ProRes
+> HM
+> x265
+> Ours 125
+> Bits per pixel (BPP)
+> 40
+> 45
+> 50
+> 55
+> PSNR (dB)
+> MCL-JCV dataset (BPP >= 0.6)
+> 125
+> Bits per pixel (BPP)
+> 0.980
+> 0.985
+> 0.990
+> 0.995
+> 1.000
+> MS-SSIM
+> MCL-JCV dataset (BPP >= 0.6)
+> Ours
+> HM
+> x265
+> ProRes
+
+Figure 3: Rate-distortion curves on the UVG and MCL-JCV datasets. 
+
+## 5 Results and Discussion 
+
+Rate-distortion performance. Figure 3 reports the rate-distortion curves on the UVG and MCL-JCV datasets, and the corresponding BD-rate results are summarized in Table 1. We report results separately in the low-bitrate and high-bitrate regions. The symbol “ −” indicates that the corresponding result is unavailable, either because the method does not target that bitrate range or because the result is not reported by the original paper. In the high-bitrate region, InnVC is the only neural codec operating there, yielding 18.01% and 28.73% BD-rate savings relative to x265 under PSNR and MS-SSIM on MCL-JCV, respectively. It also outperforms ProRes on both datasets and beats HM (RA) on UVG. In the low-bitrate region, 
+
+InnVC remains competitive, with 28.14% and 26.74% BD-rate savings over x265 on UVG and MCL-JCV datasets, respectively. Compared with NVRC, InnVC performs worse at the low-bitrate end, which is consistent with our design choice of using a single model scale across multiple λ values while prioritizing broad-range and high-fidelity compression. 
+
+Component-wise analysis. To better understand the roles of the two paths, we perform a component-wise decoding analysis in Figure 4. Specifically, after training the full model, we mask either the conditioning field or the INN latent at decoding time and examine the resulting reconstructions. Removing the conditioning field preserves some complex local textures but severely disrupts the global content organization, consistent with the view that the conditioning path mainly provides structured spatio-temporal priors. In contrast, removing the INN latent yields outputs that show degradation patterns similar to those at low bitrates, with coarse content preserved but many fine details missing. This supports our design hypothesis that the two paths play complementary roles. 
+
+Complexity analysis. Table 3 summarizes the computational complexity of InnVC and the INR-based baselines. Enc/Dec FPS denotes encoding-side optimization steps and decoding-side evaluation steps per second, respectively. MACs are measured for the compression pipeline, including quan-tization and entropy coding. Compared with NVRC, InnVC uses a fixed architecture scale across different λ values, avoiding the need to deploy separate model-size configurations for different operating points. This reduces configuration and model-management complexity, although InnVC is not the lightest model in terms of MACs or parameter count. 8GT Full Recon. w/o Cond. Field w/o INN Latent   
+
+> Beauty
+> 58.71 dB / 6.24 bpp 30.52 dB / 0.03 bpp
+> Jockey
+> 54.09 dB / 4.24 bpp 32.43 dB / 0.04 bpp
+
+Figure 4: Component-wise decoding analysis. We mask either the conditioning field or the INN latent at decoding time and visualize the resulting reconstructions, revealing the distinct roles of the two paths. The masked outputs are shown only for analysis and should not be interpreted as an exact additive decomposition of the coded signal. Table 2: Component ablation on 720p UVG dataset.           
+
+> Method PSNR MS-SSIM Ours w/o masking 85.93% 44.72% Ours w/o modulation 32.44% 37.17% Residual variant 25.81% 28.49% Ours 0.0% 0.0%
+
+Table 3: Complexity comparison on 1080p UVG dataset using one RTX 4090.                 
+
+> Method MACs ↓Enc FPS ↑Dec FPS ↑Params ↓
+> HiNeRV 23.0–96.0G 20.0-37.6 76.7-132.1 0.77-3.25M NVRC 359.6–1929.0G 2.2-6.4 9.7-21.0 2.14-31.41M Ours 868.82G 3.3 1.8 15.38M
+
+Ablation study. We evaluate three degraded variants of InnVC : w/o masking , which removes the proposed scheduled masking strategy; w/o modulation , which removes the implicit conditioning field; and w/ residual , which replaces the modulation-based interaction with direct residual coding from the conditioning-path reconstruction. As shown in Table 2, all three variants degrade rate-distortion performance. Removing masking leads to the largest BD-rate increase, suggesting that the scheduled masking strategy helps organize the latent representation for entropy coding rather than only acting as a training heuristic. Without modulation, the model loses the structured conditioning signal from the implicit path and requires noticeably more bits to reach the same reconstruction quality. The residual variant also gives higher BD-rates, indicating that directly coding the residual of the conditioning-path reconstruction is less effective than using it to modulate the invertible path. All values are BD-rate increases relative to the full model. 
+
+## 6 Conclusion 
+
+We presented InnVC , a neural video codec designed for high-fidelity compression, where transform-induced distortion becomes increasingly important as quantization becomes mild. The codec builds on an instance-adaptive design that combines INR-style conditioning, an invertible transform backbone, and scheduled latent masking. Experiments on UVG and MCL-JCV show competitive rate-distortion performance across a wide quality range, with the strongest gains in the high-bitrate regime. On UVG, InnVC reduces BD-rate by 21.66% in PSNR and 46.06% in MS-SSIM relative to x265 in this regime, while covering more than 20 dB in PSNR without changing the architecture scale. Despite these encouraging results, InnVC remains a lossy, instance-adaptive codec. The exact invertibility of the main transform removes reconstruction error from the transform itself, but the final reconstruction is still affected by quantization and finite-precision implementation. In addition, the instance-adaptive training paradigm improves representation flexibility but incurs higher optimization cost than fully pretrained codecs. Reducing this optimization cost and extending the framework toward lossless compression are important directions for future work. 9References 
+
+[1] x265. https://www.videolan.org/developers/x265.html .[2] M. Abdoli, R. G. Youvalari, K. Naser, K. Reuzé, and F. L. Léannec. Video compression beyond VVC: Quantitative analysis of intra coding tools in enhanced compression model (ECM). arXiv preprint arXiv:2404.07872 , 2024. [3] E. Agustsson, D. Minnen, N. Johnston, J. Balle, S. J. Hwang, and G. Toderici. Scale-space flow for end-to-end optimized video compression. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 8503–8512, 2020. [4] E. Agustsson and L. Theis. Universally quantized neural compression. In NeurIPS , 2020. [5] Apple Inc. Apple ProRes . Apple Inc., Apr. 2022. White paper. [6] Y. Bai, C. Dong, C. Wang, and C. Yuan. PS-NeRV: Patch-wise stylized neural representations for videos. In 2023 IEEE International Conference on Image Processing (ICIP) , pages 41–45. IEEE, 2023. [7] J. Ballé, V. Laparra, and E. P. Simoncelli. End-to-end optimized image compression. In ICLR . OpenRe-view.net, 2017. [8] Y. Bengio, N. Léonard, and A. Courville. Estimating or propagating gradients through stochastic neurons for conditional computation. arXiv preprint arXiv:1308.3432 , 2013. [9] G. Bjøntegaard. Calculation of average PSNR differences between RD-curves. In 13th VCEG Meeting ,number VCEG-M33, Austin, Texas, USA, April 2001. ITU-T. [10] B. Bross, Y.-K. Wang, Y. Ye, S. Liu, J. Chen, G. J. Sullivan, and J.-R. Ohm. Overview of the Versatile Video Coding (VVC) standard and its applications. IEEE Transactions on Circuits and Systems for Video Technology , 31(10):3736–3764, 2021. [11] D. Bull and F. Zhang. Intelligent image and video compression: communicating pictures . Academic Press, 2021. [12] S. Cai, L. Chen, Z. Zhang, X. Zhao, J. Zhou, Y. Peng, L. Yan, S. Zhong, and X. Zou. I2C: Invertible Continuous Codec for High-Fidelity Variable-Rate Image Compression. IEEE Transactions on Pattern Analysis and Machine Intelligence , 46(6):4262–4279, 2024. [13] A. Cayley. Sur quelques propriétés des déterminants gauches. 1846. [14] H. Chen, M. Gwilliam, S.-N. Lim, and A. Shrivastava. Hnerv: A hybrid neural representation for videos. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 10270–10279, 2023. [15] H. Chen, B. He, H. Wang, Y. Ren, S. N. Lim, and A. Shrivastava. Nerv: Neural representations for videos. 
+
+Advances in Neural Information Processing Systems , 34:21557–21568, 2021. [16] Y. Chen, D. Mukherjee, J. Han, A. Grange, Y. Xu, S. Parker, C. Chen, H. Su, U. Joshi, C.-H. Chiang, et al. An overview of coding tools in AV1: the first video codec from the alliance for open media. APSIPA Transactions on Signal and Information Processing , 9:e6, 2020. [17] L. Dinh, D. Krueger, and Y. Bengio. Nice: Non-linear independent components estimation. arXiv preprint arXiv:1410.8516 , 2014. [18] L. Dinh, J. Sohl-Dickstein, and S. Bengio. Density estimation using real nvp. arXiv preprint arXiv:1605.08803 , 2016. [19] G. Gao, C. Feng, Y. Jiang, T. Peng, H. M. Kwan, S. Teng, C. Zeng, Y. Li, C. Wang, R. Hamilton, Z. Qi, F. Zhang, and D. Bull. Advances in neural video compression: A review and benchmarking. Preprints 26040035 , 2026. [20] G. Gao, S. Teng, T. Peng, F. Zhang, and D. Bull. GIViC: Generative implicit video compression. arXiv preprint arXiv:2503.19604 , 2025. [21] Y. Gao, S. Li, M. Fu, C. Lv, Z. Yang, X. Cai, H. Yuan, and M. Ye. Approximately Invertible Neural Network for Learned Image Compression. IEEE Transactions on Image Processing , 2025. [22] H. Guo, S. Kwong, and M. Zhou. Exploring Invertible Encoding for Deep Video Compression. IEEE Transactions on Broadcasting , 2025. 
+
+10 [23] W. Hamidouche, T. Biatek, M. Abdoli, E. François, F. Pescador, M. Radosavljevi´ c, D. Menard, and M. Raulet. Versatile video coding standard: A review from coding tools to consumers deployment. IEEE Consumer Electronics Magazine , 11(5):10–24, 2022. [24] J. Han, B. Li, D. Mukherjee, C.-H. Chiang, A. Grange, C. Chen, H. Su, S. Parker, S. Deng, U. Joshi, et al. A technical overview of av1. arXiv preprint arXiv:2008.06091 , 2020. [25] L. Helminger, A. Djelouah, M. Gross, and C. Schroers. Lossy Image Compression with Normalizing Flows. arXiv preprint arXiv:2008.10486 , 2020. [26] Y.-H. Ho, C.-C. Chan, W.-H. Peng, H.-M. Hang, and M. Doma´ nski. ANFIC: Image compression using augmented normalizing flows. IEEE Open Journal of Circuits and Systems , 2:613–626, 2021. [27] Y.-H. Ho, C.-P. Chang, P.-Y. Chen, A. Gnutti, and W.-H. Peng. CANF-VC: Conditional Augmented Normalizing Flows for Video Compression. In European Conference on Computer Vision , pages 207–223. Springer, 2022. [28] Z. Hu, Z. Chen, D. Xu, G. Lu, W. Ouyang, and S. Gu. Improving deep video compression by resolution-adaptive flow coding. In European Conference on Computer Vision , pages 193–209. Springer, 2020. [29] Z. Hu, G. Lu, and D. Xu. FVC: A New Framework towards Deep Video Compression in Feature Space. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 1502–1511, 2021. [30] Z. Jia, B. Li, J. Li, W. Xie, L. Qi, H. Li, and Y. Lu. Towards Practical Real-Time Neural Video Compression. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 12543–12552, 2025. [31] W. Jiang, J. Li, K. Zhang, and L. Zhang. Ecvc: Exploiting non-local correlations in multiple frames for contextual video compression. In Proceedings of the Computer Vision and Pattern Recognition Conference ,pages 7331–7341, 2025. [32] Joint Video Experts Team (JVET). Hm-18.0: Hevc reference software, 2023. Accessed: March 28, 2026. [33] H. Kim, M. Bauer, L. Theis, J. R. Schwarz, and E. Dupont. C3: high-performance and low-complexity neural compression from a single image or video. In CVPR , pages 9347–9358. IEEE, 2024. [34] D. P. Kingma and P. Dhariwal. Glow: Generative Flow with Invertible 1×1 Convolutions. Advances in neural information processing systems , 31, 2018. [35] I. Kobyzev, S. J. Prince, and M. A. Brubaker. Normalizing Flows: An Introduction and Review of Current Methods. IEEE transactions on pattern analysis and machine intelligence , 43(11):3964–3979, 2020. [36] H. M. Kwan, G. Gao, F. Zhang, A. Gower, and D. Bull. Hinerv: Video compression with hierarchical encoding-based neural representation. Advances in Neural Information Processing Systems , 36, 2023. [37] H. M. Kwan, G. Gao, F. Zhang, A. Gower, and D. Bull. NVRC: Neural video representation compression. In Advances in Neural Information Processing Systems (NeurIPS) , volume 37, pages 132440–132462. Curran Associates, Inc., 2024. [38] H. M. Kwan, F. Zhang, A. Gower, and D. Bull. Immersive video compression using implicit neural representations. In PCS , pages 1–5. IEEE, 2024. [39] T. Ladune, P. Philippe, F. Henry, G. Clare, and T. Leguay. COOL-CHIC: Coordinate-based low complexity hierarchical image codec. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 13515–13522, 2023. [40] J. C. Lee, D. Rho, J. H. Ko, and E. Park. FFNeRV: Flow-guided frame-wise neural representations for videos. In Proceedings of the 31st ACM International Conference on Multimedia , pages 7859–7870, 2023. [41] J. Li, B. Li, and Y. Lu. Deep Contextual Video Compression. Advances in Neural Information Processing Systems , 34:18114–18125, 2021. [42] J. Li, B. Li, and Y. Lu. Hybrid spatial-temporal entropy modelling for neural video compression. In 
+
+Proceedings of the 30th ACM international conference on multimedia , pages 1503–1511, 2022. [43] J. Li, B. Li, and Y. Lu. Neural Video Compression with Diverse Contexts. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 22616–22626, 2023. [44] J. Li, B. Li, and Y. Lu. Neural Video Compression with Feature Modulation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 26099–26108, 2024. 
+
+11 [45] Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie. A ConvNet for the 2020s. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 11976–11986, 2022. [46] G. Lu, W. Ouyang, D. Xu, X. Zhang, C. Cai, and Z. Gao. DVC: An End-to-end Deep Video Compression Framework. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 11006–11015, 2019. [47] H. Ma, D. Liu, R. Xiong, and F. Wu. iWave: CNN-based wavelet-like transform for image compression. 
+
+IEEE Transactions on Multimedia , 22(7):1667–1679, 2019. [48] H. Ma, D. Liu, N. Yan, H. Li, and F. Wu. End-to-End Optimized Versatile Image Compression With Wavelet-Like Transform. IEEE Transactions on Pattern Analysis and Machine Intelligence , 44(3):1247– 1263, 2020. [49] S. R. Maiya, S. Girish, M. Ehrlich, H. Wang, K. S. Lee, P. Poirson, P. Wu, C. Wang, and A. Shrivastava. NIRVANA: Neural implicit representations of videos with adaptive networks and autoregressive patch-wise modeling. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,pages 14378–14387, 2023. [50] A. Mercat, M. Viitanen, and J. Vanne. UVG Dataset: 50/120fps 4K Sequences for Video Codec Analysis and Development. In MMSys , pages 297–302. ACM, 2020. [51] D. Minnen and S. Singh. Channel-wise autoregressive entropy models for learned image compression. In 
+
+2020 IEEE International Conference on Image Processing (ICIP) , pages 3339–3343. IEEE, 2020. [52] Z. Montajabi, V. K. Ghassab, and N. Bouguila. Invertible Neural Network-Based Video Compression. In 
+
+ICPRAM , pages 558–564, 2023. [53] O. Rippel, M. Gelbart, and R. Adams. Learning ordered representations with nested dropout. In Interna-tional Conference on Machine Learning , pages 1746–1754. PMLR, 2014. [54] X. Sheng, J. Li, B. Li, L. Li, D. Liu, and Y. Lu. Temporal context mining for learned video compression. 
+
+IEEE Transactions on Multimedia , 25:7311–7322, 2022. [55] J. Shi, Z. Chen, H. Li, Q. Zhao, M. Lu, T. Chen, and Z. Ma. On quantizing neural representation for variable-rate video coding. arXiv preprint arXiv:2502.11729 , 2025. [56] N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever, and R. Salakhutdinov. Dropout: a simple way to prevent neural networks from overfitting. The journal of machine learning research , 15(1):1929–1958, 2014. [57] G. J. Sullivan, J. Ohm, W. Han, and T. Wiegand. Overview of the high efficiency video coding (HEVC) standard. IEEE Transactions on Circuits and Systems for Video Technology , 22(12):1649–1668, 2012. [58] C. Systems. VNI complete forecast highlights. Technical report, Cisco, 2022. Accessed: 2025-03-14. [59] C. Tang, Z. Li, Y. Bian, L. Li, and D. Liu. Neural video compression with context modulation. In 
+
+Proceedings of the Computer Vision and Pattern Recognition Conference , pages 12553–12563, 2025. [60] S. Teng, Y. Jiang, G. Gao, F. Zhang, T. Davis, Z. Liu, and D. Bull. Benchmarking conventional and learned video codecs with a low-delay configuration. arXiv preprint arXiv:2408.05042 , 2024. [61] H. Tu, S. Wu, L. Li, W. Zhou, and H. Li. Multi-Scale Invertible Neural Network for Wide-Range Variable-Rate Learned Image Compression. IEEE Transactions on Multimedia , 2025. [62] A. van den Oord, N. Kalchbrenner, and K. Kavukcuoglu. Pixel recurrent neural networks. In ICML , JMLR Workshop and Conference Proceedings, pages 1747–1756. JMLR.org, 2016. [63] H. Wang, W. Gan, S. Hu, J. Y. Lin, L. Jin, L. Song, P. Wang, I. Katsavounidis, A. Aaron, and C. J. Kuo. MCL-JCV: A JND-based H.264/AVC video quality assessment dataset. In ICIP , pages 1509–1513. IEEE, 2016. [64] Z. Wang, E. P. Simoncelli, and A. C. Bovik. Multiscale structural similarity for image quality assessment. In The thrity-seventh asilomar conference on signals, systems & computers, 2003 , volume 2, pages 1398–1402. Ieee, 2003. [65] T. Wiegand, G. J. Sullivan, G. Bjontegaard, and A. Luthra. Overview of the H.264/AVC video coding standard. IEEE Transactions on circuits and systems for video technology , 13(7):560–576, 2003. 
+
+12 [66] J. Xiang, K. Tian, and J. Zhang. MIMT: Masked image modeling transformer for video compression. In 
+
+The Eleventh International Conference on Learning Representations , 2023. [67] Y. Xie, K. L. Cheng, and Q. Chen. Enhanced Invertible Encoding for Learned Image Compression. In 
+
+Proceedings of the 29th ACM international conference on multimedia , pages 162–170, 2021. [68] C. Zhang and W. Gao. Learned rate control for frame-level adaptive neural video compression via dynamic neural network. In European Conference on Computer Vision , pages 239–255. Springer, 2024. [69] X. Zhao, Z. Lei, A. Norkin, T. Daede, and A. Tourapis. AOM Common Test Conditions v3. 0. Document, CWG-C038i , 5, 2022. 
+
+13

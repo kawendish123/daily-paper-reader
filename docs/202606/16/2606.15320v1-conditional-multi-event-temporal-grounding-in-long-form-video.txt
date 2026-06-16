@@ -1,0 +1,1428 @@
+Title: Conditional Multi-Event Temporal Grounding in Long-Form Video
+
+URL Source: https://arxiv.org/pdf/2606.15320v1
+
+Published Time: Tue, 16 Jun 2026 00:42:13 GMT
+
+Number of Pages: 30
+
+Markdown Content:
+# Conditional Multi-Event Temporal Grounding in Long-Form Video 
+
+Yuanhao Zou 1 Arthad Kulkarni 1 Lucas Toñanez 1 Lincoln Spencer 1 Guangyu Sun 1
+
+Tianxingjian Ding 1 Andong Deng 1 Yi Li 2 Shuangjun Liu 2 Yuan Li 2
+
+Dashan Gao 2 Ning Bi 2 Taotao Jing 2 Shuai Zhang 2 Chen Chen 1, ∗
+
+> 1
+
+University of Central Florida 2Qualcomm AI Research 
+
+Abstract 
+
+Multimodal large language models have made rapid progress in video temporal grounding, yet real-world applications routinely require localizing every event that satisfies compositional temporal and spatial conditions. Existing benchmarks fall short: they localize only a single moment per query, count without tempo-ral conditions, or treat grounding and counting as disjoint tasks. We introduce 
+
+CoMET-Bench for Conditional Multi-Event Temporal Grounding in long-form video, comprising 2,789 queries over 600 videos averaging 33.8 minutes across five real-world domains, with each query composed from 4 temporal conditions, 3 spatial conditions, and a dedicated negative-query subset. We further propose a uni-fied evaluation protocol jointly measuring counting, grounding, and negative-query recognition, including a new Rejection-F1 metric that prevents trivial gaming by lazy “always-empty” models. Benchmarking a broad suite of MLLMs, agent-based, and grounding-specialized methods reveals that existing approaches remain far from solving this task. Building on these findings, we propose CoMET-Agent ,a training-free agentic framework that reformulates the task as structured search-and-aggregate, improving F1@0.5 by 6.1% over GPT-5 purely through structural reasoning. Failure analysis further surfaces three open directions: fine-grained entity tracking, position-uniform retrieval, and causal event pairing. 
+
+1 Introduction 
+
+Multimodal large language models (MLLMs) [ 48 , 20 , 3, 53 ] have reshaped the paradigm of video understanding by enabling flexible, query-driven reasoning over long and complex videos. Beyond recognizing visual content, modern MLLMs can answer questions [ 38 , 18 , 56 , 71 ], generate de-scriptions [ 10 , 32 ], and ground moments [ 19 , 34 , 33 , 29 ] in response to natural-language queries, showing strong promise on a wide range of real-world tasks. Among these capabilities, Video Tem-poral Grounding (VTG), which aims to localize the time interval in a video that corresponds to a natural-language query, has emerged as a fundamental building block for downstream applications, with rapid progress on benchmarks [65, 6, 36] and dedicated methods [43, 27, 23, 52]. However, in many real-world applications, such as video editing and sports analysis, temporal grounding often requires more than identifying a single relevant moment. A video editor may ask: 
+
+“How many times does the video transition from b-roll footage back to the streamer?” (Fig. 1 (d)); a basketball analyst may ask: “How many times does a player successfully score a field goal while a foul is simultaneously committed by the defense, resulting in an ‘and-one’ play?” (Fig. 2 (a)). Such queries are conditional, time-bounded, and correspond to multi-event : a model must search within                               
+
+> ∗Corresponding author. chen.chen@crcv.ucf.edu
+> Preprint.
+> arXiv:2606.15320v1 [cs.CV] 13 Jun 2026 Woman in plaid shirt sits still by
+> a red couch. [60s, 210s]
+> ... ...
+> How many dogs appeared
+> wearing ribbons or bow ties? 4
+> Temporal Grounding Task Counting Task
+> Conditional Multi -Event Temporal Grounding (Ours)
+> Between 00:16:00 and 00:34:00 , how
+> many distinct segments occur where the
+> jaguar is shown performing a swimming
+> motion against the river current ?
+> [[ 30:43 ,30:52 ],
+> [30:56 ,31:10 ],
+> [31:19 ,31:40 ]]
+> ...
+> How many times does the video
+> transition from b-roll footage (e.g.,
+> concert clips) back to the streamer?
+> [[0 0: 00, 0 0: 13],
+> [04 :09, 04 :20],
+> [06 :02, 06 :21]]
+> ...
+> How many times does an artwork fall
+> to the ground and visibly shatter,
+> causing the video to abruptly cut to
+> black ,followed by ... ?
+> None
+> (Negative)
+> After introducing Tofu making ,what kind of traditional
+> technique or scenic spot did the youtuber introduce ... ?
+> Video Understanding Task
+> ...
+> [A. Nishiki Market., B. Kyoto Museum., C.A Buddhist Temple. ]
+> ...
+> 33
+
+(a) (b) (c) 
+
+(d) Figure 1: Conditional Multi-Event Temporal Grounding compared with prior video tasks. (a) 
+
+Temporal Grounding pairs a query with a single moment. (b) Counting returns a single integer without temporal evidence. (c) Video Understanding selects an answer from predefined choices under a temporal condition. (d) Our task requires the model to (i) parse a compositional query that may include temporal and spatial conditions, (ii) ground every qualifying event with precise timestamps, and (iii) return timestamps with an exact count, while allowing an empty set for negative queries. a specified scope, identify every distinct occurrence that satisfies the spatial and temporal conditions, and produce an exact count supported by grounded start/end timestamps. Despite recent progress, no existing benchmark fully evaluates this capability along three dimensions. 
+
+(1) Temporal output. The majority of VTG benchmarks [ 19 , 32 , 33 , 65 ] are designed to localize a single moment per query and do not require the model to retrieve multiple event instances [ 30 ]. Conversely, counting-oriented benchmarks [26, 68, 15] count repetitive physical actions (e.g., push-ups, squats) instead of semantically diverse events. (2) Query complexity. Existing counting benchmarks [ 26 , 68 , 15 , 51 ] are largely object-dominated : identifying the target object or repetitive pattern is often sufficient to ground the right moments or answer questions, since their queries impose no temporal condition (e.g., “after event Y, events X and Z occur synchronously”) that would restrict the counting scope. While some video understanding benchmarks [ 71 , 18 , 39 , 5] do involve those temporal conditional queries, they only require the model to select an answer from predefined choices rather than explicitly ground every qualifying event. (3) Evaluation protocol. Existing methods may perform well on single-moment grounding and yet fail entirely when it must ground all instances of an event under a temporal condition and report their count. Furthermore, although a recent benchmark [ 17 ] introduces negative queries , whose answer is the empty set, to expose hallucination behavior, it remains confined to single-moment retrieval and unconditioned queries. As summarized in Tab. 1, no benchmark to date mimics the real-world scenario that unifies multi-event grounding, temporal conditions, and negative queries within an evaluation framework. To bridge this gap, we introduce COMET-B ENCH for Co nditional M ulti-Event Temporal Ground-ing in long-form video. CoMET-Bench contains 2,789 queries over 600 videos averaging 33.8 minutes, spanning five real-world domains (Sports, TV & Movie, Life Record, Knowledge, and Surveillance) to capture the diversity of practical scenarios. The benchmark is designed to address the three limitation dimensions identified above. (1) To overcome the single-moment restriction, every annotation provides the grounded timestamps of all qualifying event instances, requiring exhaustive multi-event instance retrieval rather than a single best moment. (2) To overcome the unconditional counting restriction, each query is composed from four temporal conditions ( causal , sequential ,
+
+synchronous , and bounded ) and three spatial conditions ( static , dynamic , and identity ), yielding a compositional query space that systematically tests reasoning under diverse temporal scopes. (3) To overcome the disjoint evaluation restriction, CoMET-Bench unifies three complementary aspects of evaluation under a single protocol: multi-event counting (set-level) and temporal event grounding 
+
+(instance-level) for positive queries, and negative query recognition for the dedicated subset of neg-ative queries that have zero matching instances. For the last aspect, we further propose Rejection-F1 ,a new metric defined as the harmonic mean of negative-rejection rate and positive coverage, which prevents the trivial “always-empty” strategy that can game the standard rejection rate. Together, these designs make CoMET-Bench a rigorous litmus test of whether a model has constructed a genuine temporal representation of the video or is merely performing shallow pattern matching. We further propose COMET-A GENT , a training-free agentic framework that models long-form video as a video graph and formulates this task as a structured search-and-aggregate problem. CoMET-Agent comprises three components: (i) a hierarchical Video Temporal Graph that organizes 2Table 1: Comparison with various video benchmarks. Answer Type: multiple-choice questions (MC), numeric answers (NA), timestamps (TS) or open-ended answers (OE). Three key dimensions differentiate our work: Multi-Event : whether queries require grounding multi-event when answer-ing; Temp. Cond. : whether queries attach temporal conditions that restrict the grounding scope; 
+
+Neg. Query : whether the benchmark includes queries with zero matching instances.                                                                                                                           
+
+> Benchmark Label #Videos Average Dur. (s) #Queries Answer Type Multi-Event Temp. Cond. Neg. Query
+> General video understanding benchmarks
+> Video-MME [18] Human 900 1,021.3 2,700 MC ×✓×
+> MLVU [71] Human 349 905.8 502 MC ✓✓×
+> LongVideoBench [56] Human 753 574.9 1337 MC ×✓×
+> E.T. Bench [36] Human 7002 129 7289 OE/MC ✓✓×
+> Counting benchmarks
+> RepCount [26] Human 1,451 29.4 19,280 NA ×××
+> OVR [16] Auto 72,552 2.7 72,552 NA ×××
+> Countix [15] Human 8757 6.1 8757 NA ×××
+> EC-Bench [51] Human 152 3420.0 1,699 OE/NA ✓××
+> Temporal grounding benchmarks
+> Charades-STA [19] Human 1,334 30.6 3,720 TS ×××
+> QVHighlights [33] Human 476 150.0 1,542 TS ×××
+> THUMOS14 [29] Human 216 186.4 3457 TS ×××
+> MomentSeeker [65] Human 268 1201.9 1,800 TS ✓××
+> NA-VMR (Charades-STA) [17] Auto 1334 30.6 5,270 TS ××✓
+> NA-VMR (QVHighlights) [17] Auto 476 150.0 3,100 TS ××✓
+> CoMET-Bench (Ours) Human 600 2028.6 2,789 TS/NA ✓✓✓
+
+the video into a set of searchable event nodes and action nodes, addressing the need for exhaustive search under compositional temporal conditions; (ii) an MLLM agent that decomposes the query and performs iterative traversal over the graph, addressing the need for query parsing and fine-grained verification; and (iii) a persistent Global Memory Bank that accumulates verified instances with their temporal indices, addressing the need for identity-aware global perception across the full video. Our main contributions are summarized as follows: 
+
+• We introduce CoMET-Bench , the first benchmark for conditional multi-event temporal grounding in long-form video, together with a unified evaluation protocol and a new Rejection-F1 metric that jointly measures counting, grounding, and negative-query recognition. 
+
+• We propose CoMET-Agent , a training-free agentic framework that solves this task through structured search-and-aggregate over a Video Temporal Graph with persistent global memory. 
+
+• Extensive benchmarking shows that existing methods consistently fail on this task while CoMET-Agent yields substantial gains, and our analysis surfaces concrete directions for future work. 
+
+2 Related Works 
+
+Temporal Grounding Benchmarks. Temporal grounding benchmarks evaluate whether models can localize a described event to a precise temporal interval, and have driven steady progress on short-clip moment retrieval [ 19 , 32 , 2, 34 , 33 ] and temporal action localization with closed action vocabularies [ 29 , 4]. Newer efforts extend grounding to long-form, egocentric, and movie-length videos with richer query formats [ 21 , 24 , 36 , 5 , 6 ], while MomentSeeker [ 65 ] introduces multi-event retrieval and [ 17 ] adds negative queries to expose hallucination. However, the queries in these benchmarks are largely object-dominated : locating the target entity or action is typically sufficient to recover the grounded interval, since the queries impose no compositional temporal condition (e.g., 
+
+after , while , or within ) that would constrain when a match qualifies. 
+
+Conditional Video Understanding Benchmarks. Another line of work studies conditional reason-ing, where the answer depends on temporal, causal, or compositional context. Holistic comprehension benchmarks [ 18 , 71 , 56 , 38 ] evaluate long videos through multiple-choice or open-ended QA, while temporal-reasoning benchmarks [ 58 , 22 , 37 , 44 ] probe ordering, causality, and fine-grained temporal perception. Although their queries may include temporal conditions, evaluation usually reduces to selecting from multiple choices rather than grounding every qualifying event with precise timestamps. 3Sports (Synchronous + Causal + Dynamic) TV/ Movie (Causal + Static)                           
+
+> Knowledge (Bounded + Identity) Life Record (Sequential + Static)
+> Surveillance ( Negative + Bounded + Identity + Dynamic)
+> Count the number of times a player successfully scores a field
+> goal while a foul is simultaneously committed by the defense,
+> resulting in an 'and -one' play. 16min 14s
+> [06:29, 06:37]
+> [06:52, 06:55]
+> [09:20, 09:27]
+> [12:55, 13:03]
+> [11:51, 11:56]
+> Identify and ground the moments in the video where the
+> reported events are influenced by the U.S. –Iran conflict .43min 23s
+> [02:56, 04:12]
+> [05:16, 07:23]
+> After the weight reaches 120 LBS , find all the moments
+> that a person wearing sunglasses successfully complete
+> the bench press challenge. 09min 09s
+> [01:13, 01:17]
+> [01:24, 01:29]
+> [02:08, 02:20] [07:49, 08:02] [06:40, 06:52]
+> Between 00:00:00 and 00:05:00 , how many
+> times does a male adult enter the room to
+> take care of the baby ?
+> Between 00:00:00 and 00:10:00 , count the number of times
+> the video cuts from a clip of the TV show back to the
+> speaker in the blue suit sitting in front of the camera.
+> (First 10 minutes)
+> [01:19, 02:20]
+> [02:36, 04:14]
+> [04:41, 05:35]
+> [07:18, 07:49]
+> [06:10, 07:09] [08:29, 09:09] [09:40, 10:00]
+> (No Satisfied Moment Found)
+> 30min 17s
+> 15min 49s
+> (c)
+> (a) (b)
+> (d)
+> (e)
+
+Figure 2: Example queries from CoMET-Bench across the five video domains. Each panel shows a representative query, its compositional attribute combination drawn from four temporal conditions (Causal, Sequential, Synchronous, Bounded) and three spatial conditions (Static, Dynamic, Identity), the source video duration, and all ground-truth grounded intervals on the timeline. The benchmark spans Sports , TV & Movie , Life Record , Knowledge , and Surveillance (highlighted). The surveillance example is a Negative query whose temporal condition yields zero matching instances, evaluating the model’s ability to resist hallucinating nonexistent events. 
+
+Counting Benchmarks. Counting benchmarks measure quantitative ability, mainly over repetitive physical motion: RepCount [ 26 ], UCF-Rep [ 68 ], and Countix [ 15 ] count exercise repetitions through periodicity detection, and OVR [ 16 ] scales this setting to 72k open-vocabulary videos. More recent work moves beyond periodicity to broader event counting [ 39 ], with EC-Bench [ 51 ] pairing enumeration with evidence spans in ultra-long videos. These benchmarks generally ask unconditional questions of the form “how many times does X happen?” and rarely require grounded start/end timestamps for every counted instance. 
+
+Summary. As summarized in Tab. 1, prior benchmarks largely study temporal grounding, condi-tional reasoning, and counting in isolation. CoMET-Bench unifies all three: it requires multi-event grounding under compositional temporal and spatial conditions, reports grounded intervals with exact counts, and includes a negative-query subset to probe hallucination resistance under such conditions. 
+
+3 CoMET-Bench 
+
+3.1 Benchmark Design Task formulation. Given a long-form video V and a natural-language query Q, the task of conditional multi-event temporal grounding is to produce a set of grounded event intervals 
+
+P(V, Q ) = (si, e i) Ni=1 , (1) where each (si, e i) denotes the start and end timestamps of the i-th event instance that satisfies the temporal condition specified in Q, and N = |P (V, Q )| is the exact event count. A correct prediction requires: (1) Set-level completeness: all N ground-truth instances are retrieved; and (2) Instance-level temporal precision: each retrieved interval tightly overlaps its ground-truth counterpart. Notably, N
+
+can be zero for negative queries , where no event in the video satisfies the condition. 
+
+Query taxonomy. Each query in CoMET-Bench is composed of two semantic components: a 
+
+temporal condition and a spatial condition . The temporal condition restricts the temporal relationship between the events of interest. We define four attributes for it, covering the majority of temporal relations in natural language: (1) Causal , where one event occurs as a direct consequence of another; 
+
+(2) Sequential , where one event strictly precedes or follows another in time; (3) Synchronous , where two events happen simultaneously; and (4) Bounded , where events fall within a bounded temporal window. The spatial condition specifies visual attributes that qualifying events must exhibit, and is categorized into three types based on the visual granularity required to verify them: (1) Static , an 4(a) Video Topic Distribution   
+
+> Life Record
+> 27.0%
+> Surveilance
+> 3.3%
+> Knowledge
+> 17.8%
+> TV/Movie
+> 42.8%
+> Sports
+> 9.0%
+> 600 videos
+> 2,789 queries
+> 15,022 annotations
+> (b) Query Type Distribution
+> Static
+> 12.3%
+> Causal
+> 11.6%
+> Synchronous
+> 11.7% Negative
+> Samples
+> 26.6%
+> Bounded
+> 19.7%
+> Sequential
+> 11.9% Identity
+> 15.6%
+> Dynamic
+> 17.2%
+> Positive
+> Samples
+> 73.4%
+> (c) Video Duration Distribution (d) #Events per Query Distribution
+
+Figure 3: Dataset statistics of CoMET-Bench. (a) Video distribution across five real-world domains. 
+
+(b) Distribution of query type occurrence: the inner ring splits positive and negative queries; the outer ring breaks positives into four temporal conditions (Causal, Sequential, Synchronous, Bounded) and three spatial conditions (Static, Dynamic, Identity). (c) Video-duration distribution, ranging from under 10 minutes to over 90 minutes. (d) Distribution of the number of grounded events per query, covering zero-instance negatives to dense multi-event cases. attribute verifiable from a single frame (e.g., “a person in a black suit” ); (2) Dynamic , an attribute requiring multiple frames within a single event to verify (e.g., “a player shooting from the free-throw line” ); and (3) Identity , an attribute that requires tracking a specific entity across the full video to distinguish it from other similar entities (e.g., “the referee who firstly issued a yellow card” ). In addition, we introduce a Negative attribute, which references plausible events or objects that could conceivably occur in the video but in fact never happen, yielding a ground-truth count of zero. This attribute explicitly tests whether a model can resist hallucinating nonexistent events. 
+
+3.2 Dataset Construction 
+
+Our dataset construction pipeline consists of three stages: video collection, query generation and verification, and annotation generation and verification. The full pipeline (B.2), MLLM prompts (B.3 and B.4), human verification protocol (B.5), annotation statistics (B.6) and evaluation prompt (B.7) are provided in Appendix B. 
+
+Video collection. To ensure broad coverage of real-world scenarios, we curate a set of long-form videos spanning five categories: TV/Movie, Life Record, Sports, Knowledge, and Surveillance. The resulting 600 videos are drawn from existing long-video benchmarks [ 8, 18 , 71 ] and open video platforms such as YouTube. The copyright and license clarification is detailed in B.1. 
+
+Query generation and human verification. For each video, we prompt an MLLM [ 20 ] to generate candidate queries under attribute-driven prompting. Each query targets a random combination of one to four attributes drawn from the eight query types defined above ( Causal , Sequential , Synchronous ,
+
+Bounded , Static , Dynamic , Identity , and Negative ), ensuring uniform coverage of the compositional query space. The prompt further enforces the event-centric property: each query must target at least one query type with clear start and end boundaries. We explicitly prohibit spatial multi-instance counting (e.g., “how many birds are in the sky”), as such queries reduce to single-frame object detection and are orthogonal to our goal of evaluating long-range temporal reasoning. Generated queries are then verified by trained human annotators, who verify that each query follows the main content of the video, reads naturally from a human perspective, and is free of social bias. Queries failing any of these criteria are either rewritten or discarded before entering the grounding stage. 
+
+Annotation generation and human verification. For each verified query, we prompt the MLLM to produce an initial set of grounding annotations. These MLLM-generated annotations substantially reduce annotation cost by providing a strong starting point for human refinement, but they frequently miss instances, hallucinate boundaries, or misalign timestamps. Trained annotators then review each annotation against the source video, correcting boundaries, adding missed instances, and removing spurious ones, until every event instance satisfies the query. Each verified query-annotation pair is further audited by an independent second annotator, who jointly inspects the query, its grounding annotations, and the source video. Disagreements between the two annotators are adjudicated by a senior reviewer, and only QA pairs that pass this final round are included in the benchmark. 53.3 Dataset Statistics 
+
+Fig. 3 summarizes CoMET-Bench’s diversity along four axes: video topic, query type, video duration, and event density. (1) Topic. Videos span five real-world domains (Fig. 3 (a)), led by TV/Movie (42.8%) and Life Record (27.0%), with Knowledge, Sports, and Surveillance covering the remaining 30.1%. (2) Query type. Among the 2,789 queries, 73.4% are positive, and 26.6% are negative (Fig. 3 (b)), supporting joint evaluation of retrieval capability and hallucination resistance. Across the seven positive attributes, four temporal conditions (Causal 11.6%, Sequential 11.9%, Synchronous 11.7%, Bounded 19.7%) and three spatial conditions (Static 12.3%, Dynamic 17.2%, Identity 15.6%) jointly span a broad compositional space. (3) Duration. The 600 videos span from <10 to >90 minutes, with 111 videos over 50 minutes, including 32 over 90 minutes (Fig. 3 (c)). The average duration of 33.8 minutes places CoMET-Bench firmly in the long-form regime. (4) Event density. The number of target events per query ranges from 0 to 20+ (Fig. 3 (d)), with a long tail of dense cases (510 queries with ≥ 8 events) that prevents models from succeeding on sparse instances alone. 
+
+3.4 Evaluation Metrics 
+
+We evaluate CoMET-Bench along three aspects, each targeting a distinct failure mode of conditional multi-event temporal grounding. (1) Multi-event counting (MAE , OBO , Pearson ) measures whether the predicted instance count matches the ground truth. (2) Temporal event grounding (mIoU ,
+
+Recall@0.5 , F1@0.5 ) measures whether predicted intervals align with ground-truth intervals. (3) Negative query recognition reports the proposed Rejection-F1 , the harmonic mean of rejection recall on negatives and non-empty coverage on positives, which prevents trivial gaming by lazy “always-empty” models, alongside FPR as a direct readout of hallucination severity. Detailed formulations and motivations are provided in Appendix B.8. 
+
+4 Methodology 
+
+We propose CoMET-Agent (details are in Appendix C), a training-free agentic framework that reformulates conditional multi-event temporal grounding as a search-and-aggregate problem over a hierarchical video temporal graph with a persistent memory bank. Fig. 4 illustrates our four-step end-to-end pipeline orchestrated by a single MLLM. In Step 1 (Video Adaptive Planning) , the 
+
+Planner Agent parses the natural-language query to determine an adaptive hyperparameter (HP) configuration for subsequent graph construction. If the query specifies an explicit bounded temporal window, the agent also trims the video to a pre-segmented clip and passes it into Step 2 (Details in the Appendix C.1). In Step 2 (Temporal Graph Building) , we construct a hierarchical video temporal graph. First, ViT features [ 47 ] combined with a change-point detection algorithm [ 31 ] on inter-frame similarity segment the video into coarse Event Nodes . Next, a Filter Agent screens out irrelevant events. The retained potential events are then expanded into fine-grained Action Nodes 
+
+via optical-flow segmentation [ 50 ]. In Step 3 (Iterative Graph-based Verification) , the Verifier Agent iteratively traverses the action graph: in each iteration, it expands candidate nodes with their neighbors to enlarge the perception context, verifies whether the expanded context satisfies the query conditions, and commits every verified node to the Global Memory Bank (Sec. 4.3). In Step 4 (Final Aggregation) , the Aggregator Agent consults the populated memory bank to produce the final grounded intervals and exact count. 
+
+4.1 Hierarchical Temporal Graph Building 
+
+To avoid the computational bottleneck of exhaustive frame-by-frame evaluation over long-form videos, we construct a hierarchical temporal graph that organizes the video into a searchable two-level structure: a coarse Event Graph for rapid semantic localization, and a fine-grained Action Graph for precise boundary delineation. Details are explained in Appendix C.2 
+
+Coarse Event Graph Building. We first construct the Event Graph GE = ( VE , EE ), which serves as the coarse-grained search index over the video. To define the node set VE , we extract visual features using a pre-trained ViT model [ 47 ] and apply a change-point detection algorithm [ 31 ] on the inter-frame cosine similarities. This process segments the continuous video into N discrete coarse-grained event nodes, where each vi ∈ V E represents a temporal segment [tsi , t ei ]. The edge set EE encodes the temporal relations that guide the search: edge weights are computed using a 6Question 
+
+Input 
+
+Planner 
+
+Agent   
+
+> Between 00:16:00 and 00:34:00 , how
+> many distinct segments occur where the
+> jaguar is shown performing a swimming
+> motion against the river current?
+> Adaptive
+> Hyperparameter (HP)
+> Config
+
+ViT ViT 
+
+> Pre -segmented
+> Video
+> Pre -segmented
+> Video
+> Pre -segmented Video
+> (16 to 34 min)
+> Event -Level Frame Similarity
+> Time
+
+Filter Agent 
+
+Flow 
+
+Step 2: Temporal Graph Building  
+
+> Event Graph
+> Building
+> Action -Level Frame Similarity
+> Time
+> Event Nodes
+> Action Nodes
+> Select Potential Events Direct Neighbor Edge
+> Indirect Neighbor Edge
+> Control
+> Step 2
+> Action Graph
+> Building
+> Filtered Event Graph
+> Step 1: Video Adaptive Planning
+> Whole Video
+> Timeline (min)
+> 0
+> 44
+> 16
+> 34
+
+Step 3: Iterative Graph -based Verification 
+
+Verifier Agent 
+
+Aggregator Agent 
+
+> Verified Action Nodes
+
+×N Iterations 
+
+> Node Reduction & Combination
+> Node
+> Verification
+> Memory
+> Updating
+> Memory
+> Reading
+> Answer
+> Node
+> Verification
+
+Step 4: Final Aggregation            
+
+> To -be -Combined Nodes Processed Action Graph
+> Global Memory Bank
+> [[ 30:43 ,30:52 ],
+> [30:56 ,31:10 ],
+> [31:19 ,31:40 ]]
+> Timestamps
+> [start, end]
+> Text Summary
+> {A jaguar with
+> brown -and -black
+> rosette markings
+> Swims in the
+> river …}
+> Confidence
+> 0.75
+> HP
+> Config Initial input
+> from Step 2
+> Change Point Change Point
+> All
+> Verified
+> Nodes
+> {}{}
+
+Figure 4: Overview of the proposed CoMET-Agent framework. Given a long-form video and a natural-language query, a single MLLM orchestrates four specialized agents ( Planner , Filter , Verifier ,and Aggregator ) across four sequential steps to address conditional multi-event temporal grounding. Snowflake icons denote frozen (training-free) components. video embedding model [ 3], and we establish two types of edges to expose both local and long-range 
+
+search paths —direct neighbor edges connecting strictly adjacent segments, and indirect neighbor edges connecting non-adjacent segments within a bounded temporal distance. Once GE is built, we deploy a Filter Agent that prunes the search space: it evaluates the sampled frames of each event node against the query and discards clearly irrelevant background segments, yielding a focused set of potential events to be further searched at finer granularity. 
+
+Fine-grained Action Graph Building. While event nodes efficiently capture high-level semantic chunks, they are often too coarse to determine the exact action boundaries required for precise temporal grounding. Therefore, we expand the retained potential events into a fine-grained Action Graph, GA = ( VA, EA). Specifically, within each retained event node vi ∈ A E , we extract frame-level dense optical flow using RAFT [ 50 ] and compute the cosine similarities between adjacent flow representations. By applying the same change-point detection algorithm used for the Event Graph to these motion-based similarities, we segment vi into smaller, motion-homogeneous Action Nodes 
+
+VA. To maintain structural consistency, the edge set EA inherits the direct and indirect connectivity logic similar in Event Graph. This fine-grained, interconnected topology serves as the foundational structure for the subsequent iterative verification process. 
+
+4.2 Iterative Graph-based Verification 
+
+While the fine-grained Action Graph GA provides precise temporal boundaries, individual action nodes often lack the broader contextual information necessary for complex temporal reasoning ( e.g. ,determining if an action occurred “after a referee’s red card”). To address this, we introduce an iterative, graph-based verification algorithm that dynamically expands the perception context before evaluating each candidate node. Detailed formulation could be found in Alg. 1 and C.3. 
+
+Node Reduction and Combination. Instead of processing every node in isolation, we iteratively traverse the candidate nodes in VA. For a given candidate action node vi ∈ V A, we expand its context by combining it with its topological neighborhood (comprising both direct and indirect neighbors) connected by edges whose values exceed a predefined threshold τ , resulting in C(vi). This aggregated node set is then forwarded to the Verifier Agent for evaluation in the current iteration. 
+
+Condition Verification and Memory Updating. At each search step, the Verifier Agent takes the sampled frames from the perception context C(vi) and the query as input, and decides whether the candidate action node vi satisfies both the spatial semantics and the overarching temporal conditions specified in the query. A node passing this check is recorded as a verified hit and committed to the 
+
+Global Memory Bank (Sec. 4.3); otherwise, the search proceeds to the next candidate without writing to memory. This selective writing ensures that the search outcome accumulated in memory contains only condition-compliant evidence, ready for downstream aggregation. 7Table 2: Main results on CoMET-Bench across three evaluation aspects. Counting : MAE ( ↓, mean absolute error), OBO ( ↑, off-by-one accuracy), Pearson ( ↑, Pearson correlation). Grounding : mIoU (↑), R@0.5 ( ↑, Recall at tIoU 0.5), F1@0.5 ( ↑). Negative : Rej.-F1 ( ↑, harmonic mean of negative-rejection rate and positive-coverage rate), FPR ( ↓, fraction of negative queries with non-empty prediction). Bold marks the best score per metric; underline marks the second best.                                                                                                                                                                                                              
+
+> Method #Size Counting Grounding (Pos. only) Negative
+> MAE ↓OBO ↑Pear. ↑mIoU ↑R@0.5 ↑F1@0.5 ↑Rej.-F1 ↑FPR ↓
+> Video MLLMs
+> GPT-5 [48] –3.2 56.8 9.0 9.7 9.5 10.1 60.6 5.3 Gemini 2.5 Pro [14] –3.3 53.6 4.8 10.8 9.9 10.1 60.8 37.3 Gemini 3 Flash [20] –3.4 54.2 6.6 16.5 15.8 14.6 61.5 51.7 LLaVA-Video [70] 7B 3.5 55.3 2.4 0.7 0.3 0.4 48.9 58.5 LLaVA-OV1.5 [1] 7B 3.7 47.7 3.9 0.3 0.2 0.2 9.3 2.6
+> LongVILA-R1 [11] 7B 5.7 38.2 11.1 10.8 7.6 4.6 5.6 97.1 MiMO-VL [59] 7B 3.8 48.5 -1.3 0.3 0.1 0.1 8.8 3.8 InternVL3.5 [53] 8B 3.6 52.3 3.2 1.9 1.7 1.1 64.7 16.8 Eagle2.5 [7] 8B 3.9 48.8 1.0 2.1 0.9 0.7 39.9 14.6 Qwen3-VL [3] 8.3B 4.8 51.7 9.8 5.1 3.9 3.4 52.1 5.3 Qwen3-VL [3] 30B 3.6 51.5 3.4 3.3 3.0 3.1 47.2 5.9 InternVL3.5 [53] 38B 4.0 48.3 13.4 2.6 1.8 1.3 40.3 9.1
+> Agent-based Methods
+> VideoMind [35] 7B 4.4 14.8 -0.5 7.6 4.8 2.3 1.2 99.4 Vgent [46] (Qwen2.5-VL) 7B Cannot Follow Instruction
+> T∗[63] (GPT-4o) –Cannot Follow Instruction
+> VideoARM [64] (GPT-4.1&o3) –3.6 52.1 14.5 13.5 12.8 13.0 61.0 9.5
+> Temporal Grounding-Specialized
+> TRACE [23] 7B 3.2 60.9 1.0 4.0 3.3 3.8 2.5 98.8 DisTime [66] 7B 3.3 60.0 -0.6 2.7 0.5 0.5 12.1 93.5 TimeLens [69] 7B 3.3 60.7 0.0 6.2 5.0 5.4 0.0 100.0 LITA [28] 13B 3.7 58.4 0.2 1.8 0.4 0.4 1.7 99.1
+> Ours (Qwen3-VL) 8.6B 3.9 54.5 11.0 9.2 8.5 8.8 57.4 8.0
+> Ours (GPT-5) –2.8 61.4 13.7 17.5 17.6 16.2 66.5 6.4
+> Ours (Gemini 3 Flash) –2.7 62.0 12.0 19.3 19.5 19.0 68.1 5.8
+
+4.3 Global Memory Bank 
+
+To support global perception across the entire long-form video, we maintain a persistent Global Memory Bank M. Each verified node is committed as a tuple m = ⟨S , (tstart , t end ), c ⟩, where S is a textual summary, (tstart , t end ) are inherited timestamps, and c ∈ [0 , 1] is the verifier’s confidence. An online deduplication mechanism prevents redundant entries from neighboring nodes firing on the same event. In Step 4, the Aggregator Agent consolidates M into the final answer and resolves identity consistency across temporally disjoint entries by cross-referencing their summaries S. Detailed mechanisms and formulations are in Appendix C.4. 
+
+5 Experiments 
+
+Experimental Setup. We benchmark CoMET-Bench across three representative families of video understanding methods. General-purpose Video MLLMs include proprietary frontier models [ 48 , 20 ]and open-source models at 7–38B scales [ 3, 53 , 70 , 1, 7], probing whether single-pass inference and model scale alone suffice. Agent-based methods [ 62 , 35 , 46 , 63 , 64 ] test whether existing decompose-and-retrieve pipelines transfer to compositional multi-event queries. Temporal-grounding-specialized models [ 23 , 66 , 69 , 28 ] assess whether grounding-specific training generalizes to our setting. All models use uniform sampling at 128 frames per video. CoMET-Agent is training-free 
+
+and instantiated with two backbones (Qwen3-VL-8B [ 3] and GPT5 [ 48 ]) to demonstrate portability across the open-source and proprietary regimes, paired with frozen Qwen3-VL-Embedding-8B [ 3], DINOv2-L/14 [47], and RAFT [50] to build a temporal graph. More Details are in Appendix D. 
+
+Main Results. Tab. 2 reports performance across counting, grounding, and negative-query metrics, from which we highlight six findings: (1) CoMET-Agent lifts GPT-5 from F1@0.5 10.1% to 16.2% and Gemini 3 Flash from 14.6% to 19.0%, surpassing all single-pass baselines purely through framework design. (2) Scaling Qwen3-VL from 8.3B to 30B does not help and even hurts grounding (F1@0.5 3.4% → 3.1%), suggesting that raw parameter count is not the bottleneck. (3) Proprietary 8Bounded     
+
+> Dynamic
+> Identity
+> Static
+> Sequential
+> Synchronous
+> Causal
+> 510 15 20 25
+
+(1). R@0.5 (%)        
+
+> Bounded
+> Dynamic
+> Identity
+> Static
+> Sequential
+> Synchronous
+> Causal
+> 45 50 55 60 65 70 75 80
+
+(2). Rejection-F1    
+
+> GPT-5 Gemini 3 Flash Ours (w/ GPT-5) Ours (w/ Gemini 3 Flash)
+
+(a) Per-query type R@0.5 and Rej.-F1. 0-10min 
+
+> 10-20min
+> 20-30min
+> 30-40min
+> 40-50min
+> 50-60min
+> 60-90min
+> >90min
+> 0.0-0.1
+> 0.1-0.2
+> 0.2-0.3
+> 0.3-0.4
+> 0.4-0.5
+> 0.5-0.6
+> 0.6-0.7
+> 0.7-0.8
+> 0.8-0.9
+> 0.9-1.0
+> GT Moment Position
+
+GPT-5 
+
+> 0-10min
+> 10-20min
+> 20-30min
+> 30-40min
+> 40-50min
+> 50-60min
+> 60-90min
+> >90min
+> 0.0-0.1
+> 0.1-0.2
+> 0.2-0.3
+> 0.3-0.4
+> 0.4-0.5
+> 0.5-0.6
+> 0.6-0.7
+> 0.7-0.8
+> 0.8-0.9
+> 0.9-1.0
+
+Gemini 3 Flash 
+
+> 0-10min
+> 10-20min
+> 20-30min
+> 30-40min
+> 40-50min
+> 50-60min
+> 60-90min
+> >90min
+> 0.0-0.1
+> 0.1-0.2
+> 0.2-0.3
+> 0.3-0.4
+> 0.4-0.5
+> 0.5-0.6
+> 0.6-0.7
+> 0.7-0.8
+> 0.8-0.9
+> 0.9-1.0
+> GT Moment Position
+
+Ours (w/ GPT-5) 
+
+> 0-10min
+> 10-20min
+> 20-30min
+> 30-40min
+> 40-50min
+> 50-60min
+> 60-90min
+> >90min
+> 0.0-0.1
+> 0.1-0.2
+> 0.2-0.3
+> 0.3-0.4
+> 0.4-0.5
+> 0.5-0.6
+> 0.6-0.7
+> 0.7-0.8
+> 0.8-0.9
+> 0.9-1.0
+
+Ours (w/ Gemini 3 Flash)  
+
+> 0.000
+> 0.075
+> 0.150
+> 0.225
+> 0.300
+> mIoU
+
+(b) mIoU w.r.t. video duration and event position. 
+
+Figure 5: Where CoMET-Agent’s gains come from. (a) Attribute-level R@0.5 and Rej.-F1. (b) 
+
+mIoU heatmap with respect to ( w.r.t. ) video duration and ground-truth moment position. (a) Count the number of times Jiang Liuer is shown running while           
+
+> simultaneously carrying the little girl ,followed immediately by ascene cut ?
+> [[01:25, 01:27], [02:57, 03:01], [03:33, 03:35], …, [05:17, 05:21], [07:17, 07:19]] GT (7):
+> Gemini 3 Flash (16):
+> GPT -5 (0):
+> CoMET -Agent (4):
+> [[00:00, 00:04], [00:10, 00:13], …, [01:54, 01:57], [02:02, 02:05]]
+> [[01:24, 01:27], [02:57, 03:01], …, [05:15, 05:16], [07:16, 07:19]]
+> [ ] (None)
+
+Missed short -duration entity instances 
+
+→ Fine -grained Entity Tracking        
+
+> [[01:32, 01:36], [02:59, 03:02], …, [36:44, 36:47], [38:08, 38:11], [38:25, 38:28]] GT (44):
+> Gemini 3 Flash (8):
+> GPT -5 (8):
+> CoMET -Agent (22):
+> (b) How many times does a hard cut to a new interviewee cause a
+> lower -third graphic identifying their name and title to appear on screen?
+> [[18:42, 18:48], [21:21, 21:35], [21:36, 21:46]] GT (3):
+> Gemini 3 Flash (2):
+> GPT -5 (2):
+> CoMET -Agent (3):
+
+Incomplete causal events retrieved 
+
+→ Causal event attention & pairing         
+
+> (c) How many times does a cheetah's tackle cause the wildebeest to
+> collapse to the ground ?
+> ……
+> [[06:39, 06:44], [11:39, 11:44], …, [26:38, 26:43], [30:22, 30:27]]
+> [[06:39, 06:40], [11:39, 11:40], [14:34, 14:35], …, [26:38, 26:39], [30:22, 30:23]]
+
+Video events systematically missed 
+
+→ Position -uniform retrieval    
+
+> [[01:32, 01:36], [02:59, 03:03], …, [38:07, 38:10], [38:26, 38:28]]
+> [[20:07, 20:48], [21:09, 21:30]]
+> [[20:27, 20:48], [21:09, 21:30]]
+> [[20:09, 20:48], [21:10, 21:31], [21:35, 21:47]]
+> Unsuccessful Attack!
+> ……
+
+Figure 6: Failure cases analysis of CoMET-Agent, each motivating a future direction. 
+
+frontier models substantially outperform open-source ones on grounding (F1@0.5 10.1%–14.6% vs 
+
+≤4.6% across all 7–38B open-source MLLMs). (4) Several agent-based methods (VideoMind, Vgent, T∗) either fail or cannot follow our task instruction, exposing a brittleness of decompose-and-retrieve pipelines on multi-event queries (Appendix D.1). (5) Temporal Grounding-specialized models collapse on our task: F1@0.5 below 5.4% and FPR above 93%, indicating that grounding-tuned training does not transfer to a compositional multi-event setting and severely amplifies hallucination. 
+
+(6) The proposed Rejection-F1 successfully exposes “always-empty” models like LLaVA-OV1.5 and MiMO-VL attain the lowest FPR yet collapses on Rej.-F1, confirming that FPR or rejection rate alone is gameable while Rej.-F1 is not. Note that more in-depth analyses are in Appendix E.1. 
+
+Why does CoMET-Agent help? (1) Compositional temporal conditions. As shown in Fig. 5, best-performing MLLMs collapse on cross-moment attributes ( Sequential , Synchronous , Causal ;R@0.5 below 8% for GPT-5), and CoMET-Agent’s largest gains concentrate exactly there (Sequential R@0.5: 7% → 22% under the same GPT-5 backbone), showing the iterative graph verification and memory bank target compositional temporal reasoning rather than perception. (2) Long-form videos. (Fig. 5b) Both baselines collapse to near-zero mIoU once the video exceeds 10 minutes, with failures uniform across all moment positions, indicating evidence dilution rather than a middle-position bias. CoMET-Agent retains non-trivial mIoU beyond 90 minutes and across all positions. (3) Efficiency. CoMET-Agent adds only ∼0.3B frozen parameters (DINOv2 and RAFT). Additional results, ablations, and efficiency analysis are in Appendix E.2, E.3 and E.4). 
+
+Unsolved Aspects of CoMET-Agent. Despite consistent gains, three regimes remain challenging (Fig. 6). (1) Fine-grained entity tracking (Fig. 6(a)): when target events are short and feature visually similar co-occurring entities, the verifier’s textual identity summary becomes ambiguous and CoMET-Agent under-counts, motivating dedicated object trackers [ 42 , 61 ] integrated into our search-and-aggregate pipeline. (2) Position-uniform retrieval (Fig. 6(b)): on densely distributed events across long videos, CoMET-Agent recalls only 22 of 44 instances and the remaining errors concentrate at mid- and late-video positions, calling for coverage-aware traversal that explicitly enforces uniform exploration along the timeline. (3) Causal event pairing (Fig. 6(c)): all baselines including CoMET-Agent ground visually similar but non-causal instances (e.g., unsuccessful attack 
+
+that never lead to a collapse), suggesting an explicit cause-effect attention mechanism that pairs the cause and the consequence ( tackle → collapse ) across the action graph as a promising direction. We further discuss limitation and future works in Appendix F. 96 Conclusion 
+
+We introduced CoMET-Bench , the first benchmark for Conditional Multi-Event Temporal Grounding in long-form video, together with a unified evaluation protocol and the proposed Rejection-F1 metric. Benchmarking reveals that no existing method handles compositional multi-event queries well. We further proposed CoMET-Agent , a training-free agentic framework that substantially improves over single-pass inference, and identify entity tracking, position-uniform retrieval, and causal event pairing as open directions for future work. 
+
+References 
+
+[1] Xiang An, Yin Xie, Kaicheng Yang, Wenkang Zhang, Xiuwei Zhao, Zheng Cheng, Yirui Wang, Songcen Xu, Changrui Chen, Didi Zhu, et al. Llava-onevision-1.5: Fully open framework for democratized multimodal training. arXiv preprint arXiv:2509.23661 , 2025. [2] Lisa Anne Hendricks, Oliver Wang, Eli Shechtman, Josef Sivic, Trevor Darrell, and Bryan Russell. Localizing moments in video with natural language. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , 2017. [3] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, et al. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631 , 2025. [4] Fabian Caba Heilbron, Victor Escorcia, Bernard Ghanem, and Juan Carlos Niebles. Activitynet: A large-scale video benchmark for human activity understanding. In Proceedings of the ieee conference on computer vision and pattern recognition , pages 961–970, 2015. [5] Mu Cai, Reuben Tan, Jianrui Zhang, Bocheng Zou, Kai Zhang, Feng Yao, Fangrui Zhu, Jing Gu, Yiwu Zhong, Yuzhang Shang, et al. Temporalbench: Benchmarking fine-grained temporal understanding for multimodal video models. arXiv preprint arXiv:2410.10818 , 2024. [6] Keshigeyan Chandrasegaran, Agrim Gupta, Lea M. Hadzic, Taran Kota, Jimming He, Cristobal Eyzaguirre, Zane Durante, Manling Li, Jiajun Wu, and Fei-Fei Li. Hourvideo: 1-hour video-language understanding. In Advances in Neural Information Processing Systems , volume 37, 2024. [7] Guo Chen, Zhiqi Li, Shihao Wang, Jindong Jiang, Yicheng Liu, Lidong Lu, De-An Huang, Wonmin Byeon, Matthieu Le, Tuomas Rintamaki, et al. Eagle 2.5: Boosting long-context post-training for frontier vision-language models. arXiv preprint arXiv:2504.15271 , 2025. [8] Guo Chen, Yicheng Liu, Yifei Huang, Yuping He, Baoqi Pei, Jilan Xu, Yali Wang, Tong Lu, and Limin Wang. Cg-bench: Clue-grounded question answering benchmark for long video understanding. arXiv preprint arXiv:2412.12075 , 2024. [9] Shimin Chen, Xiaohan Lan, Yitian Yuan, Zequn Jie, and Lin Ma. Timemarker: A versatile video-llm for long and short video understanding with superior temporal localization ability. arXiv preprint arXiv:2411.18211 , 2024. [10] Sihan Chen, Handong Li, Qunbo Wang, Zijia Zhao, Mingzhen Sun, Xinxin Zhu, and Jing Liu. Vast: A vision-audio-subtitle-text omni-modality foundation model and dataset. Advances in Neural Information Processing Systems , 36:72842–72866, 2023. [11] Yukang Chen, Wei Huang, Baifeng Shi, Qinghao Hu, Hanrong Ye, Ligeng Zhu, Zhijian Liu, Pavlo Molchanov, Jan Kautz, Xiaojuan Qi, et al. Scaling rl to long videos. arXiv preprint arXiv:2507.07966 ,2025. [12] Yukang Chen, Fuzhao Xue, Dacheng Li, Qinghao Hu, Ligeng Zhu, Xiuyu Li, Yunhao Fang, Haotian Tang, Shang Yang, Zhijian Liu, et al. Longvila: Scaling long-context visual language models for long videos. 
+
+arXiv preprint arXiv:2408.10188 , 2024. [13] Zhe Chen, Weiyun Wang, Yue Cao, Yangzhou Liu, Zhangwei Gao, Erfei Cui, Jinguo Zhu, Shenglong Ye, Hao Tian, Zhaoyang Liu, et al. Expanding performance boundaries of open-source multimodal models with model, data, and test-time scaling. arXiv preprint arXiv:2412.05271 , 2024. [14] Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al. Gemini 2.5: Pushing the frontier with ad-vanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261 , 2025. [15] Debidatta Dwibedi, Yusuf Aytar, Jonathan Tompson, Pierre Sermanet, and Andrew Zisserman. Counting out time: Class agnostic video repetition counting in the wild. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 10387–10396, 2020. [16] Debidatta Dwibedi, Yusuf Aytar, Jonathan Tompson, and Andrew Zisserman. Ovr: A dataset for open vocabulary temporal repetition counting in videos. arXiv preprint arXiv:2407.17085 , 2024. 
+
+10 [17] Kevin Flanagan, Dima Damen, and Michael Wray. Moment of untruth: Dealing with negative queries in video moment retrieval. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) , pages 5336–5345. IEEE, 2025. [18] Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, et al. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 24108–24118, 2025. [19] Jiyang Gao, Chen Sun, Zhenheng Yang, and Ram Nevatia. Tall: Temporal activity localization via language query. In Proceedings of the IEEE international conference on computer vision , pages 5267–5275, 2017. [20] Google. A new era of intelligence with Gemini 3. https://blog.google/products/gemini/ gemini-3 , 2025. [21] Kristen Grauman, Andrew Westbury, Eugene Byrne, Zachary Chavis, Antonino Furnari, Rohit Girdhar, Jackson Hamburger, Hao Jiang, Miao Liu, Xingyu Liu, et al. Ego4d: Around the world in 3,000 hours of egocentric video. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 18995–19012, 2022. [22] Madeleine Grunde-McLaughlin, Ranjay Krishna, and Maneesh Agrawala. Agqa: A benchmark for compositional spatio-temporal reasoning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2021. [23] Yongxin Guo, Jingyu Liu, Mingda Li, Qingbin Liu, Xi Chen, and Xiaoying Tang. Trace: Temporal grounding video llm via causal event modeling. arXiv preprint arXiv:2410.05643 , 2024. [24] Tengda Han, Max Bain, Arsha Nagrani, Gül Varol, Weidi Xie, and Andrew Zisserman. AutoAD: Movie description in context. In CVPR , 2023. [25] Bo He, Hengduo Li, Young Kyun Jang, Menglin Jia, Xuefei Cao, Ashish Shah, Abhinav Shrivastava, and Ser-Nam Lim. Ma-lmm: Memory-augmented large multimodal model for long-term video understanding. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 13504– 13514, 2024. [26] Huazhang Hu, Sixun Dong, Yiqun Zhao, Dongze Lian, Zhengxin Li, and Shenghua Gao. Transrac: Encoding multi-scale temporal correlation with transformers for repetitive action counting. arXiv preprint arXiv:2204.01018 , 2022. [27] Bin Huang, Xin Wang, Hong Chen, Zihan Song, and Wenwu Zhu. Vtimellm: Empower llm to grasp video moments. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,pages 14271–14280, 2024. [28] De-An Huang, Shijia Liao, Subhashree Radhakrishnan, Hongxu Yin, Pavlo Molchanov, Zhiding Yu, and Jan Kautz. Lita: Language instructed temporal-localization assistant. In European Conference on Computer Vision , pages 202–218. Springer, 2024. [29] Yu-Gang Jiang, Jingen Liu, A Roshan Zamir, George Toderici, Ivan Laptev, Mubarak Shah, and Rahul Sukthankar. Thumos challenge: Action recognition with a large number of classes, 2014. [30] Shengji Jin, Yuanhao Zou, Victor Zhu, Zhengping Ji, and Chen Chen. How should video llms output time? an analysis of efficient temporal grounding paradigms. arXiv preprint arXiv:2604.08966 , 2026. [31] Rebecca Killick, Paul Fearnhead, and Idris A Eckley. Optimal detection of changepoints with a linear computational cost. Journal of the American Statistical Association , 107(500):1590–1598, 2012. [32] Ranjay Krishna, Kenji Hata, Frederic Ren, Li Fei-Fei, and Juan Carlos Niebles. Dense-captioning events in videos. In Proceedings of the IEEE international conference on computer vision , pages 706–715, 2017. [33] Jie Lei, Tamara L Berg, and Mohit Bansal. Detecting moments and highlights in videos via natural language queries. Advances in Neural Information Processing Systems , 34:11846–11858, 2021. [34] Jie Lei, Licheng Yu, Tamara L Berg, and Mohit Bansal. Tvr: A large-scale dataset for video-subtitle moment retrieval. In European Conference on Computer Vision , pages 447–463. Springer, 2020. [35] Ye Liu, Kevin Qinghong Lin, Chang Wen Chen, and Mike Zheng Shou. Videomind: A chain-of-lora agent for temporal-grounded video reasoning. In NeurIPS 2025 Workshop on Bridging Language, Agent, and World Models for Reasoning and Planning , 2025. [36] Ye Liu, Zongyang Ma, Zhongang Qi, Yang Wu, Ying Shan, and Chang W Chen. Et bench: Towards open-ended event-level video-language understanding. Advances in Neural Information Processing Systems ,37:32076–32110, 2024. [37] Yuanxin Liu, Shicheng Li, Yi Liu, Yuxiang Wang, Shuhuai Ren, Lei Li, Sishuo Chen, Xu Sun, and Lu Hou. Tempcompass: Do video llms really understand videos? In Findings of the Association for Computational Linguistics: ACL 2024 , pages 8731–8772, 2024. 
+
+11 [38] Karttikeya Mangalam, Raiymbek Akshulakov, and Jitendra Malik. Egoschema: A diagnostic benchmark for very long-form video language understanding. Advances in Neural Information Processing Systems ,36:46212–46244, 2023. [39] Ming Nie, Dan Ding, Chunwei Wang, Yuanfan Guo, Jianhua Han, Hang Xu, and Li Zhang. Slowfocus: Enhancing fine-grained temporal understanding in video llm. Advances in Neural Information Processing Systems , 37:81808–81835, 2024. [40] Long Qian, Juncheng Li, Yu Wu, Yaobo Ye, Hao Fei, Tat-Seng Chua, Yueting Zhuang, and Siliang Tang. Momentor: Advancing video large language model with fine-grained temporal reasoning. arXiv preprint arXiv:2402.11435 , 2024. [41] Mengxue Qu, Xiaodong Chen, Wu Liu, Alicia Li, and Yao Zhao. Chatvtg: Video temporal grounding via chat with video dialogue large language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 1847–1856, 2024. [42] Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang Hu, Chaitanya Ryali, Tengyu Ma, Haitham Khedr, Roman Rädle, Chloe Rolland, Laura Gustafson, Eric Mintun, Junting Pan, Kalyan Vasudev Alwala, Nicolas Carion, Chao-Yuan Wu, Ross Girshick, Piotr Dollár, and Christoph Feichtenhofer. Sam 2: Segment anything in images and videos. arXiv preprint arXiv:2408.00714 , 2024. [43] Shuhuai Ren, Linli Yao, Shicheng Li, Xu Sun, and Lu Hou. Timechat: A time-sensitive multimodal large language model for long video understanding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 14313–14323, 2024. [44] Ziyao Shangguan, Chuhan Li, Yuxuan Ding, Yanan Zheng, Yilun Zhao, Tesca Fitzgerald, and Arman Cohan. Tomato: Assessing visual temporal reasoning capabilities in multimodal foundation models. arXiv preprint arXiv:2410.23266 , 2024. [45] Xiaoqian Shen, Yunyang Xiong, Changsheng Zhao, Lemeng Wu, Jun Chen, Chenchen Zhu, Zechun Liu, Fanyi Xiao, Balakrishnan Varadarajan, Florian Bordes, et al. Longvu: Spatiotemporal adaptive compression for long video-language understanding. arXiv preprint arXiv:2410.17434 , 2024. [46] Xiaoqian Shen, Wenxuan Zhang, Jun Chen, and Mohamed Elhoseiny. Vgent: Graph-based retrieval-reasoning-augmented generation for long video understanding. arXiv preprint arXiv:2510.14032 , 2025. [47] Oriane Siméoni, Huy V Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Ramamonjisoa, et al. Dinov3. arXiv preprint arXiv:2508.10104 , 2025. [48] Aaditya Singh, Adam Fry, Adam Perelman, Adam Tart, Adi Ganesh, Ahmed El-Kishky, Aidan McLaugh-lin, Aiden Low, AJ Ostrow, Akhila Ananthram, et al. Openai gpt-5 system card. arXiv preprint arXiv:2601.03267 , 2025. [49] Enxin Song, Wenhao Chai, Tian Ye, Jenq-Neng Hwang, Xi Li, and Gaoang Wang. Moviechat+: Question-aware sparse memory for long video question answering. arXiv preprint arXiv:2404.17176 , 2024. [50] Zachary Teed and Jia Deng. Raft: Recurrent all-pairs field transforms for optical flow. In European conference on computer vision , pages 402–419. Springer, 2020. [51] Fumihiko Tsuchiya, Taiki Miyanishi, Mahiro Ukai, Nakamasa Inoue, Shuhei Kurita, Yusuke Iwasawa, and Yutaka Matsuo. Ec-bench: Enumeration and counting benchmark for ultra-long videos. arXiv preprint arXiv:2603.29943 , 2026. [52] Haibo Wang, Zhiyang Xu, Yu Cheng, Shizhe Diao, Yufan Zhou, Yixin Cao, Qifan Wang, Weifeng Ge, and Lifu Huang. Grounded-videollm: Sharpening fine-grained temporal grounding in video large language models. arXiv preprint arXiv:2410.03290 , 2024. [53] Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, et al. Internvl3. 5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265 , 2025. [54] Xiaohan Wang, Yuhui Zhang, Orr Zohar, and Serena Yeung-Levy. Videoagent: Long-form video under-standing with large language model as agent. In European Conference on Computer Vision , pages 58–76. Springer, 2024. [55] Ziyang Wang, Shoubin Yu, Elias Stengel-Eskin, Jaehong Yoon, Feng Cheng, Gedas Bertasius, and Mohit Bansal. Videotree: Adaptive tree-based video representation for llm reasoning on long videos. In 
+
+Proceedings of the Computer Vision and Pattern Recognition Conference , pages 3272–3283, 2025. [56] Haoning Wu, Dongxu Li, Bei Chen, and Junnan Li. Longvideobench: A benchmark for long-context interleaved video-language understanding. Advances in Neural Information Processing Systems , 37:28828– 28857, 2024. [57] Yongliang Wu, Xinting Hu, Yuyang Sun, Yizhou Zhou, Wenbo Zhu, Fengyun Rao, Bernt Schiele, and Xu Yang. Number it: Temporal grounding videos like flipping manga. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 13754–13765, 2025. 
+
+12 [58] Junbin Xiao, Xindi Shang, Angela Yao, and Tat-Seng Chua. Next-qa: Next phase of question-answering to explaining temporal actions. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 9777–9786, 2021. [59] LLM-Core-Team Xiaomi. Mimo-vl technical report, 2025. [60] Xinyi Xu, Hongsong Wang, Guo-Sen Xie, Caifeng Shan, and Fang Zhao. Hitea: Hierarchical temporal alignment for training-free long-video temporal grounding. In The Fourteenth International Conference on Learning Representations , 2026. [61] Cheng-Yen Yang, Hsiang-Wei Huang, Wenhao Chai, Zhongyu Jiang, and Jenq-Neng Hwang. Samurai: Adapting segment anything model for zero-shot visual tracking with motion-aware memory. arXiv preprint arXiv:2411.11922 , 2024. [62] Zongxin Yang, Guikun Chen, Xiaodi Li, Wenguan Wang, and Yi Yang. Doraemongpt: Toward under-standing dynamic scenes with large language models (exemplified as a video agent). arXiv preprint arXiv:2401.08392 , 2024. [63] Jinhui Ye, Zihan Wang, Haosen Sun, Keshigeyan Chandrasegaran, Zane Durante, Cristobal Eyzaguirre, Yonatan Bisk, Juan Carlos Niebles, Ehsan Adeli, Li Fei-Fei, et al. Re-thinking temporal search for long-form video understanding. In Proceedings of the Computer Vision and Pattern Recognition Conference ,pages 8579–8591, 2025. [64] Yufei Yin, Qianke Meng, Minghao Chen, Jiajun Ding, Zhenwei Shao, and Zhou Yu. Videoarm: Agentic reasoning over hierarchical memory for long-form video understanding. arXiv preprint arXiv:2512.12360 ,2025. [65] Huaying Yuan, Jian Ni, Zheng Liu, Yueze Wang, Junjie Zhou, Zhengyang Liang, Bo Zhao, Zhao Cao, Zhicheng Dou, and Ji-Rong Wen. Momentseeker: A task-oriented benchmark for long-video moment retrieval. arXiv preprint arXiv:2502.12558 , 2025. [66] Yingsen Zeng, Zepeng Huang, Yujie Zhong, Chengjian Feng, Jie Hu, Lin Ma, and Yang Liu. Distime: Distribution-based time representation for video large language models. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 21961–21971, 2025. [67] Haoji Zhang, Yiqin Wang, Yansong Tang, Yong Liu, Jiashi Feng, and Xiaojie Jin. Flash-vstream: Efficient real-time understanding for long video streams. In Proceedings of the IEEE/CVF international conference on computer vision , pages 21059–21069, 2025. [68] Huaidong Zhang, Xuemiao Xu, Guoqiang Han, and Shengfeng He. Context-aware and scale-insensitive temporal repetition counting. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 670–678, 2020. [69] Jun Zhang, Teng Wang, Yuying Ge, Yixiao Ge, Xinhao Li, Ying Shan, and Limin Wang. Timelens: Rethinking video temporal grounding with multimodal llms. arXiv preprint arXiv:2512.14698 , 2025. [70] Yuanhan Zhang, Jinming Wu, Wei Li, Bo Li, Zejun Ma, Ziwei Liu, and Chunyuan Li. Llava-video: Video instruction tuning with synthetic data. arXiv preprint arXiv:2410.02713 , 2024. [71] Junjie Zhou, Yan Shu, Bo Zhao, Boya Wu, Zhengyang Liang, Shitao Xiao, Minghao Qin, Xi Yang, Yongping Xiong, Bo Zhang, et al. Mlvu: Benchmarking multi-task long video understanding. In 
+
+Proceedings of the Computer Vision and Pattern Recognition Conference , pages 13691–13701, 2025. 
+
+13 Appendix Overview 
+
+This appendix is organized as follows: • A. Related Works of Video Understanding Methods 
+
+• B. Additional Details of Benchmark Construction 
+
+• C. Additional Details of Methodology 
+
+• D. Implementation Details 
+
+• E. Additional Experiments 
+
+• F. Challenges and Future Work 
+
+A Related Works of Video Understanding Methods 
+
+Existing video understanding approaches fall into two categories. (i) Video MLLMs —including general-purpose models [ 48 , 20 , 3, 53 , 1 , 59 ], VTG-specialized variants such as TimeChat [ 43 ](time-aware encoder), VTimeLLM [ 27 ] (normalized timestamp tokens), LITA [ 28 ] (SlowFast tokens for reasoning temporal localization), TRACE [ 23 ] (causal event modeling), and Number-It [ 57 ](numerical frame identifiers), and memory- or context-extension methods [ 49 , 25 , 67 , 45 , 12 ]—all process the video in a single forward pass and predict one best-matching moment per query. (ii) Agent-based methods decompose the task into structured sub-routines: VideoAgent [ 54 ] iteratively retrieves key frames via CLIP-guided tool use; VideoTree [ 55 ] constructs query-adaptive hierarchical trees through visual clustering; DoraemonGPT [ 62 ] converts videos into SQL-queryable symbolic memory; VideoMind [ 35 ] trains Planner/Grounder/Verifier/Answerer roles to complete each sub-task for video understanding; Vgent [ 46 ] represents videos as entity-centric graphs for retrieval-augmented generation; and T* [ 63 ] explicitly frames long-video understanding as iterative temporal search with adaptive zoom-in. Across both categories, however, grounding is treated as retrieval —returning a single best moment or a sparse set of relevant frames—and none provides a quantitative aggregation mechanism for exhaustive multi-instance counting under compositional temporal conditions, leaving the gap that CoMET-Agent addresses. 
+
+B Additional Details of Benchmark Construction 
+
+This appendix provides additional details on the construction of CoMET-Bench, complementing the high-level description in Sec. 3.2. We first present the end-to-end annotation pipeline (Sec. B.2), followed by the prompts used for MLLM-assisted query generation (Sec. B.3) and annotation generation (Sec. B.4). Finally, we describe the human verification protocol and the quality-control statistics (Sec. B.5). 
+
+B.1 Copyright and License Clarification 
+
+The 600 videos in CoMET-Bench are sourced from three publicly released long-video benchmarks and a small set ( ≤ 20 ) of YouTube videos collected by us. Video-MME [18 ] is released for academic research only with copyright held by the original video owners; MLVU [71 ] is released under CC-BY-NC-SA-4.0 for non-commercial research; and CG-Bench [ 8] is distributed as a gated dataset for approved researchers only, and we accessed it through the official approval process. We use all videos strictly for non-commercial academic research, in compliance with their original terms. For the YouTube subset, we do not redistribute raw video files but release only video identifiers so that researchers can fetch them directly from the original sources, subject to YouTube’s Terms of Service and the uploaders’ copyright. The query-annotation pairs created in this work, including natural-language queries, attribute tags, grounded intervals, and verification metadata, are released under CC-BY-NC-SA-4.0 to remain compatible with the most restrictive upstream source. To preserve the access controls inherited from CG-Bench and to ensure non-commercial academic use, CoMET-Bench is itself distributed as a 
+
+gated dataset : researchers request access through the form shown in Fig. 7, providing their full name, institutional affiliation, and an institutional email, and explicitly agreeing not to redistribute, resell, or commercially exploit any portion of the dataset or its annotations. We respect the rights of all original 14 video creators and will promptly remove any entries upon request from copyright holders through the project page. 
+
+Figure 7: CoMET-Bench data access request form. Researchers must provide institutional creden-tials and explicitly agree to non-commercial academic use before being granted access to the dataset. 
+
+B.2 Annotation Pipeline Overview 
+
+The detailed annotation pipeline is illustrated in Fig. 8. The pipeline consists of five stages. (1) Video collection : 600 videos are curated from five real-world domains (TV/Movie, Life Record, Sports, Knowledge, Surveillance). (2) Query generation : an MLLM generates candidate queries under attribute-driven prompting, where each query targets a specific combination drawn from the eight query attributes (four temporal: Causal , Sequential , Synchronous , Bounded ; three spatial: Static ,
+
+Dynamic , Identity ; and the orthogonal Negative attribute). (3) Query verification : human annotators verify each query for video relevance, naturalness, and real-world plausibility, rewriting or discarding those that fail. (4) Annotation generation : the MLLM produces an initial set of grounded intervals for each verified query. (5) Two-pass annotation verification : a pair of human annotators independently inspects each query–annotation pair against the source video, correcting boundaries, adding missed instances, and removing spurious ones; pairs reaching inter-annotator agreement above IoU > 0.7
+
+proceed to a final third-pass review by a senior annotator, while disagreements are adjudicated. Only pairs passing all three rounds of verification are included in the final benchmark. 
+
+B.3 Query Generation 
+
+The query generation prompt instructs the MLLM (in practical we use Gemini 3 Pro-Preview [ 20 ]) to produce queries that are visually grounded, temporally precise, and compositional. To achieve compositionality, we sample attribute combinations from the eight-attribute pool before invoking the MLLM, and pass the selected combinations into the prompt as explicit constraints. Each combination contains 1–3 attributes, with combinations of 2–3 attributes oversampled (peak at k = 2 .5, Gaussian-weighted) to encourage compositional queries while still preserving simpler single-attribute cases. The MLLM is then instructed to generate exactly one query per combination, ensuring uniform coverage of the compositional query space. For each video, we sample five attribute combinations using a biased random procedure: the combi-nation size k is drawn from {1, 2, . . . , 7} with probability p(k) ∝ exp( −α(k − μ)2) where μ = 2 .5
+
+and α = 0 .9, peaking at compositional queries of 2–3 attributes; the k attributes are then sampled uniformly without replacement from the 8-attribute pool. This procedure ensures uniform coverage of the compositional space while concentrating effort on the queries with most diagnostic value. 15 Video Sources    
+
+> Sports
+> Knowledge
+> TV/Movie
+> Life Record
+> Surveillance
+> Query
+> Generation
+> Potential
+> Queries
+> Static
+> Causal
+> Sequential
+> Bounded Dynamic
+> Identity Synchronous
+> Annotations
+> Double Verification
+> Generated
+> Annotations
+> Negative
+> Query Type Pool
+> Human
+> Annotators
+> Query
+> Verification
+> MLLM Verified
+> Queries
+> Annotation
+> Generation
+> MLLM
+> Human
+> Annotators Query -Annotation
+> Pairs
+> Annotation
+> (tIoU>0.7)?
+> Yes
+
+CoMET -Bench 
+
+Data  
+
+> Videos
+> Third Human
+> Verification
+
+Figure 8: Data construction pipeline of CoMET-Bench. Query Generation Prompt 
+
+Task Overview: You are an expert annotator building a benchmark for Conditional Multi-Event Temporal Grounding. Your goal is to generate 5 meaningful queries based on the video content provided. 
+
+*** CRITICAL CONSTRAINT 1: VISUAL GROUNDING *** 
+
+The queries MUST describe events that are VISUALLY OBSERVABLE in the video player pixel-by-pixel. • BAD Query (Abstract): “Count how many times the empire expands.” (Too vague.) • GOOD Query (Visual): “Count how many times the map border visually shifts or changes color.” 
+
+(Observable.) 
+
+*** CRITICAL CONSTRAINT 2: STRICT TIME FORMAT (HH:MM:SS) *** 
+
+• You MUST use the 3-part HH:MM:SS format for ALL time references. • NEVER use MM:SS (e.g., 12:30 is ambiguous). • If the video is within 1 hour, write 00:MM:SS .• Examples: 30 seconds → 00:00:30 ; 1 minute 5 seconds → 00:01:05 ; 1 hour 15 minutes →
+
+01:15:00 .
+
+Core Attribute Definitions: 
+
+1. Identity : Distinguish unique visual entities (e.g., “The man in the blue hat” ). 2. Static : State-based attributes (e.g., “The map is entirely red” ). 3. Dynamic : Motion analysis (e.g., “The hand shuffles the cards” ). 4. Causal : A visual trigger leads to a visual reaction. 5. Sequential : Visual events in order. 6. Synchronous : Two things happening at the exact same time. 7. Bounded : Constrains the counting to a specific timestamp range. 
+
+Query Requirements: 
+
+• If a combination has 2+ attributes, use at least two. • Each query must specify exactly one target event type to count. • STRICTLY AVOID spatial counting (e.g., “how many birds in the sky” ). • At least 2 of the 5 queries must include a specific time window. 
+
+=== FEW-SHOT EXAMPLES === Example 1 (Dynamic + Identity + Bounded) 
+
+Question: Between 00:00:00 and 00:00:30, how many times does Jennifer Lawrence (Identity) perform a riffle shuffle (Dynamic) with the cards? 
+
+Target: Count the specific “shuffling” motion visible on the FaceTime screen. 
+
+Example 2 (Causal + Static) 
+
+Question: Count the number of times a question text appears on screen (Causal) that immediately cuts 
+
+16 to a static image of Jennifer looking surprised (Static). 
+
+Target: Ground the cut between the text frame and the reaction frame. 
+
+Example 3 (Sequential + Dynamic) 
+
+Question: After the text “Jack of Clubs” appears, how many times is a card physically flipped by a hand? 
+
+Target: Count each individual hand movement that changes the position of a card. 
+
+Example 4 (Bounded) 
+
+Question: From 00:45:00 to 00:46:30, how many times does the red arrow appear on the map? 
+
+Target: Visual tracking of the red arrow graphic within the 90-second window. 
+
+Attribute Combinations to use: 
+
+{combinations_block} 
+
+=== OUTPUT FORMAT === 
+
+Return strictly valid JSON. No markdown. "annotations" must be empty. 
+
+{"queries": [ {"query_text": "Question...", "annotations": [] }]}
+
+B.4 Annotation Generation 
+
+For each verified query, we prompt a frontier MLLM to produce an initial set of grounded intervals as a starting point for human refinement. The prompt enforces three properties critical to our task: (i) exhaustive enumeration —every occurrence of the target pattern must be returned as a separate interval, ensuring multi-instance coverage rather than only the most salient match; (ii) boundary strictness —each interval starts when the target event first becomes visually identifiable and ends when it concludes or leaves the frame, providing tight grounding that downstream tIoU metrics can mean-ingfully evaluate; and (iii) strict temporal format —all timestamps follow the unambiguous HH:MM:SS 
+
+convention. We additionally request a short descriptive evidence note for each interval, which serves as an audit trail that human verifiers use during the subsequent refinement and adjudication stages. We emphasize that the MLLM output is treated as a strong candidate to be reviewed and corrected by human annotators, not as ground truth: human verifiers routinely correct misaligned boundaries, add missed instances, and remove spurious ones during the two-pass verification described in Sec. 3.2. 
+
+Annotation Generation Prompt 
+
+Role: You are a Professional Video Annotation Specialist specializing in Temporal Grounding. Your goal is to produce high-fidelity datasets by mapping the given query to precise video intervals. 
+
+Input: 
+
+• Given Video • Query: {query_text} 
+
+Execution Protocol: 
+
+1. Temporal Precision (HH:MM:SS): 
+
+• You MUST use the 3-part HH:MM:SS format for ALL time references. • NEVER use MM:SS (e.g., 12:30 is ambiguous). • If the video is within 1 hour, write 00:MM:SS .• Examples: 30 seconds → 00:00:30 ; 1 minute 5 seconds → 00:01:05 ; 1 hour 15 minutes →
+
+01:15:00 .2. Exhaustive Retrieval: No occurrence of the target pattern should be omitted. If the pattern repeats 10 times, you must provide 10 distinct annotation blocks. 3. Boundary Strictness: The start is the moment the action/object becomes first identifiable. The end 
+
+is the moment the action concludes, or the object leaves the frame. 
+
+17 4. Descriptive Evidence: In the notes field, describe the specific visual or auditory anchor that confirms the match.  
+
+> OUTPUT FORMAT (STRICT JSON ONLY, NO MARKDOWN):
+> {"annotations": [ {"start_timestamp": "00:15:23", "end_timestamp": "00:15:29", "notes": "Short evidence note" }]}
+
+B.5 Human Verification 
+
+To ensure data quality, every CoMET-Bench query and its grounded annotations pass through a multi-stage verification protocol. We recruit trained annotators with backgrounds in computer vision and video annotation, and equip them with a custom web-based annotation interface (Fig. 9 and 10) that integrates query refinement, attribute tagging, timestamp correction, and progress tracking into a single workflow. The full protocol consists of three stages, described below. 
+
+Stage 1: Query Verification. For each video, the MLLM produces five candidate queries, and human verifiers examine them along three axes: understandability (the query reads naturally and unambiguously), meaningfulness (the query targets information someone would realistically want to extract), and difficulty (the query is sufficiently challenging for current MLLMs). Verifiers are explicitly instructed to evaluate the query against three representative real-world application scenarios: (i) video cutting (finding repeated or highlighted patterns), (ii) event counting (finding complex, semantically meaningful events with clear visual features), and (iii) record analysis (locating recurring patterns of a specific player or interviewee, such as successful shots or mentions of a keyword). A query is considered well-formed if it reflects one or more of the eight task attributes (Identity , Static , Dynamic , Causal , Sequential , Synchronous , Bounded , and Negative ). For each accepted query, verifiers assign the appropriate attribute tags (a query may carry multiple) and mark it as Verified . To preserve the temporal nature of the benchmark, verifiers are required to reject queries that reduce to spatial counting , in which the model would simply count co-occurring objects within a single frame. Queries failing any of the above criteria are either rewritten or discarded before entering the annotation stage. Fig. 9 shows the query-verification view of the annotation interface. 
+
+Figure 9: Query verification interface of the CoMET-Bench annotation tool. For each candidate query produced by the MLLM, verifiers can assign one or more attribute tags from a dropdown (Identity , Static , Dynamic , Causal , Sequential , Synchronous , Bounded , and Negative ), edit the query text, mark it as Verified , or discard it. Each query also displays its current verification and annotation status ( Verified /Unverified , Annotated /Unannotated ), allowing annotators to track progress at a glance. 
+
+Stage 2: Annotation Refinement. For each verified query, the MLLM produces a candidate set of grounded intervals, which is then refined by a human annotator. The annotator inspects the video 18 against each candidate interval and performs four checks: (i) format check —all timestamps follow the unambiguous HH:MM:SS convention; (ii) content check —the visual content within each interval indeed satisfies the query; (iii) completeness check —the annotator quickly scrubs through the entire video to identify qualifying instances missed by the MLLM; (iv) boundary correction —intervals that only partially satisfy the query are tightened, extended, or split as appropriate. Candidates that cannot be salvaged are deleted, and missed instances are added as new intervals. We deliberately leave the predicted count from the MLLM unverified at this stage, since the count is determined by the final set of corrected intervals rather than any intermediate prediction. Fig. 10 shows the annotation-refinement view. 
+
+Figure 10: Annotation verification interface of the CoMET-Bench annotation tool. Given a verified query and its source video (left), annotators inspect every MLLM-generated candidate interval shown in the central panel. Each interval can be edited (boundary correction in HH:MM:SS format), deleted (when spurious), or supplemented with new intervals to capture instances missed by the MLLM. A Query Annotated flag is set once the annotator confirms the interval set is exhaustive and correct. The right panel provides a video-level navigator across all assigned topics for tracking annotation progress. 
+
+Stage 3: Double Verification and Final Audit. Each refined query–annotation pair is independently re-examined by a second annotator who has not seen the first annotator’s edits. The two annotators’ outputs are compared via temporal Intersection-over-Union (IoU); pairs reaching IoU > 0.7 on 
+
+all corresponding intervals are forwarded to the final benchmark with the primary annotator’s annotation. Pairs that fail the IoU threshold are returned for adjudication, in which both annotators jointly review the disputed intervals with the senior annotator until consensus is reached. Only query–annotation pairs passing all three verification stages are included in the final benchmark. The completed annotations are exported as JSON from the annotation tool and merged into the released CoMET-Bench dataset. 
+
+B.6 Annotation Quality Statistics 
+
+To quantify the rigor of the human verification pipeline (Sec. B.5), Tab. 3 reports aggregate interven-tion statistics across the 600 videos and 2,789 final query–annotation pairs. The numbers confirm that MLLM outputs alone are insufficient as ground truth and that human review meaningfully reshapes the released benchmark. At the query stage, only 15.4% of candidate queries were accepted unchanged: 77.6% required rewriting (typically to tighten ambiguous wording, fix attribute–query mismatches, or remove spatial-only counting), and 7.0% were discarded outright. At the annotation stage, 31.7% of MLLM-proposed intervals were removed as spurious and 26.0% of the final intervals were newly added by annotators to recover missed instances. Together these numbers indicate that without human refinement the benchmark would substantially under-report event density and over-report condition compliance. In Stage 3, every query was independently re-annotated by a second annotator, and only 6.5% (182 / 2,789) of queries fell below the tIoU > 0.7 agreement threshold 19 and were adjudicated by a senior annotator. The remaining 93.5% reached direct inter-annotator consensus, supporting the reliability of CoMET-Bench as a benchmark. Table 3: Annotation quality statistics for CoMET-Bench. Query Verification Stage human in-tervention on MLLM-generated queries; Annotation Refinement reports interval-level edits on MLLM-proposed annotations; Double Verification reports adjudication outcomes when two indepen-dent annotators disagreed on a query.                 
+
+> Statistic Value
+> Query Verification (3000 →2789)
+> Candidate queries generated by MLLM 3,000 Accepted unchanged 462 (15.4%) Modified by human verifiers 2,327 (77.6%) Discarded 211 (7.0%)
+> Annotation Refinement (16247 →15327)
+> Candidate intervals proposed by MLLM 16,247 Spurious intervals removed 5,148 (31.7%) Missed intervals newly added by annotators 4,228 (26.0%)
+> Double Verification (all 2789 queries re-annotated)
+> Queries requiring third-party adjudication ( tIoU <0.7)182 (6.5%) Intervals adjudicated within those queries 305
+
+B.7 Benchmark Evaluation 
+
+To evaluate baseline MLLMs on CoMET-Bench, we adopt a single, deliberately compact prompt that is shared across all models. The prompt design balances two competing requirements: (i) it must be sufficiently informative to allow the model to interpret compositional temporal and spatial conditions in the query, and (ii) it must remain short enough for smaller open-source models to follow without being overwhelmed by lengthy task instructions. Three task-level properties are explicitly enforced. First, the prompt requires the model to identify every qualifying interval rather than only the most salient match, directly aligning with the multi-instance nature of our task. Second, it allows the model to return an empty list when no qualifying interval exists, which is essential for fair evaluation on the negative-query subset. Third, the prompt explicitly forbids interval fabrication ( “Do not fabricate intervals” ), which is necessary to prevent models from inflating recall on negative queries by guessing. The output format is a strict JSON array of [start_seconds, end_seconds] pairs in integer seconds, which is directly parseable by our evaluation pipeline without post-processing. We use the same prompt for both proprietary and open-source models to ensure a controlled comparison. 
+
+Benchmark Evaluation Prompt             
+
+> You are a video analysis assistant. You are given {NUM_FRAMES} frames uniformly sampled from a
+> {duration_str} video.
+> Query: {query_text}
+> Find every time interval in the video where the query is satisfied. Return all matching intervals, or [] if none exist. Do not fabricate intervals.
+> Output ONLY a JSON array of [start_seconds, end_seconds] pairs in integer seconds.
+> Examples: [[10, 20], [45, 60]] or [] .No explanation, no extra text.
+
+B.8 Evaluation Metrics: Detailed Formulations 
+
+This section provides the formal definitions of the metrics summarized in Sec. 3.4. Let Q denote the full query set, partitioned into positive queries Q+ (with at least one ground-truth interval) and negative queries Q− (with zero ground-truth intervals). For a query q ∈ Q , let Gq = {(sgt  
+
+> i
+
+, e gt  
+
+> i
+
+)}Nq
+
+> i=1
+
+20 denote the ground-truth interval set with Nq = |G q |, and let Pq = {(spred  
+
+> j
+
+, e pred  
+
+> j
+
+)} ˆNq 
+
+> j=1
+
+denote the predicted interval set with ˆNq = |P q |.
+
+Multi-event counting. We compute three counting metrics over the full query set Q:
+
+MAE = 1
+
+|Q| 
+
+X
+
+> q∈Q
+
+ˆNq − Nq , OBO = 1
+
+|Q| 
+
+X
+
+> q∈Q
+
+⊮ | ˆNq − Nq | ≤ 1 , (2) 
+
+Pearson = 
+
+P
+
+> q∈Q
+
+( ˆNq − ¯ˆN )( Nq − ¯N )
+
+qP
+
+> q∈Q
+
+( ˆNq − ¯ˆN )2
+
+qP
+
+> q∈Q
+
+(Nq − ¯N )2
+
+, (3) where ¯ˆN and ¯N are the means of predicted and ground-truth counts. MAE captures average error magnitude, OBO reports the fraction of predictions within a single count of the target (a near-correctness tolerance expected in practical use), and Pearson captures systematic agreement beyond pointwise error [26, 68, 15, 51]. 
+
+Temporal event grounding. Intuitively, mIoU captures boundary precision, Recall@0.5 captures completeness, and F1@0.5 jointly penalizes over- and under-prediction. Following common practice in temporal grounding [ 4, 65 , 19 ], we report the threshold θ = 0 .5 in the main paper as a representative operating point. For a single interval pair, the temporal Intersection-over-Union is 
+
+tIoU  (s, e ), (s′, e ′) = max(0 , min( e, e ′) − max( s, s ′)) (e − s) + ( e′ − s′) − max(0 , min( e, e ′) − max( s, s ′)) . (4) For each positive query q ∈ Q +, we compute three per-query scores and then macro-average them across Q+. mIoU averages the best-match tIoU over each ground-truth interval: 
+
+mIoU q = 1
+
+NqNq
+
+X
+
+> i=1
+
+max  
+
+> j
+
+tIoU  (spred  
+
+> j
+
+, e pred  
+
+> j
+
+), (sgt  
+
+> i
+
+, e gt  
+
+> i
+
+). (5) 
+
+Recall@ θ measures the fraction of ground-truth intervals matched at the single event tIoU threshold 
+
+θ:
+
+Recall@ θ q = 1
+
+NqNq
+
+X
+
+> i=1
+
+⊮
+
+
+
+max  
+
+> j
+
+tIoU  (spred  
+
+> j
+
+, e pred  
+
+> j
+
+), (sgt  
+
+> i
+
+, e gt  
+
+> i
+
+) ≥ θ
+
+
+
+. (6) 
+
+F1@ θ is computed via greedy one-to-one matching: each prediction is matched to at most one ground-truth interval (in order), and a match is counted as a true positive iff its tIoU exceeds θ.Letting TP q denote the number of matched pairs, 
+
+Precision@ θ q = TP q
+
+ˆNq
+
+, F1@ θ q = 2 Precision@ θ q · Recall@ θ q
+
+Precision@ θ q + Recall@ θ q
+
+. (7) 
+
+Negative query recognition. A correct response to a negative query q ∈ Q − is the empty prediction set Pq = ∅. The Rejection Rate is the fraction of negative queries handled correctly: 
+
+RejRate = 1
+
+|Q −|
+
+X
+
+> q∈Q −
+
+⊮ ˆNq = 0 . (8) However, RejRate alone is trivially gameable: a model that always emits an empty prediction reaches 
+
+RejRate = 1 at the cost of zero recall on positive queries. To prevent this, we additionally define the Positive Coverage as the fraction of positive queries on which the model returns at least one prediction, 
+
+PosCov = 1
+
+|Q +|
+
+X
+
+> q∈Q +
+
+⊮ ˆNq > 0 , (9) and report Rej.-F1 as the harmonic mean of the two, 
+
+Rej . − F1 = 2 · RejRate · PosCov RejRate + PosCov . (10) 21 Rej.-F1 takes a high value only when the model both correctly rejects negatives and remains willing to commit predictions on positives, ruling out the lazy “always-empty” strategy. As a complementary readout of hallucination severity, we also report the False Positive Rate (FPR) , defined as the fraction of negative queries on which the model emits any non-empty prediction. While FPR is the direct complement of RejRate ( FPR = 1 − RejRate ), reporting it alongside Rej.-F1 makes the magnitude of hallucination on negative queries directly visible in the result table. 
+
+C Additional Details of Methodology 
+
+This appendix complements Sec. 4 by providing the formal definitions and algorithmic details that were omitted in the main paper for brevity. We elaborate on three components: the temporal-window parsing performed by the Planner Agent (Sec. C.1), the edge weight formulation used to construct the hierarchical graph (Sec. C.2), and the iterative verification algorithm with online deduplication that drives Steps 3 and 4 (Sec. C.3). All notation is consistent with the main text. 
+
+C.1 Adaptive Video Planning (Step 1) Pre-segmentation. When a query specifies an explicit temporal window (e.g., “Between 00:16:00 and 00:34:00...” ), processing the entire video introduces unnecessary computational overhead and risks hallucination from out-of-bound segments. The Planner Agent parses such queries to extract the absolute boundary timestamps Tstart and Tend , and trims the original video Vfull into a pre-segmented video: 
+
+Vtrim = {ft ∈ V full | Tstart ≤ t ≤ Tend }, (11) where ft denotes the video frame at timestamp t. The trimmed clip Vtrim is then passed to Step 2, ensuring that all subsequent graph construction and reasoning are strictly bounded within the user-specified temporal scope. For queries without explicit time bounds, Tstart and Tend default to 0 and the full video duration, respectively. 
+
+Hyperparameter Adaptive Configuration. The granularity of the hierarchical graph strongly affects downstream verification: too coarse a segmentation collapses distinct events into a single node, while too fine a segmentation fragments a single event across many spurious nodes. Since the optimal granularity depends on both the visual dynamics of the video and the temporal scope of the query, no single static setting generalizes across the benchmark. We therefore pre-define a small library of configuration profiles , where each profile is a complete, internally consistent set of hyperparameters that controls graph construction. A profile specifies the frame sampling rate used to extract DINOv2 and RAFT features, the event-level boundary threshold τe that governs event-node segmentation, the PELT penalty that governs action-node segmentation, and the edge parameters 
+
+σ and τ from Eq. 15 that control graph traversal. Each profile is tuned for a representative regime, namely a coarse profile for short videos with a broad temporal scope, a balanced profile for typical long-form videos, and a fine profile for fast-paced or narrow-window queries. Given the query and a brief description of the trimmed video Vtrim , the Planner Agent selects the most suitable profile, which is then propagated to all downstream operations in Step 2. By delegating profile-level selection to the agent rather than asking it to set numerical hyperparameters directly, the framework retains adaptivity while avoiding the brittleness of free-form numerical generation by an MLLM. 
+
+C.2 Temporal Graph Building (Step 2) 
+
+This section details the change-point detection procedure used to construct the hierarchical graph in Step 2 (Sec. 4.1) and the edge weight formulation that quantifies inter-node affinity. 
+
+Event-level segmentation. Given the pre-segmented video Vtrim , we sample frames at a fixed rate (1 fps in our default configuration) and extract per-frame semantic features {xt}Tt=1 using a frozen DINOv2 encoder [ 47 ], where T is the total number of sampled frames. We compute the inter-frame cosine similarity sequence 
+
+se 
+
+> t
+
+= x⊤ 
+
+> t
+
+xt−1
+
+∥xt∥ ∥ xt−1∥ , t = 2 , . . . , T, (12) 22 and apply wavelet smoothing (Daubechies-4 with soft thresholding) to suppress high-frequency noise while preserving genuine scene transitions. Event-level boundaries are then identified as the local minima of the smoothed curve that fall below an adaptive threshold τe (set by the Planner Agent), since semantically coherent events correspond to plateaus of high inter-frame similarity, separated by sharp similarity drops at scene changes. Each contiguous segment between consecutive boundaries forms an Event Node vi ∈ V E with timestamp interval [tstart  
+
+> i
+
+, t end  
+
+> i
+
+].
+
+Action-level segmentation. For each event node vi retained by the Filter Agent, we apply a second segmentation pass that operates on motion rather than appearance. We extract dense optical flow 
+
+{ft}Ti−1 
+
+> t=1
+
+between consecutive frames within vi using a frozen RAFT encoder [ 50 ], where Ti is the number of frames in vi. We then compute the per-frame flow magnitude 
+
+gt = ∥ft∥2, (13) which is large at frames containing strong motion (likely action boundaries) and small within motion-homogeneous regions. To convert this signal into a similarity-style curve whose local minima mark transitions, we negate and rescale it to [0 , 1] via min–max normalization: 
+
+sa 
+
+> t
+
+= gmax − gt
+
+gmax − gmin + ϵ , gmax = max  
+
+> 1≤t≤Ti−1
+
+gt, gmin = min  
+
+> 1≤t≤Ti−1
+
+gt, (14) where ϵ is a small constant for numerical stability. After this transformation, frames with low motion correspond to sa 
+
+> t
+
+≈ 1 (motion-homogeneous regions) and frames with strong motion correspond to 
+
+sa 
+
+> t
+
+≈ 0 (likely action transitions). We further smooth sa using wavelet denoising with hard thresh-olding (which preserves abrupt motion changes better than soft thresholding) and apply the PELT change-point detection algorithm [ 31 ] with an RBF kernel cost to recover action-level boundaries. The resulting fine-grained segments form the Action Nodes VA within each filtered event. 
+
+Edge weight formulation. Both the Event Graph GE and the Action Graph GA contain direct neighbor edges (between temporally adjacent nodes) and indirect neighbor edges (between non-adjacent nodes within a bounded hop distance), as introduced in Sec. 4.1. To quantify the strength of each edge—and to provide a principled criterion for traversing the graph during iterative verification (Sec. 4.2)—we assign a scalar weight that combines semantic similarity with a temporal-decay penalty. For any two nodes vi, v j ∈ V , we extract segment-level visual representations zi, zj ∈ Rd using the frozen video embedding model [3] and define 
+
+w(ei,j ) = z⊤ 
+
+> i
+
+zj
+
+∥zi∥ ∥ zj ∥
+
+| {z }
+
+> semantic similarity
+
+· exp 
+
+
+
+− |i − j|
+
+σ
+
+| {z }
+
+> temporal decay
+
+, (15) where |i − j| denotes the discrete hop distance between vi and vj along the temporal sequence, and 
+
+σ > 0 is a scalar controlling how rapidly the weight decays with temporal distance (set adaptively by the Planner Agent). This formulation favors connections between nodes that are simultaneously semantically related and temporally proximate, suppressing spurious long-range similarities. During the iterative verification of Step 3, only edges satisfying w(ei,j ) > τ are traversed when constructing the perception context C(vi), where τ is the edge threshold introduced in the main text. 
+
+C.3 Iterative Verification with Online Deduplication (Step 3) 
+
+This section formalizes the iterative refinement loop introduced in Sec. 4.2 and the online update mechanism (i.e., online deduplication) that populates the Global Memory Bank M described in Sec. 4.3. It takes as input the fine-grained Action Graph GA = ( VA, EA) constructed in Step 2 and the natural-language query Q, and returns a populated memory bank M containing every verified, deduplicated event instance. Algorithm 1 provides the complete pseudocode. The algorithm maintains an unverified node set U ⊆ V A (initialized to VA) and an iteration counter iter . Each iteration consists of three operations. 
+
+(1) Node Reduction and Combination. A candidate action node vi is sampled from U. To enlarge the limited temporal receptive field of an isolated action, we form a perception context C(vi) by 23 Algorithm 1 Iterative Graph-based Verification with Online Deduplication 
+
+Input: Action Graph GA = ( VA, EA), query Q, edge threshold τ , IoU threshold γ, max hops K,max iterations Nmax 
+
+Output: Populated Global Memory Bank M 
+
+> 1:
+
+Initialize M ← ∅ , U ← V A, iter ← 0 
+
+> 2:
+
+while U̸ = ∅ and iter < N max do  
+
+> 3:
+
+Sample candidate node vi ∼ U  
+
+> 4:
+
+# (1) Node Reduction & Combination  
+
+> 5:
+
+C(vi) ← { vi} ∪ N K (vi; τ ) {K-hop neighbors with edge weight w > τ } 
+
+> 6:
+
+# (2) Verifier Agent inspection  
+
+> 7:
+
+m ← VerifierAgent  C(vi), Q  
+
+> 8:
+
+if m is valid then  
+
+> 9:
+
+Parse m = ⟨S , (tstart , t end ), c ⟩ 
+
+> 10:
+
+# (3) Online deduplication via temporal NMS  
+
+> 11:
+
+is _dup ← False  
+
+> 12:
+
+for each m′ = ⟨S ′, (t′start, t ′end ), c ′⟩ ∈ M do  
+
+> 13:
+
+if IoU  (tstart , t end ), (t′start, t ′end ) > γ then  
+
+> 14:
+
+is _dup ← True  
+
+> 15:
+
+if c > c ′ then  
+
+> 16:
+
+M ← (M \ { m′}) ∪ { m} {Replace lower-confidence duplicate}  
+
+> 17:
+
+end if  
+
+> 18:
+
+end if  
+
+> 19:
+
+end for  
+
+> 20:
+
+if not is _dup then  
+
+> 21:
+
+M ← M ∪ { m} {Append novel event}  
+
+> 22:
+
+end if  
+
+> 23:
+
+end if  
+
+> 24:
+
+# Mark covered nodes to avoid redundant search  
+
+> 25:
+
+U ← U \ C (vi) 
+
+> 26:
+
+iter ← iter + 1  
+
+> 27:
+
+end while  
+
+> 28:
+
+return M
+
+unioning vi with its K-hop neighborhood, where neighbor traversal is restricted to edges whose weight w(ei,j ) > τ (with w defined in 15 and τ being the edge threshold from the main text): 
+
+C(vi) = {vi} ∪ N K (vi; τ ), (16) where NK (vi; τ ) denotes the set of nodes reachable from vi within K hops along edges satisfying 
+
+w > τ . This step realizes the Node Reduction and Combination operation introduced in Sec. 4.2. 
+
+(2) Verifier Agent inspection. Frames sampled from the perception context C(vi) are passed, together with the query Q, to the Verifier Agent. The agent decides whether the candidate action node 
+
+vi satisfies all spatial and temporal conditions specified by Q. If verified, the agent emits a memory tuple 
+
+m = ⟨S , (tstart , t end ), c ⟩, (17) following the definition in Sec. 4.3: S is a textual summary describing the verified event and its salient entities, (tstart , t end ) are the timestamps inherited from vi, and c ∈ [0 , 1] is the Verifier’s self-reported confidence. If the agent rejects vi, no tuple is produced. 
+
+(3) Online deduplication via temporal NMS. A newly verified tuple m may correspond to the same underlying event as an existing entry m′ ∈ M , since multiple candidate nodes within the same event region can independently trigger verification. To prevent redundant detections, we apply an online temporal Non-Maximum Suppression: m is compared against every existing 
+
+m′ = ⟨S ′, (t′start , t ′end ), c ′⟩ ∈ M via temporal Intersection-over-Union (IoU); if any overlap exceeds the threshold γ, the framework retains only the tuple with the higher confidence c. If no existing entry overlaps, m is appended as a novel event. After processing vi, all nodes in C(vi) are removed from U to avoid redundant verification of nodes already covered by the perception context. 24 The loop terminates when either U is exhausted or the iteration count reaches Nmax . The resulting memory bank M is then consumed by the Aggregator Agent in Step 4 to produce the final grounded intervals and exact count. 
+
+C.4 Global Memory Bank Mechanism 
+
+This section provides the detailed formulation of the Global Memory Bank introduced in Sec. 4.3, including its tuple semantics, the online deduplication policy, and the cross-moment aggregation performed by the Aggregator Agent in Step 4. 
+
+Memory entries. The Global Memory Bank, denoted as M, is a persistent data structure that supports global perception across the entire long-form video and overcomes the limitations of localized processing. For every node verified by the Verifier Agent in Step 3, the framework emits an entry 
+
+m = ⟨S , (tstart , t end ), c ⟩, (18) where S is a concise text summary describing the visual event and the salient features of the involved entities, (tstart , t end ) are the grounding timestamps inherited from the fine-grained action node, and 
+
+c ∈ [0 , 1] is the agent’s self-reported confidence score. The text summary S serves a dual purpose: it both records what was verified and provides the cross-moment evidence consumed by the Aggregator Agent in Step 4. 
+
+Online deduplication. Because neighboring action nodes covering the same underlying event may independently trigger verification, naively appending every verified entry would inflate M with near-duplicate records. The memory bank employs an online deduplication mechanism (formalized in Algorithm 1): a new entry is appended as a novel event if its temporal IoU with all existing entries falls below threshold γ; otherwise only the higher-confidence entry is retained. The iterative search continues until the maximum iteration is reached or all candidate nodes in GA have been processed, populating M with a comprehensive, deduplicated log of all condition-compliant events. 
+
+Cross-moment aggregation. In Step 4, the Aggregator Agent consolidates the populated memory bank M into the final answer: an exact count ˆN of the validated instances and their corresponding grounded intervals {(tstart  
+
+> j
+
+, t end  
+
+> j
+
+)} ˆNj=1 . Beyond simple enumeration, the Aggregator performs cross-moment reasoning : by cross-referencing the descriptive summaries S across all stored entries, it determines whether temporally disjoint events involve the same underlying entities, resolving identity consistency for queries that refer to specific individuals or objects (e.g., “the referee who first issued a yellow card” ). This step is what allows CoMET-Agent to handle Identity-attribute queries that single-pass inference cannot, since identity verification requires comparing evidence collected at different timestamps. The resulting answer, ( ˆN , {(tstart  
+
+> j
+
+, t end  
+
+> j
+
+)} ˆNj=1 ), is the structured output of the search-and-aggregate pipeline. 
+
+D Implementation Details 
+
+This section reports the key implementation choices used in our experiments, focusing only on the parameters that appear in the main paper or directly affect the reported results. Code and configuration files will be released upon publication. 
+
+Model choices. CoMET-Agent is fully training-free and assembled from frozen, off-the-shelf components. The four agent roles ( Planner , Filter , Verifier , Aggregator ) are all instantiated by the same MLLM, Qwen3-VL-8B-Instruct [ 3], in zero-shot mode without any task-specific fine-tuning. Edge weights in the hierarchical graph (Eq. 15) are computed using Qwen3-VL-Embedding-8B [ 3]as the segment-level video encoder. For the visual feature extractors used in change-point detection (Sec. C.2), we adopt frozen DINOv2 [ 47 ] (ViT-S/14 backbone) for event-level appearance features and frozen RAFT [50 ] for action-level optical flow. All experiments run on a single NVIDIA A100 (80 GB) GPU. We do the evaluation of other methods on multiple NVIDIA 4 ×A40 GPUs. 25 Hyperparameters of iterative verification. The iterative loop in Step 3 is bounded by Nmax = 3 
+
+iterations for both node reduction (Step 3.1) and verification (Step 3.2), with early termination when no new candidates are accepted. Online deduplication uses a temporal IoU threshold of γ = 0 .5.
+
+Configuration profiles for the hierarchical graph. As described in Sec. C.1, the Planner Agent selects one of three pre-defined configuration profiles ( Short , Medium , Long ) based on the query and the trimmed video. Each profile is a complete, internally consistent set of hyperparameters tuned for a specific duration regime; the concrete values are summarized in Tab. 4. The Short profile (videos under 10 minutes) uses denser sampling and stricter thresholds to capture fast, fine-grained transitions; the Medium profile (10–30 minutes) balances granularity and computational cost; the Long profile (over 30 minutes) uses coarser sampling and looser thresholds to keep the graph manageable while preserving coverage of long-range dependencies. Table 4: Configuration profiles selected by the Planner Agent in Step 1, applied to event- and action-level graph construction in Step 2 and to graph traversal in Step 3.                                      
+
+> Parameter Short Medium Long
+> (<10 min) (10–30 min) (>30 min)
+> Event-level segmentation
+> Frame sampling rate ρE(fps) 2.0 1.0 0.5 Boundary threshold τe0.92 0.88 0.82
+> Action-level segmentation
+> Frame sampling rate ρA(fps) 2.0 2.0 1.0 PELT penalty β0.30 0.50 0.70
+> Edge construction (Eq. 15) and graph traversal
+> Temporal-decay scale σ2.0 3.0 5.0 Edge traversal threshold τ0.85 0.82 0.78
+> Iterative verification budgets
+> MAX _COARSE _EVENTS 346
+> MAX _ACTION _NODES 468
+
+Baselines. For the open-source MLLM and agent-based baselines reported in Tab. 2, we use the official checkpoints released by the authors and evaluate them with the prompt in Sec. B.7 under uniform frame sampling at the model’s default frame budget. Proprietary models (GPT-5, Gemini 2.5 Pro, Gemini 3 Flash) are queried through their public APIs with the same prompt and a fixed sampling rate of 128 uniformly extracted frames per video to control inference cost. 
+
+D.1 Details of Agent-based Method Benchmarking 
+
+In Tab. 2, two agent-based baselines, Vgent [ 46 ] and T ∗ [63 ], are reported as “Cannot Follow Instruction.” We elaborate on this status below to clarify that it is a structural property of their pipelines rather than an artifact of any specific run. The benchmark evaluation prompt (Appendix B.7) requires (i) exhaustive enumeration of every qualifying interval rather than a single best match, (ii) explicit rejection via an empty list [] when no qualifying interval exists, and (iii) strict JSON output of [start_seconds, end_seconds] 
+
+pairs. These requirements expose two structural mismatches with existing agent pipelines. (1) Task-paradigm mismatch. Both Vgent and T ∗ are originally designed for video question answering (VideoQA), where the terminal output is natural-language answer text rather than temporal intervals. Repurposing such pipelines for compositional temporal grounding requires their internal reasoning steps, which are optimized for producing and verifying answer phrases, to instead emit, enumerate, and verify timestamp pairs, which is a paradigm-level shift that cannot be achieved by prompt edits alone. (2) Pipeline-format rigidity. Each pipeline is composed of multiple fixed steps (e.g., planner, retriever, answerer), each of which expects and emits step-specific intermediate formats. Modifying the final output format propagates inconsistencies upstream, since the answerer’s expected input is shaped by the retriever’s fixed output schema. Despite extensive prompt adaptations on top of the official code, both pipelines consistently produced empty or unparseable outputs on CoMET-Bench, and we accordingly mark them as “Cannot Follow Instruction.” We view this as evidence that the conditional multi-event grounding setting demands more general agent compositions than prior question-answering pipelines provide. 26 E Additional Experiments 
+
+E.1 Additional Analysis on CoMET-Bench 
+
+We provide three complementary analyses that surface patterns hidden by the headline numbers in Tab. 2. 
+
+Scaling improves counting but hurts grounding. Two open-source families exhibit the same counter-intuitive divergence under parameter scaling. The Qwen3-VL 8.3B → 30B comparison improves counting (MAE 4.8 → 3.6) yet degrades grounding (F1@0.5 3.4% → 3.1%) and Rej.-F1 (52.1 → 47.2). The InternVL3.5 8B → 38B comparison shows the same dissociation: F1@0.5 marginally rises (1.1% → 1.3%) but Rej.-F1 collapses (64.7 → 40.3) while MAE actually worsens (3.6 → 4.0). This consistent pattern across families suggests that simple parameter scaling does not translate into the structured search needed for precise temporal grounding, motivating the dual-axis design of our evaluation protocol. 
+
+Counting calibration depends on reasoning capacity more than visual capacity. Pearson correlation ranks differently from grounding metrics: the top scores come from VideoARM (14.5), Ours (GPT-5) (13.7), InternVL3.5 38B (13.4), and Ours (Gemini 3 Flash) (12.0). With the partial exception of InternVL3.5 38B, the top of this ranking is dominated by systems with strong reasoning components (GPT-4.1+o3, GPT-5, Gemini 3), whereas top grounding scores instead follow visual grounding capacity. This suggests count calibration is closer to a reasoning task (“how many qualifying instances did I see?”), while grounding accuracy depends jointly on visual perception and structured search. The dissociation between Pearson and F1@0.5 within the same model further supports that the two axes capture distinct capabilities. 
+
+Negative queries split methods into two failure modes. Fig. 11 visualizes the bimodal pattern on negative queries. Hallucinators predict non-empty intervals on ≥93% of negative queries, including all four grounding-specialized models (TRACE 98.8%, LITA 99.1%, DisTime 93.5%, and TimeLens 100%, the latter rejecting no negative query at all) and VideoMind (99.4%). Over-rejectors achieve very low FPR by also rejecting positive queries: LLaVA-OV1.5 (FPR 2.6%, Rej.-F1 9.3%) and MiMO-VL (FPR 3.8%, Rej.-F1 8.8%) return empty for nearly every query regardless of ground truth, an outcome that the standard rejection rate would falsely reward. Only methods in the middle of this spectrum, including GPT-5 and our CoMET-Agent variants (Rej.-F1 57.4–68.1), achieve both low hallucination and high coverage. This bimodal split is exactly what our proposed Rejection-F1 
+
+metric is designed to detect. 
+
+E.2 CoMET-Agent’s Performance on Existing Benchmarks 
+
+To verify that CoMET-Agent generalizes beyond CoMET-Bench, we evaluate it on two standard temporal-grounding benchmarks: Charades-STA [ 19 ] and ActivityNet-Captions [ 32 ]. Both bench-marks ask the model to localize a single event described in natural language; we follow the standard protocol and report Recall@0.5 (R@0.5) and mIoU. We instantiate CoMET-Agent with the open-source backbone Qwen2.5-VL-7B and compare against representative video grounding methods. Tab. 5 reports the results. CoMET-Agent achieves the strongest zero-shot performance on Charades-STA (R@0.5 56.2%, mIoU 50.1%), surpassing all zero-shot baselines including DisTime (52.0% / 47.4%) and TimeMarker (51.9% / 48.4%), and approaching the fully-supervised TRACE (61.7% R@0.5). Compared to HiTeA, which uses the same Qwen2.5-VL backbone, CoMET-Agent improves R@0.5 by 7.7% on Charades-STA and 9.8% on ActivityNet-Captions, isolating the gain to the framework rather than the backbone. On ActivityNet-Captions, our R@0.5 (40.9%) is below TimeMarker (50.7%), which uses a larger 8B backbone with grounding-specific pretraining; nonetheless, CoMET-Agent remains the strongest zero-shot Qwen2.5-VL-based system. These results confirm that the search-and-aggregate framework, although designed for compositional multi-event grounding on long videos, also transfers effectively to classical single-event grounding on shorter clips. 27 0 20 40 60 80 100   
+
+> FPR ( , fraction of negative queries with non-empty prediction, %)
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> Rejection-F1 (  , %)
+> Hallucinators
+> Over-rejectors
+> Healthy
+> GPT-5 Gemini 2.5 Pro
+> Gemini 3 Flash
+> LLaVA-Video
+> LLaVA-OV1.5
+> MiMO-VL
+> LongVILA-R1
+> InternVL3.5 8B
+> Eagle2.5
+> Qwen3-VL 8B
+> Qwen3-VL 30B
+> VideoMind
+> VideoARM
+> TRACE
+> DisTime
+> TimeLens
+> LITA
+> Ours (Qwen3-VL)
+> Ours (GPT-5)
+> Ours (Gemini Flash)
+> MLLM
+> Agent
+> Grounding-Spec.
+> Ours
+
+Figure 11: Two failure modes on negative queries. Each point is a method on Tab. 2; colors denote method category. Hallucinators (bottom-right) predict intervals on nearly every negative query, while over-rejectors (bottom-left) reject nearly every query, including positives. Only methods in the top-left region achieve both low hallucination and high positive coverage. Table 5: Comparison with representative video grounding methods on Charades-STA and ActivityNet-Captions. We report R@0.5 and mIoU under each benchmark’s official protocol. Sup :supervision regime, with FS = fully supervised, ZS = zero-shot. 
+
+Method Sup Charades-STA ActivityNet-Captions 
+
+R@0.5 ↑ mIoU ↑ R@0.5 ↑ mIoU ↑
+
+VTimeLLM [27] FS 34.3 34.6 29.5 31.4 TRACE [23] FS 61.7 - 37.7 39.0 Momentor [40] ZS 26.6 28.5 23.0 29.3 ChatVTG [41] ZS 33.0 34.9 22.5 27.2 TimeChat [43] ZS 32.2 – – –InternVideo2.5 [13] ZS 43.3 41.7 – –TimeMarker [9] ZS 51.9 48.4 50.7 49.5 DisTime [66] (Llava-OV) ZS 52.0 47.4 34.3 37.1 HiTeA [60] (Qwen2.5-VL) ZS 48.5 46.3 31.1 37.9 
+
+CoMET-Agent (Qwen2.5-VL) ZS 56.2 50.1 40.9 41.6 
+
+E.3 Method Ablations 
+
+We disable one component at a time and report Pearson correlation (counting calibration), grounding F1@0.5, and Rejection-F1 (Rej.-F1) on CoMET-Bench. All variants are instantiated with the Qwen3-VL-7B backbone for a controlled comparison. Tab. 6 summarizes the results. 
+
+Findings. (1) Every component contributes: all four ablated variants fall between the raw Qwen3-VL baseline (Pearson 4.8%, F1@0.5 3.4%, Rej.-F1 52.1%) and the full CoMET-Agent (11.0% / 8.8% / 57.4%), confirming that each module addresses a distinct failure mode rather than overlapping with the others. (2) Global Memory Bank is the most impactful: removing it drops Pearson to 6.0% and F1@0.5 to 4.0%, the largest absolute drops on both metrics, since the agent loses cross-moment evidence and degenerates to local-only verification. (3) Iterative Verification is critical for negative-query handling: disabling it collapses Rej.-F1 to 52.1%, identical to the raw baseline, indicating that without iterative context expansion the verifier cannot reliably reject hallucinated events. (4) Temporal Graph and Adaptive HP provide complementary smaller gains: removing the hierarchical graph (flat segmentation) drops F1@0.5 by 2.3% and Rej.-F1 by 2.5%, mostly hurting 28 long-video performance, while removing adaptive HP configuration causes the smallest drop (-1.3% F1@0.5), as static profiles still cover the typical 30-minute regime adequately. Table 6: Ablation study of CoMET-Agent on CoMET-Bench (Qwen3-VL 8B backbone). We disable one component at a time and report Pearson correlation, grounding F1@0.5, and Rejection-F1.                         
+
+> Variant Pearson ↑F1@0.5 ↑Rej.-F1 ↑
+> Qwen3-VL 7B (baseline) 4.8 3.4 52.1 w/o Adaptive HP Configuration 9.2 7.5 56.3 w/o Temporal Graph (flat segm.) 7.7 6.5 54.9 w/o Iterative Verification 6.2 4.2 52.1 w/o Global Memory Bank 6.0 4.0 53.8
+> CoMET-Agent (Qwen3-VL 8B) 11.0 8.8 57.4
+
+E.4 Method Efficiency 
+
+Despite reformulating the task as a multi-step search-and-aggregate pipeline, CoMET-Agent does not impose a prohibitive inference cost relative to existing agent baselines. We report two efficiency comparisons under matched backbones: against Vgent [ 46 ] sharing Qwen2.5-VL, and against T ∗ [63 ]sharing GPT-4o. Tab. 7 reports per-query inference time averaged over 100 randomly sampled CoMET-Bench videos. 
+
+Comparison with agent baselines. Under matched backbones, CoMET-Agent is substantially faster than both compared agent baselines: 2.8× faster than Vgent (27.5s vs 78.2s on Qwen2.5-VL) and 
+
+8.4× faster than T ∗ (21.3s vs 178.3s on GPT-4o). The advantage stems from our hierarchical graph design, which restricts verifier calls to a small set of candidate sub-graphs rather than scanning the entire video, and our online deduplication, which avoids redundant verification of overlapping segments. The speedup is larger with the GPT-4o backbone, where each agent call is more expensive and thus call-count reduction translates more directly into wall-clock savings. 
+
+Step-by-step profiling. Tab. 7b breaks down the 27.54s per-query budget into four pipeline stages. 
+
+Iterative Verification (Step 3) accounts for nearly half of the total cost (12.92s, ≈47%), as expected, since this stage performs the bulk of agent reasoning across multiple candidate nodes. Planner 
+
+(6.85s) and Graph Construction (6.25s) together contribute another 48% and run only once per video, including ViT and optical-flow feature extraction. Aggregator (1.52s, ≈5%) is lightweight as it operates only on the populated memory bank rather than raw frames. Table 7: Inference cost analysis of CoMET-Agent under the Qwen2.5-VL-7B backbone. Left: 
+
+per-query inference time compared with the agent baseline Vgent. Right: step-by-step profiling of CoMET-Agent, grouped by the four pipeline stages.              
+
+> Method Time (s) ↓
+> with Qwen2.5-VL as backbone
+> Vgent [46] 78.22
+> CoMET-Agent (ours) 27.5
+> with GPT4o as backbone
+> T∗[63] 178.3
+> CoMET-Agent (ours) 21.3 (a) Comparison with the agent baseline.
+> Stage Time (s)
+> Planner (Step 1) 6.85 Graph Construction (Step 2) 6.25 Iterative Verification (Step 3) 12.92 Aggregator (Step 4) 1.52
+> Total 27.54
+> (b) Step-by-step profiling.
+
+F Challenges and Future Work 
+
+While CoMET-Bench and CoMET-Agent together establish a strong reference point for conditional multi-event temporal grounding, several limitations remain. We organize them into open challenges 29 directly surfaced by our experimental analysis (Sec. 5), followed by independent limitations of the benchmark and broader directions for future iterations. 
+
+F.1 Open Challenges from Experimental Analysis 
+
+Our failure-case analysis (Fig. 6) identifies three regimes that even the strongest CoMET-Agent variant fails to fully solve. Below we expand each into a concrete research direction. 
+
+(1) Fine-grained entity tracking under tight temporal conditions. When target events are short and feature visually similar co-occurring entities (e.g., “Jiang Liuer running while carrying the girl” ), the verifier’s textual identity summary becomes insufficient to disambiguate, and CoMET-Agent under-counts. A natural extension is to integrate a dedicated multi-object tracker (e.g., SAM 2 [ 42 ]or SAMURAI [ 61 ]) into the hierarchical graph, so that nodes carry not only temporal extents but also persistent tracklets. The Verifier Agent can then ground queries to a unified (interval, tracklet-id) 
+
+primitive, supporting richer compositional queries such as counting events tied to a specific entity’s trajectory. 
+
+(2) Position-uniform retrieval on dense long-form queries. On long videos with densely distributed events, CoMET-Agent recovers far more instances than baselines but still concentrates errors at mid- and late-video positions. The current Filter Agent ranks candidates by event-level similarity, which biases exploration toward salient regions. A coverage-aware traversal scheme that explicitly enforces uniform exploration of the timeline, for example via budgeted sampling per duration bin or a coverage-regularized verifier policy, is a promising direction. 
+
+(3) Compositional causal event pairing. On causal queries (e.g., “a tackle that causes a collapse” ), all baselines including CoMET-Agent ground visually plausible cause events without verifying that the expected consequence actually follows, yielding false positives such as unsuccessful attacks . The current Verifier Agent reasons over individual nodes; an explicit cause-effect attention mechanism that pairs candidate cause and consequence nodes across the action graph, possibly via a learned scoring head over node pairs, would more faithfully model causal queries. 
+
+F.2 Future Work Modality scope. CoMET-Bench is currently a purely visual benchmark: queries are grounded against the video stream only, and the audio track is intentionally excluded. This design isolates visual temporal reasoning as a controlled testbed, but it also leaves out a large class of real-world queries that depend on audio cues (e.g., “count every applause that follows a punchline” ). Extending both the benchmark and the agent pipeline to audio-visual queries is a natural next step. 
+
+Annotation scale. The 2,789 queries are produced through a three-stage human verification pipeline (Sec. B.5) that guarantees quality but caps scale relative to fully automatic counting datasets. Scaling by an order of magnitude will likely require active learning over MLLM-generated candidates and lightweight quality filters that approximate the human verification protocol. 
+
+Beyond training-free agents. CoMET-Agent is deliberately training-free to provide a strong, reproducible baseline whose behavior is fully attributable to its components. Lightweight task-specific fine-tuning of the Verifier or Aggregator on a small subset of CoMET-Bench may further close the gap to human performance, particularly on identity-bound and causal queries that demand cross-moment reasoning. 
+
+Towards spatial-temporal counting grounding. The current task formulation grounds events at the event level : each prediction is a temporal interval that satisfies the query as a whole. A more demanding next step is object-level grounding within events , where models must not only locate when 
+
+a qualifying event happens but also which object in the scene it involves, producing predictions of the form (interval, object trajectory) . This unifies counting, temporal grounding, and spatial grounding into a single primitive, supports compositional queries that prior benchmarks cannot express (e.g., counting interactions between two specific tracked entities, or grounding events constrained to an object’s spatial path), and pushes the task closer to how humans actually reason about long-form video. We view this as the central direction for the next iteration of CoMET-Bench and CoMET-Agent. 30
