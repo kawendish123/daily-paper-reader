@@ -1,0 +1,206 @@
+Title: Contactless Respiratory Monitoring on Heterogeneous Mobile Robots: A Multimodal Edge-Computing Framework
+
+URL Source: https://arxiv.org/pdf/2606.17376v1
+
+Published Time: Wed, 17 Jun 2026 00:20:34 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Contactless Respiratory Monitoring on Heterogeneous Mobile Robots: A Multimodal Edge-Computing Framework 
+
+Milind Rampure *† , Shadman Sakib *† , Haley Patel ‡, Zahid Hasan *, Nirmalya Roy *
+
+> *
+
+Department of Information Systems, University of Maryland Baltimore County, USA 
+
+> ‡
+
+Department of Computer Science, University of Maryland Baltimore County, USA 
+
+Abstract —Respiratory-rate (RR) monitoring is a critical com-ponent of remote triage and victim assessment in emergency re-sponse, disaster recovery, and infectious-disease scenarios, where minimizing physical contact can reduce responder risk and im-prove operational safety. However, field deployment of contactless RR monitoring remains challenging due to variable illumination, posture changes, platform heterogeneity, and the impracticality of wearable sensors in hazardous environments. In this pa-per, we present a modality-adaptive contactless RR monitoring framework for heterogeneous mobile robots with onboard edge computing. The proposed system combines brightness-adaptive sensor selection across RGB, thermal, near-infrared (NIR), and low-light cameras, keypoint-guided chest ROI extraction for posture-robust monitoring, and a signal-quality-index (SQI)-based filtering mechanism for reliable respiratory estimation. We implement and evaluate the framework on three robotic platforms spanning quadruped and wheeled locomotion and multiple edge-computing architectures. Experiments conducted across diverse lighting conditions, subject poses, and robot-to-subject distances demonstrate that the framework generalizes across platforms without per-platform algorithmic retuning, while revealing modality-specific operational boundaries. RGB provides the broadest coverage up to 8 m, NIR remains effective up to 6 m, thermal is reliable only at short range, and low-light sensing supports monitoring in complete darkness up to 8 m. Overall, the results demonstrate the feasibility of multimodal contactless RR monitoring on mobile robots and support its use as a foundation for autonomous triage and victim assessment in hazardous search-and-rescue settings. 
+
+Index Terms —Contactless respiratory monitoring, heteroge-neous robotic platforms, multimodal sensing, edge computing, signal quality index 
+
+I. I NTRODUCTION 
+
+Respiratory rate (RR), defined as the number of breaths per minute, is a critical vital sign for assessing physiological status and detecting respiratory distress, clinical deterioration, and other life-threatening conditions [1]. It also reflects stress, fatigue, physical exertion, and cognitive workload [2], [3]. However, RR remains one of the least consistently monitored vital signs because contact-based methods, such as chest straps, nasal probes, and wearable sensors, are often uncom-fortable, restrictive, and impractical in remote or dynamic environments [4]. To address these limitations, contactless 
+
+> †
+
+Equal contribution. 
+
+Fig. 1. Adaptive multi-modal respiratory-rate (RR) monitoring on a mobile robotic platform under variable illumination and environmental conditions. 
+
+RR monitoring has gained increasing attention. Existing ap-proaches use video, radar, and thermal imaging to capture sub-tle respiration-induced motion [5], [6]. Camera-based methods are particularly attractive because they are low cost, widely available and suitable for scalable deployment in clinical and emergency settings [7], [8]. Earlier work relied on classical signal-processing techniques such as optical flow, motion mag-nification, pixel-difference analysis, and band-pass filtering [4], [9], while more recent studies use deep learning with RGB, NIR, and thermal data [10]. Despite these advances, robust field deployment remains difficult because performance is still affected by illumination changes, body motion, weak cross-subject generalization, and computational cost [1], [5]. These challenges are amplified in emergency and disaster-response scenarios, where rapid and contactless assessment of multiple casualties is needed while limiting first-responder exposure to hazardous environments [8], [11]. In such settings, stationary systems are often impractical, and single-modality approaches can fail as conditions change. For example, RGB sensing may work well under favorable lighting but can degrade sharply in darkness, smoke, or visually degraded scenes [12]. As illustrated in Figure 1, these environments require sensing strategies that can adapt to changing visibility 
+
+> arXiv:2606.17376v1 [cs.RO] 16 Jun 2026
+
+and operational constraints. Mobile robots provide a promising platform for this prob-lem because they can access rubble, uneven terrain, and confined spaces that may be unsafe for human responders [13]. However, deploying contactless RR monitoring on robots introduces additional challenges, including variable subject-to-camera distance, changing illumination, heterogeneous sensor payloads, and limited onboard computing resources [14], [15]. Although prior work such as Dr. Spot has shown the feasibility of thermal-RGB sensing on quadruped robots [14], [16], sys-tematic evaluation across heterogeneous robotic platforms with different sensing and edge-computing configurations remains limited. In this paper, we present a modality-adaptive contactless respiratory monitoring framework for heterogeneous mobile robots with onboard edge computing. The proposed system combines brightness-adaptive sensor selection across RGB, thermal, near-infrared (NIR), and low-light cameras, keypoint-guided chest ROI extraction for posture-robust monitoring, and a signal-quality-index (SQI)-based filtering strategy for reli-able respiratory-rate (RR) estimation under variable field con-ditions. The framework is evaluated on three mobile robotic platforms spanning quadruped and wheeled locomotion, di-verse sensing payloads, and distinct edge-computing architec-tures. By integrating multimodal sensing, robotic mobility, and real-time onboard processing, this work supports autonomous triage and victim assessment in hazardous environments where conventional contact-based or stationary monitoring is not feasible. The primary contributions of this paper are as follows:  
+
+> •
+
+A modality-adaptive contactless respiratory monitoring framework for heterogeneous mobile robots that supports RGB, thermal, NIR, and low-light sensing modalities.  
+
+> •
+
+An edge-computing pipeline that combines brightness-adaptive modality selection, keypoint-guided chest ROI extraction, respiratory signal processing, and SQI-based window filtering for robust onboard RR estimation.  
+
+> •
+
+A systematic evaluation across three robotic platforms, multiple environmental conditions, subject poses, and stand-off distances, establishing modality-specific op-erational envelopes and demonstrating utility for au-tonomous triage and victim assessment in hazardous search-and-rescue environments. II. R ELATED WORKS 
+
+Contactless respiratory-rate (RR) estimation from video has progressed from early proof-of-concept studies to increas-ingly realistic monitoring scenarios. Early methods primarily inferred breathing from subtle torso or chest motion using frame differencing [17], optical flow [7], [18], and phase-based analysis [4], [19]. These studies established the feasibility of video-based RR estimation, but performance often degraded under subject motion, posture variation, occlusion, and illu-mination changes. Later work improved robustness through more structured motion modeling, including head-movement tracking to mitigate occlusion-related errors [20] and artifact-removal methods to stabilize respiratory signal extraction under moderate motion [21]. More broadly, foundational non-contact vital-sign monitoring work showed that physiological signals can be recovered from ambient-light video [22], while later survey, real-time monitoring, and clinical validation stud-ies reinforced the potential of contactless monitoring in both laboratory and medical settings [12], [23], [24]. Recent work has also explored thermal and multimodal imaging to address the limitations of RGB-only sensing. Thermal video remains effective in low-light or nighttime conditions where RGB methods degrade, whereas RGB typi-cally provides higher spatial detail under favorable illumina-tion. Comparative studies highlight this complementary trade-off and show that neither modality is uniformly reliable across operating conditions [25]. Related work on remote photoplethysmography under real-world and extreme light-ing conditions further underscores the sensitivity of camera-based physiological estimation to illumination changes outside controlled environments [26], [27]. Together, these results motivate modality-aware sensing and multimodal adaptation for deployment scenarios in which viewpoint, subject distance, and ambient lighting cannot be tightly controlled. Signal quality assessment is essential for reliable phys-iological inference. Prior work has proposed signal-quality indices based on spectral consistency, autocorrelation, and related measures to distinguish valid from corrupted physio-logical measurements [28], [29]. Quality-aware video methods have similarly shown that explicit reliability modeling can improve respiratory estimation and waveform reconstruction [30]. More recently, contactless sensing has begun to extend to robotic platforms. A mobile robotic platform for contactless vital-sign monitoring was demonstrated in [14], while related search-and-rescue and emergency-response systems have fo-cused more broadly on victim detection, robotic triage, and field operation in complex environments [11], [15], [31]. Advances in quadruped locomotion, heterogeneous robot-team deployment, emergency sensing infrastructures, and edge intelligence further support deployment in challenging real-world settings [13], [16], [32]. However, prior work has not systematically examined contactless RR monitoring across heterogeneous robotic platforms with non-uniform sensor payloads, diverse edge-computing constraints, and modality-specific quality adaptation requirements. This gap motivates the present work. III. M ETHODOLOGY 
+
+We propose a modality-adaptive respiratory-rate (RR) esti-mation pipeline that can be deployed across heterogeneous robotic platforms without requiring platform-specific algo-rithmic redesign. As shown in Figure 2, the pipeline com-prises five stages: (i) platform-specific video acquisition and adaptive modality selection, (ii) 2D keypoint-guided chest ROI extraction, (iii) respiratory signal extraction and filtering, (iv) SQI-filtered sliding-window analysis, and (v) harmonic disambiguation with final RR aggregation. Fig. 2. System methodology workflow illustrating detection, ROI extraction, temporal signal processing, and RR estimation pipeline. 
+
+A. Video Acquisition and Sensor Selection 
+
+Each robotic platform acquires video through its native interface, including USB-connected sensors, ROS 2 image topics, and forwards the resulting frames to a common process-ing pipeline. This abstraction decouples the downstream RR estimation stages from platform-specific sensing and commu-nication details while enabling a unified algorithmic workflow across the heterogeneous systems summarized in Table II. A brightness-adaptive sensor-selection module determines the operating modality from the mean brightness B of the initial detection frame. For all platforms, RGB sensing is selected when B > 60 . When B ≤ 60 , the framework switches to an alternative modality according to the sensing payload available on the robot. On SPOT, NIR is preferred in dim scenes because active 850 nm illumination remains effective up to 6 m (Table V),whereas thermal sensing is selected under near-complete darkness. On Vision 60, the low-light camera is used for all sub-threshold conditions. On Husky A300, which carries only an RGB sensor, the pipeline defaults to the available modality regardless of brightness. This adaptive selection strategy allows the same downstream processing stages to operate robustly under variable illumination and sensing availability. 
+
+B. 2D Pose-Based Chest ROI Extraction 
+
+Person localization and 2D pose estimation are performed using YOLOv11x-pose across all sensing modalities. Fixed proportional crops derived directly from the person bounding box are highly sensitive to posture and often fail to remain aligned with the thoracic region when the subject is sitting, leaning, or lying down. To address this limitation, we derive the chest ROI directly from the detected left/right shoulder and left/right hip keypoints. This keypoint-guided formulation yields a geometry-adaptive crop that remains aligned with the thorax across posture variation and is more tolerant to partial keypoint occlusion. We selected YOLOv11x-pose over the lighter YOLOv11n-pose variant because the latter produced lower keypoint confidence and occasional detection failures at extended distances ( > 6 m), particularly in non-upright poses and under thermal and low-light imaging. After ROI localiza-tion, a 70-second chest-cropped video segment is forwarded to the temporal processing stage. 
+
+C. Signal Extraction and Filtering 
+
+To avoid transient exposure adjustments, the first 30 frames of each cropped video segment are discarded. Time-series signals are then extracted from N =64 grid points distributed uniformly across the chest ROI. At each grid point, a 20 ×20 
+
+pixel block is spatially averaged in every frame to produce one temporal intensity signal xi(t), where i=1 , . . . , 64 . The signal source depends on the active sensing modality. For RGB video, the green channel is used because it provides higher sensitivity to subtle surface changes associated with thoracic expansion. For thermal and low-light imagery, which effectively provide grayscale outputs with identical RGB channels, the mean pixel intensity across the chest ROI is used. For NIR imagery, the mean intensity is also extracted because the observed pseudo-color variations result from differential sensor response to 850 nm illumination rather than physiologically meaningful color content. Each signal is then bandpass-filtered using a fifth-order Butterworth filter with passband 8–35 BPM (0.13– 0.58 Hz), preserving physiologically plausible respiratory fre-quencies while suppressing motion artifacts and low-frequency drift [23]. The filtered signals ˜xi(t) are ranked by energy: 
+
+Ei = X
+
+> t
+
+˜xi(t)2, (1) and the top-10 highest-energy signals are retained for down-stream analysis, prioritizing grid locations that capture the strongest respiration-induced motion content. 
+
+D. SQI-Filtered Sliding Window Analysis 
+
+The top-10 filtered signals are analyzed using overlapping sliding windows of 15 s with a 5 s step. For each window, a three-component Signal Quality Index (SQI) is computed from the highest-energy signal. Before SQI estimation, each signal is normalized to zero mean and unit variance so that the quality measure reflects signal periodicity rather than raw amplitude. Spectral flatness (Wiener entropy) measures the concentration of spectral energy within the respiratory band: 
+
+SF = 
+
+QKk=1 S(k)
+
+1/K 
+
+> 1
+> K
+
+PKk=1 S(k) , (2) where S(k) denotes the Welch power spectral density at frequency bin k within the 8–35 BPM band. Values near 1 indi-cate a flat, noise-like spectrum, whereas values near 0 indicate a peaked and periodic spectrum. Peak prominence is defined as the ratio of the dominant spectral peak power to the median power in the respiratory band, i.e., P = Speak /median( S).Autocorrelation confidence Rac is defined as the normalized autocorrelation peak height at the lag corresponding to the dominant breathing period. These three terms are combined as a weighted sum: 
+
+SQI = 0 .3 (1 − SF) + 0 .4 min 
+
+
+
+1, P
+
+10 
+
+
+
++ 0 .3 Rac . (3) In addition to the continuous SQI score, each window is subject to hard rejection when either SF or P violates its modality-specific threshold. In that case, the window is capped below the acceptance threshold regardless of the remaining SQI components. The modality-specific SQI thresholds in Table I account for the distinct noise characteristics of the sensing modalities. Platform A RGB, which exhibits the highest signal-to-noise ratio, uses the strictest thresholds. The Husky A300 and Vision 60 RGB sensors require moderately relaxed criteria due to elevated sensor noise. NIR and thermal modalities use more lenient flatness thresholds to accommodate active-illumination limitations and lower spatial resolution, respectively. Windows that fail the modality-specific acceptance criteria are discarded from subsequent RR estimation.                          
+
+> TABLE I MODALITY -S PECIFIC SQI T HRESHOLD CONFIGURATION
+> Parameter Plat. A Plat. B&C NIR Therm. LL
+> SQI ≥0.25 0.25 0.25 0.20 0.25 Flatness <0.75 0.75 0.85 0.85 0.88 Prominence >1.5 2.0 1.5 1.5 1.5
+
+E. Harmonic Disambiguation and RR Aggregation 
+
+Within each valid window, respiratory rate is estimated using median voting across FFT-based and autocorrelation-based estimates computed from the top-10 retained signals. The resulting window-level estimate is then refined through harmonic disambiguation. If the subharmonic frequency at half of the dominant spectral peak carries more than 30% of the dominant peak power, the estimate is corrected to the subharmonic value. The same procedure is applied to third-harmonic ambiguity at f / 3. To improve temporal consistency, we further perform cross-window consistency checking. Win-dows whose RR estimates deviate from neighboring windows by approximately ≈2× or ≈3× are flagged as likely harmonic errors and corrected using the corresponding subharmonic when supported by the local spectral structure. The final respiratory rate is computed as the SQI-weighted median across all accepted windows. Given W valid windows with estimates {rw} and weights {SQI w}, the weighted me-dian is defined as the value r∗ at which the cumulative weight of the sorted estimates reaches half of the total weight. If all windows are rejected, the pipeline reports that no reliable respiratory signal was detected. IV. S YSTEM DESCRIPTION AND EXPERIMENTAL SETUP 
+
+We evaluate the proposed framework on three mobile robotic platforms that span two locomotion classes and three edge-computing architectures. As summarized in Table II, Platform A (SPOT) is equipped with three sensing modalities (RGB, thermal, and NIR), Platform B (Vision 60) carries two modalities (RGB and low-light), and Platform C (Husky A300) operates with RGB only. This heterogeneous platform design enables us to assess how the proposed pipeline performs under varying sensing capabilities, mobility constraints, and onboard compute resources. Experiments were conducted across four environmental conditions: indoor lit (standard indoor illumi-nation), indoor dark (lights off), outdoor lit (clear daytime conditions), and outdoor dark (nighttime with no artificial lighting). These scenarios were selected to reflect the diverse visibility conditions likely to arise in practical field deploy-ment. For each scenario, trials were performed at robot-to-subject distances of 2, 4, 6, and 8 m in order to evaluate the operational range of each sensing modality. Multiple subjects participated in the study to examine robustness across differences in body type and clothing. To further assess posture robustness, each experimental condition was evaluated using three subject poses: standing, seated, and lying. Every trial consisted of a 70-second chest video recording collected under a structured breathing protocol comprising three sequential phases: normal breathing (0–30 s), breath-hold (30–50 s), and deep breathing (50–70 s). This protocol introduces deliberate intra-trial variation in respiratory dynamics and provides a controlled way to stress-test the SQI-based rejection and aggregation stages of the pipeline. Ground-truth respiratory rate was approximated from the predefined phases of the controlled breathing protocol rather than from a concurrently worn reference sensor. Accordingly, the expected BPM ranges TABLE II HETEROGENEOUS PLATFORM AND SENSOR CONFIGURATION                                      
+
+> Specification Platform A (Q-UGV) Platform B (Q-UGV) Platform C (Wheeled UGV)
+> Base Platform Boston Dynamics SPOT Ghost Robotics Vision 60 Clearpath Husky A300 Locomotion Quadruped Quadruped Differential-drive wheeled Edge Compute NVIDIA Jetson Orin AGX NVIDIA Jetson Xavier x86 + NVIDIA RTX 4060 Ti GPU 2048-core Ampere 512-core Volta Ada Lovelace (8 GB VRAM) Memory 64 GB unified 32 GB unified 32 GB RAM + 8 GB VRAM Power Monitor tegrastats (VDD IN) jtop (Power TOT) nvidia-smi + RAPL Modality count 3 (RGB, thermal, NIR) 2 (RGB, low-light) 1 (RGB only)
+> Sensing Modalities
+> RGB Camera Custom (1920×1080, 30 fps) Built-in (960×540, 20 fps) OAK-D Pro W (1334×1008, 15 fps) Thermal Camera FLIR C5 (640×480, 10 fps) ——NIR Camera Custom w/ 6× 850nm LEDs ——(1920×1080, 30 fps) Low-Light Camera —Payload (960×540, 30 fps, —0.0001 lux min.)
+> Fig. 3. Representative experimental configurations: (left to right) Platform A with RGB camera at 2 m indoor lit, Platform A at 4 m outdoor lit, Platform B low-light capture of lying subject at 2 m with YOLOv11x-pose keypoint overlay, and Platform A NIR capture of seated subject indoor dark.
+
+associated with each breathing phase are used for qualitative validation of the estimated respiratory patterns and rates. Figure 3 presents representative experimental configurations. Table III summarizes the resulting dataset composition across modalities, platforms, and distances, totaling 96 sessions of 70-second chest-cropped video. Cells containing 0 correspond to infeasible modality–distance combinations whose operational constraints are analyzed in Section V. The dataset and asso-ciated code will be made available upon request for research purposes, subject to institutional data sharing agreements.                               
+
+> TABLE III DATASET COMPOSITION ACROSS MODALITIES , P LATFORMS ,AND
+> DISTANCES .
+> Modality / Platform Sessions per Distance Total 2m 4m 6m 8m
+> RGB / A,B,C 18 12 12 12 54 NIR / A 644014 Thermal / A 640010 Low-Light / B 644418
+> Total sessions 96
+
+V. S YSTEM ANALYSIS 
+
+A. Modality-Specific SQI Validity Accuracy 
+
+Figure 4 illustrates representative signal behavior across platforms and sensing modalities. The red-shaded regions denote windows rejected by the proposed SQI framework. In particular, the 30–50 s breath-hold phase in the 4 m panels is                                       
+
+> TABLE IV MODALITY -S PECIFIC SQI V ALIDITY AND ESTIMATED RR A CROSS
+> DISTANCES .
+> Modality / Platform Valid Win. % Est. BPM 2m 4m 6m 8m
+> RGB / A 75 92 83 75 16.5 RGB / B 92 92 75 75 16.3 RGB / C 83 92 75 75 16.0 NIR / A 83 67 75 0.0 15.9 Thermal / A 50 0.0 0.0 0.0 19.5 Low-Light / B 92.3 76.9 92.3 92.3 16.1
+
+consistently rejected, indicating that the quality index responds to respiratory periodicity and physiological state rather than signal amplitude alone. The Platform B and Platform C panels at 6 m further demonstrate cross-pattern generalization without modality-specific retuning: Platform B rejects only the still phase in a varying respiratory sequence, whereas Platform C retains all windows during sustained periodic breathing be-cause they satisfy the SQI criteria. Table IV reports the percentage of valid sliding windows and the aggregated respiratory-rate estimate for each modality– platform combination across distance conditions. Because the valid-window percentage is derived entirely from the frame-work’s internal quality-gating mechanism and does not depend on external ground truth, it provides a reproducible and self-consistent measure of modality reliability that directly reflects the effectiveness of the proposed SQI-based filtering strategy. Across all visible-light modalities, including RGB on Plat-forms A, B, and C and the low-light sensor on Platform B, the framework maintains valid-window rates above 75% through-out the operational range. RGB on Platform B shows the most consistent performance, achieving 92% valid windows at both 2 m and 4 m. The corresponding RR estimates remain tightly grouped within 15.9–16.5 BPM, which is consistent with the controlled breathing protocol used during data collection. NIR on Platform A performs comparably at short and moderate range but degrades sharply at 8 m, where no valid windows remain. Thermal imaging on Platform A yields only marginal validity at 2 m and complete rejection beyond that distance. Fig. 4. Bandpass filtered respiratory signals (8–35 BPM) across platforms and modalities. Red-shaded regions indicate SQI-rejected windows. Panels at 4 m show the breath-hold protocol (30–50 s), while Platform B and Platform C panels at 6 m demonstrate framework response to respiratory pattern variation. 
+
+B. Operational Distance Boundaries 
+
+Table V summarizes modality-specific operational bound-aries across distances and subject poses. RGB provides the broadest operating envelope, supporting reliable RR estima-tion across all three platforms up to 8 m under both indoor and outdoor illuminated conditions. NIR on Platform A re-
+
+TABLE V MODALITY -S PECIFIC OPERATIONAL DISTANCE AND POSE COVERAGE .
+
+Modality Platform 2m 4m 6m 8m Poses 
+
+RGB A, B, C ✓ ✓ ✓ • Stand, Sit, Lie NIR A ✓ ✓ ✓ × Stand, Sit, Lie Thermal A ✓ × × × Stand, Sit Low-Light B ✓ ✓ ✓ • Stand, Sit, Lie 
+
+mains effective up to approximately 6 m, after which per-formance degrades because of illumination falloff from the fixed-power LED array. This limitation is inherent to the active-illumination design, as emitted intensity decreases with increasing distance. Extending this range would require a higher-power or denser LED configuration, at the expense of additional payload weight and power consumption. Thermal imaging supports valid RR estimation only at 2 m under dark indoor and outdoor conditions. Beyond this distance, the limited chest-ROI pixel area at the native FLIR C5 resolution reduces the reliability of pose-keypoint detection, which in turn prevents stable ROI extraction and causes all windows to be rejected by the SQI stage. The low-light camera on Platform B performs reliably in pitch-dark envi-ronments; however, lying-pose estimation fails beyond 6 m. We attribute this behavior to a viewing geometry limitation rather than to the sensing modality itself. Because the camera is mounted near payload height (˜0.6 m), a lying subject appears with a strongly foreshortened torso profile, reducing the pixel separation between shoulder and hip keypoints. This leads to low-confidence pose estimation and misaligned chest ROI extraction. The same issue is likely to arise on other ground-level robotic platforms with similar camera mounting geometry. In Table V, entries marked × denote modality– distance combinations in which the framework fails at both the pose-detection and SQI-validation stages. Entries marked 
+
+• indicate a different failure mode: pose detection remains successful for standing and seated subjects at 8 m, but lying-pose keypoint alignment fails because of the viewing-angle constraint, preventing a valid chest ROI from reaching the SQI analysis stage. 
+
+C. Platform Computational Performance 
+
+Figure 5 summarizes the computational characteristics of the full RR monitoring pipeline across the three heterogeneous platforms. Platform B exhibits the highest resource utilization, with 69.8% CPU usage and 35% GPU load, and requires the longest execution time of 2 min 20 s. This behavior reflects the tighter computational constraints of the Jetson Xavier architecture under end-to-end pipeline execution. By contrast, Platform A maintains substantially lower uti-lization, with 9.59% CPU usage and 11.53% GPU load, while sustaining a relatively stable average power draw of approxi-mately 22 W over a 2-minute run. This improved efficiency is attributable to the higher compute density and core capacity of the Jetson Orin AGX. Platform C achieves the shortest execu-tion time, 1 min 34 s, but does so with considerably higher peak power consumption in the 38–65 W range, consistent with its 0 20 40 60 80 100 120 
+
+> Pipeline Execution Time (s)
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> Total Power (W)
+> Vision 60
+> SPOT
+> Husky A300 Platform A
+> (SPOT/Orin AGX)
+> Platform B
+> (Vision60/Xavier)
+> Platform C
+> (Husky A300)
+> 0
+> 20
+> 40
+> 60
+> 80
+> Utilization (%)
+> CPU (%)
+> GPU (%)
+> Memory (%)
+
+(a) (b) 
+
+Fig. 5. Platform computational performance during RR pipeline execution: (a) 
+
+total power consumption over time (W); (b) average CPU, GPU, and memory utilization. x86 host and desktop-class RTX 4060 Ti GPU. Overall, all three platforms support real-time execution of the proposed pipeline within practical field-deployment constraints. VI. D ISCUSSION 
+
+The results demonstrate both the practical value and the cur-rent limits of the proposed modality-adaptive contactless RR monitoring framework across heterogeneous robotic platforms. The consistently high valid-window percentages observed un-der visible-light sensing, ranging from 75% to 92% across Platforms A, B, and C, show that keypoint-guided chest ROI extraction and SQI-based filtering generalize across multiple robots and edge-computing architectures without platform-specific redesign. This cross-platform consistency is important for search-and-rescue and disaster-response settings, where robotic systems may differ in mobility, sensing payload, and onboard compute capability, yet still need to support a com-mon triage workflow [8], [32]. The experiments also reveal several sensing and geometry constraints. Thermal sensing is currently limited by the native resolution of the FLIR C5, which restricts reliable operation to short range. Similarly, the lying-pose failures beyond 6 m for ground-mounted cameras arise primarily from viewing geometry rather than sensing modality: a low camera height causes torso foreshortening and reduces shoulder–hip keypoint separation, making ROI extraction less reliable. These findings show that contactless respiratory monitoring on mobile robots depends not only on sensing modality, but also on the interaction among sensor placement, subject posture, and stand-off distance. In addi-tion, the current framework operates on fixed video segments while the robot remains stationary. Although appropriate for controlled evaluation, practical field deployment will require continuous monitoring during robot motion, where vibration, viewpoint change, and ROI drift must be addressed. Overall, the results suggest that SQI-gated multimodal sensing provides a strong basis for robotic contactless physiological monitoring, while also highlighting clear directions for system refinement. VII. C ONCLUSION 
+
+We presented a modality-adaptive contactless respiratory monitoring framework for three heterogeneous mobile robots with different locomotion, sensing, and edge-computing con-figurations. By combining brightness-adaptive sensor selec-tion, pose-guided chest ROI extraction, and SQI-based window filtering, the framework supports unified RR monitoring across RGB, thermal, NIR, and low-light modalities without per-platform retuning. The results establish clear operational en-velopes, with RGB performing up to 8 m across all platforms, NIR up to 6 m, thermal at 2 m, and low-light supporting monitoring up to 8 m in complete darkness. Future work will focus on extending the thermal operating range with higher-resolution thermal sensors, improving long-range lying-pose monitoring through better camera geometry or adaptive robot positioning, and enabling continuous RR estimation during robot locomotion. We also plan to incorporate additional contactless vital signs, such as heart rate, to support broader multi-vital robotic assessment in hazardous environments. ACKNOWLEDGEMENT 
+
+This work has been partially supported by NSF CNS EAGER Grant #2233879, NSF IIS Grant #2509680, NSF CAREER Grant #1750936, NSF I-Corps Grant # 2502886, U.S. Army Grants #W911NF2120076 & #W911NF2410367, and ONR Grant #N00014-23-1-2119. REFERENCES [1] S. Majumder, T. Mondal, and M. J. Deen, “Wearable sensors for remote health monitoring,” Sensors , vol. 17, no. 1, p. 130, 2017. [2] C. Massaroni, A. Nicolo, M. Sacchetti, and E. Schena, “Contactless methods for measuring respiratory rate: A review,” IEEE Sensors Jour-nal , vol. 21, no. 11, pp. 12 821–12 839, 2020. [3] S. Sakib, Z. Hasan, and N. Roy, “A state-of-the-art survey of remote photoplethysmography for contactless health parameters sensing,” Wiley Interdisciplinary Reviews: Data Mining and Knowledge Discovery ,vol. 15, no. 3, p. e70039, 2025. [4] C. Massaroni, A. Nicol` o, D. Lo Presti, M. Sacchetti, S. Silvestri, and E. Schena, “Contact-based methods for measuring respiratory rate,” 
+
+Sensors , vol. 19, no. 4, p. 908, 2019. [5] C. Massaroni, E. Schena, S. Silvestri, and S. Maji, “Comparison of two methods for estimating respiratory waveforms from videos without con-tact,” in 2019 IEEE International Symposium on Medical Measurements and Applications (MeMeA) . IEEE, 2019, pp. 1–6. [6] S. Sakib, G. Shinde, S. Chugh, M. S. Anwar, and N. Roy, “Respformer: A motion-guided temporal-frequency multimodal fusion transformer for contactless respiratory monitoring,” in 2025 International Conference on Machine Learning and Applications (ICMLA) . IEEE, 2025, pp. 631–638. [7] L. Queiroz, H. Oliveira, S. Yanushkevich, and R. Ferber, “Video-based breathing rate monitoring in sleeping subjects,” in 2020 IEEE International Conference on Systems, Man, and Cybernetics (SMC) .IEEE, 2020, pp. 2458–2464. [8] Defense Advanced Research Projects Agency, “Triage Challenge,” https://triagechallenge.darpa.mil/, n.d., accessed: Jul. 27, 2025. [9] S. K. R. Manne, S. Zhu, S. Ostadabbas, and M. Wan, “Automatic infant respiration estimation from video: A deep flow-based algorithm and a novel public benchmark,” in International Workshop on Preterm, Perinatal and Paediatric Image Analysis . Springer, 2023, pp. 111–120. [10] S. Sakib, G. Shinde, E. Dev, and N. Roy, “E2respunet: End-to-end respiratory signal reconstruction and rate prediction using a unified attention-enhanced u-net,” in 2025 IEEE International Conference on Smart Computing (SMARTCOMP) . IEEE, 2025, pp. 154–161. [11] C. Cruz Ulloa, G. Prieto S´ anchez, A. Barrientos, and J. Del Cerro, “Autonomous thermal vision robotic system for victims recognition in search and rescue missions,” Sensors , vol. 21, no. 21, p. 7346, 2021. [12] M. Alnaggar, A. I. Siam, M. Handosa, T. Medhat, and M. Rashad, “Video-based real-time monitoring for heart rate and respiration rate,” 
+
+Expert Systems with Applications , vol. 225, p. 120135, 2023. [13] D. Hoeller, N. Rudin, D. Sako, and M. Hutter, “Anymal parkour: Learning agile navigation for quadrupedal robots,” Science Robotics ,vol. 9, no. 88, p. eadi7566, 2024. [14] H.-W. Huang, J. Chen, P. R. Chai, C. Ehmke, P. Rupp, F. Z. Dadabhoy, A. Feng, C. Li, A. J. Thomas, M. da Silva et al. , “Mobile robotic platform for contactless vital sign monitoring,” Cyborg and Bionic Systems , 2022. [15] C. Cruz Ulloa, J. del Cerro, and A. Barrientos, “Mixed-reality for quadruped-robotic guidance in sar tasks,” Journal of Computational Design and Engineering , vol. 10, no. 4, pp. 1479–1489, 2023. [16] R. Damaˇ seviˇ cius, N. Bacanin, and S. Misra, “From sensors to safety: Internet of emergency services (ioes) for emergency response and disaster management,” Journal of sensor and actuator networks , vol. 12, no. 3, p. 41, 2023. [17] K. S. Tan, R. Saatchi, H. Elphick, and D. Burke, “Real-time vision based respiration monitoring system,” in 2010 7th International Symposium on Communication Systems, Networks & Digital Signal Processing (CSNDSP 2010) . IEEE, 2010, pp. 770–774. [18] R. Janssen, W. Wang, A. Moc ¸o, and G. De Haan, “Video-based respiration monitoring with automatic region of interest detection,” 
+
+Physiological measurement , vol. 37, no. 1, p. 100, 2015. [19] D. M. Tveit, K. Engan, I. Austvoll, and Ø. Meinich-Bache, “Motion based detection of respiration rate in infants using video,” in 2016 IEEE International Conference on Image Processing (ICIP) . IEEE, 2016, pp. 1225–1229. [20] M. Gwak, K. Vatanparvar, L. Zhu, J. Kuang, and A. Gao, “Contactless monitoring of respiratory rate and breathing absence from head move-ments using an rgb camera,” IEEE Engineering in Medicine & Biology Society Conference , 2023. [21] M. Gwak, K. Vatanparvar, J. Kuang, and A. Gao, “Motion-based respiratory rate estimation with motion artifact removal using video of face and upper body,” 44th Annual International Conference of the IEEE Engineering in Medicine & Biology Society (EMBC) , p. 1961, 2022. [22] L. Tarassenko, M. Villarroel, A. Guazzi, J. Jorge, D. Clifton, and C. Pugh, “Non-contact video-based vital sign monitoring using ambient light and auto-regressive models,” Physiological measurement , vol. 35, no. 5, p. 807, 2014. [23] N. Molinaro, E. Schena, S. Silvestri, F. Bonotti, D. Aguzzi, E. Viola, F. Buccolini, and C. Massaroni, “Contactless vital signs monitoring from videos recorded with digital cameras: An overview,” Frontiers in physiology , vol. 13, p. 801709, 2022. [24] C. E. Goldfine, M. F. T. Oshim, B. P. Chapman, D. Ganesan, T. Rahman, and S. P. Carreiro, “Contactless monitoring system versus gold standard for respiratory rate monitoring in emergency department patients: pilot comparison study,” JMIR Formative Research , vol. 8, p. e44717, 2024. [25] F. Yang, S. He, S. Sadanand, A. Yusuf, and M. Bolic, “Contactless measurement of vital signs using thermal and rgb cameras: A study of covid 19-related health monitoring,” Sensors , vol. 22, no. 2, p. 627, 2022. [26] H. Shao, L. Luo, J. Qian, M. Yan, S. Chen, and J. Yang, “Remote photoplethysmography in real-world and extreme lighting scenarios,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2025, pp. 10 858–10 867. [27] D. D. Lernia, G. Finotti, M. Tsakiris, G. Riva, and M. Naber, “Remote photoplethysmography (rppg) in the wild: Remote heart rate imaging via online webcams,” Behavior Research Methods , pp. 6904–6914, 2024. [28] M. Elgendi, I. Martinelli, and C. Menon, “Optimal signal quality index for remote photoplethysmogram sensing,” npj Biosensing , vol. 1, no. 1, p. 5, 2024. [29] J. Song, D. Li, X. Ma, G. Teng, and J. Wei, “Pqr signal quality indexes: A method for real-time photoplethysmogram signal quality estimation based on noise interferences,” Biomedical Signal Processing and Control , vol. 47, pp. 88–95, 2019. [30] Z. Hasan, M. Ahmed, S. Sakib, S. Chugh, M. A. Khan, A. Z. M. Faridee, and N. Roy, “Rrpips: Respiratory waveform reconstruction using persistent independent particles tracking from video,” in Proceed-ings of the ACM/IEEE International Conference on Connected Health: Applications, Systems and Engineering Technologies , 2025, pp. 13–24. [31] R. K. Senthilkumaran, M. Prashanth, H. Viswanath, S. Kotha, K. Tiwari, and A. Bera, “Artemis: Ai-driven robotic triage labeling and emergency medical information system,” arXiv preprint arXiv:2309.08865 , 2023. [32] M. Tranzatto, M. Dharmadhikari, L. Bernreiter, M. Camurri, S. Khattak, F. Mascarich, P. Pfreundschuh, D. Wisth, S. Zimmermann, M. Kulkarni 
+
+et al. , “Team cerberus wins the darpa subterranean challenge: Technical overview and lessons learned,” arXiv preprint arXiv:2207.04914 , vol. 11, 2022.

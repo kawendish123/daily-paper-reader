@@ -1,0 +1,370 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-17T20:40:46.114012+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2606.17241v1",
+      "source": "arxiv",
+      "title": "Beyond Benchmarks: Continuous Edge Inference for Fine-Grained Roadside Perception",
+      "abstract": "Continuous AI inference on resource-constrained edge hardware introduces deployment effects that are largely invisible to conventional benchmark evaluation, including temporal instability in streaming video, thermal throttling under sustained load, and workload-dependent performance variability. We present Edge-TSR, a deployment-oriented continuous edge inference system for sustained roadside perception on the NVIDIA Jetson Orin Nano. Edge-TSR integrates detection, tracking, fine-grained classification, and a lightweight track-aware temporal stabilization mechanism that improves streaming inference consistency with negligible computational overhead. Our central finding is that benchmark-centric evaluation systematically overstates deployed edge inference performance. Across three state-of-the-art baselines, we observe consistent 20-30% relative degradation when transitioning from static-image evaluation to real-world streaming deployment. Edge-TSR addresses this gap through temporal inference stabilization, recovering up to 10.16% classification accuracy over per-frame inference baselines while maintaining sustained real-time performance under continuous operation. We evaluate the complete system under diverse real-world deployment conditions, jointly characterizing inference quality, latency, throughput, and thermal behavior during long-duration operation. A 55-minute vehicular deployment over a 26 km route demonstrates sustained operation at 16.18 FPS within safe thermal limits on a single embedded device without cloud offload. Our findings show that deployment-aware evaluation and temporal inference stabilization are necessary components of continuously operating edge AI systems intended for real-world sensing deployments. We release a sample annotated streaming video evaluation dataset and full system implementation to support reproducible deployment-centric evaluation.",
+      "authors": [
+        "Aditya Mishra",
+        "Haroon Lone"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO",
+        "eess.SY"
+      ],
+      "published": "2026-06-15T19:39:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.17241v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "continuous edge inference for streaming video processing on edge hardware",
+      "llm_evidence_cn": "边缘硬件上的流式视频连续推理",
+      "llm_evidence": "边缘硬件上的流式视频连续推理",
+      "canonical_evidence": "边缘硬件上的流式视频连续推理",
+      "llm_tldr_en": "Edge-TSR enables sustained roadside perception on edge devices by integrating detection, tracking, and temporal stabilization, addressing streaming video instability under real-world deployment.",
+      "llm_tldr_cn": "该论文提出Edge-TSR系统，针对边缘硬件上流式视频推理中的时间不稳定性和热节流等问题，在NVIDIA Jetson Orin Nano上实现了持续的道路场景感知。系统集成了目标检测、跟踪和轻量级轨迹感知时间稳定机制，有效提升了流式推理的一致性。实验表明基准评估会高估计部署性能，而Edge-TSR在真实场景中表现稳健。",
+      "llm_tldr": "该论文提出Edge-TSR系统，针对边缘硬件上流式视频推理中的时间不稳定性和热节流等问题，在NVIDIA Jetson Orin Nano上实现了持续的道路场景感知。系统集成了目标检测、跟踪和轻量级轨迹感知时间稳定机制，有效提升了流式推理的一致性。实验表明基准评估会高估计部署性能，而Edge-TSR在真实场景中表现稳健。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.17378v1",
+      "source": "arxiv",
+      "title": "RISE: Relay Inference and Online Scheduling for Efficient Edge-Device Collaborative Diffusion Model Services",
+      "abstract": "Text-to-image diffusion models are increasingly deployed at the network edge to serve heterogeneous workloads with diverse quality and latency requirements. However, existing deployment strategies choose either large edge-side models with high fidelity but high latency or lightweight device-side models that offer speed at the cost of semantic coherence. Moreover, these approaches rarely split the denoising workload between models of different sizes across edge servers and user devices. To bridge this gap, we propose RISE, a method for edge-device diffusion model services that combines relay inference with online scheduling. Driven by the finding that the latent intensity exhibits minimal deviation after a model handoff, RISE uses a training-free relay mechanism that exploits the shared latent space within a model family: the large model on the edge handles the early denoising steps that shape semantic structure, then passes the intermediate latent to a small device-side model for detail refinement. To deploy this mechanism as a practical service, a contextual bandit scheduler selects the best relay configuration based on prompt complexity, user preferences, network quality and real-time node loads. Experiments on two benchmarks show that RISE's relay mechanism achieves up to 2.1$\\times$ speedup while preserving full-model quality, and its context-aware scheduler effectively balances quality and latency under mixed workloads.",
+      "authors": [
+        "Zilan Huang",
+        "Zhiqing Tang",
+        "Hanshuai Cui",
+        "Tian Wang",
+        "Yuan Wu",
+        "Weijia Jia",
+        "Wei Zhao"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-06-16T00:26:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.17378v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "edge-device collaborative inference and scheduling for diffusion models",
+      "llm_evidence_cn": "边缘-设备协作推理与调度用于扩散模型服务",
+      "llm_evidence": "边缘-设备协作推理与调度用于扩散模型服务",
+      "canonical_evidence": "边缘-设备协作推理与调度用于扩散模型服务",
+      "llm_tldr_en": "RISE combines relay inference and online scheduling for edge-device diffusion model services, splitting denoising workload across models of different sizes to balance quality and latency.",
+      "llm_tldr_cn": "边缘部署扩散模型面临质量与延迟权衡。本文提出RISE，通过中继推理和在线调度，将去噪工作负载在边缘服务器和设备端不同大小模型间拆分。基于潜在强度偏差小的发现，实现高效协作。适合移动边缘计算场景，支持视频分析中的实时推理。",
+      "llm_tldr": "边缘部署扩散模型面临质量与延迟权衡。本文提出RISE，通过中继推理和在线调度，将去噪工作负载在边缘服务器和设备端不同大小模型间拆分。基于潜在强度偏差小的发现，实现高效协作。适合移动边缘计算场景，支持视频分析中的实时推理。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.17798v1",
+      "source": "arxiv",
+      "title": "LiveStarPro: Proactive Streaming Video Understanding with Hierarchical Memory for Long-Horizon Streams",
+      "abstract": "Despite the remarkable progress of Video Large Language Models (Video-LLMs), current online architectures still struggle to simultaneously process continuous video streams, decide autonomously when to respond, and preserve long-horizon contextual memory. These obstacles undermine real-time responsiveness and cause severe forgetting throughout prolonged interactions. In this work, we introduce LiveStarPro, a live streaming assistant that is designed for proactive video understanding over long-horizon streams. The design of LiveStarPro rests on three complementary components. The first component is Streaming Verification Decoding (SVeD), an inference framework that identifies the appropriate response timing through single-pass perplexity verification, thereby eliminating the dependency on explicit silence tokens. The second component is Streaming Causal Attention Masks (SCAM), a training strategy that enforces incremental video-language alignment over variable-length streams. The third component is Tree-Structured Hierarchical Memory (TSHM), a recursive memory architecture that organizes evicted historical information into event chains and consequently enables efficient retrieval from effectively unbounded video streams. To facilitate a comprehensive evaluation under realistic online conditions, we further present OmniStarPro, a large-scale benchmark that spans 15 diverse real-world scenarios and that extends to hour-scale streams for the assessment of long-term recall. Extensive experiments demonstrate that LiveStarPro consistently surpasses existing methods, attaining a 28.9% improvement in semantic correctness and an 18.2% reduction in timing error, while its streaming key-value cache further yields a 1.58x inference speedup over the same model without caching. The model and the code are publicly available at https://github.com/sotayang/LiveStarPro.",
+      "authors": [
+        "Zhenyu Yang",
+        "Kairui Zhang",
+        "Bing Wang",
+        "Shengsheng Qian",
+        "Changsheng Xu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-16T11:18:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.17798v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "streaming video understanding with proactive response",
+      "llm_evidence_cn": "主动式流式视频理解与响应",
+      "llm_evidence": "主动式流式视频理解与响应",
+      "canonical_evidence": "主动式流式视频理解与响应",
+      "llm_tldr_en": "LiveStarPro is a live streaming assistant that achieves proactive video understanding over long-horizon streams using Streaming Verification Decoding and hierarchical memory.",
+      "llm_tldr_cn": "现有在线视频架构难以同时处理连续视频流、自主决定响应时机并保持长期记忆。LiveStarPro提出流式验证解码（SVeD）推断框架和分层记忆机制，实现长时段流上的主动视频理解。实验证明其在实时性和上下文记忆方面显著提升，适用于直播和监控等流式视频分析场景。",
+      "llm_tldr": "现有在线视频架构难以同时处理连续视频流、自主决定响应时机并保持长期记忆。LiveStarPro提出流式验证解码（SVeD）推断框架和分层记忆机制，实现长时段流上的主动视频理解。实验证明其在实时性和上下文记忆方面显著提升，适用于直播和监控等流式视频分析场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.17376v1",
+      "source": "arxiv",
+      "title": "Contactless Respiratory Monitoring on Heterogeneous Mobile Robots: A Multimodal Edge-Computing Framework",
+      "abstract": "Respiratory-rate (RR) monitoring is a critical component of remote triage and victim assessment in emergency response, disaster recovery, and infectious-disease scenarios, where minimizing physical contact can reduce responder risk and improve operational safety. However, field deployment of contactless RR monitoring remains challenging due to variable illumination, posture changes, platform heterogeneity, and the impracticality of wearable sensors in hazardous environments. In this paper, we present a modality-adaptive contactless RR monitoring framework for heterogeneous mobile robots with onboard edge computing. The proposed system combines brightness-adaptive sensor selection across RGB, thermal, near-infrared (NIR), and low-light cameras, keypoint-guided chest ROI extraction for posture-robust monitoring, and a signal-quality-index (SQI)-based filtering mechanism for reliable respiratory estimation. We implement and evaluate the framework on three robotic platforms spanning quadruped and wheeled locomotion and multiple edge-computing architectures. Experiments conducted across diverse lighting conditions, subject poses, and robot-to-subject distances demonstrate that the framework generalizes across platforms without per-platform algorithmic retuning, while revealing modality-specific operational boundaries. RGB provides the broadest coverage up to 8m, NIR remains effective up to 6m, thermal is reliable only at short range, and low-light sensing supports monitoring in complete darkness up to 8m. Overall, the results demonstrate the feasibility of multimodal contactless RR monitoring on mobile robots and support its use as a foundation for autonomous triage and victim assessment in hazardous search-and-rescue settings.",
+      "authors": [
+        "Milind Rampure",
+        "Shadman Sakib",
+        "Haley Patel",
+        "Zahid Hasan",
+        "Nirmalya Roy"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-06-16T00:18:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.17376v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "edge computing framework for multimodal contactless monitoring on mobile robots",
+      "llm_evidence_cn": "移动机器人上的多模态边缘计算框架",
+      "llm_evidence": "移动机器人上的多模态边缘计算框架",
+      "canonical_evidence": "移动机器人上的多模态边缘计算框架",
+      "llm_tldr_en": "A modality-adaptive contactless respiratory monitoring framework runs on heterogeneous mobile robots with onboard edge computing, combining RGB, thermal, and NIR sensors.",
+      "llm_tldr_cn": "该论文提出一种模态自适应的非接触式呼吸监测框架，部署在异构移动机器人的板载边缘计算上。系统通过亮度自适应传感器选择，融合RGB、热红外和近红外数据，在复杂环境下实现鲁棒监测。实验验证了框架在紧急响应场景中的可行性和准确性。",
+      "llm_tldr": "该论文提出一种模态自适应的非接触式呼吸监测框架，部署在异构移动机器人的板载边缘计算上。系统通过亮度自适应传感器选择，融合RGB、热红外和近红外数据，在复杂环境下实现鲁棒监测。实验验证了框架在紧急响应场景中的可行性和准确性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.15346v1",
+      "source": "arxiv",
+      "title": "DYNA-PRUNER: Input-Adaptive Data-Model Co-Pruning for Efficient and Scalable Spatio-Temporal Media Prediction",
+      "abstract": "Spatio-temporal prediction supports radar/satellite nowcasting and city-scale traffic monitoring, but modern models are often too expensive for real-time deployment. This stems from a mismatch between dense computation and strong input-dependent redundancy (e.g., calm seas or clear skies). To enable automated, resource-aware architecture optimization in scalable media analysis, we propose Dyna-Pruner, an end-to-end framework for input-dependent co-pruning of data and model structure. A shared-importance synchronization mechanism generates coupled masks that prune redundant regions and their corresponding computational units (e.g., convolutional filters), yielding per-sample sparse sub-networks at inference time. Experiments on WeatherBench, SEVIR, and TaxiBJ show seamless integration with CNN, RNN, and Transformer backbones, reducing FLOPs by up to $70\\%$ and achieving a $2.5\\times$ speedup on NVIDIA Jetson AGX Orin with negligible accuracy loss ($<1\\%$).",
+      "authors": [
+        "Fuyan Zhang",
+        "Yuqi Li",
+        "Yingli Tian",
+        "Edmond S. L. Ho"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG",
+        "cs.MM"
+      ],
+      "published": "2026-06-13T15:14:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.15346v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "input-adaptive pruning for real-time spatio-temporal media prediction",
+      "llm_evidence_cn": "面向实时时空媒体预测的输入自适应剪枝",
+      "llm_evidence": "面向实时时空媒体预测的输入自适应剪枝",
+      "canonical_evidence": "面向实时时空媒体预测的输入自适应剪枝",
+      "llm_tldr_en": "Dyna-Pruner proposes input-dependent co-pruning of data and model for spatio-temporal prediction, generating per-sample sparse subnetworks to reduce computational cost for real-time deployment.",
+      "llm_tldr_cn": "时空预测模型在实时部署中计算开销大。本文提出Dyna-Pruner，根据输入自适应地同时剪枝数据区域和模型结构（如卷积核），生成每个样本的稀疏子网络。共享重要性同步机制确保耦合。在雷达和交通数据上显著加速，适用于实时视频流处理。",
+      "llm_tldr": "时空预测模型在实时部署中计算开销大。本文提出Dyna-Pruner，根据输入自适应地同时剪枝数据区域和模型结构（如卷积核），生成每个样本的稀疏子网络。共享重要性同步机制确保耦合。在雷达和交通数据上显著加速，适用于实时视频流处理。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.12899v2",
+      "source": "arxiv",
+      "title": "LGVSC: A Large-Model-Driven Generative Video Semantic Communication Framework",
+      "abstract": "Driven by the massive video transmission requirements in the Internet of Everything, semantic communication holds great promise for striking a balance between transmission efficiency and quality. This paper introduces a large-model-driven generative video semantic communication (LGVSC) framework, enabling efficient video semantic transmission under extremely low bandwidth conditions. First, by decoupling the encoder and decoder as well as exposing explicit intermediate semantic representations, LGVSC maintains interpretability, avoiding the black-box behavior commonly observed in end-to-end systems. Next, we introduce a new metric, i.e., the probability-based semantic similarity score (PSSS), which quantifies semantic similarity for complex modalities within a continuous range, allowing for more precise evaluation of semantic content. Building on PSSS, we propose a semantic-guided keyframe extraction module driven by a multimodal large model. This module can enhance fine-grained semantic consistency during keyframe selection at the transmitter, optimizing transmission bandwidth without compromising semantic fidelity. Additionally, we design a generative large-model-driven dynamic semantic-adaptive decoder at the receiver, which can adapt to videos of arbitrary lengths. Simulation results demonstrate that LGVSC significantly outperforms traditional schemes, achieving a channel bandwidth ratio on the order of $10^{-4}$ to $10^{-3}$, while maintaining strong zero-shot generalization across downstream tasks.",
+      "authors": [
+        "Yu Ma",
+        "Hang Yin",
+        "Li Qiao",
+        "Shuo Sun",
+        "Zhen Gao",
+        "Yin Xu",
+        "Wenjun Zhang"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP"
+      ],
+      "published": "2026-06-11T04:58:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.12899v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generative video semantic communication framework for low-bandwidth transmission",
+      "llm_evidence_cn": "生成式视频语义通信框架，低带宽传输",
+      "llm_evidence": "生成式视频语义通信框架，低带宽传输",
+      "canonical_evidence": "生成式视频语义通信框架，低带宽传输",
+      "llm_tldr_en": "Proposes LGVSC, a large-model-driven generative video semantic communication framework for efficient video transmission under extremely low bandwidth, with interpretable intermediate representations and a new semantic similarity metric.",
+      "llm_tldr_cn": "大视频传输需求下，语义通信平衡效率与质量。本文提出大模型驱动的生成式视频语义通信框架LGVSC，在极低带宽下实现高效视频语义传输。通过解耦编解码器并暴露中间语义表示保持可解释性，并提出概率语义相似度评分PSSS。该方法为流式视频分析中的高效传输提供了新思路。",
+      "llm_tldr": "大视频传输需求下，语义通信平衡效率与质量。本文提出大模型驱动的生成式视频语义通信框架LGVSC，在极低带宽下实现高效视频语义传输。通过解耦编解码器并暴露中间语义表示保持可解释性，并提出概率语义相似度评分PSSS。该方法为流式视频分析中的高效传输提供了新思路。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.13033v1",
+      "source": "arxiv",
+      "title": "SAM-Deep-EIoU: Selective Mask Propagation for Multi-Object Tracking",
+      "abstract": "Multi-object tracking has a heavy-tailed difficulty distribution: most frames are easy for a lightweight base tracker, while a small fraction are intrinsically hard. Video object segmentation (VOS) models can often preserve identity through the hard frames where the base tracker fails, but they are much more expensive in compute and memory. We propose selective mask propagation, a tracking algorithm that dispatches from a base tracker to a VOS model only on windows where an assignment-uncertainty signal fires. The base tracker's output is modified only when the VOS model makes a confident prediction that contradicts the base tracker's identity assignment; weak or inconclusive predictions preserve the base output. The method is training-free, treats both the base tracker and the VOS model as black boxes, and can benefit from replacing the VOS component with a more capable model. On DanceTrack, selective mask propagation improves three different base trackers. On SportsMOT, where identity preservation is central to sports analytics, SAM3-Deep-EIoU with global track association achieves state-of-the-art performance on the benchmark with 86.8 HOTA.",
+      "authors": [
+        "Alexander Holmberg"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-11T08:09:32+00:00",
+      "link": "https://arxiv.org/pdf/2606.13033v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "selective propagation for multi-object tracking in video",
+      "llm_evidence_cn": "视频多目标跟踪中的选择性传播方法",
+      "llm_evidence": "视频多目标跟踪中的选择性传播方法",
+      "canonical_evidence": "视频多目标跟踪中的选择性传播方法",
+      "llm_tldr_en": "SAM-Deep-EIoU proposes selective mask propagation for multi-object tracking, dispatching a VOS model only on hard frames where uncertainty is high, achieving efficient tracking without training.",
+      "llm_tldr_cn": "多目标跟踪中困难帧少但计算开销大。本文提出选择性掩码传播，仅在不确定性高的窗口调用视频目标分割模型，其余帧使用轻量基追踪器。无训练，仅当VOS模型自信且与基追踪器冲突时修改结果。在多种视频上提升鲁棒性，适合实时视频分析。",
+      "llm_tldr": "多目标跟踪中困难帧少但计算开销大。本文提出选择性掩码传播，仅在不确定性高的窗口调用视频目标分割模型，其余帧使用轻量基追踪器。无训练，仅当VOS模型自信且与基追踪器冲突时修改结果。在多种视频上提升鲁棒性，适合实时视频分析。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.15632v1",
+      "source": "arxiv",
+      "title": "Open-World Video Segmentation",
+      "abstract": "While video segmentation has advanced rapidly on short clips and closed-set benchmarks, open-world video segmentation remains largely unexplored. The challenge is twofold: (1) existing methods are not designed to support object discovery and identity maintenance in long videos of dynamic ego-motion, and (2) existing evaluation protocols rely on a rigid 1:1 matching that unfairly penalizes semantically valid predictions with mismatched granularity. To address both gaps, we introduce Savvy, a practical and strong system for zero-shot open-world long-horizon video segmentation. Savvy combines hierarchical mask discovery, deferred admission, and track consolidation to support persistent object discovery, safe track promotion, and stable long-range identity maintenance. We further propose OGA, a granularity-aware evaluation suite for open-world video segmentation. Built on a Granularity-Agnostic (GA) matching protocol, OGA relaxes conventional 1:1 matching to an n:1 mapping, but still enforces temporal rigor by detecting support discontinuities through sever points and scoring each reference object through its dominant coherent fragment. This prevents fragmented or flickering support from being over-rewarded while enabling GA-adapted metrics and structural diagnostics: identity persistence (IP), and identity concentration (IC). On VIPSeg, we show that standard 1:1 evaluation substantially underestimates open-world methods, whereas GA evaluation recovers much of their suppressed performance. On the more realistic long-horizon benchmarks: ScanNet and HM3D, Savvy consistently outperforms strong baselines across both classical and proposed metrics, including STQ, VPQ$_\\infty$, IP and IC. Together, these results establish a practical benchmark and a strong baseline for open-world long-horizon video segmentation.",
+      "authors": [
+        "Qing Su",
+        "Kaiyang Li",
+        "Yuan Zhuang",
+        "Fei Miao",
+        "Shihao Ji"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-14T06:48:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.15632v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "open-world long-horizon video segmentation for persistent object discovery and tracking",
+      "llm_evidence_cn": "开放世界长时视频分割实现持续对象发现与跟踪",
+      "llm_evidence": "开放世界长时视频分割实现持续对象发现与跟踪",
+      "canonical_evidence": "开放世界长时视频分割实现持续对象发现与跟踪",
+      "llm_tldr_en": "Savvy system enables zero-shot open-world long-horizon video segmentation with hierarchical mask discovery and track consolidation.",
+      "llm_tldr_cn": "现有视频分割局限于短片段和封闭类别，无法处理开放世界长视频。Savvy系统结合分级掩码发现、延迟证实和轨迹整合，支持零样本持续对象发现和长期身份维护。实验在多个长视频基准上显著优于现有方法。该工作推动了视频分析在真实开放场景的应用。",
+      "llm_tldr": "现有视频分割局限于短片段和封闭类别，无法处理开放世界长视频。Savvy系统结合分级掩码发现、延迟证实和轨迹整合，支持零样本持续对象发现和长期身份维护。实验在多个长视频基准上显著优于现有方法。该工作推动了视频分析在真实开放场景的应用。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.17869v1",
+      "source": "arxiv",
+      "title": "Perceptually-Weighted Video Quality Metric for Asymmetric Encoded Sports Videos",
+      "abstract": "Objective video quality metrics commonly assume uniform spatial attention, an assumption that conflicts with the selective nature of human visual perception, particularly in sports videos. Here, allocating more bits for salient regions through semantic encoding can lead to significant bitrate savings. We present a Perceptually-Weighted Video Quality Metric (PW-VQM), a full-reference metric that accounts for the unequal perceptual importance of spatial regions and therefore targets quality evaluation for asymmetrically encoded content. SSIM maps computed in a multiscale wavelet domain are weighted by differentiating between foreground and background regions. Perceptually salient foreground regions are identified by combining open-vocabulary object detection with optical flow analysis, and are assigned higher weight during quality aggregation. Evaluated on sports video content, PW-VQM achieves a Spearman Rank Order Correlation Coefficient of 0.9511, outperforming established metrics including SSIM, VMAF, FUNQUE, and LPIPS. An ablation study confirms the individual contributions of the components of the perceptual weighting.",
+      "authors": [
+        "Anna Meyer",
+        "Jonas Janzen",
+        "Diwakara Reddy",
+        "Alexander Kopte",
+        "Simon Deniffel",
+        "Paul Wawerek-López",
+        "Marc Windsheimer",
+        "André Kaup"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV"
+      ],
+      "published": "2026-06-16T12:41:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.17869v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video quality metric for streaming sports content",
+      "llm_evidence_cn": "面向流式体育视频的质量评价方法",
+      "llm_evidence": "面向流式体育视频的质量评价方法",
+      "canonical_evidence": "面向流式体育视频的质量评价方法",
+      "llm_tldr_en": "PW-VQM proposes a perceptually-weighted full-reference metric for asymmetric encoded sports videos, using multiscale wavelet SSIM maps weighted by foreground/background saliency, enabling bitrate savings while maintaining perceptual quality.",
+      "llm_tldr_cn": "现有视频质量指标假设空间均匀注意力，与人类视觉的注意力选择性矛盾。本文提出PW-VQM，一种感知加权全参考指标，在小波域计算SSIM图并通过前景/背景区分加权，对不对称编码内容进行质量评价。实验表明，该指标能有效反映感知质量，节省码率，适用于流式体育视频分析。",
+      "llm_tldr": "现有视频质量指标假设空间均匀注意力，与人类视觉的注意力选择性矛盾。本文提出PW-VQM，一种感知加权全参考指标，在小波域计算SSIM图并通过前景/背景区分加权，对不对称编码内容进行质量评价。实验表明，该指标能有效反映感知质量，节省码率，适用于流式体育视频分析。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

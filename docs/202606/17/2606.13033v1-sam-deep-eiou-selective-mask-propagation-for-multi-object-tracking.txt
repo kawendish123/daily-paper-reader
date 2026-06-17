@@ -1,0 +1,314 @@
+Title: SAM-Deep-EIoU: Selective Mask Propagation for Multi-Object Tracking
+
+URL Source: https://arxiv.org/pdf/2606.13033v1
+
+Published Time: Fri, 12 Jun 2026 00:38:53 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# SAM-Deep-EIoU: Selective Mask Propagation for Multi-Object Tracking 
+
+## Alexander Holmberg KTH Royal Institute of Technology 
+
+> alholmbe@kth.se
+
+## Abstract 
+
+Multi-object tracking has a heavy-tailed difficulty distribu-tion: most frames are easy for a lightweight base tracker, while a small fraction are intrinsically hard. Video ob-ject segmentation (VOS) models can often preserve iden-tity through the hard frames where the base tracker fails, but they are much more expensive in compute and mem-ory. We propose selective mask propagation, a tracking algorithm that dispatches from a base tracker to a VOS model only on windows where an assignment-uncertainty signal fires. The base tracker’s output is modified only when the VOS model makes a confident prediction that contra-dicts the base tracker’s identity assignment; weak or incon-clusive predictions preserve the base output. The method is training-free, treats both the base tracker and the VOS model as black boxes, and can benefit from replacing the VOS component with a more capable model. On Dance-Track, selective mask propagation improves three differ-ent base trackers. On SportsMOT, where identity preser-vation is central to sports analytics, SAM 3-Deep-EIoU with global track association achieves state-of-the-art per-formance on the benchmark with 86.8 HOTA. 
+
+## 1. Introduction 
+
+Multi-object tracking (MOT) requires maintaining consis-tent identities across the frames of a video. Modern tracking-by-detection methods [2, 10, 23] build a cost ma-trix from spatial, motion, or appearance cues and solve the resulting assignment problem with the Hungarian al-gorithm. This works when one assignment is clearly bet-ter than the alternatives. It fails when the alternatives are near-tied: when two people are close in the cues the tracker uses, candidate assignments have nearly identical cost and the tracker commits to one identity on a small cost differ-ence. When the wrong choice is made, the result is an iden-tity switch that propagates forward in time. In sports ana-lytics, this can corrupt every subsequent event attributed to that trajectory, assigning passes, shots, or defensive actions to the wrong player until the identity is recovered. Existing approaches address this failure mode at differ-ent costs. End-to-end trackers [8, 22, 24] learn detection and association jointly, removing the explicit cost matrix, but require extensive training data and do not transfer cleanly across domains without retraining. SORT-family exten-sions [1, 7, 21] improve the cost matrix with better mo-tion or appearance features, but cannot resolve cases where those cues are simultaneously ambiguous. Mask-based trackers [4, 12, 17] integrate video object segmentation as an additional association cue, but propagate masks on every frame, paying the model’s cost regardless of whether the base tracker needs help. Video object segmentation (VOS) models such as the SAM family [3, 16] and Cutie [5] target this failure mode directly. They maintain a pixel-level representation of each tracked object and can preserve identity through occlusions where bounding-box association fails. Bringing them into MOT raises two practical obstacles. First, per-frame latency and GPU memory grow with the number of tracked objects. Second, uniform VOS usage subjects every frame to mask drift, mask collapse, or mask convergence. On easy frames where a lightweight tracker would already have been cor-rect, these failures degrade the output rather than improve it. The structure of the problem suggests a division of la-bor. MOT has a heavy-tailed difficulty distribution (Fig-ure 1): most frames are easy for a lightweight tracker, while a small fraction are hard. The VOS cost is paid only on dispatched windows, while its value is concentrated in the hard fraction. We therefore propose selective mask prop-agation: the base tracker handles the common case, and a VOS model is dispatched only to temporal windows where a signal indicates that the base tracker’s identity assignment is at risk. The primary signal is the assignment margin in the Hun-garian cost matrix, defined as the difference between the second-best and best assignment cost for a matched detec-tion. A large margin indicates that one assignment is clearly preferred; a small margin indicates that competing assign-ments are near-tied. When the signal fires, the VOS model propagates masks through the ambiguous window. At exit, 1      
+
+> arXiv:2606.13033v1 [cs.CV] 11 Jun 2026 00.25 0.50 0.75 1
+> Frame difficulty
+> Frame count
+> easier harder Figure 1. Distribution of frame difficulty on SportsMOT, derived from the base tracker’s assignment margin (Section 3.1). Most frames are easy for lightweight bounding-box association; a small fraction concentrate the ambiguity that produces identity switches.
+
+the base tracker’s output is modified only when the VOS model makes a confident prediction that contradicts the base tracker’s identity assignment. If the VOS output is weak, inconclusive, or confirms the base tracker, the original out-put passes through unchanged. This asymmetric decision rule restricts the algorithm’s relative failure modes: the only way it can harm the base tracker is through a false-positive identity switch, while all other outcomes preserve the base output. We instantiate selective mask propagation as SAM-Deep-EIoU, using Deep-EIoU [10] as the base tracker and SAM 3 [3] for mask propagation. For sports applica-tions, we additionally incorporate a global track associa-tion (GTA) [18] module that links tracklets across frame-boundary exits using jersey recognition [11], team classifi-cation, and appearance embeddings. Our contributions are: • A training-free tracking algorithm that selectively dis-patches from a lightweight base tracker to a VOS model using assignment uncertainty, while preserving the base tracker’s output unless the VOS model confidently con-tradicts the base assignment. • State-of-the-art performance on SportsMOT [6] (86.8 HOTA), and consistent improvements across three base trackers on DanceTrack [19]. 
+
+## 2. Related Work 
+
+Tracking-by-detection. The dominant paradigm for multi-object tracking builds a cost matrix from spatial, motion, or appearance cues, then solves the assignment with the Hungarian algorithm. ByteTrack [23] associates detec-tions by IoU in two rounds. OC-SORT [2] improves mo-tion estimation during occlusion. StrongSORT [7] adds re-identification embeddings and camera-motion compensa-tion. Deep-EIoU [10] combines expanded IoU with appear-ance embeddings, achieving strong results without Kalman filtering in the association step. These methods differ in how they construct the cost matrix, but all expose the same assignment structure. Selective mask propagation uses that structure by reading assignment ambiguity from the cost matrix rather than modifying the base tracker. 
+
+Mask-based tracking. Several methods incorporate seg-mentation masks into tracking. DEVA [4] decouples image segmentation from class-agnostic temporal propagation. MASA [12] uses SAM segmentations to learn instance-level correspondences for association. McByte [17] is the closest comparison: it integrates temporally propagated masks into ByteTrack as an additional association cue. These methods demonstrate the value of pixel-level repre-sentations for identity preservation, but they use masks as a standing part of the tracker. In contrast, selective mask propagation invokes the VOS model only when a dispatch signal fires and accepts its output only as a gated correction to the base tracker. 
+
+Video object segmentation. VOS models propagate pixel-level masks across video frames. Cutie [5] uses object-level memory encoding for robust long-term propagation. SAM 2 [16] extends the Segment Anything model to video with a streaming memory architecture supporting prompted segmentation. SAM 3 [3] further improves mask quality and temporal consistency. These models are powerful for single-object tracking but lack the tracklet management re-quired for MOT, including handling new objects, track ter-mination, and identity assignment. 
+
+Global track association. Global association operates on finished tracklets rather than on a per-frame basis. In sports, GTA [18] links tracklets using stable identity cues such as jersey numbers, team identity, and appearance. This ad-dresses off-screen re-identification after players leave and re-enter the camera view. Selective mask propagation tar-gets the complementary failure mode: on-screen identity switches during occlusion and close interaction. 
+
+Selective computation. The broader idea of allocating ex-pensive computation selectively appears in early-exit net-works such as BranchyNet [20] and MSDNet [9], which route easy inputs through cheaper exits and reserve deeper computation for uncertain inputs. Selective mask propaga-tion applies the same principle to tracking-by-detection: a lightweight tracker handles the common case, while a more capable VOS model is dispatched to ambiguous windows. 
+
+## 3. Method 
+
+Selective mask propagation augments a tracking-by-detection base tracker with a VOS model that is invoked only on at-risk temporal windows. The base tracker runs on every frame and supplies the default output. A dispatch sig-nal opens a window when the base tracker’s association is ambiguous, the VOS model propagates masks through that window, and the output is modified only if the propagated mask gives a confident prediction that contradicts the base tracker’s identity assignment. If the VOS result is weak, in-2conclusive, or confirms the base tracker, the base output is preserved. For sports tracking, we additionally separate two iden-tity problems: on-screen identity preservation , maintaining identities through occlusions while players remain visible, and off-screen re-identification , linking tracklets of players who leave and re-enter the scene. Selective mask prop-agation addresses the first problem. Global track associ-ation (GTA), described in Section 3.3, addresses the sec-ond. Pseudocode for the complete pipeline is given in Ap-pendix A. 
+
+3.1. Window Creation 
+
+The core dispatch question is when to invoke mask prop-agation. We define signals that identify frames where the base tracker is likely to make an identity error. When a sig-nal fires, a window is opened: SAM is seeded from a clean frame before the ambiguity and propagates forward through it. The primary signal monitors the assignment margin in the Hungarian cost matrix. Given a cost matrix C ∈ RN ×M
+
+where Ci,j is the cost of assigning track i to detection j, let 
+
+(i∗, j ∗) be a matched pair from the Hungarian solution. The margin for detection j∗ is: 
+
+mj∗ = min  
+
+> i̸=i∗
+
+Ci,j ∗ − Ci∗,j ∗ (1) A large margin indicates confident assignment; a small mar-gin means two tracks are nearly equally viable for the same detection. We open a window when mj∗ < τ entry for any matched pair. Additional signals extend coverage to cases where the margin signal is absent or incomplete. A gap signal fires when a track disappears for at least G frames and reappears, since the track may have been re-attached to the wrong person after an occlusion. Witness windows are opened for nearby tracks that overlap a primary window at entry, since the nearby track is often the counterpart in an identity switch and both identities must be tracked to resolve the ambiguity. 
+
+Seeding. Each window requires a seed frame before the am-biguity where the target identity is unambiguous and spa-tially isolated. We walk backward from the entry frame to find Nseed consecutive frames with margin ≥ τseed and no nearby overlapping boxes. The high margin confirms as-signment confidence; the isolation ensures SAM receives unambiguous pixels for initialization. Windows without a valid seed are discarded. The entry threshold τentry controls a compute-versus-recall tradeoff. A more relaxed threshold opens more win-dows. Most additional windows produce non-SWAP out-comes that preserve the base tracker, but some catch real identity switches that a stricter threshold would miss. False-positive SWAPs remain the possible relative failure mode, so the threshold controls both the amount of VOS compute and the number of opportunities for the VOS model to in-tervene. 
+
+3.2. Mask Propagation and Exit Conditions 
+
+Once windows are created and seeded, masks are propa-gated forward from the seed frame through the ambiguous region. Figure 3 summarizes a window’s lifetime from seed to exit. To determine when the ambiguity has resolved, we check which base tracker bounding box the mask has settled into using intersection over mask area (IoMA): IoMA (M, B ) = |M ∩ B||M | (2) where M is the set of mask pixels and B is the set of pixels within the bounding box. A window exits when the follow-ing conditions are sustained for Nexit consecutive frames: (1) the mask is contained by a single track (IoMA ≥ τIoMA ), (2) that track’s assignment margin has recovered above τexit ,(3) the track’s bounding box is spatially isolated from other bounding boxes, and (4) the mask is isolated from other ac-tive masks. When the exit conditions are met, the outcome depends on where the mask ended up relative to where it started. If the mask settled into a different track than it was seeded on, the window exits as SWAP and track IDs are renamed from the swap frame, the frame at which the mask first settled into the matched track. If the mask returned to the same track, the window exits as CLEAN and no modification is made. Several conditions can terminate a window early with-out an identity decision. If, at the entry frame, the mask no longer covers the seeded track’s bounding box (IoMA 
+
+< τ IoMA ), the base tracker reassigned the seeded identity between seed and entry, and the window exits as STALE. If two masks converge onto the same person, neither identity is recoverable and both are discarded. If the mask area has significantly collapsed relative to its seed, the mask has de-graded and is discarded. If the mask reaches the frame bor-der and disappears, the person left the scene. If propagation reaches the last frame of the sequence with no other condi-tion having fired, the window exits as END. These STALE, DEGRADED, EDGE, and END outcomes leave the base tracker’s output untouched. 
+
+3.3. Global Track Association 
+
+For off-screen re-identification in sports, we link tracklets separated by frame-boundary exits following prior work on global track association [18]. We extract jersey numbers via OCR on pose-guided torso crops [11] and use them alongside team classification and appearance embeddings to match tracklets hierarchically: tracklets with the same 3Figure 2. Qualitative example from SportsMOT. Two players (T1, T11) are involved in an occlusion event during a play. Top: Deep-EIoU loses both identities after the occlusion, assigning T1 and T11 to the wrong people at exit (T1 →T7, T11 →T6). Bottom: SAM-Deep-EIoU seeds masks before the occlusion (left), propagates through it (center, masks shown), and correctly resolves both identities at exit (right). Warmup Active Exit streak   
+
+> seed entry exit
+> outcome
+> Time
+
+Figure 3. A window’s lifetime. The VOS model propagates from the seed frame, exit checks begin at the entry frame, and the win-dow exits once all four exit conditions have held for Nexit consec-utive frames. 
+
+jersey number and team are merged first, then remaining tracklets are merged by appearance similarity with vetoes for temporal overlap, opposite-edge transitions, and con-flicting identities. Gaps left by merged tracklets are filled with linear bounding box interpolation. GTA operates on finished tracklets and is a sports-specific post-processing module, not part of the general selective mask propagation algorithm. 
+
+## 4. Results 
+
+We evaluate selective mask propagation in two settings. DanceTrack tests whether the same dispatch mechanism improves different base trackers without sport-specific modules. SportsMOT tests the sports-tracking instantiation, where selective mask propagation is combined with GTA. 
+
+4.1. Cross-Tracker Generalization on DanceTrack 
+
+To validate that selective mask propagation generalizes across base trackers, we evaluate on the DanceTrack [19] validation set using three base trackers with the same YOLOX detections. No GTA or sport-specific module is used; the only addition to each base tracker is the margin-dispatched mask propagation described in Section 3.1–3.2. Table 1 shows consistent improvements across all base trackers, indicating that the margin signal is not specific to one cost-matrix construction. The improvement is largest 
+
+Base tracker Baseline + SAM 2 + SAM 3 
+
+HOTA ( ↑)
+
+SORT 39.8 45.0 +5.2 46.1 +6.2 
+
+ByteTrack 54.6 60.3 +5.7 61.2 +6.6 
+
+Deep-EIoU 51.7 57.7 +6.0 59.7 +8.0 
+
+AssA ( ↑)
+
+SORT 23.8 29.9 +6.1 31.1 +7.3 
+
+ByteTrack 39.0 46.9 +7.9 48.2 +9.2 
+
+Deep-EIoU 36.7 44.9 +8.2 47.7 +11.0 
+
+Table 1. DanceTrack validation set (25 sequences). Selective mask propagation applied to three base trackers using the same detec-tions with no per-tracker tuning. 
+
+on AssA, directly reflecting the method’s purpose: correct-ing association errors. SAM 3 consistently outperforms SAM 2 across all base trackers, supporting the modular de-sign: replacing the VOS component with a more capable model improves performance while the surrounding algo-rithm is fixed. 
+
+τentry ∆HOTA Windows SWAPs SAM s/frame 0.01 +6.0 1009 119 0.154 0.025 +8.0 1203 138 0.165 0.05 +8.2 1375 142 0.171 Table 2. Effect of τentry on DanceTrack validation set with Deep-EIoU + SAM 3. Relaxing the threshold opens more windows and catches more SWAP outcomes. Timing on a single RTX 5090. 
+
+Table 2 shows the effect of varying τentry . A stricter threshold (0.01) reduces compute but misses 23 SWAP outcomes relative to the most relaxed setting, costing 2.2 HOTA. Performance continues to improve at 0.05, catching 4 additional SWAP outcomes over 0.025 with minimal ex-tra compute. We use τentry = 0 .05 throughout the remaining experiments. 44.2. SportsMOT 
+
+We evaluate the sports-tracking instantiation (Deep-EIoU + selective mask propagation + GTA) on the SportsMOT [6] test set. Table 3 compares against published methods. 
+
+Method HOTA AssA IDF1 MOTA CenterTrack [25] 62.7 48.0 60.0 90.8 MeMOTR [8] 70.0 59.1 71.4 91.5 MotionTrack [15] 74.0 61.7 74.0 96.6 Deep-EIoU [10] 77.2 67.7 79.8 96.3 ByteTrack [23] 64.1 52.3 71.4 95.9 OC-SORT [2] 73.7 61.5 74.0 96.5 DiffMOT [13] 76.2 65.1 76.1 97.1 NOOUGAT [14] 85.6 83.0 92.3 95.9 SAM 2-Deep-EIoU 85.5 81.7 91.2 97.3 
+
+SAM 3-Deep-EIoU 86.8 84.2 93.2 97.3 
+
+Table 3. SportsMOT test set. SAM 3-Deep-EIoU achieves state-of-the-art performance across all four metrics shown. 
+
+SAM 3-Deep-EIoU achieves 86.8 HOTA on SportsMOT, state-of-the-art across all four metrics shown. SAM 3 out-performs SAM 2 by +1.3 HOTA with the dispatch signal, window logic, and merge procedure held fixed, supporting the modular design of the algorithm. 
+
+Sport HOTA AssA IDF1 Basketball 89.9 +5.5 88.7 +7.0 97.4 +11.0 
+
+Football 85.2 +2.0 83.6 +3.0 91.4 +5.0 
+
+Volleyball 85.5 +3.7 82.7 +4.5 92.0 +9.0 
+
+Table 4. Per-sport breakdown on SportsMOT validation set with SAM 2-Deep-EIoU and GTA. Superscript values are deltas over Deep-EIoU + GTA, isolating the contribution of selective mask propagation. 
+
+Table 4 breaks down the selective mask propagation con-tribution by sport. Basketball benefits most, consistent with close camera angles and frequent player interactions. Foot-ball, with wider camera views and fewer close occlusions, has fewer opened windows but still improves. Figure 4 shows the window outcome distribution across both benchmarks. On both datasets, most windows leave the base tracker’s output unchanged. DanceTrack produces a higher rate of both SWAP outcomes and mask degrada-tion, consistent with its more challenging appearance and motion characteristics. The higher degradation rate repre-sents additional compute but does not affect tracking qual-ity, since DEGRADED windows leave the base tracker’s output unchanged. 
+
+## 5. Conclusion 
+
+We presented selective mask propagation, a tracking algo-rithm that combines the efficiency of a lightweight base No modification Switch corrected Mask degraded   
+
+> 74.6%
+> 10.3% 15.1%
+> 93.0%
+> 4.1% 2.9%
+> DanceTrack val
+> SportsMOT test
+
+Figure 4. Window outcome distribution with SAM 3 and τentry =0.05 . Base unchanged groups CLEAN, STALE, EDGE, and END; SWAP is the only outcome that relabels the base tracker’s identi-ties; and DEGRADED windows are discarded without modifying the base output. 
+
+tracker with the identity-preservation capabilities of a VOS model. The assignment margin in the Hungarian cost matrix provides a dispatch signal for opening at-risk windows, and the asymmetric decision rule preserves the base tracker’s output unless the VOS model makes a confident predic-tion that contradicts the base assignment. The method is training-free, treats both the base tracker and the VOS model as black boxes, and improves SORT, ByteTrack, and Deep-EIoU on DanceTrack without per-tracker tuning. For sports tracking, SAM 3-Deep-EIoU combines selec-tive mask propagation with global track association, sep-arating on-screen identity preservation from off-screen re-identification. The resulting system achieves state-of-the-art performance on SportsMOT with 86.8 HOTA. The pri-mary limitation is the additional compute cost of running a VOS model on opened windows. Since most opened win-dows leave the base output unchanged (93% on SportsMOT and 75% on DanceTrack), a more precise dispatch sig-nal could reduce VOS compute while preserving the same identity-switch recall. 
+
+## References 
+
+[1] Nir Aharon, Roy Orfaig, and Ben-Zion Bobrovsky. Bot-sort: Robust associations multi-pedestrian tracking, 2022. 1 [2] Jinkun Cao, Jiangmiao Pang, Xinshuo Weng, Rawal Khirod-kar, and Kris Kitani. Observation-centric sort: Rethinking sort for robust multi-object tracking. In 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 9686–9696, 2023. 1, 2, 5 [3] Nicolas Carion, Laura Gustafson, Yuan-Ting Hu, Shoub-hik Debnath, Ronghang Hu, Didac Suris, Chaitanya Ryali, Kalyan Vasudev Alwala, Haitham Khedr, Andrew Huang, Jie Lei, Tengyu Ma, Baishan Guo, Arpit Kalla, Markus Marks, Joseph Greer, Meng Wang, Peize Sun, Roman R¨ adle, Triantafyllos Afouras, Effrosyni Mavroudi, Kather-ine Xu, Tsung-Han Wu, Yu Zhou, Liliane Momeni, Rishi Hazra, Shuangrui Ding, Sagar Vaze, Francois Porcher, Feng Li, Siyuan Li, Aishwarya Kamath, Ho Kei Cheng, Piotr 
+
+5Doll´ ar, Nikhila Ravi, Kate Saenko, Pengchuan Zhang, and Christoph Feichtenhofer. Sam 3: Segment anything with concepts. In International Conference on Learning Repre-sentations (ICLR) , 2026. 1, 2 [4] Ho Kei Cheng, Seoung Wug Oh, Brian Price, Alexander Schwing, and Joon-Young Lee. Tracking anything with de-coupled video segmentation. In 2023 IEEE/CVF Interna-tional Conference on Computer Vision (ICCV) , pages 1316– 1326, 2023. 1, 2 [5] Ho Kei Cheng, Seoung Wug Oh, Brian Price, Joon-Young Lee, and Alexander Schwing. Putting the object back into video object segmentation. In 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 3151–3161, 2024. 1, 2 [6] Yutao Cui, Chenkai Zeng, Xiaoyu Zhao, Yichun Yang, Gangshan Wu, and Limin Wang. Sportsmot: A large multi-object tracking dataset in multiple sports scenes. In 2023 IEEE/CVF International Conference on Computer Vision (ICCV) , pages 9887–9897, 2023. 2, 5 [7] Yunhao Du, Zhicheng Zhao, Yang Song, Yanyun Zhao, Fei Su, Tao Gong, and Hongying Meng. Strongsort: Make deep-sort great again. IEEE Transactions on Multimedia , 25: 8725–8737, 2023. 1, 2 [8] Ruopeng Gao and Limin Wang. Memotr: Long-term memory-augmented transformer for multi-object tracking. In 
+
+2023 IEEE/CVF International Conference on Computer Vi-sion (ICCV) , pages 9867–9876, 2023. 1, 5 [9] Gao Huang, Danlu Chen, Tianhong Li, Felix Wu, Laurens van der Maaten, and Kilian Q. Weinberger. Multi-scale dense networks for resource efficient image classification, 2018. 2 [10] Hsiang-Wei Huang, Cheng-Yen Yang, Jiacheng Sun, Pyong-Kun Kim, Kwang-Ju Kim, Kyoungoh Lee, Chung-I Huang, and Jenq-Neng Hwang. Iterative scale-up expansioniou and deep features association for multi-object tracking in sports. In 2024 IEEE/CVF Winter Conference on Applica-tions of Computer Vision Workshops (WACVW) , pages 163– 172, 2024. 1, 2, 5 [11] Maria Koshkina and James H. Elder. A general frame-work for jersey number recognition in sports video. In 
+
+2024 IEEE/CVF Conference on Computer Vision and Pat-tern Recognition Workshops (CVPRW) , pages 3235–3244, 2024. 2, 3 [12] Siyuan Li, Lei Ke, Martin Danelljan, Luigi Piccinelli, Mat-tia Segu, Luc Van Gool, and Fisher Yu. Matching anything by segmenting anything. In 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 18963–18973, 2024. 1, 2 [13] Weiyi Lv, Yuhang Huang, Ning Zhang, Ruei-Sung Lin, Mei Han, and Dan Zeng. Diffmot: A real-time diffusion-based multiple object tracker with non-linear prediction. In 
+
+2024 IEEE/CVF Conference on Computer Vision and Pat-tern Recognition (CVPR) , pages 19321–19330, 2024. 5 [14] Benjamin Missaoui, Orcun Cetintas, Guillem Bras´ o, Tim Meinhardt, and Laura Leal-Taix´ e. Noougat: Towards uni-fied online and offline multi-object tracking. International Journal of Computer Vision , 134:272, 2026. 5 [15] Zheng Qin, Sanping Zhou, Le Wang, Jinghai Duan, Gang Hua, and Wei Tang. Motiontrack: Learning robust short-term and long-term motions for multi-object tracking. In 
+
+2023 IEEE/CVF Conference on Computer Vision and Pat-tern Recognition (CVPR) , pages 17939–17948, 2023. 5 [16] Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang Hu, Chaitanya Ryali, Tengyu Ma, Haitham Khedr, Roman R¨ adle, Chloe Rolland, Laura Gustafson, Eric Mintun, Junt-ing Pan, Kalyan Vasudev Alwala, Nicolas Carion, Chao-Yuan Wu, Ross Girshick, Piotr Doll´ ar, and Christoph Feicht-enhofer. Sam 2: Segment anything in images and videos. In International Conference on Learning Representations (ICLR) , 2025. 1, 2 [17] Tomasz Stanczyk and Francois Bremond. Temporally prop-agated masks and bounding boxes: Combining the best of both worlds for multi-object tracking, 2024. 1, 2 [18] Jiacheng Sun, Hsiang-Wei Huang, Cheng-Yen Yang, Zhongyu Jiang, and Jenq-Neng Hwang. Gta: Global tracklet association for multi-object tracking in sports. In Proceed-ings of the Asian Conference on Computer Vision (ACCV) Workshops , pages 421–434, 2024. 2, 3 [19] Peize Sun, Jinkun Cao, Yi Jiang, Zehuan Yuan, Song Bai, Kris Kitani, and Ping Luo. Dancetrack: Multi-object track-ing in uniform appearance and diverse motion. In 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 20961–20970, 2022. 2, 4 [20] Surat Teerapittayanon, Bradley McDanel, and H. T. Kung. Branchynet: Fast inference via early exiting from deep neu-ral networks. In 2016 23rd International Conference on Pat-tern Recognition (ICPR) , pages 2464–2469, 2016. 2 [21] Mingzhan Yang, Guangxin Han, Bin Yan, Wenhua Zhang, Jinqing Qi, Huchuan Lu, and Dong Wang. Hybrid-sort: Weak cues matter for online multi-object tracking. In Pro-ceedings of the AAAI Conference on Artificial Intelligence ,2024. 1 [22] Fangao Zeng, Bin Dong, Yuang Zhang, Tiancai Wang, Xi-angyu Zhang, and Yichen Wei. Motr: End-to-end multiple-object tracking with transformer. In Computer Vision – ECCV 2022 , pages 659–675. Springer, 2022. 1 [23] Yifu Zhang, Peize Sun, Yi Jiang, Dongdong Yu, Fucheng Weng, Zehuan Yuan, Ping Luo, Wenyu Liu, and Xinggang Wang. Bytetrack: Multi-object tracking by associating every detection box. In Computer Vision – ECCV 2022 , pages 1– 21. Springer, 2022. 1, 2, 5 [24] Yuang Zhang, Tiancai Wang, and Xiangyu Zhang. Motrv2: Bootstrapping end-to-end multi-object tracking by pre-trained object detectors. In 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 22056–22065, 2023. 1 [25] Xingyi Zhou, Vladlen Koltun, and Philipp Kr¨ ahenb¨ uhl. Tracking objects as points. In Computer Vision – ECCV 2020 , pages 474–490. Springer, 2020. 5 
+
+6A. Algorithm Pseudocode 
+
+Algorithm 1 summarizes the complete selective mask prop-agation pipeline, with P ROPAGATION PASS expanded in Algorithm 2. The named subroutines map to the cor-responding subsections of Section 3: MARGIN SIGNAL ,GAP SIGNAL , W ITNESS WINDOWS , and S EED SEARCH are described in Section 3.1, and the matching, exit checks, and outcomes in P ROPAGATION PASS are described in Sec-tion 3.2. 
+
+Algorithm 1 Selective Mask Propagation 
+
+Require: Video V , base tracker B, VOS model F
+
+Ensure: Tracklets with consistent identities  
+
+> 1:
+
+T ← B(V ) {base tracker output } 
+
+> 2:
+
+W ← MARGIN SIGNAL (T ) ∪ GAP SIGNAL (T ) 
+
+> 3:
+
+W ← W ∪ WITNESS WINDOWS (W, T ) 
+
+> 4:
+
+for all w ∈ W do  
+
+> 5:
+
+w. seed ← SEED SEARCH (w, T ) 
+
+> 6:
+
+end for  
+
+> 7:
+
+W ← { w ∈ W : w. seed ̸ = ∅ } { discard invalid win-dows } 
+
+> 8:
+
+L ← PROPAGATION PASS (W, T, F ) {rename log } 
+
+> 9:
+
+T ← APPLY RENAMES (T, L ) 
+
+> 10:
+
+T ← GTA (T ) {sports configuration } 
+
+> 11:
+
+return T
+
+Algorithm 2 PROPAGATION PASS 
+
+Require: Windows W , tracklets T , VOS model F
+
+Ensure: Rename log L 
+
+> 1:
+
+L ← ∅  
+
+> 2:
+
+A ← ∅ { active windows } 
+
+> 3:
+
+for frame f from min w∈W w. seed to end of video do  
+
+> 4:
+
+for all w ∈ W with w. seed = f do  
+
+> 5:
+
+Seed F with w’s track bounding box at f 
+
+> 6:
+
+A ← A ∪ { w} 
+
+> 7:
+
+end for  
+
+> 8:
+
+Propagate masks via F to frame f 
+
+> 9:
+
+Remove converged mask pairs from A
+
+{DEGRADED } 
+
+> 10:
+
+for all w ∈ A with f ≥ w. entry do  
+
+> 11:
+
+Match F (w) to a base tracker box (Sec. 3.2)  
+
+> 12:
+
+Append (f, matched track ) to w’s match history  
+
+> 13:
+
+o ← EXIT CHECK (w, f ) {Sec. 3.2 } 
+
+> 14:
+
+if o = SWAP then  
+
+> 15:
+
+Append SWAP record to L 
+
+> 16:
+
+end if  
+
+> 17:
+
+if o is terminal then  
+
+> 18:
+
+A ← A \ { w} 
+
+> 19:
+
+end if  
+
+> 20:
+
+end for  
+
+> 21:
+
+end for  
+
+> 22:
+
+return L
+
+7

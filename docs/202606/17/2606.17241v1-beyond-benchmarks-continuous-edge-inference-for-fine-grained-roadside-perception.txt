@@ -1,0 +1,675 @@
+Title: Beyond Benchmarks: Continuous Edge Inference for Fine-Grained Roadside Perception
+
+URL Source: https://arxiv.org/pdf/2606.17241v1
+
+Published Time: Wed, 17 Jun 2026 00:13:54 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# Beyond Benchmarks: Continuous Edge Inference for Fine-Grained Roadside Perception 
+
+# Aditya Mishra 
+
+Indian Institute of Science Education and Research Bhopal, India aditya21@iiserb.ac.in 
+
+# Haroon Lone 
+
+Indian Institute of Science Education and Research Bhopal, India haroon@iiserb.ac.in 
+
+## Abstract 
+
+Continuous AI inference on resource-constrained edge hardware introduces deployment effects that are largely invisible to con-ventional benchmark evaluation, including temporal instability in streaming video, thermal throttling under sustained load, and workload-dependent performance variability. We present Edge-TSR , a deployment-oriented continuous edge inference system for sustained roadside perception on the NVIDIA Jetson Orin Nano. Edge-TSR integrates detection, tracking, fine-grained classifica-tion, and a lightweight track-aware temporal stabilization mecha-nism that improves streaming inference consistency with negligible computational overhead. Our central finding is that benchmark-centric evaluation systematically overstates deployed edge infer-ence performance. Across three state-of-the-art baselines, we ob-serve consistent 20–30% relative degradation when transitioning from static-image evaluation to real-world streaming deployment. Edge-TSR addresses this gap through temporal inference stabi-lization, recovering up to 10.16% classification accuracy over per-frame inference baselines while maintaining sustained real-time performance under continuous operation. We evaluate the complete system under diverse real-world deployment conditions, jointly characterizing inference quality, latency, throughput, and thermal behavior during long-duration operation. A 55-minute vehicular deployment over a 26 km route demonstrates sustained operation at 16.18 FPS within safe thermal limits on a single embedded de-vice without cloud offload. Our findings show that deployment-aware evaluation and temporal inference stabilization are necessary components of continuously operating edge AI systems intended for real-world sensing deployments. We release a sample anno-tated streaming video evaluation dataset and full system implemen-tation to support reproducible deployment-centric evaluation at https://github.com/adityamishra-ml/Edge-TSR.git. 
+
+## 1 Introduction 
+
+AI inference pipelines are increasingly embedded in resource con-strained edge hardware for continuous environmental sensing (e.g., roadside perception, structural health monitoring, industrial inspection) where they must sustain reliable operation over ex-tended deployments rather than processing isolated, curated in-puts [ 6, 8 , 15 , 40 ]. Despite substantial progress in model accuracy on static benchmarks, the gap between controlled evaluation per-formance and real-world deployed behavior remains poorly charac-terized for a class of systems that is rapidly becoming infrastructure: pipelines that perform streaming video inference on moving plat-forms under hard real-time and resource constraints. This gap is not incidental. It is a structural consequence of evaluating systems on independent image samples drawn from a stationary distri-bution, when the deployment context is a temporally correlated, non-stationary video stream subject to motion-induced degrada-tions, variable scene complexity, and sustained thermal load on embedded hardware that benchmark protocols do not replicate. This deployment gap is harder to close than it appears. A con-tinuous inference pipeline operating on a moving vehicle must si-multaneously satisfy constraints that are in direct tension with one another. It must sustain real-time throughput while managing the thermal envelope of embedded hardware that throttles under pro-longed GPU load [ 4] — a property invisible in short-duration bench-marks but dominant in vehicular operation. It must suppress the frame-to-frame prediction instability inherent to streaming video inference: motion blur, rolling-shutter artifacts, transient occlusions, and illumination changes that compound to degrade classification quality far below static-image benchmark figures [ 15 , 39 ]. And it must do both while operating under the variable per-frame com-putational cost of a decoupled detection-classification architecture, where throughput is load-proportional rather than fixed — a prop-erty that creates an inverse relationship between scene complexity and system efficiency with direct consequences for deployment planning. Prior work has addressed these constraints individually — proposing efficient detectors [ 9, 25 , 27 ], temporal reasoning for video [ 16 , 42 ], or edge-optimized inference [ 2 , 3, 15 , 34 , 40 ] — but rarely in combination, and never under evaluation conditions that expose the full scope of real-world deployment behavior. The consequence is a systematic overestimation of deployed system performance. Benchmark evaluations that report accuracy on curated image datasets do not account for the temporal noise (frame-to-frame prediction instability: motion blur, partial occlu-sions, illumination variation across frames, and detector instability) introduced by streaming video inference. Also, evaluations that report frames per second on a single forward pass do not account for thermal throttling under continuous operation. Also, streaming inference quality scores on balanced, well-lit test sets do not reflect the degradation observed under rain, low light, or at-speed sign exposures. This results in embedded AI systems that perform well in the laboratory and poorly in the field — a failure mode that is directly consequential for any deployment context where inference quality cannot be spot-checked and corrected by a human operator. In this work, we address these challenges through the design and characterization of Edge-TSR , a continuous edge inference system for Traffic Sign Recognition (TSR) on resource-constrained embedded hardware. We use fine-grained traffic sign recognition as a representative streaming perception workload because it simul-taneously stresses multiple deployment dimensions: dense scene 
+
+> 1
+> arXiv:2606.17241v1 [cs.CV] 15 Jun 2026
+
+dynamics, rapid appearance variation, real-time latency require-ments, and prolonged continuous operation. Rather than treating traffic sign recognition solely as an application problem, we use it for studying how temporal instability, thermal sustainability, and workload variability — dynamics that are well-characterized in server-side video analytics [ 22 ] but poorly understood in single-device vehicular edge deployment — jointly shape the behavior of continuously operating edge AI systems. Edge-TSR integrates a lightweight detection stage, multi-object tracking, fine-grained classification, and a novel track-aware temporal stabilization mech-anism that performs confidence-weighted stateful inference with hysteresis-based label locking. The system is designed around three deployment-driven objectives: maintaining sustained throughput under prolonged GPU utilization, improving temporal prediction stability in streaming inference, and managing workload-dependent computational variability on embedded hardware. Unlike conven-tional frame-wise inference pipelines, Edge-TSR explicitly treats temporal consistency and deployment sustainability as first-class system objectives rather than secondary evaluation artifacts. We evaluate Edge-TSR under four real-world deployment con-ditions: dense urban traffic, rain, rural/extreme low-light driving, and out-of-distribution sign appearances. Our evaluation jointly characterizes detection and classification quality, temporal predic-tion stability, per-component latency, throughput, thermal enve-lope, and memory pressure under sustained operation. Across three independent state-of-the-art baselines, we observe a consistent 20–30% relative degradation in deployed performance when transi-tioning from static-image evaluation to streaming video inference, demonstrating that benchmark-centric evaluation systematically overestimates real-world behavior. We further show that the pro-posed track-aware temporal stabilization mechanism recovers up to 10.16% classification accuracy over per-frame inference baselines at negligible computational overhead, enabling stable streaming in-ference under continuous operation. Finally, a 55-minute vehicular deployment over a 26 km urban and peri-urban route demonstrates sustained operation at 16.18 FPS ( 𝜎 = 0.93 ) within safe thermal limits on a single Jetson Orin Nano without cloud offload. Our findings show that benchmark-centric evaluation may sys-tematically mischaracterize a broader class of continuously operat-ing edge AI systems deployed in transportation and mobile sensing environments. We summarize our contributions as follows: 
+
+• We present Edge-TSR , a deployment-oriented continuous edge inference system for sustained roadside perception on resource-constrained hardware, evaluated under four challenging real-world deployment conditions. 
+
+• We demonstrate a consistent 20–30% benchmark-to-deployment performance gap across three baseline systems, showing that image-based evaluation systematically overstates deployed performance under continuous streaming inference. 
+
+• We introduce a lightweight track-aware temporal stabiliza-tion layer that improves streaming inference quality, recovering 10.16 percentage points in classification accuracy over per-frame baselines with negligible overhead. 
+
+• We provide a comprehensive deployment characterization of Edge-TSR, including latency, throughput, memory usage, and ther-mal behavior, validated through a 55-minute vehicular deployment trial. We release our 50,732-frame streaming evaluation dataset and full system implementation. 
+
+## 2 Related Work 
+
+The benchmark-to-deployment gap: The disconnect between controlled evaluation and deployment reality is a known problem in embedded AI [ 6 , 8]: component-level benchmarks routinely over-state achievable system throughput by ignoring thermal throttling, memory contention, and concurrent process overhead. More re-cent work has highlighted similar controlled-to-field performance gaps in mobile inference systems. For example, [ 38 ] demonstrate that speech recognition systems evaluated under static laboratory conditions exhibit substantial degradation in real-world mobile deployment. Existing TSR and edge vision studies similarly rely primarily on curated image datasets or short-duration inference evaluation, leaving the effects of temporal instability, sustained operation, and deployment-induced workload variability largely uncharacterized. In this work, we depart from benchmark-centric evaluation and instead study continuous streaming inference under real deployment conditions on embedded hardware, jointly char-acterizing recognition quality, throughput, latency, and thermal behavior during sustained operation. 
+
+Edge deployment of continuous vision pipelines: Deploy-ing object recognition workloads on resource-constrained edge hardware has attracted substantial attention due to growing de-mand from autonomous vehicles, mobile sensing, and IoT applica-tions [ 17 , 19 , 21 ]. Prior work has explored hardware-aware opti-mization strategies including FPGA acceleration [ 3], lightweight in-ference on Raspberry Pi platforms [ 34 ], and deployment on NVIDIA Jetson devices [ 2 ]. While these systems improve throughput and deployment feasibility, existing studies primarily optimize individ-ual pipeline components and rarely characterize the system-level effects that emerge under sustained real-world operation. In partic-ular, prior work largely omits evaluation of thermal sustainability, workload-dependent throughput variability, sampling behavior, and latency overhead during continuous streaming deployment. These deployment effects, rather than isolated model accuracy, dominate the real-world behavior of continuously operating edge inference systems and are the primary focus of this paper. 
+
+Temporal consistency in streaming inference: Temporal rea-soning has been widely studied in video understanding and object detection [ 16 , 32 , 36 , 42 ], where information propagation across frames improves prediction stability and reduces redundant infer-ence. However, many existing approaches rely on computationally intensive techniques such as optical flow estimation or recurrent feature aggregation, making them difficult to deploy on resource-constrained embedded hardware operating under real-time con-straints. Multi-object tracking approaches including SORT [ 5], Deep-SORT [ 37 ], ByteTrack [ 41 ], BoT-SORT [ 1], and StrongSORT [ 11 ] im-prove temporal continuity by associating detections across frames, though often with trade-offs between robustness and computa-tional overhead. Existing edge vision pipelines typically perform frame-wise classification independently, without maintaining tem-porally stable per-object inference state across streaming video. In contrast, we introduce a lightweight track-aware temporal stabiliza-tion mechanism that integrates tracking with confidence-weighted 
+
+> 2Action Camera
+
+Figure 1: Overview of the data collection setup showing the action camera mounted on the vehicle windshield, capturing forward-facing scenes in real-world driving environments. 
+
+stateful inference and hysteresis-based label locking to improve streaming inference stability at negligible computational overhead. 
+
+Traffic sign recognition: TSR has emerged as a representative workload for embedded roadside perception due to its combination of small-object detection, fine-grained classification, rapid appear-ance variation, and strict real-time constraints. Recent work has largely focused on adapting YOLO-family detectors and lightweight classification architectures for embedded deployment [ 9, 25 , 27 , 28 ]. Other studies explore robustness under adverse weather, nighttime driving, and low-light conditions [ 14 , 24 , 29 , 30 , 33 ]. However, most prior TSR evaluations are conducted on static image datasets or ex-tracted frames rather than continuous streaming video. As a result, existing studies rarely characterize the degradation in detection and classification performance that emerges under temporally corre-lated deployment conditions. In Section 6, we systematically quan-tify this benchmark-to-deployment gap across three independent baseline systems, observing consistent 20–30% relative degradation under streaming video evaluation. 
+
+## 3 Deployment Dataset and Evaluation Environment 3.1 Training Data: INTSD 
+
+We train both the detector and classifier on the Indian Nighttime Traffic Sign Dataset (INTSD) [ 27 ], the only publicly available fine-grained TSR dataset collected under nighttime and adverse-weather conditions in an Indian road environment. INTSD is selected be-cause its visual noise profile — motion blur, lens glare, partial occlu-sions, and truncated signs at frame boundaries — directly matches the inference-time crop quality produced by a detector operating on a moving vehicle, reducing the domain gap between training-time image quality and deployment-time inputs. The dataset comprises 41 traffic sign classes with 14,044 annotated instances. We adopt Fold 0 of the standard five-fold split, which empirically demon-strates the best generalization performance on streaming video data, and apply YOLO’s default augmentation strategies (mosaic, mixup, multi-scale training) supplemented with translation and rotation augmentations to capture the spatial and viewpoint varia-tions encountered in real-world driving. 
+
+## 3.2 Evaluation Data: Curated Driving Video Set 
+
+Existing TSR benchmarks are composed of static images or short image sequences and do not reflect the temporal dynamics, scene density, and environmental diversity of continuous vehicular opera-tion. To evaluate the full pipeline under deployment conditions, we construct a dedicated video evaluation dataset recorded from a mov-ing vehicle on Indian roads. We release the annotated dataset and evaluation code to support reproducible streaming video evaluation in future TSR research. 
+
+Recording setup. Video is recorded at 30 FPS using an action camera (SJCAM SJ4000AIR) mounted on the interior of the vehicle’s windshield, positioned to minimize dashboard reflections and maxi-mize forward road coverage. Figure 1 illustrates the recording setup. The videos were recorded at a resolution of 1080p and a frame rate of 30 FPS. We use an SJCAM camera due to its wide field of view (170 °), which maximizes scene coverage and increases the likeli-hood of capturing traffic signs under diverse driving conditions. All recordings are conducted on public roads in a mid-sized city in North India, covering urban, peri-urban, and rural road types. 
+
+Dataset composition. The evaluation set comprises four videos, each corresponding to a distinct operating condition: (i) Dense urban traffic. Recorded under normal nighttime conditions in high-traffic urban zones with high sign density, frequent occlusion from vehicles, and background clutter from roadside commercial signage. This condition establishes the operational performance baseline. 
+
+(ii) Rain. Recorded during active precipitation. This condition in-troduces lens occlusion from water droplets, specular highlights from wet road surfaces, contrast reduction, and intermittent de-tector confidence suppression. (iii) Rural and dark (no street lighting). Recorded on rural roads in the absence of street lighting, with illumination provided exclusively by the vehicle’s headlights. This condition represents the extreme of the nighttime operat-ing envelope, with high dynamic range, sign reflectivity variation, and low background contrast. (iv) Out-of-distribution (OOD). 
+
+Recorded in locations containing both (a) in-vocabulary sign cate-gories rendered in non-standard physical forms — differing shapes, materials, or typographic styles not present in INTSD, and (b) sign categories entirely absent from the 41-class training vocabulary. This condition stress-tests the system’s behavior at the boundary of its closed-world classification assumption. 
+
+Annotation. The four videos collectively comprise 50,732 frames, all of which are manually annotated using CVAT [ 10 ]. Annotation follows the labeling protocol established by [ 27 ] and [ 12 ], cover-ing bounding box localization and class label assignment for all visible traffic signs in each frame, including partially occluded and motion-blurred instances. Out of the 50,732 frames, 21,493 contain traffic signs, comprising a total of 62,707 annotated instances. To ensure high annotation quality, each video was manually reviewed three times on a frame-by-frame basis, minimizing labeling incon-sistencies and errors. Signs smaller than a minimum visibility are excluded from the ground truth to avoid penalizing the detector for physically unresolvable detections. To our knowledge, this is the first publicly released streaming deployment evaluation dataset 
+
+> 3
+
+Table 1: Dataset statistics across different evaluation scenar-ios. The average bounding box area is given in 𝑝𝑖𝑥𝑒𝑙𝑠 2.Scenario Total Frames Labeled Frames Sign Instances Avg. Inst. /Frame Max. Inst. Avg. Box Area                         
+
+> Dense 27030 19290 53231 2.76 11 13231.92 Rural/Dark 7042 914 1127 1.23 54684.00 OOD 4413 1895 2181 1.15 45499.35 Rain 12247 2622 6168 2.35 713199.34
+
+for studying continuous edge inference under adverse roadside conditions on Indian road infrastructure. 
+
+Dataset statistics. Table 1 summarizes each scenario. Dense traffic contains the highest object density (2.76 instances/frame, up to 11 per frame) and the largest average bounding box area (13,231 px 2), while rural and OOD settings are considerably sparser and contain smaller, more distant signs (4,684 and 5,499 px 2 respec-tively). These differences directly influence detection difficulty and explain the performance variation reported in Section 6. 
+
+## 4 System Design 
+
+Edge-TSR is a deployment-oriented continuous edge inference sys-tem designed for sustained roadside perception under real-world driving conditions on resource-constrained embedded hardware. The system is motivated by the observation that continuously oper-ating edge inference pipelines must balance competing objectives that are largely absent from benchmark-centric evaluation, includ-ing sustained throughput, temporal inference stability, thermal sustainability, and workload-dependent computational variability. 
+
+## 4.1 Design Constraints and Trade-offs 
+
+The design of Edge-TSR is governed by three system-level tensions that emerge during continuous deployment on embedded hard-ware. (1) Throughput vs. accuracy under sparse sampling: full per-frame detection is thermally unsustainable on the Jetson Orin Nano, yet sparser inference introduces temporal gaps where classi-fier inputs are unavailable — the sparse sampler and stabilization module are jointly designed so that recognition quality does not degrade proportionally with reduced inference frequency. (2) Tem-poral stability vs. responsiveness to genuine sign changes: 
+
+the hysteresis locking mechanism is deliberately asymmetric, re-quiring strong sustained contradictory evidence to change a locked real-class label while applying a more permissive escape condi-tion for the unknown class where suppression is less critical. (3) Classification quality vs. edge memory budget: applying the high-capacity fine-grained classifier only to localized regions of interest — rather than full frames — bounds its cost by the num-ber of active detections per frame, making it feasible within the Jetson’s unified 8 GB memory pool. These deployment constraints jointly motivate the system architecture described below. Section 6 evaluates the contribution of each design choice through controlled ablation and long-duration deployment experiments. 
+
+## 4.2 System Overview 
+
+Edge-TSR processes a continuous video stream through four stages: sparse detection, tracking-based state propagation, fine-grained classification, and track-aware temporal stabilization (Figure 2). For a video stream 𝑉 = {𝑓 1, 𝑓 2, . . . , 𝑓 𝑛 }, where 𝑓 𝑖 denotes 𝑖 𝑡ℎ 
+
+video frame, full detection inference is performed only on frames satisfying 𝑡 mod 𝑘 = 0, where 𝑘 is the sampling interval. On non-sampled frames, tracked object states are propagated from the previous detection frame, and previously inferred labels are carried forward. The pipeline produces per-frame outputs with bounding boxes, persistent track identities, and stabilized class labels. 
+
+## 4.3 Detection and Tracking 
+
+Traffic sign localization is performed using a lightweight real-time detector optimized for embedded deployment. The detector op-erates at 640 × 640 input resolution, providing sufficient spatial detail for sign localization while remaining within the memory and latency constraints of the Jetson Orin Nano. Detection is class-agnostic: the detector localizes candidate sign regions, while fine-grained semantic recognition is delegated to a downstream region-level classifier. Our implementation uses YOLOv8 [ 23 ] due to its favorable accuracy-to-latency trade-off, native TensorRT support, and efficient integration with the tracking subsystem on Jetson. 
+
+Multi-object tracking: To maintain temporal continuity across frames, Edge-TSR integrates a lightweight tracking layer that as-sociates detections over time and assigns persistent identities to active objects. For each frame 𝑓 , the tracker maintains a set of active tracklets T = {( 𝐵 𝑓 𝑖 , ID 𝑖 )} , where 𝐵 𝑓 𝑖 = (𝑥 1, 𝑦 1, 𝑥 2, 𝑦 2) denotes the bounding box of object 𝑖 and ID 𝑖 is its persistent identity. We use ByteTrack [ 41 ], which exploits both high- and low-confidence detections to preserve track continuity under partial occlusion and transient detector instability. On intermediate frames where detection is skipped, the tracker propagates object states using Kalman filter prediction without invoking the detector. In-tegrating tracking directly into the inference pipeline serves two system-level objectives: (i) enabling temporal association of clas-sification outputs under a shared object identity, which supports the stabilization layer described in Section 4.5, and (ii) reducing redundant detector invocations across temporally correlated frames during sparse scheduling. 
+
+Minimum size filtering: Detections with bounding box dimen-sions below 15 × 15 pixels are discarded prior to classification. This removes highly distant or truncated detections for which crop qual-ity is insufficient for reliable fine-grained recognition and reduces downstream computation on visually ambiguous regions. 
+
+## 4.4 Fine-Grained Classification 
+
+Each detected Region of Interest (RoI) is processed using a high-capacity fine-grained classifier trained to discriminate among 41 traffic sign categories on INTSD [ 27 ]. The classifier operates only on localized tracked regions rather than full frames, allowing com-putational cost to scale with active scene complexity rather than image resolution. We instantiate this component using ResNet-50 [ 18 ], selected based on empirical evaluation on the Jetson Orin Nano and its favorable balance between representational capacity and deployment feasibility. A detailed comparison with alternative architectures is provided in Appendix 9. The classifier produces a probability distribution over classes via a softmax output layer, and                                               
+
+> 4Edge-TSR
+> Detector
+> imgsz=640 *640 &conf>50 %
+> Tracker
+> persistentIDs&KalmanPropagation
+> ROI Preprocessing
+> dropbox<15 ×15 px|contextualpadClassi fi er
+> ImageNetNormalisation|41 classes
+> Track-Aware Temporal
+> Stabilisation
+> slidingwindow|Conf−Weighted
+> Voting|HysteresisLock
+> Skip Frames
+> [bbox,cls]
+> tmod k=0
+> propagate
+> Sparse Frame
+> Sampler
+> tmod k=0→detect;
+> elsepropagate
+
+Figure 2: Overview of the Edge-TSR continuous edge inference system. Detection is performed every 𝑘 frames, with tracking-based state propagation on intermediate frames. A track-aware temporal stabilization layer combines classification outputs through confidence-weighted voting and hysteresis to produce temporally stable [bbox , cls ] outputs. 
+
+the predicted label is: 
+
+ˆ𝑦 = arg max  
+
+> 𝑐
+
+𝑃 (𝑐 | 𝑥 )
+
+where 𝑐 denotes the class and 𝑥 denotes the detected signboard. 
+
+Contextual padding: Detector bounding boxes are expanded by a padding factor 𝑝 in both spatial dimensions before cropping: 
+
+𝑑𝑥 = ⌊( 𝑥 2 −𝑥 1)· 𝑝 ⌋, 𝑥 ′ 
+
+> 1
+
+= max (0, 𝑥 1 −𝑑𝑥 ), 𝑥 ′ 
+
+> 2
+
+= min (𝑊 , 𝑥 2 +𝑑𝑥 )
+
+and analogously for the vertical dimension. This expansion serves two purposes: (i) it provides the classifier with contextual border information (sign background, mounting structure, and par-tially truncated sign regions) that aids discrimination, and (ii) it reduces sensitivity to localization jitter from the detector. Crops are resized to 224 × 224 and normalized using ImageNet channel statistics ( 𝜇 = [0.485 , 0.456 , 0.406 ], 𝜎 = [0.229 , 0.224 , 0.225 ]). 
+
+Geometric pruning for visual noise: Roadside environments contain visually confusable objects (commercial advertisements, branded stickers, and informational placards) that may trigger detec-tor responses and be misclassified. To suppress such false positives, we introduce a geometric pruning rule: any detection classified as advertisement with bounding box width or height below 50 pixels is reassigned to the unknown class. This rule encodes the prior that genuine traffic signs occupy a minimum physical footprint when projected onto the image plane at operationally relevant distances, while advertisement-class responses on small detections are more likely to correspond to roadside visual noise. The decoupled design ensures that the classifier’s high capacity and large input resolution do not impose latency at the detection stage. Classification is invoked only for active detections, and its cost is bounded by the number of tracked signs in the scene rather than the full frame resolution. 
+
+## 4.5 Track-Aware Confidence-Weighted Temporal Stabilization 
+
+Streaming inference under real driving conditions introduces signif-icant temporal noise in per-frame classification outputs. Sources of noise include: motion blur from vehicle movement, rolling-shutter artifacts, partial occlusions as the vehicle passes a sign, rapid illu-mination changes (oncoming headlights), and detector instability manifesting as transient missed detections or slightly shifted bound-ing boxes. These effects are exacerbated under sparse inference, where inference is not performed on every frame. To address label flickering while avoiding the overhead of per-frame temporal models, we propose a lightweight track-aware confidence-weighted temporal stabilization module. The module operates independently per tracked object and introduces negligible computational cost relative to detection and classification. 
+
+Memory buffer: For each tracked object 𝑖 with identity ID 𝑖 , we maintain a sliding window memory buffer of fixed length 𝑇 (𝑇 = 5): 
+
+𝑀 𝑖 = {( 𝑦 𝑗 , 𝑠 𝑗 )} 𝑡 𝑗 =𝑡 −𝑇 +1
+
+where 𝑦 𝑗 is the classifier’s predicted label and 𝑠 𝑗 ∈ [ 0, 1] is the associated softmax confidence at frame 𝑗 . The buffer stores only frames on which classification was invoked, i.e., detection frames under the sparse sampling schedule. 
+
+Confidence-weighted majority voting: Rather than relying on single-frame predictions, the module computes a stabilized label estimate by aggregating predictions across the temporal window with confidence weighting. The effective score for each candidate class 𝑐 is: 
+
+˜𝑦 𝑖 = arg max 
+
+> 𝑐
+
+∑︁ (𝑦 𝑗 ,𝑠 𝑗 ) ∈ 𝑀 𝑖 
+
+𝑠 𝑗 · 1[𝑦 𝑗 = 𝑐 ]
+
+This formulation jointly rewards classes that are (1) predicted fre-quently within the window and (2) predicted with high confidence. A class assigned with low confidence on every observation will be outscored by a class predicted with moderate confidence on fewer observations, preventing high-entropy, uncertain predictions from dominating the aggregated output. 
+
+Hysteresis-based label locking: Confidence-weighted voting is sufficient to suppress high-frequency noise but does not prevent slower-timescale label oscillations caused, for example, by a par-tially occluded sign alternating between two visually similar classes over several seconds. We introduce a hysteresis mechanism that promotes a candidate label to a locked state when evidence reaches a stability threshold, and requires strong contradictory evidence to permit a subsequent state transition. Figure 3 provides a detailed illustration of the proposed mechanism. The stabilization module operates as a two-state machine per track: 
+
+(i) Candidate state. When a track has no locked label, per-frame predictions from confidence-weighted voting are used directly. A                              
+
+> 5Candidate
+> State Locked State
+> Count(c)≥3&¯sc>0.6
+> (classc)NewTrack/TrackLost
+> iflocked=unknown
+> &
+> Count(c*)≥2
+> (re−lockonc*)
+> Count(c*)≥3
+> &
+> ¯sc*>¯sc+Δ
+> (re−lockonc*)
+> State Transition
+> Permissive Escape
+
+Figure 3: State machine of the track-aware temporal stabi-lization layer. Tracks transition from a Candidate state to a 
+
+Locked state based on confidence and temporal consistency. Locked labels are retained across frames and updated only when sufficient contradictory evidence is observed. 
+
+label becomes eligible for locking when: Count (𝑐 ) ≥ 𝜏 and 𝑠 𝑐 > 𝛿 
+
+where Count (𝑐 ) is the frequency of the majority label within 𝑀 𝑖 
+
+and 𝑠 𝑐 is the mean softmax confidence over all observations of 𝑐 in the window. The threshold values ( 𝜏 = 3, 𝛿 = 60% ) are determined empirically. 
+
+(ii) Locked state. Once a real-class label is locked, it is output for all subsequent frames regardless of single-frame classifier out-puts. Label oscillations arising from transient noise are suppressed entirely. Unknown -class detections within the window are ignored: a locked real label is not displaced by uncertain predictions. 
+
+Escape condition: To prevent misclassification persistence — arising, for instance, when an out-of-distribution object is initially locked to an incorrect label — the module permits a state transition from locked label 𝑐 to a new candidate label 𝑐 ∗ (re-lock on 𝑐 ∗) only when the new evidence satisfies a confidence premium: Count (𝑐 ∗) ≥ 𝜏 and 𝑠 𝑐 ∗ > 𝑠 𝑐 + Δ
+
+where Δ is the confidence margin. This asymmetric escape condi-tion ensures that state changes occur only when there is sustained, high-confidence contradictory evidence, and not in response to momentary artifacts. A special, more permissive escape rule ap-plies when the locked label is unknown : any majority non-unknown label appearing with Count ≥ 𝜏 − 1 immediately supersedes the unknown lock, as suppression of unknown is less safety-critical than suppression of real class changes. The module’s computational cost is 𝑂 (𝑇 ) per track per frame, where 𝑇 = 5, making it negligible relative to the inference pipeline. 
+
+## 4.6 Periodic Sparse Frame Sampling 
+
+Performing full detection and classification on every frame is com-putationally expensive and thermally unsustainable under continu-ous operation on embedded hardware. Beyond raw computational cost, exhaustive per-frame inference leads to thermal accumulation and subsequent CPU/GPU frequency scaling, producing non-linear throughput degradation during long-duration deployment. Edge-TSR therefore adopts a periodic sparse inference strategy in which full detection inference is invoked every 𝑘 𝑡ℎ frame ( 𝑘 = 3), corre-sponding to a duty cycle of 33%. On intermediate frames, the system reuses tracked object states propagated by the tracking layer and retains the most recent stabilized classification labels. This design is motivated by the observation that consecutive driving frames exhibit substantial temporal redundancy: object identity changes slowly relative to frame rate, and object displace-ment over short intervals remains small relative to the contextual padding applied during region-level classification. Sparse sched-uling therefore reduces computational load and thermal pressure while preserving stable inference behavior through temporal state propagation and stabilization. The choice of 𝑘 = 3 is determined empirically and evaluated in Section 6. Combined with the temporal stabilization layer, peri-odic sparse inference enables sustained real-time throughput under continuous deployment while avoiding the thermal instability as-sociated with exhaustive per-frame inference. 
+
+## 5 System Evaluation 5.1 Evaluation Scenarios 
+
+We evaluate Edge-TSR across four driving scenarios whose compo-sition and recording conditions are described in Section 3. Here we characterize each scenario by the system properties it is designed to stress-test and the performance dimensions along which we expect it to differentiate system behavior. (i) Dense urban traffic serves as the operational baseline, representing the highest sign density condition (up to 11 signs per frame, mean 2.76 instances/frame) and the most demanding detector load. Performance under this condition characterizes the system’s upper-bound throughput un-der high classification invocation rate. (ii) Rain is designed to isolate the effect of precipitation artifacts (lens occlusion, specu-lar highlights, and contrast reduction) on detector confidence and classification stability. It evaluates whether the temporal stabiliza-tion module can maintain correct labels across frames in which detector confidence is weather-suppressed. (iii) Rural and dark (no street lighting) stress-tests detection under the most extreme illumination conditions in our dataset, with sign illumination pro-vided exclusively by vehicle headlights. This condition isolates the nighttime detection bottleneck from the classification bottleneck, as characterized in Section 6. (iv) Out-of-distribution (OOD) eval-uates system behavior at two distinct generalization boundaries: (a) intra-class distribution shift, where known sign categories appear in non-standard physical forms, and (b) true open-set failure, where sign categories have no in-distribution equivalent in the 41-class training vocabulary. These are evaluated jointly but interpreted separately in Section 6. All four scenarios are evaluated using the same pipeline configu-ration ( 𝑘 = 3, confidence threshold 0.5, padding 𝑝 = 0.20 ) deployed on the Jetson Orin Nano. No scenario-specific tuning is applied, ensuring that reported performance reflects a single, fixed system configuration rather than a per-condition optimized one. 
+
+## 5.2 Hardware Platform 
+
+All controlled evaluations and the live vehicular deployment trial are conducted on the NVIDIA Jetson Orin Nano (8 GB unified memory variant), a representative resource-constrained edge device  
+
+> 65” HDMI Display USB Web Camera
+> Jetson Orin Nano
+
+Figure 4: Real-world deployment setup. The NVIDIA Jetson Orin Nano (right) is mounted on the vehicle dashboard along-side a 5-inch HDMI display (left) for live pipeline visualiza-tion. A Logitech USB webcam is mounted on a tripod at the center of the dashboard for forward-facing video capture. 
+
+targeting automotive and robotics applications. It combines an Arm Cortex-A78AE 6-core CPU with an NVIDIA Ampere GPU (1024 CUDA cores, 32 Tensor Cores) in a 7–25W configurable power en-velope. A key architectural constraint is its unified memory design: CPU and GPU share a single 8 GB LPDDR5 pool, which limits simul-taneous allocation by the PyTorch inference engine, the OpenCV capture backend, and the operating system. All experiments are conducted in MAXN SUPER power mode, permitting the highest sustained clock frequencies within the platform’s thermal limits and reflecting a realistic high-performance deployment configuration. Full hardware specifications are provided in Appendix 9. 
+
+## 5.3 Real-World Deployment Setup 
+
+The Jetson Orin Nano is mounted on the vehicle dashboard along-side a 5-inch HDMI display providing a live annotated video feed (bounding boxes, class labels, confidence scores, and real-time FPS) for pipeline verification during the trial (Figure 4). Following [ 2], video is captured using a Logitech C270 HD webcam mounted on a dashboard tripod at the center of the windscreen, providing a forward-facing 720p view at 30 FPS. The pipeline executes as a single coordinated runtime system on the Jetson, concurrently man-aging video capture, sparse inference scheduling, tracking-based state propagation, temporal stabilization, visualization, and metric logging without cloud offload. This reflects the minimal deployment footprint of a production edge sensing system. 
+
+## 5.4 Implementation Details 
+
+Training protocol. The Edge-TSR detector and classifier are trained on Fold 0 of INTSD, which empirically demonstrates the best gen-eralization performance on streaming video data. The YOLOv8 detector is fine-tuned on INTSD using YOLO’s default augmenta-tion strategies (mosaic, mixup, multi-scale training), supplemented with translation and rotation augmentations to better capture the spatial and viewpoint variations encountered in real-world driving. The ResNet-50 classifier is trained using the standard cross-entropy loss with ImageNet pre-trained initialization. 
+
+Inference pipeline. Edge-TSR is implemented in Python using PyTorch 2.10 and OpenCV 4.13. The YOLOv8 detector is loaded via the Ultralytics API [ 23 ] and executed directly on the Jetson GPU in FP32 precision without TensorRT optimization, establishing a performance baseline that reflects off-the-shelf deployment rather than hardware-specific tuning. ByteTrack is invoked through the Ultralytics tracking interface with default hyperparameters ( byte-track.yaml ). The ResNet-50 classifier is loaded in FP32. Zero-copy memory buffers are used between the OpenCV capture backend and the PyTorch inference engine to minimize host-device data transfer overhead at each frame. System metrics include FPS, per-component latency, CPU/GPU utilization, temperature, and memory usage. They are sampled at every frame using psutil and the Jetson hardware monitoring inter-face, and logged alongside prediction outputs for post-hoc analysis. All controlled experiments are conducted over five independent runs and we report the mean of the resulting metrics. 
+
+Baselines. YOLO-LLTS [ 25 ], YOLO-TS [ 9], and LENS-Net [ 27 ]are evaluated using their published codes (trained on INTSD), ap-plied directly to the video evaluation set without retraining or fine-tuning. All baseline evaluations are run on the same Jetson Orin Nano hardware to ensure comparability of system-level metrics. 
+
+## 5.5 Evaluation Metrics 
+
+We categorize evaluation metrics into four groups: (i) system-level metrics, which characterize computational and thermal sustainabil-ity on edge hardware; (ii) temporal consistency, which quantifies resistance to label flickering under streaming inference; (iii) detec-tion metrics, which assess localization quality independently of class label; and (iv) classification metrics, which assess fine-grained label correctness on RoIs. 
+
+5.5.1 System-Level Metrics. End-to-end throughput (FPS) is mea-sured from raw image loading to final predictions, including all preprocessing, forward pass, post-processing, and CUDA synchro-nization, averaged over five runs. We adopt FPS ≥ 15 as the thresh-old for real-time operational viability [ 28 , 35 ]. Component latency 
+
+is reported separately for the detector (Det), classifier (Cls), and tracker (Trk) as mean per-invocation wall-clock time in millisec-onds. CPU/GPU utilization and thermal envelope (average and maximum temperature in °C) are sampled continuously through-out each run; on the Jetson Orin Nano, thermal throttling reduces clock frequencies and degrades throughput, so the thermal envelope characterizes pipeline sustainability under continuous operation. 
+
+Memory utilization is reported as average and peak RAM and GPU memory occupancy as a percentage of the unified 8 GB pool. 
+
+5.5.2 Temporal Consistency. To measure the system’s resistance to label flickering — a failure mode specific to streaming video inference that does not appear in image-based evaluations — we define a consistency metric. For each track 𝑖 with label sequence 
+
+{𝑦 𝑡 }𝐿 𝑖  
+
+> 𝑡 =1
+
+, we compute the fraction of consecutive frame-pairs in which the label does not change: 
+
+> 7
+
+Consistency 𝑖 = 1
+
+Í𝑘 (𝑇 𝑘 − 1)∑︁ 𝑘 𝑇 𝑘 ∑︁ 
+
+> 𝑡 =2
+
+⊮
+
+h
+
+𝑦 (𝑘 ) 
+
+> 𝑡
+
+= 𝑦 (𝑘 ) 
+
+> 𝑡 −1
+
+i
+
+(1) Overall consistency is averaged across all tracks with length 𝐿 𝑖 ≥
+
+5, a minimum length threshold that excludes transient detections from contributing to the metric: 
+
+Consistency = 1
+
+|T | ∑︁ 𝑖 ∈ T 
+
+Consistency 𝑖 (2) where T is the set of qualifying tracks. The complement, Flip Rate =
+
+1 − Consistency , measures the proportion of consecutive observa-tions where the system changes its label for the same physical sign. High consistency does not imply correctness — a system that consistently outputs the wrong label scores 100% consistency — and should therefore be interpreted jointly with the classification metrics defined in Section 5.5.4. Its utility is in quantifying label oscillation as an independent failure mode: a system with high ac-curacy but low consistency produces unreliable outputs that would cause instability in downstream navigation or driver alert modules. 
+
+5.5.3 Detection Metrics. We report mAP@50 and mAP@50:95 
+
+following the standard PASCAL VOC and COCO evaluation pro-tocols [ 13 ], measuring localization quality under lenient and strict IoU thresholds respectively. 
+
+5.5.4 Classification Metrics. Classification is evaluated on stabi-lized label outputs from the temporal module rather than raw per-frame classifier outputs, ensuring metrics reflect deployed system behavior. For each class 𝑐 , a true positive ( TP 𝑐 ) requires both correct localization (IoU ≥ 0.5) and correct label assignment. We report 
+
+macro-averaged precision (A.P.) and macro-averaged recall (A.R.) , which assign equal weight to each class regardless of fre-quency — critical in our setting because rare sign categories (e.g., 
+
+cattle crossing , school zone ) are safety-critical despite low instance counts. Classification accuracy (Acc.) measures the fraction of all ground-truth instances assigned the correct label: 
+
+Accuracy =
+
+> 𝐶
+
+∑︁ 
+
+> 𝑐 =1
+
+TP 𝑐 
+
+𝑁 gt 
+
+(3) where 𝑁 gt is the total number of ground-truth instances. Unlike A.P. and A.R., accuracy is instance-weighted and reflects aggregate system correctness including the effect of class imbalance. 
+
+## 6 Results 
+
+The evaluation is around four questions that collectively character-ize the system’s deployability: ( RQ1 ) How does the full pipeline compare to prior TSR approaches under realistic streaming video conditions? ( RQ2 ) How does detection and recognition perfor-mance vary across the environmental conditions encountered in real driving? ( RQ3 ) What are the system-level trade-offs of sparse frame sampling under continuous edge operation? ( RQ4 ) How does the system behave under unconstrained real-world vehicular de-ployment? Where applicable, we distinguish between image-based evaluation — which reflects the conditions of prior benchmark work, and video-based evaluation — which reflects deployed system be-havior — to make the image-to-video performance gap explicit. 
+
+## 6.1 Comparison with Prior Work (RQ1) 
+
+Table 2 compares Edge-TSR against three recent TSR models: YOLO-LLTS [ 25 ], YOLO-TS [ 9 ], and LENS-Net [ 27 ], evaluated under both image-based (INTSD) and video-based protocols on our video dataset. We report detection quality (mAP@50, mAP@50:95) and classifi-cation quality (A.P., A.R., and Acc.) separately, as these measure complementary properties of the pipeline. 
+
+Finding 1: Image-based benchmarks overstate deployed performance by 20–30%. The most consequential result in Table 2 is not the relative ranking of models but the magnitude and consis-tency of the performance drop from image-based to video-based evaluation across all three baselines. YOLO-LLTS drops from 90.00% to 60.50% mAP@50 (29.50% relative degradation); YOLO-TS drops from 90.82% to 70.48%; LENS-Net, the strongest image-based system at 92.56% mAP@50, drops to 65.73%. Classification follows the same pattern: A.P. drops by 9.73%, 16.50%, and 14.28% for YOLO-LLTS, YOLO-TS, and LENS-Net respectively. This gap is consistent across three independent baselines, suggesting that deployment-induced degradation is not specific to a single architecture. 
+
+Finding 2: Deployment-aware temporal stabilization sub-stantially alters the relative performance ranking under streaming inference conditions. Under video-based evaluation, Edge-TSR achieves mAP@50 of 73.12% and mAP@50:95 of 45.79%, competitive with YOLO-TS (70.48 / 48.32). On classification, Edge-TSR outperforms all baselines: A.P. 75.23% versus 64.61% for LENS-Net (the strongest image-based classifier on static images); A.R. 72.10% versus 66.92%; accuracy 75.33% versus 72.90%. The 10.62% A.P. margin over LENS-Net, despite LENS-Net’s image-benchmark superiority, demonstrates that image-based representational capac-ity does not translate to streaming performance without explicit temporal reasoning. Edge-TSR’s mAP@50:95 trails YOLO-TS by 2.53%, reflecting the known trade-off of the decoupled detection-classification architecture: the class-agnostic YOLOv8 detector does not benefit from fine-grained supervision, a localization penalty we accept in exchange for the classification gains documented above. 
+
+## 6.2 Performance Across Driving Scenarios (RQ2) 
+
+Table 3 reports detection, classification, and system performance across four conditions: dense urban traffic and very high number of signboards, rain, rural roads without street lighting (Rural/Dark), and out-of-distribution sign appearances (OOD). All metrics are computed under streaming video inference on the Jetson Orin Nano. Please refer to Appendix 9.2 for visuals and failure cases. 
+
+Finding 3: Detection and classification fail differently across conditions, revealing a differential bottleneck. Under Rural/Dark conditions, detection quality degrades severely (mAP@50 56.60%, mAP@50:95 26.47%), but classification precision conditioned on suc-cessful detection remains competitive (A.P. 68.12%). These results suggest that nighttime performance degradation is dominated pri-marily by the detection stage rather than the downstream classifier. The classifier operating on normalized, retroreflective-illuminated crops is relatively robust to absolute scene illumination, whereas the 
+
+> 8
+
+Table 2: Comparison of baseline systems under image-based and streaming video evaluation. All systems experience substantial performance degradation when transitioning from benchmark-style image evaluation to deployment-oriented video evaluation. Edge-TSR achieves the strongest overall classification performance and highest end-to-end throughput. † LENS-Net could not be executed at a practical deployment rate on the Jetson Orin Nano GPU due to its computational and memory requirements. Consequently, all reported LENS-Net results were obtained using CPU-based inference.                                       
+
+> Model Detection (%) Classification (%) FPS mAP@50 mAP@50:95 A.P. A.R. Acc. (end-to-end)
+> Image-based Evaluation
+> YOLO-LLTS [25] 90.00 73.65 68.28 58.13 83.89 56.30 YOLO-TS [9] 90.82 77.27 75.08 74.43 89.70 63.36 LENS-Net [27] 92.56 79.54 78.89 75.56 88.59 33.87
+> Video-based Evaluation
+> YOLO-LLTS [25] 60.50 41.10 58.55 46.49 63.03 16.13 LENS-Net [27] 65.73 47.40 64.61 58.84 68.59
+
+0.44 †            
+
+> YOLO-TS [9] 70.48 48.32 58.58 66.92 72.90 25.38
+> Edge-TSR 73.12 45.79 75.23 72.10 75.33 27.01
+
+Table 3: Performance across diverse real-world driving scenarios. All metrics are computed on the deployed edge system under streaming video conditions. Please refer to Appendix 9.2 for qualitative results. Scenario mAP@50 mAP@50:95 A.P. A.R. Acc. FPS Det (ms) Cls (ms) Trk (ms) 
+
+Dense 73.12 45.79 75.23 72.10 75.33 27.01 34.96 21.85 0.22 Rain 61.20 37.81 54.14 72.70 68.64 38.46 38.46 21.57 0.07 Rural/Dark (no streetlight) 56.60 26.47 68.12 58.36 62.10 42.32 32.42 22.22 0.03 OOD 59.44 36.11 24.04 28.34 37.05 37.67 33.75 22.79 0.06 
+
+detector — which must locate signs against a dark, high-dynamic-range background — loses a substantial fraction of instances entirely. The implication for system improvement is specific: investment in nighttime detection (illumination-aware backbones [ 25 , 27 ], multi-exposure fusion) will yield larger system-level gains than equivalent investment in nighttime classification. Under rain, mAP@50 drops to 61.20% but classification recall improves slightly to 72.70%: the hysteresis locking mechanism main-tains previously stabilized labels during confidence suppression from precipitation, trading precision for recall stability. Throughput under rain is notably higher (38.46 FPS), a consequence of reduced sign density per frame lowering the classification invocation rate — a property of the decoupled architecture where computational load scales with detected object count, not frame rate. 
+
+Finding 4: OOD performance reveals two distinct failure modes, both localized to the classifier. OOD metrics (A.P. 24.04%, A.R. 28.34%, accuracy 37.05%) reflect two qualitatively different challenges: intra-class distribution shift (known categories in non-standard physical forms, addressable via data augmentation) and 
+
+true open-set failure (categories absent from the 41-class vocabulary, requiring architectural changes at inference time). Crucially, detec-tion remains functional under both sub-cases (mAP@50 59.44%), confirming that the class-agnostic YOLOv8 detector generalizes across appearance variation at the localization level and that the performance penalty is borne entirely by the closed-world classifier. 
+
+Finding 5: FPS is inversely correlated with detection qual-ity across conditions. Table 3 reveals a counterintuitive pattern: FPS increases as conditions become more adverse (Dense: 27.01, Rain: 38.46, Rural/Dark: 42.32, OOD: 37.67 FPS). This inversion is a structural property of the decoupled architecture: conditions that suppress the detector reduce the classification invocation rate and therefore increase throughput. System designers must interpret FPS figures as load-dependent quantities rather than fixed performance characteristics — the conditions where the system runs fastest are precisely those where it is least accurate. 
+
+## 6.3 Sparse Sampling Trade-offs (RQ3) 
+
+Tables 4, 5, and Figure 5, characterize the effect of sampling interval 
+
+𝑘 on FPS, latency, thermal envelope, and recognition quality. 
+
+Finding 6: Every-frame inference unsustainable. At 𝑘 = 1,the system achieves only 12.12 FPS (below real-time) with GPU utilization at 65.73% and GPU temperature at 56.74 °C average and 58.96 °C maximum. The 12 FPS throughput under exhaustive infer-ence reflects the fundamental incompatibility of sequential single-stage detection and classification with the Jetson Orin Nano’s com-pute budget when no temporal reuse is employed. Critically, the observed 65.73% GPU utilization does not indicate available compu-tational headroom; rather, it reflects near-saturated load on the Jet-son Orin Nano’s Ampere GPU under sequential per-frame detection and classification, where the pipeline cannot sustain the throughput required for real-time operation without temporal reuse. 
+
+Finding 7: 𝑘 = 3 is the optimal sampling interval. Increasing to 𝑘 =3 yields a 2.24 × FPS improvement ( 12 .12 → 27 .01 ) while simul-taneously reducing average GPU temperature ( 56 .74 → 54 .51 °C)     
+
+> 913510 30
+> Sampling Interval (k)
+> 0
+> 20
+> 40
+> 60
+> 80
+> Value
+> FPS
+> Latency (ms)
+
+(a) Inference stability 1 3 5 10 30  
+
+> Sampling Interval (k)
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> Performance (%)
+> mAP@50
+> F1 Score
+
+(b) Performance vs. sampling 
+
+Figure 5: Effect of sparse frame sampling. Moderate sampling improves classification performance, larger intervals reduce performance and impact stability. 
+
+and CPU temperature ( 57 .13 → 54 .28 °C), as the reduced inference duty cycle lowers thermal accumulation below the threshold. Fig-ure 5(b) shows that F1 score peaks at 𝑘 =3 rather than 𝑘 =1 — a non-monotonic relationship showing reduced inference frequency does not monotonically degrade recognition quality when the tem-poral stabilization module is active. Beyond 𝑘 =3, both F1 and mAP decline monotonically as inference gaps grow large enough that tracker drift and temporal window starvation degrade stabilization quality. Memory utilization is insensitive to 𝑘 (42–47% RAM, 40– 45% GPU memory across all settings), confirming sparse sampling can be applied at runtime without additional memory pressure. Figure 5(a) shows inference stability (FPS standard deviation and latency standard deviation) across sampling intervals. Stabil-ity peaks at 𝑘 = 5 (FPS Std. 4.09, Latency Std. 27.97 ms) before declining. This instability at 𝑘 = 5 reflects competition between the tracker’s prediction interval and the classifier’s invocation rate: at five-frame gaps, bounding box drift from the Kalman predictor occasionally displaces crop regions sufficiently to alter classifier input quality, producing burst latency spikes when the stabiliza-tion module attempts to reconcile inconsistent predictions within a single window. At 𝑘 = 3, both stability curves are lower and more consistent, confirming that this interval lies within the tracker’s reliable propagation range for typical driving speeds. Figure 5(b) shows that F1 score peak at 𝑘 = 3 rather than 𝑘 = 1.This non-monotonic relationship between sampling interval and recognition quality demonstrates that reducing inference frequency does not monotonically degrade performance and that the temporal stabilization module successfully aggregates sparse predictions into stable outputs up to 𝑘 = 3. Beyond 𝑘 = 3, both metrics decline monotonically as inference gaps grow large enough that tracker drift and temporal window starvation degrade stabilization quality. 
+
+Memory utilization is insensitive to sampling interval. Ta-ble 5 shows that RAM and GPU memory utilization are largely invariant to 𝑘 (approximately 42–47% RAM, 40–45% GPU memory across all settings), with only minor fluctuations attributable to system-level variability. This behavior is expected, as the mem-ory footprint is dominated by model parameters and pre-allocated buffers, which remain constant regardless of inference frequency. Unlike compute utilization, which scales with the number of de-tector invocations, memory usage is largely independent of the sampling interval 𝑘 . This indicates that sparse frame sampling can A.P. 
+
+> A.R.
+> Acc.
+> Consistency
+> 60 70 80 90 100
+> Edge-TSR
+> w/o Hysteresis
+> w/o Voting
+> w/o Memory
+
+Figure 6: Ablation of temporal components in the Edge-TSR. 
+
+be applied at runtime without introducing additional memory pres-sure. While larger sampling intervals further increase throughput, recognition performance degrades substantially beyond 𝑘 = 5, indi-cating a clear trade-off between efficiency and accuracy. 
+
+Table 6: Ablation configurations used to isolate the contribu-tion of memory, voting, and hysteresis within the Edge-TSR temporal stabilization module. Condition Memory Voting Hysteresis What it isolates?                  
+
+> No memory ×××Baseline: raw per-frame No voting ✓×✓(conf-only) Value of count-based voting No hysteresis ✓✓×Value of locking Edge-TSR ✓✓✓Complete system
+
+## 6.4 Ablation Study 
+
+Figure 6 reports A.P., A.R., accuracy, and label consistency across four configurations defined in Table 6. 
+
+Finding 8: Hysteresis locking is the single largest contrib-utor to classification accuracy. Removing hysteresis reduces accuracy from 75.33% to 65.17% (10.16% ↓) — the largest single-component degradation observed — and increases the label flip rate from 0.69% to 2.23%, more than tripling per-frame label oscilla-tions. This validates the core design motivation: per-frame classifier noise under sparse sampling is sufficient that voting alone cannot prevent accuracy-degrading oscillations; hysteresis absorbs tran-sient misclassifications by requiring sustained, high-confidence contradictory evidence before unlocking. 
+
+Finding 9: Count-based voting and confidence-only lock-ing make distinct trade-offs. No Voting (confidence-only locking) achieves higher consistency (98.76%) but lower accuracy (62.64%) and substantially lower recall (65.75%) than No Hysteresis (97.77%, 65.17%, 69.76%). Confidence-only locking commits on the first high-confidence prediction, suppressing flips effectively but also blocking legitimate label changes as signs transition into or out of frame — reducing recall by 4.01%. Count-based voting requires a label to appear in at least 3 of the 5 most recent observations before locking, providing a noise filter responsive to genuine sign transitions. 
+
+Finding 10: The full system’s gains are synergistic, not additive. Edge-TSR outperforms No Memory by 10.58% accuracy and 3.77% consistency — exceeding the sum of isolated component contributions — confirming that count-based voting produces a 
+
+> 10
+
+Table 4: System-level performance under different frame sampling strategies on the Jetson Orin Nano, including FPS, latency (Det., Cls., Trk.), CPU/GPU utilization, and temperature. Setting FPS Latency (ms) CPU Statistics GPU Statistics Det Cls Trk Util (%) Avg. Temp ( °C) Max. Temp ( °C) Util (%) Avg. Temp ( °C) Max. Temp ( °C) 
+
+Every frame 12.12 31.90 21.01 – 27.44 57.13 59.00 65.73 56.74 58.96 Every 3𝑟𝑑 frame 27.01 34.96 21.39 0.21 39.64 54.28 57.96 62.88 54.51 57.96 Every 5𝑡ℎ frame 34.58 38.05 22.39 0.22 48.63 53.25 56.03 61.58 52.87 55.90 Every 10 𝑡ℎ frame 48.35 38.21 22.55 0.21 55.43 53.14 55.15 59.08 52.60 54.62 Every 30 𝑡ℎ frame 66.27 41.60 23.26 0.19 59.72 52.34 54.12 59.37 51.48 53.50 
+
+Table 5: Memory utilization under different frame sampling strategies on the Jetson Orin Nano, including average and peak RAM usage and GPU memory utilization. Setting Avg. RAM (%) Max. RAM (%) Avg. GPU Mem. (%) Max. GPU Mem. (%) 
+
+Every frame 44.49 46.60 42.76 44.79 Every 3𝑟𝑑 frame 46.80 47.20 45.11 45.68 Every 5𝑡ℎ frame 42.41 43.10 40.00 41.33 Every 10 𝑡ℎ frame 44.07 44.60 41.82 42.85 Every 30 𝑡ℎ frame 44.31 44.60 42.11 42.67 Jetson Orin Nano  
+
+> 5” HDMI Display
+> USB Web Camera Starting Point
+> U - Turn Point
+> Ending Point
+> Distance: 26 Km
+> Top Speed: 71 Km/h
+> Avg. Speed: 31 Km/h
+> Duration: 55 mins
+> Deployment Summary
+
+Figure 7: Real-world deployment summary showing the tra-versed route and key motion statistics, including distance, duration, average speed, and maximum speed. 
+
+higher-quality candidate label that hysteresis then stabilizes more reliably. The 6.5 × reduction in flip rate relative to No Memory quan-tifies the aggregate benefit of temporal stabilization as a whole. 
+
+## 6.5 Real-World Vehicular Deployment (RQ4) 
+
+We conducted a continuous 55-minute deployment trial over a 26 km urban and peri-urban route (Figure 7), with average speed 31 km/h and peak speed 71 km/h. The system made 10,371 recogni-tion decisions over the trial duration. Figure 8 shows representative frames illustrating correct recognition of diverse sign categories under nighttime conditions with mixed artificial illumination. 
+
+Finding 11: Detector latency doubles under live deploy-ment due to system-level overhead. The system achieved mean FPS of 16.18 ( 𝜎 = 0.93 ) — above the 15 FPS real-time threshold with 7.8% headroom [ 35 ], confirming operational viability. However, average detector latency increased from 34.96 ms in controlled evaluation to 65.68 ms during deployment, approximately dou-bling. Classifier latency (34.97 ms) and tracker latency (0.10 ms) are marginally higher than controlled figures. This latency dou-bling is attributable to system-level contention — concurrent pro-cesses, display rendering overhead, OS scheduling — absent from controlled single-process benchmarks. The practical implication is direct: component-level latency benchmarks are upper bounds 
+
+Figure 8: Qualitative results from real-world deployment of Edge-TSR, showing accurate detection and classification of diverse signs under unconstrained driving conditions. 
+
+on deployment performance, not deployment targets. Headroom must be explicitly reserved for system overhead in any embedded AI deployment specification. 
+
+Finding 12: The thermal envelope remains safe through-out, with vehicular airflow providing passive cooling bene-fit. Average GPU temperature during the trial was 48.15 °C (max 50.37 °C) and average CPU temperature was 48.78 °C (max 50.68 °C) — both substantially below the controlled evaluation figures (GPU avg. 54.51 °C at 𝑘 =3). This reduction is attributable to passive airflow from the vehicle’s air conditioning system reducing ambient temper-ature around the device, confirming that the thermal management concerns identified under static conditions are not a bottleneck in real vehicular deployment. 
+
+At-speed recognition boundary. At peak speed 71 km/h ( ≈20 m/s) with effective detection rate ≈5 Hz under 𝑘 =3, the vehicle travels 
+
+≈4 m between detection frames. For signs visible for 2–3 seconds (≈40 –60 m at 71 km/h), the temporal window 𝑇 =5 accumulates sufficient observations to lock a label before the sign exits the field of view. For signs with shorter visibility windows — junction advi-sories, highway exit ramps — there is a risk of insufficient temporal accumulation before the sign leaves frame, a failure mode observed in a small number of high-speed frames during the trial and not recoverable by the temporal module without a higher detection rate or speed-adaptive sampling. 
+
+## 7 Discussion 
+
+Deployment Reveals What Benchmarks Cannot. The image-to-video performance gap documented in Section 6 — 20–30% relative degradation in detection mAP and up to 30% in classification across three independent baseline systems — is not an artifact of any particular architecture or dataset. The observed gap appears to arise 
+
+> 11
+
+from evaluating systems on independent image samples drawn from a stationary distribution while deployment occurs over temporally correlated, non-stationary video streams subject to motion-induced degradation. This gap is large enough to reverse the performance ordering of systems: LENS-Net, the strongest image-based classifier, falls to third among baselines under video evaluation. Our results suggest that TSR systems intended for reliable field deployment should be evaluated under continuous streaming conditions in addition to conventional image benchmarks. This methodological finding is not unique to traffic signs — any embedded AI pipeline whose inputs are drawn from a continuous, environment-coupled sensor stream will exhibit analogous degradation when per-frame models are deployed without explicit temporal reasoning [6, 38]. 
+
+Temporal Reasoning as Systems Infrastructure. The ablation study establishes that temporal stability is a first-class system re-quirement, not an optional post-processing refinement. Removing hysteresis locking alone degrades accuracy by a margin (10.16%) larger than the accuracy gap between the strongest and weakest image-based baselines in Table 2. In a deployment context where a label oscillation on a speed-limit or right-of-way sign produces a conflicting constraint that a downstream planning module must resolve, label flickering is not a marginal quality-of-life issue — it is a distinct failure mode with direct operational consequences. The 𝑂 (𝑇 ) per-track cost of the full stabilization module at 𝑇 =5
+
+is negligible relative to detection and classification, making the cost-benefit ratio of temporal stabilization highly favorable for any resource-constrained deployment. 
+
+Design Lessons for Continuous Edge Inference. Three findings from this work generalize beyond the TSR application to continuous edge inference systems broadly. 
+
+• Load-proportional cost creates a throughput-accuracy inversion: 
+
+In decoupled detection-classification architectures, computational demand scales with detected object count rather than frame reso-lution. Conditions that suppress the detector — adverse weather, sparse scenes — increase throughput while simultaneously degrad-ing recognition quality. System designers must treat worst-case FPS as a load-dependent quantity rather than a fixed hardware-model property, and should not use best-case throughput figures in deployment specifications. 
+
+• Component benchmarks are upper bounds, not deployment targets: 
+
+Detector latency approximately doubles under live vehicular op-eration relative to controlled evaluation (34.96 ms → 65.68 ms), dominated by system-level overhead rather than model compu-tation. This gap is invisible in component-level benchmarks and can only be characterized through end-to-end deployment trials. Embedded system specifications should reserve headroom for OS scheduling, display rendering, and concurrent process contention. 
+
+• Thermal management is context-dependent: GPU temperatures during live deployment were 6 °C lower than in controlled eval-uation, attributable to passive vehicular airflow. This favorable interaction cannot be relied upon universally — enclosed vehicles, warm climates, or slow-moving traffic may eliminate this benefit — but it illustrates that real deployment contexts introduce environ-mental variables that static bench testing cannot capture. Thermal-resilient system design should be considered standard practice for any continuous-inference embedded AI system. 
+
+Limitations and Future Directions. Several limitations of the current system motivate important directions for future work. (i) Closed-world classification. The classifier operates under a fixed 41-class vocabulary and therefore cannot reliably abstain on un-seen traffic sign categories. The OOD evaluation demonstrates that the dominant failure mode is high-confidence misclassification of semantically unknown signs rather than localization failure. Incor-porating open-set recognition mechanisms, such as energy-based or prototype-distance novelty detection [ 26 ], would enable the system to reject unfamiliar inputs instead of producing confidently incor-rect predictions. (ii) Fixed sparse scheduling policy. The current sparse scheduling mechanism uses a fixed sampling interval ( 𝑘 ) and does not dynamically adapt to vehicle speed, scene complexity, or thermal state. As observed during high-speed deployment, larger inter-frame displacement can reduce the effectiveness of temporal accumulation and tracking-based state propagation. Future work should explore speed-aware and workload-aware scheduling poli-cies that dynamically adjust inference frequency during deployment while remaining within thermal and computational constraints. (iii) Geographic and deployment scope. Edge-TSR is trained and eval-uated primarily on Indian road environments using INTSD [ 27 , 33 ], and the deployment evaluation dataset was collected within a sin-gle city. While the deployment-centric evaluation methodology generalizes beyond this setting, quantitative performance figures should not be assumed to transfer directly across countries, road-way structures, or traffic environments. Broader deployment trials spanning diverse geographic regions, vehicle types, camera config-urations, and sustained highway-speed operation would strengthen the generalizability of the findings. (iv) Single-modality sensing. 
+
+The current system relies monocular RGB sensing and therefore remains vulnerable to illumination degradation, adverse weather, and other photometric failure modes. Integrating complementary sensing modalities such as infrared imaging, radar, or depth sensing [ 7] may improve deployment robustness under challenging envi-ronmental conditions, albeit at increased system complexity, power draw, and deployment cost. 
+
+## 8 Conclusion 
+
+We presented Edge-TSR, a deployment-oriented continuous edge inference system for sustained roadside perception on the NVIDIA Jetson Orin Nano, and characterized its behavior under real-world streaming deployment conditions that benchmark-centric evalu-ation protocols fail to capture. Across four deployment scenarios, Edge-TSR achieves 75.23% macro-averaged precision and sustains real-time operation at 16.18 FPS during a 55-minute vehicular de-ployment while remaining within safe thermal limits. Our results demonstrate that image-based evaluation systematically overstates deployed edge inference performance, with all evaluated baselines exhibiting substantial degradation when transitioning from static-image evaluation to continuous streaming inference. We further show that lightweight temporal stabilization substantially improves deployment stability and recognition quality under sparse schedul-ing, recovering 10.16 percentage points in accuracy over per-frame inference with negligible computational overhead. Beyond recogni-tion performance, our deployment characterization reveals system-level behaviors invisible to controlled benchmarking, including 
+
+> 12
+
+load-dependent throughput variation, deployment-induced latency inflation, and context-dependent thermal behavior. More broadly, this work suggests that deployment-aware evaluation and stateful streaming inference should be treated as first-class design require-ments for continuously operating edge AI systems. We release our annotated 50,732-frame streaming evaluation dataset and full sys-tem implementation to support reproducible deployment-centric evaluation in future embedded AI sensing research. 
+
+## References 
+
+[1] Nir Aharon, Roy Orfaig, and Ben-Zion Bobrovsky. 2022. BoT-SORT: Robust associations multi-pedestrian tracking. arXiv preprint arXiv:2206.14651 (2022). [2] KS Anoop, KK Chandrathejas, SP Anusha, et al . 2025. Real-Time Two-Stage Detection of Indian Traffic Signboards Using YOLO11 on Jetson Orin Nano. In 
+
+2025 International Conference on Advancements in Power, Communication and Intelligent Systems (APCI) . IEEE, 1–6. [3] Riadh Ayachi, Mouna Afif, Yahia Said, and Abdessalem Ben Abdelali. 2022. An edge implementation of a traffic sign detection system for advanced driver assis-tance systems. International Journal of Intelligent Robotics and Applications 6, 2 (2022), 207–215. [4] Théo Benoit-Cattin, Delia Velasco-Montero, and Jorge Fernández-Berni. 2020. Impact of thermal throttling on long-term visual inference in a CPU-based edge device. Electronics 9, 12 (2020), 2106. [5] Alex Bewley, Zongyuan Ge, Lionel Ott, Fabio Ramos, and Ben Upcroft. 2016. Simple online and realtime tracking. In 2016 IEEE international conference on image processing (ICIP) . Ieee, 3464–3468. [6] Simone Bianco, Remi Cadene, Luigi Celona, and Paolo Napoletano. 2018. Bench-mark analysis of representative deep neural network architectures. IEEE access 6(2018), 64270–64277. [7] Mario Bijelic, Tobias Gruber, Fahim Mannan, Florian Kraus, Werner Ritter, Klaus Dietmayer, and Felix Heide. 2020. Seeing through fog without seeing fog: Deep multimodal sensor fusion in unseen adverse weather. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 11682–11692. [8] Alfredo Canziani, Adam Paszke, and Eugenio Culurciello. 2016. An analy-sis of deep neural network models for practical applications. arXiv preprint arXiv:1605.07678 (2016). [9] Junzhou Chen, Heqiang Huang, Ronghui Zhang, Nengchao Lyu, Yanyong Guo, Hong-Ning Dai, and Hong Yan. 2025. Yolo-ts: Real-time traffic sign detection with enhanced accuracy using optimized receptive fields and anchor-free fusion. 
+
+IEEE Transactions on Intelligent Transportation Systems (2025). [10] CVAT.ai Corporation. 2023. Computer Vision Annotation Tool (CVAT) . doi:10.5281/ zenodo.4009388 [11] Yunhao Du, Zhicheng Zhao, Yang Song, Yanyun Zhao, Fei Su, Tao Gong, and Hongying Meng. 2023. Strongsort: Make deepsort great again. IEEE Transactions on Multimedia 25 (2023), 8725–8737. [12] Christian Ertler, Jerneja Mislej, Tobias Ollmann, Lorenzo Porzi, Gerhard Neuhold, and Yubin Kuang. 2020. The mapillary traffic sign dataset for detection and classification on a global scale. In European conference on computer vision . Springer, 68–84. [13] Mark Everingham, Luc Van Gool, Christopher KI Williams, John Winn, and Andrew Zisserman. 2010. The pascal visual object classes (voc) challenge. Inter-national journal of computer vision 88, 2 (2010), 303–338. [14] Kevin Eykholt, Ivan Evtimov, Earlence Fernandes, Bo Li, Amir Rahmati, Chaowei Xiao, Atul Prakash, Tadayoshi Kohno, and Dawn Song. 2018. Robust physical-world attacks on deep learning visual classification. In Proceedings of the IEEE conference on computer vision and pattern recognition . 1625–1634. [15] Biyi Fang, Xiao Zeng, and Mi Zhang. 2018. Nestdnn: Resource-aware multi-tenant on-device deep learning for continuous mobile vision. In Proceedings of the 24th Annual International Conference on Mobile Computing and Networking . 115–127. [16] Mingfei Han, Yali Wang, Xiaojun Chang, and Yu Qiao. 2020. Mining inter-video proposal relations for video object detection. In European conference on computer vision . Springer, 431–446. [17] Song Han, Huizi Mao, and William J Dally. 2015. Deep compression: Compressing deep neural networks with pruning, trained quantization and huffman coding. 
+
+arXiv preprint arXiv:1510.00149 (2015). [18] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. 2016. Deep residual learning for image recognition. In Proceedings of the IEEE conference on computer vision and pattern recognition . 770–778. [19] Geoffrey Hinton, Oriol Vinyals, and Jeff Dean. 2015. Distilling the knowledge in a neural network. arXiv preprint arXiv:1503.02531 (2015). [20] Andrew Howard, Mark Sandler, Grace Chu, Liang-Chieh Chen, Bo Chen, Mingx-ing Tan, Weijun Wang, Yukun Zhu, Ruoming Pang, Vijay Vasudevan, et al . 2019. Searching for mobilenetv3. In Proceedings of the IEEE/CVF international conference on computer vision . 1314–1324. [21] Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, and Dmitry Kalenichenko. 2018. Quantization and training of neural networks for efficient integer-arithmetic-only inference. In 
+
+Proceedings of the IEEE conference on computer vision and pattern recognition .2704–2713. [22] Junchen Jiang, Ganesh Ananthanarayanan, Peter Bodik, Siddhartha Sen, and Ion Stoica. 2018. Chameleon: scalable adaptation of video analytics. In Proceedings of the 2018 conference of the ACM special interest group on data communication .253–266. [23] Glenn Jocher, Ayush Chaurasia, and Jing Qiu. 2023. Ultralytics YOLOv8. https: //github.com/ultralytics/ultralytics [24] Jianan Li, Xiaodan Liang, Yunchao Wei, Tingfa Xu, Jiashi Feng, and Shuicheng Yan. 2017. Perceptual generative adversarial networks for small object detection. In Proceedings of the IEEE conference on computer vision and pattern recognition .1222–1230. [25] Ziyu Lin, Yunfan Wu, Yuhang Ma, Junzhou Chen, Ronghui Zhang, Jiaming Wu, Guodong Yin, and Liang Lin. 2025. YOLO-LLTS: Real-Time Low-Light Traffic Sign Detection via Prior-Guided Enhancement and Multi-Branch Feature Interaction. 
+
+arXiv preprint arXiv:2503.13883 (2025). [26] Weitang Liu, Xiaoyun Wang, John Owens, and Yixuan Li. 2020. Energy-based out-of-distribution detection. Advances in neural information processing systems 
+
+33 (2020), 21464–21475. [27] Aditya Mishra, Akshay Agarwal, and Haroon Lone. 2026. Learning Un-der Low Illumination: A Dataset and Algorithm for Traffic Sign Recognition. arXiv:2511.17183 [cs.CV] https://arxiv.org/abs/2511.17183 [28] Joseph Redmon, Santosh Divvala, Ross Girshick, and Ali Farhadi. 2016. You only look once: Unified, real-time object detection. In Proceedings of the IEEE conference on computer vision and pattern recognition . 779–788. [29] Pierre Sermanet and Yann LeCun. 2011. Traffic sign recognition with multi-scale convolutional networks. In The 2011 international joint conference on neural networks . IEEE, 2809–2813. [30] Johannes Stallkamp, Marc Schlipsing, Jan Salmen, and Christian Igel. 2012. Man vs. computer: Benchmarking machine learning algorithms for traffic sign recognition. 
+
+Neural networks 32 (2012), 323–332. [31] Mingxing Tan and Quoc Le. 2019. Efficientnet: Rethinking model scaling for convolutional neural networks. In International conference on machine learning .PMLR, 6105–6114. [32] Du Tran, Lubomir Bourdev, Rob Fergus, Lorenzo Torresani, and Manohar Paluri. 2015. Learning spatiotemporal features with 3d convolutional networks. In 
+
+Proceedings of the IEEE international conference on computer vision . 4489–4497. [33] Rishabh Uikey, Haroon R Lone, and Akshay Agarwal. 2024. Indian traffic sign detection and classification through a unified framework. IEEE Transactions on Intelligent Transportation Systems 25, 10 (2024), 14866–14875. [34] Ishparsh Uprety, Griffen Agnello, and Xinghui Zhao. 2026. Optimizing deep learning based autonomous driving applications on edge devices. Journal on Autonomous Transportation Systems 3, 3 (2026), 1–18. [35] Daniel Wagner, Gerhard Reitmayr, Alessandro Mulloni, Tom Drummond, and Dieter Schmalstieg. 2009. Real-time detection and tracking for augmented reality on mobile phones. IEEE transactions on visualization and computer graphics 16, 3 (2009), 355–368. [36] Limin Wang, Yuanjun Xiong, Zhe Wang, Yu Qiao, Dahua Lin, Xiaoou Tang, and Luc Van Gool. 2016. Temporal segment networks: Towards good practices for deep action recognition. In European conference on computer vision . Springer, 20–36. [37] Nicolai Wojke, Alex Bewley, and Dietrich Paulus. 2017. Simple online and realtime tracking with a deep association metric. In 2017 IEEE international conference on image processing (ICIP) . IEEE, 3645–3649. [38] Daliang Xu, Mengwei Xu, Qipeng Wang, Shangguang Wang, Yun Ma, Kang Huang, Gang Huang, Xin Jin, and Xuanzhe Liu. 2022. Mandheling: Mixed-precision on-device dnn training with dsp offloading. In Proceedings of the 28th Annual International Conference on Mobile Computing And Networking . 214–227. [39] Mengwei Xu, Mengze Zhu, Yunxin Liu, Felix Xiaozhu Lin, and Xuanzhe Liu. 2018. Deepcache: Principled cache for mobile deep vision. In Proceedings of the 24th annual international conference on mobile computing and networking . 129–144. [40] Xiao Zeng, Biyi Fang, Haichen Shen, and Mi Zhang. 2020. Distream: scaling live video analytics with workload-adaptive distributed edge intelligence. In 
+
+Proceedings of the 18th Conference on Embedded Networked Sensor Systems . 409– 421. [41] Yifu Zhang, Peize Sun, Yi Jiang, Dongdong Yu, Fucheng Weng, Zehuan Yuan, Ping Luo, Wenyu Liu, and Xinggang Wang. 2022. Bytetrack: Multi-object tracking by associating every detection box. In European conference on computer vision .Springer, 1–21. [42] Xizhou Zhu, Yujie Wang, Jifeng Dai, Lu Yuan, and Yichen Wei. 2017. Flow-guided feature aggregation for video object detection. In Proceedings of the IEEE international conference on computer vision . 408–417. 
+
+> 13
+
+## 9 Appendix 9.1 Backbone Comparison 
+
+Table 7 reports the performance of three candidate classification backbones evaluated on the dense urban traffic scenario under identical streaming video conditions on the Jetson Orin Nano. All backbones are trained on Fold 0 of INTSD using the same hyperpa-rameters, crop preprocessing pipeline ( 𝑝 = 0.20 padding, 224 × 224 
+
+resize, ImageNet normalization). Latency is measured as mean per-crop wall-clock inference time on the Jetson GPU in FP32 precision, averaged over all classification invocations in the evaluation video. 
+
+Table 7: Backbone comparison for fine-grained classification. All models evaluated under identical conditions on the Jetson Orin Nano. Backbone A.P. (%) A.R. (%) Acc. (%) FPS Det (ms) Cls (ms) Trk (ms)                      
+
+> MobileNetV3 [20] 52.42 73.36 72.68 24.52 40.09 21.69 0.23 EfficientNet-B3 [31] 61.53 75.67 73.08 19.26 34.75 41.80 0.23 ResNet-50 [18] 75.23 72.10 75.33 27.01 34.96 21.85 0.22
+
+The results reveal two findings that directly justify the ResNet-50 choice. First, the A.P. gap is large and asymmetric: ResNet-50 outperforms MobileNetV3 by 22.81% and EfficientNet-B3 by 13.70%, while the accuracy gap is smaller but consistent (2.65% and 2.25% respectively). The recall figures partially mask this: EfficientNet-B3 achieves the highest A.R. (75.67%), marginally above ResNet-50 (72.10%), but this recall advantage does not translate into classi-fication accuracy, indicating that EfficientNet-B3 produces more detections at the cost of precision — a trade-off that is unfavorable in a fine-grained recognition setting where label correctness is the primary requirement. Second, and more counterintuitively, ResNet-50 achieves the 
+
+highest end-to-end FPS (27.01) of the three backbones, despite hav-ing the largest parameter count. EfficientNet-B3 is the slowest at 19.26 FPS, with per-crop classifier latency of 41.80 ms — nearly double that of ResNet-50 (21.85 ms) and MobileNetV3 (21.69 ms). This result reflects a known property of EfficientNet on embed-ded GPU hardware: its compound scaling strategy, which balances depth, width, and resolution, introduces memory access patterns and activation shapes that are less efficiently handled by the Jetson Ampere architecture than the straightforward residual blocks of ResNet-50. MobileNetV3’s per-crop latency (21.69 ms) is essentially identical to ResNet-50 (21.85 ms) on this hardware, meaning its lightweight design yields no practical speed benefit on the Jetson while incurring a 22.81% A.P. penalty. We therefore adopt ResNet-50 as the classification backbone: it is simultaneously the most accurate, the fastest end-to-end, and the most stable under the fine-grained discrimination demands of the 41-class Indian traffic sign vocabulary. 
+
+## 9.2 Qualitative Results 
+
+9.2.1 Dense. Figure 9 demonstrates Edge-TSR’s detection and clas-sification performance under the dense urban traffic condition — the most challenging scenario in terms of simultaneous object count, background clutter, and illumination variability. The system suc-cessfully localizes and correctly classifies multiple traffic sign cat-egories within a single frame, including regulatory signs ( no stop no stand , go slow ), warning signs ( speed breaker , right curve ), and directional signs ( direction ), even in the presence of a high density of visually confusable advertisement boards that trigger parallel detector responses. Confidence scores for correctly classified traffic signs remain high ( 80 − − 95% ) across frames with up to 11 simultaneous detec-tions, demonstrating that the decoupled detection-classification architecture maintains fine-grained discrimination quality under maximum classification invocation load. 
+
+9.2.2 Rain. Figure 10 shows Edge-TSR’s behavior under the rain scenario — the condition that most severely degrades detector con-fidence through concurrent lens-level and scene-level degradations. Despite active precipitation introducing water droplet occlusion directly on the camera lens, specular highlights from wet road sur-faces, and contrast reduction from reflected headlight glare, the system successfully localizes and correctly classifies a range of sign categories including pedestrian crossing , side road left , direc-tion , accident , and speed limit signs, with confidence scores sus-tained between 85% and 93% on correctly classified instances. The 
+
+unknown -class outputs visible in several frames (top-left, bottom-center, bottom-right) reflect the hysteresis module’s correct behav-ior under uncertainty: detections that do not accumulate sufficient consistent evidence within the temporal window 𝑇 =5 are with-held as unknown rather than committed to a potentially incorrect label, demonstrating that the stabilization module degrades grace-fully under confidence suppression rather than producing spurious high-confidence misclassifications. The bottom-right frame illustrates the primary failure mode under heavy rain: a vehicle’s rear brake light, diffused and bloomed through water droplets adhering to the camera lens, generates a detector response that is assigned the unknown label at confidence 83%. This false positive is mechanistically explicable: the bloomed brake light presents as a circular, red-dominant region of high in-tensity — a visual signature that closely resembles the appearance of a speed sign (circular red background) or a stop sign (octagon red background) at the detector’s 640 × 640 input resolution, causing the class-agnostic detector to fire. Crucially, the classifier correctly withholds a committed label, assigning unknown rather than er-roneously locking onto speed or stop — demonstrating that the closed-world classifier retains sufficient discriminative capacity to reject a visually plausible but contextually incorrect match. This failure mode is therefore partially mitigated by the classification stage, but the false detection itself is irreducible at the detector level: no amount of temporal stabilization can suppress a detec-tor response that recurs consistently across frames, as repeated 
+
+unknown observations would accumulate in the track buffer and consume window capacity without contributing label information. Mitigation would require either a rain-aware detection backbone that suppresses high-intensity bloomed regions, or a lens contam-ination detector that reduces detector sensitivity during severe precipitation events. 
+
+9.2.3 Rural. Figure 11 presents qualitative results under the ru-ral/dark condition — the most extreme illumination scenario in the evaluation set, where no street lighting is present and sign visibil-ity depends entirely on retroreflective surfaces illuminated by the 
+
+> 14
+
+Figure 9: Qualitative results of Edge-TSR on the dense urban traffic scenario. The system correctly detects and classifies multiple sign categories simultaneously under nighttime conditions with high scene clutter, oncoming headlight glare, and co-occurring advertisement boards. High detector confidence scores are sustained even in frames containing up to 11 simultaneous detections. 
+
+vehicle’s own headlights. Despite near-zero background luminance and the absence of any ambient light source, Edge-TSR successfully localizes and correctly classifies multiple warning sign categories across all three frames, including speed breaker , left curve , side road left , and right curve , with confidence scores ranging from 80% to 93%. Two properties of this result are worth noting in the context of the system-level findings reported in Section 6. First, the success-fully detected signs in the left and center frames are small, dark, and low-contrast against the surrounding vegetation — the detector must identify retroreflective triangle outlines against a background that is nearly identical in luminance to the sign interior, operating at the lower bound of what the 640 × 640 input resolution can resolve. The high confidence scores on these detections indicate that the INTSD-trained detector has internalized retroreflective appearance cues specific to nighttime sign illumination, rather than relying on ambient contrast that is absent in this condition. Second, the rightmost frame introduces simultaneous oncoming headlight glare — a high dynamic range condition where the bright glare source and the dark sign background differ by several orders of magnitude in luminance. Edge-TSR correctly detects and classifies left curve 
+
+at confidence 92% in this frame, demonstrating that the pipeline remains functional even when the dominant light source in the scene is an oncoming vehicle rather than the host vehicle’s own headlights. This result directly supports the finding in Section 6 that the rural/dark bottleneck is localized to the detection stage rather than the classification stage: when the detector successfully localizes a sign under these conditions, the classifier operating on the normalized crop reliably assigns the correct label regardless of absolute scene illumination level. 
+
+9.2.4 OOD. Figure 12 presents qualitative results under the OOD scenario, which encompasses two distinct generalization challenges as characterized in Section 6: intra-class distribution shift, where in-vocabulary sign categories appear in non-standard physical forms, and true open-set failure, where the encountered sign or board has no valid equivalent in the 41-class training vocabulary. Both failure modes are visible across the six frames. The top-center frame shows the system’s correct handling of a genuinely out-of-vocabulary sign: a large blue directional board of a format not present in INTSD is detected but assigned unknown at confi-dence 91%, indicating that the classifier correctly rejects the nearest in-vocabulary match rather than committing to a plausible but incorrect label. Similarly, the bottom-center frame shows a large blue directional board assigned direction at confidence 52% — a low-confidence com-mitted label that reflects the classifier’s uncertainty when faced with a sign whose layout and typography differ substantially from training examples, and which would likely be overridden by the hys-teresis escape condition under sustained observation. The top-right frame shows a further instance of this pattern: an OOD directional sign assigned direction at confidence 50%. The bottom-right frame illustrates the most consequential OOD failure mode: a large decorative blue roadside board bearing text (physically resembling a direction sign in color, size, and shape) is classified as direction at high confidence (89%). This is a spuriously high-confidence misclassification: the classifier assigns a committed 
+
+> 15
+
+Figure 10: Qualitative results of Edge-TSR on the rain scenario. The system correctly detects and classifies signs under active precipitation, despite severe lens occlusion from water droplets, specular highlights from wet road surfaces, and oncoming headlight glare that dominates several frames. The bottom-right frame illustrates a characteristic failure mode under heavy rain: a vehicle’s rear brake light reflected in water droplets on the lens is incorrectly triggered as a sign detection (labeled 
+
+unknown , confidence 83%), demonstrating the limits of the class-agnostic detector under extreme precipitation artifacts. 
+
+Figure 11: Qualitative results of Edge-TSR on the rural/dark scenario, where illumination is provided exclusively by the vehicle’s headlights with no street lighting. The system correctly detects and classifies warning signs against near-zero background luminance, relying entirely on retroreflective sign surfaces illuminated by headlights. The rightmost frame demonstrates correct detection and classification under simultaneous oncoming headlight glare where high dynamic range between the bright glare source and the dark sign background compresses the effective contrast available to the detector. 
+
+label well above the locking threshold ( 𝛿 = 0.60 ), meaning the temporal stabilization module would lock this incorrect label and maintain it across subsequent frames. The failure is mechanistically distinct from the low-confidence OOD cases above: the board shares sufficient visual features with the direction training distribution — blue rectangular background, white text, similar aspect ratio — that the classifier’s softmax output is dominated by a single class rather than being distributed across alternatives. This is precisely the failure mode identified in Section 6 as unreachable by the geometric pruning rule or the unknown-class suppression logic: both mechanisms operate on low-confidence or small detections, and neither can intercept a large, high-confidence, visually plausible misclassification. 
+
+## 9.3 Hyperparameter Sensitivity 
+
+The temporal stabilization module uses fixed hyperparameters (𝑇 = 5, locking threshold ≥ 3 observations, confidence thresh-old 60%, escape margin Δ = 5% ) selected empirically on the dense 
+
+> 16
+
+Figure 12: Qualitative results of Edge-TSR on the out-of-distribution (OOD) scenario, containing sign categories rendered in non-standard physical forms and sign categories absent from the 41-class training vocabulary. The system correctly detects and classifies in-vocabulary signs including direction and speed where sufficient visual similarity to training examples exists, and correctly withholds commitment on a genuinely out-of-vocabulary green directional board ( unknown , 91%, top-center). The bottom-right frame illustrates a characteristic high-confidence misclassification failure: a large decorative blue roadside board bearing text is incorrectly classified as direction at confidence 89%, representing the most dangerous OOD failure mode — a spuriously high-confidence committed label on a non-sign object whose blue rectangular form and white text layout closely mirror the visual signature of the direction training class. Table 8: Edge-TSR inference pipeline hyperparameters. Parameter Value                                
+
+> Detector YOLOv8 (custom weights, yolov8s backbone) Detector input size 640 ×640
+> Detector conf. threshold 0.5 Tracker ByteTrack ( bytetrack.yaml , default params) Sampling interval ( 𝑘 )3Min. box size 15 ×15 px Classifier ResNet-50, FP32, 41 classes Classifier input 224 ×224 , ImageNet normalization Padding factor ( 𝑝 )0.20 Memory buffer ( 𝑇 )5 frames Lock threshold 𝜏 =3,𝛿 =0.6
+> Escape margin ( Δ)0.05 Adv. pruning threshold width or height <50 px
+
+urban scenario. These parameters may not be optimal across all op-erating conditions — in particular, high-speed driving may warrant smaller 𝑇 and lower locking thresholds to avoid temporal window starvation, while low-speed urban crawl may benefit from larger windows. An adaptive parameter schedule conditioned on vehicle speed or detected scene complexity is a natural extension. Please refer to 8 for the full list of the hyperparameters along with their optimum value. 
+
+## 9.4 Implementation Details 
+
+This section provides complete implementation details for the Edge-TSR inference pipeline. The pipeline is implemented as a single Python process; the code for the full system and evaluation scripts is released alongside the video evaluation dataset. Table 9 gives the hardware and other related details of the Jetson Orin Nano used in the study. 
+
+9.4.1 Inference Pipeline. The main inference loop is structured around a frame-level conditional: full detection and classification are invoked only on frames satisfying 𝑡 mod 𝑘 = 0; on all other frames, the previously computed bounding boxes and stabilized labels are propagated without any model invocation. This structure ensures that tracker state is updated at every frame but model inference is amortized over 𝑘 frames, achieving the throughput gains characterized in Section 6. 
+
+Detection. The YOLOv8 detector is loaded via the Ultralytics API and invoked using yolo.track() with persist=True , which main-tains ByteTrack’s internal state across calls. The detector is run at imgsz=640 with a confidence threshold of 0.5. Detections with bounding box width or height below 15 pixels are discarded be-fore crop extraction. The tracker output provides persistent integer track identities ( results.boxes.id ); frames where no tracks are assigned receive a sentinel value of −1.
+
+> 17
+
+Table 9: NVIDIA Jetson Orin Nano hardware specifications. Component Specification          
+
+> CPU Arm Cortex-A78AE, 6-core @ 1.5 GHz GPU NVIDIA Ampere, 1024 CUDA cores, 32 Tensor Cores Memory 8 GB LPDDR5, unified CPU/GPU pool Memory Bandwidth 68 GB/s AI Performance 67 TOPS Storage 64 GB microSD Power Mode 10W (MAXN SUPER during deployment) OS Ubuntu 22.04 (JetPack 6.0) Deep Learning Framework PyTorch 2.10, CUDA 12.6
+
+RoI Pre-processing. Each valid detection is padded by factor 𝑝 =
+
+0.20 in both spatial dimensions before cropping: 
+
+𝑑𝑥 = ⌊( 𝑥 2 −𝑥 1)· 𝑝 ⌋, 𝑥 ′ 
+
+> 1
+
+= max (0, 𝑥 1 −𝑑𝑥 ), 𝑥 ′ 
+
+> 2
+
+= min (𝑊 , 𝑥 2 +𝑑𝑥 )
+
+and analogously for the vertical dimension. The padded crop is converted from BGR to RGB, resized to 224 × 224 using T.Resize ,converted to a normalized tensor using ImageNet statistics ( 𝜇 =
+
+[0.485 , 0.456 , 0.406 ], 𝜎 = [0.229 , 0.224 , 0.225 ]), and passed to the classifier as a single-sample batch. 
+
+Classification. The ResNet-50 classifier is loaded with weights=None 
+
+and its fully connected head replaced with a linear layer of output dimension equal to the number of training classes (41). Weights are loaded from a .pth checkpoint trained on Fold 0 of INTSD. The classifier runs in torch.no_grad() context in FP32 precision. The predicted class and softmax confidence are extracted via torch.max 
+
+on the softmax output. 
+
+Temporal stabilization. Track state is maintained in a Python dictionary keyed by integer track identity. Each entry holds a 
+
+deque(maxlen=5) of (label, confidence) tuples, a locked la-bel string (initialized to None ), and the mean confidence of the locked label. The full hysteresis logic is described in Section 4; the complete implementation is provided in the released code. 
+
+Geometric pruning. After temporal stabilization, any detection assigned the advertisement class with bounding box width or height below 50 pixels is reassigned to unknown . This rule is applied after stabilization to prevent advertisement-class noise from entering the memory buffer. 
+
+9.4.2 System Metric Logging. System metrics are sampled at every frame and not only on detection frames. This provides a complete picture of resource consumption throughout the video. The follow-ing quantities are collected: 
+
+• FPS : computed as a running mean ( total frames /elapsed time )at each frame and stored as a per-frame list for standard de-viation computation. 
+
+• Component latency : wall-clock time in seconds for each detector invocation, each classifier invocation, and each draw call; stored as separate lists and converted to milliseconds at reporting time. 
+
+• CPU utilization : sampled via psutil.cpu_percent() at each frame. 
+
+• RAM utilization : sampled via psutil.virtual_memory() .percent at each frame. 
+
+• CPU temperature : read from /sys/class/thermal/therm al_zone0/temp and divided by 1000 to convert from mil-lidegrees to degrees Celsius; None is returned if the file is unavailable. 
+
+• GPU utilization and temperature : sampled via jtop , a dedicated Jetson hardware monitoring library that interfaces with the NVIDIA Tegra system-on-chip telemetry layer. A separate monitoring process runs concurrently with the in-ference pipeline, polling jetson.stats at 1-second intervals. GPU utilisation is read from the “GPU” field and GPU tem-perature from “Temp gpu” ; both are stored as per-sample lists. Mean and maximum values are computed post-hoc over all non-null samples. This approach is necessary be-cause the Jetson Orin Nano’s GPU metrics are not accessible via psutil , which only exposes CPU-side statistics on this platform. 
+
+• GPU memory utilization : read from the “RAM” field of 
+
+jetson.stats , which on the Jetson Orin Nano reflects the unified LPDDR5 memory pool shared between CPU and GPU. When the field returns a dictionary, used and total memory are extracted separately; when it returns a scalar, it is interpreted as a percentage utilization directly. Mean and maximum utilization are reported as percentages of the 8 GB unified pool. All lists are aggregated post-hoc using numpy (np.mean , np.std ,
+
+np.max ) and written to a JSON results file alongside ablation meta-data. 
+
+9.4.3 Output Format. The pipeline writes four output files per run, all in JSON format: 
+
+• predictions.json : a list of per-frame objects, each con-taining frame_id and a list of detections . Each detection record contains bbox ([𝑥 1, 𝑦 1, 𝑥 2, 𝑦 2] in pixel coordinates), 
+
+det_conf (detector confidence), cls_conf (classifier soft-max confidence), score (product of both), cls_label (sta-bilized class string), and track_id (integer ByteTrack iden-tity). 
+
+• evaluated_frames.json : a list of integer frame indices on which full detection and classification were invoked (i.e., frames satisfying 𝑡 mod 𝑘 = 0). This file is required by the evaluation scripts to distinguish inferred frames from propa-gated frames when computing per-frame metrics. 
+
+• inference_results.json : aggregate system metrics for the run, including throughput, latency breakdown, CPU/GPU statistics, and ablation condition flags. The schema is identi-cal across all ablation variants to enable direct comparison. 
+
+• gpu_stats.json : This file aggregates GPU and unified mem-ory statistics collected by a concurrent monitoring process during inference. It reports mean GPU utilization, mean and maximum GPU temperature ( ° C), and mean and maximum utilization of the unified LPDDR5 memory as a percentage of total capacity. Metrics are computed over all valid sam-ples, with the samples field indicating full monitoring cov-erage. The file is generated independently and later cross-referenced with inference_results.json to produce the system-level results in Tables 4 and 5.
