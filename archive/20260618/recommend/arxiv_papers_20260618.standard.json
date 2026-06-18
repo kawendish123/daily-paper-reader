@@ -1,0 +1,180 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-18T20:49:01.352917+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2606.15162v1",
+      "source": "arxiv",
+      "title": "GeoStream: Toward Precise Camera Controlled Streaming Video Generation",
+      "abstract": "Accurate interactive camera control is essential for video-based world models, but most existing approaches learn camera motion implicitly, leading to inaccurate control under out-of-distribution trajectories. Explicit geometric conditioning improves controllability, but existing methods are non-autoregressive and rely on a static 3D cache built from an initial frame, which becomes ineffective once the viewpoint moves beyond the original frustum. We propose GeoStream, a framework that enables precise metric-scale camera control in autoregressive streaming video generation. Our method maintains a self-refreshing 3D cache that is periodically updated online from the model's own outputs: we estimate depth from the most recently generated frame, unproject to 3D, and reproject into the target view to produce point reprojections as geometric conditioning for subsequent synthesis. By the same principle, the conditioning seen during training is also rendered from the student's own generated frames, yielding a fully on-policy distillation that naturally aligns the train and inference conditioning distributions. Unlike prior work that uses off-policy condition noising, our approach trains the model against the exact error distribution it encounters at inference, mitigating both standard autoregressive drift and the second-order geometric feedback loop that arises when the cache itself is derived from generated outputs. Quantitative and qualitative results show that our approach substantially improves camera controllability.",
+      "authors": [
+        "Yizhou Zhao",
+        "Yifan Wang",
+        "Xiaoyuan Wang",
+        "Yushu Wu",
+        "Hao Zhang",
+        "Moayed Haji-Ali",
+        "Rameen Abdal",
+        "Ashkan Mirzaei",
+        "Yanyu Li",
+        "Willi Menapace",
+        "Laszlo Jeni",
+        "Sergey Tulyakov",
+        "Peter Wonka",
+        "Chaoyang Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-13T07:18:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.15162v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "streaming video generation with precise camera control using autoregressive 3D cache",
+      "llm_evidence_cn": "具有精确摄像机控制的自回归流式视频生成使用自刷新3D缓存",
+      "llm_evidence": "具有精确摄像机控制的自回归流式视频生成使用自刷新3D缓存",
+      "canonical_evidence": "具有精确摄像机控制的自回归流式视频生成使用自刷新3D缓存",
+      "llm_tldr_en": "GeoStream enables metric-scale camera control in autoregressive streaming video generation by maintaining a self-refreshing 3D cache updated online from generated frames.",
+      "llm_tldr_cn": "现有流式视频生成方法缺乏精确摄像机控制，且非自回归或依赖静态缓存导致视角越界失效。GeoStream提出自回归流式视频生成框架，维护自刷新3D缓存，通过最新生成帧估计深度并更新缓存，实现连续视角下的精确度量级相机控制。实验表明，GeoStream在相机控制精度和视频质量上显著优于先前方法，为交互式流式视频生成开辟了新途径。",
+      "llm_tldr": "现有流式视频生成方法缺乏精确摄像机控制，且非自回归或依赖静态缓存导致视角越界失效。GeoStream提出自回归流式视频生成框架，维护自刷新3D缓存，通过最新生成帧估计深度并更新缓存，实现连续视角下的精确度量级相机控制。实验表明，GeoStream在相机控制精度和视频质量上显著优于先前方法，为交互式流式视频生成开辟了新途径。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.18122v1",
+      "source": "arxiv",
+      "title": "Embedded Machine Learning for Microcontroller-Class Edge Devices: Data, Feature, Evaluation, and Deployment Pipelines",
+      "abstract": "Embedded machine learning moves inference from cloud services to resource-constrained devices that must acquire data, preprocess signals, run a model, and act within tight limits on memory, energy, and latency. This paper presents a systems-oriented synthesis of an embedded machine-learning workflow for microcontroller-class platforms. The emphasis is placed on engineering decisions that are often hidden in generic machine-learning introductions: sampling and buffering, feature extraction as dimensionality reduction, validation under class imbalance, model/runtime co-design, and streaming deployment. Two representative signal families are used throughout the paper. The first is inertial motion recognition, where a two-second, three-axis accelerometer window is transformed from raw samples into root-mean-square and spectral features before classification. The second is keyword spotting, where audio is sampled, anti-aliased, transformed into mel-frequency cepstral coefficients, and processed by a compact one-dimensional convolutional network. The paper concludes with practical design rules for robust on-device inference, including data curation, quantization, thresholding, scheduling, and field monitoring.",
+      "authors": [
+        "Mostafa Darvishi"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.AR",
+        "eess.AS",
+        "eess.SP"
+      ],
+      "published": "2026-06-16T16:22:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.18122v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "embedded ML workflow for edge devices with streaming",
+      "llm_evidence_cn": "面向边缘设备带流式处理的嵌入式ML工作流",
+      "llm_evidence": "面向边缘设备带流式处理的嵌入式ML工作流",
+      "canonical_evidence": "面向边缘设备带流式处理的嵌入式ML工作流",
+      "llm_tldr_en": "This paper provides a comprehensive systems-oriented synthesis of embedded ML for microcontrollers, covering streaming deployment and edge analytics.",
+      "llm_tldr_cn": "嵌入式机器学习将推理从云端移至资源受限的边缘设备。该工作系统梳理了微控制器上ML的工程决策，包括采样缓冲、特征提取、模型运行时协同设计和流式部署。以惯性运动和生物信号为例展示端到端流程，为实时视频分析在边缘的落地提供了方法指南。",
+      "llm_tldr": "嵌入式机器学习将推理从云端移至资源受限的边缘设备。该工作系统梳理了微控制器上ML的工程决策，包括采样缓冲、特征提取、模型运行时协同设计和流式部署。以惯性运动和生物信号为例展示端到端流程，为实时视频分析在边缘的落地提供了方法指南。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.13376v2",
+      "source": "arxiv",
+      "title": "MoVerse: Real-Time Video World Modeling with Panoramic Gaussian Scaffold",
+      "abstract": "We present MoVerse, a real-time video world model that creates an interactively navigable scene from a single narrow-field-of-view image. This setting is challenging because the input observes only a small fraction of the environment, while interactive roaming requires a complete surrounding world, persistent geometry, controllable camera motion, and temporally coherent high-fidelity observations. MoVerse addresses this problem by separating world construction from observation rendering. It first expands the input into a gravity-aligned 360$^\\circ$ panorama with topology-aware diffusion, closing the missing field of view before 3D reasoning. It then lifts the panorama into a persistent 3D Gaussian scaffold using panoramic geometry-aware residual prediction, yielding a dense and directly renderable spatial memory. Finally, a Gaussian-conditioned video renderer translates scaffold renderings along user-specified camera trajectories into photorealistic video. To make this renderer practical for interaction, we train a bidirectional diffusion teacher for high-quality conditional rendering and distill it into a causal autoregressive student for bounded-latency streaming. This design combines the controllability and long-range consistency of explicit 3D representations with the perceptual quality of generative video models. MoVerse supports real-time scene roaming at 8~FPS on a single NVIDIA RTX~4090 GPU, demonstrating a practical path toward single-image world creation with interactive video output.",
+      "authors": [
+        "Yang Zhou",
+        "Ziheng Wang",
+        "Yuqin Lu",
+        "Haofeng Liu",
+        "Jun Liang",
+        "Shengfeng He",
+        "Jing Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-11T14:01:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.13376v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "real-time video world modeling",
+      "llm_evidence_cn": "实时视频世界建模",
+      "llm_evidence": "实时视频世界建模",
+      "canonical_evidence": "实时视频世界建模",
+      "llm_tldr_en": "MoVerse creates an interactively navigable 3D scene from a single image in real-time using panoramic diffusion and Gaussian scaffolding.",
+      "llm_tldr_cn": "单张图片生成可交互的3D场景通常计算昂贵，难以实时。MoVerse通过全景扩散补全视野，再构建持久3D高斯支架，实现实时视频世界建模。支持自由视角漫游，生成时空连贯的高保真视频，为实时视频处理提供了新范式。",
+      "llm_tldr": "单张图片生成可交互的3D场景通常计算昂贵，难以实时。MoVerse通过全景扩散补全视野，再构建持久3D高斯支架，实现实时视频世界建模。支持自由视角漫游，生成时空连贯的高保真视频，为实时视频处理提供了新范式。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.16399v1",
+      "source": "arxiv",
+      "title": "Non-Equilibrium Model Selection via Finite-Time Thermodynamics",
+      "abstract": "Information criteria such as WAIC and WBIC extend model selection to singular learning machines, but they are usually derived for equilibrium posteriors. We formulate a finite-time analogue of WBIC by replacing the equilibrium posterior with an effective ensemble generated by learning dynamics under a resource constraint. When this ensemble admits an analytic effective potential, singular learning theory yields a resource-dependent real log canonical threshold. The resulting estimator gives a computable thermodynamic contribution to time-bounded MDL and identifies the finite-time singular complexity relevant to the structural information measured by epiplexity.",
+      "authors": [
+        "Masayuki Ohzeki"
+      ],
+      "primary_category": "cond-mat.dis-nn",
+      "categories": [
+        "cond-mat.dis-nn",
+        "math.ST"
+      ],
+      "published": "2026-06-15T08:38:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.16399v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "finite-time model selection theory using thermodynamic analogy",
+      "llm_evidence_cn": "利用有限时间热力学类比进行模型选择理论",
+      "llm_evidence": "利用有限时间热力学类比进行模型选择理论",
+      "canonical_evidence": "利用有限时间热力学类比进行模型选择理论",
+      "llm_tldr_en": "This paper extends model selection to finite-time learning dynamics, deriving a resource-dependent complexity measure that improves on equilibrium criteria like WBIC.",
+      "llm_tldr_cn": "传统模型选择准则如WAIC和WBIC假设平衡后验，未考虑有限时间学习动态。本文提出非平衡模型选择框架，将学习动态产生的有效集成为有限时间后验，导出依赖于计算资源的实对数规范阈值，从而估计随时间变化的模型复杂度。该工作为资源约束下的模型选择提供了理论基础，可应用于边缘设备等场景，但本身不直接涉及视频或移动边缘计算。",
+      "llm_tldr": "传统模型选择准则如WAIC和WBIC假设平衡后验，未考虑有限时间学习动态。本文提出非平衡模型选择框架，将学习动态产生的有效集成为有限时间后验，导出依赖于计算资源的实对数规范阈值，从而估计随时间变化的模型复杂度。该工作为资源约束下的模型选择提供了理论基础，可应用于边缘设备等场景，但本身不直接涉及视频或移动边缘计算。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

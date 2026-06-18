@@ -1,0 +1,69 @@
+{
+  "label": "2026-06-18",
+  "date": "2026-06-18",
+  "generated_at": "2026-06-18T20:51:56",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202606/18/2606.15162v1-geostream-toward-precise-camera-controlled-streaming-video-generation",
+      "section": "deep",
+      "title_en": "GeoStream: Toward Precise Camera Controlled Streaming Video Generation",
+      "authors": "Yizhou Zhao, Yifan Wang, Xiaoyuan Wang, Yushu Wu, Hao Zhang, Moayed Haji-Ali, Rameen Abdal, Ashkan Mirzaei, Yanyu Li, Willi Menapace, Laszlo Jeni, Sergey Tulyakov, Peter Wonka, Chaoyang Wang",
+      "date": "2026-06-13",
+      "pdf": "https://arxiv.org/pdf/2606.15162v1",
+      "score": "8.0",
+      "evidence": "具有精确摄像机控制的自回归流式视频生成使用自刷新3D缓存",
+      "tldr": "现有视频生成方法难以在自回归流式生成中精确控制相机运动，尤其是超出初始视锥后静态3D缓存失效。GeoStream提出自刷新3D缓存，通过估计最新生成帧的深度并重投影到目标视角作为几何条件，同时采用在线策略蒸馏对齐训练和推理分布。该方法在定量和定性评估中显著提升了相机可控性，减轻了自回归漂移和几何反馈循环。",
+      "tags": "query:mec-video",
+      "abstract_en": "Accurate interactive camera control is essential for video-based world models, but most existing approaches learn camera motion implicitly, leading to inaccurate control under out-of-distribution trajectories. Explicit geometric conditioning improves controllability, but existing methods are non-autoregressive and rely on a static 3D cache built from an initial frame, which becomes ineffective once the viewpoint moves beyond the original frustum. We propose GeoStream, a framework that enables precise metric-scale camera control in autoregressive streaming video generation. Our method maintains a self-refreshing 3D cache that is periodically updated online from the model's own outputs: we estimate depth from the most recently generated frame, unproject to 3D, and reproject into the target view to produce point reprojections as geometric conditioning for subsequent synthesis. By the same principle, the conditioning seen during training is also rendered from the student's own generated frames, yielding a fully on-policy distillation that naturally aligns the train and inference conditioning distributions. Unlike prior work that uses off-policy condition noising, our approach trains the model against the exact error distribution it encounters at inference, mitigating both standard autoregressive drift and the second-order geometric feedback loop that arises when the cache itself is derived from generated outputs. Quantitative and qualitative results show that our approach substantially improves camera controllability.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/18/2606.18122v1-embedded-machine-learning-for-microcontroller-class-edge-devices-data-feature-evaluation-and-deployment-pipelines",
+      "section": "deep",
+      "title_en": "Embedded Machine Learning for Microcontroller-Class Edge Devices: Data, Feature, Evaluation, and Deployment Pipelines",
+      "authors": "Mostafa Darvishi",
+      "date": "2026-06-16",
+      "pdf": "https://arxiv.org/pdf/2606.18122v1",
+      "score": "8.0",
+      "evidence": "面向边缘设备带流式处理的嵌入式ML工作流",
+      "tldr": "针对微控制器类边缘设备在内存、能耗和延迟上的严格约束，本文系统化地介绍了嵌入式机器学习工作流，涵盖数据采样与缓冲、特征提取作为降维手段、类不平衡下的验证、模型与运行时协同设计以及流式部署。以惯性运动识别（两秒三轴加速度窗口提取RMS和频谱特征）和关键词识别（音频抗混叠、MFCC变换后一维CNN）为例，展示了完整流程。最后给出数据整理、量化、阈值、调度和现场监测等实用设计规则，确保鲁棒片上推理。",
+      "tags": "query:mec-video",
+      "abstract_en": "Embedded machine learning moves inference from cloud services to resource-constrained devices that must acquire data, preprocess signals, run a model, and act within tight limits on memory, energy, and latency. This paper presents a systems-oriented synthesis of an embedded machine-learning workflow for microcontroller-class platforms. The emphasis is placed on engineering decisions that are often hidden in generic machine-learning introductions: sampling and buffering, feature extraction as dimensionality reduction, validation under class imbalance, model/runtime co-design, and streaming deployment. Two representative signal families are used throughout the paper. The first is inertial motion recognition, where a two-second, three-axis accelerometer window is transformed from raw samples into root-mean-square and spectral features before classification. The second is keyword spotting, where audio is sampled, anti-aliased, transformed into mel-frequency cepstral coefficients, and processed by a compact one-dimensional convolutional network. The paper concludes with practical design rules for robust on-device inference, including data curation, quantization, thresholding, scheduling, and field monitoring.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/18/2606.13376v2-moverse-real-time-video-world-modeling-with-panoramic-gaussian-scaffold",
+      "section": "quick",
+      "title_en": "MoVerse: Real-Time Video World Modeling with Panoramic Gaussian Scaffold",
+      "authors": "Yang Zhou, Ziheng Wang, Yuqin Lu, Haofeng Liu, Jun Liang, Shengfeng He, Jing Li",
+      "date": "2026-06-11",
+      "pdf": "https://arxiv.org/pdf/2606.13376v2",
+      "score": "7.0",
+      "evidence": "实时视频世界建模",
+      "tldr": "从单张窄视场图像实时创建可交互漫游的完整3D场景极具挑战。MoVerse先通过拓扑感知扩散补全全景图，再预测持久3D高斯脚手架，最后蒸馏因果自回归渲染器沿用户轨迹高效生成视频。该系统在单张RTX 4090上以8 FPS运行，实现了持久几何、可控运动与高保真观测的统一。",
+      "tags": "query:mec-video",
+      "abstract_en": "We present MoVerse, a real-time video world model that creates an interactively navigable scene from a single narrow-field-of-view image. This setting is challenging because the input observes only a small fraction of the environment, while interactive roaming requires a complete surrounding world, persistent geometry, controllable camera motion, and temporally coherent high-fidelity observations. MoVerse addresses this problem by separating world construction from observation rendering. It first expands the input into a gravity-aligned 360$^\\circ$ panorama with topology-aware diffusion, closing the missing field of view before 3D reasoning. It then lifts the panorama into a persistent 3D Gaussian scaffold using panoramic geometry-aware residual prediction, yielding a dense and directly renderable spatial memory. Finally, a Gaussian-conditioned video renderer translates scaffold renderings along user-specified camera trajectories into photorealistic video. To make this renderer practical for interaction, we train a bidirectional diffusion teacher for high-quality conditional rendering and distill it into a causal autoregressive student for bounded-latency streaming. This design combines the controllability and long-range consistency of explicit 3D representations with the perceptual quality of generative video models. MoVerse supports real-time scene roaming at 8~FPS on a single NVIDIA RTX~4090 GPU, demonstrating a practical path toward single-image world creation with interactive video output.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/18/2606.16399v1-non-equilibrium-model-selection-via-finite-time-thermodynamics",
+      "section": "quick",
+      "title_en": "Non-Equilibrium Model Selection via Finite-Time Thermodynamics",
+      "authors": "Masayuki Ohzeki",
+      "date": "2026-06-15",
+      "pdf": "https://arxiv.org/pdf/2606.16399v1",
+      "score": "6.0",
+      "evidence": "利用有限时间热力学类比进行模型选择理论",
+      "tldr": "现有模型选择信息准则通常基于平衡后验，无法处理资源约束下的有限时间学习。本文提出有限时间WBIC，用学习动力学生成的有效系综替代平衡后验。当系综具有解析有效势时，奇异学习理论给出资源依赖的实对数规范阈值。该估计量为时间约束MDL提供可计算的热力学贡献，并识别有限时间奇异复杂度，与epiplexity测量的结构信息相关。",
+      "tags": "query:mec-video",
+      "abstract_en": "Information criteria such as WAIC and WBIC extend model selection to singular learning machines, but they are usually derived for equilibrium posteriors. We formulate a finite-time analogue of WBIC by replacing the equilibrium posterior with an effective ensemble generated by learning dynamics under a resource constraint. When this ensemble admits an analytic effective potential, singular learning theory yields a resource-dependent real log canonical threshold. The resulting estimator gives a computable thermodynamic contribution to time-bounded MDL and identifies the finite-time singular complexity relevant to the structural information measured by epiplexity.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
