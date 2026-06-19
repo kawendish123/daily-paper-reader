@@ -6,32 +6,38 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-18
-- 运行时间：2026-06-18 20:51:47 UTC
+- 最新运行日期：2026-06-19
+- 运行时间：2026-06-19 20:49:45 UTC
 - 运行状态：成功
-- 本次总论文数：4
-- 精读区：2
-- 速读区：2
+- 本次总论文数：6
+- 精读区：1
+- 速读区：5
 
 ### 今日简报（AI）
-今日对4篇论文完成精读与速读，重点关注视频生成和边缘机器学习两大方向。最值得看的是《GeoStream》中精确相机控制的流式视频生成方法，以及嵌入式ML在微控制器上的完整部署流程。建议普通读者优先了解视频生成技术的最新控制方式，并关注边缘设备上轻量级ML模型的实际应用趋势。
-- 详情：[/202606/18/README](/202606/18/README)
+今日推荐6篇论文，重点精读《ViCoStream》，该研究实现流式视频大模型推理速度超100FPS。值得关注的方向是高效视频理解与实例分割，《ViCoStream》的协同推理机制和《SA-VIS》的稀疏标注训练方法最具实践价值。建议普通读者优先精读《ViCoStream》，再速读视频分割相关论文以把握领域前沿。
+- 详情：[/202606/19/README](/202606/19/README)
 
 ### 精读区论文标签
-1. [GeoStream: Toward Precise Camera Controlled Streaming Video Generation](/202606/18/2606.15162v1-geostream-toward-precise-camera-controlled-streaming-video-generation)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：具有精确摄像机控制的自回归流式视频生成使用自刷新3D缓存
-2. [Embedded Machine Learning for Microcontroller-Class Edge Devices: Data, Feature, Evaluation, and Deployment Pipelines](/202606/18/2606.18122v1-embedded-machine-learning-for-microcontroller-class-edge-devices-data-feature-evaluation-and-deployment-pipelines)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：面向边缘设备带流式处理的嵌入式ML工作流
+1. [ViCoStream: Streaming VideoLLMs Can Run Beyond 100 FPS with Stage-Wise Coordinated Inference](/202606/19/2606.19849v1-vicostream-streaming-videollms-can-run-beyond-100-fps-with-stage-wise-coordinated-inference)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：流式视频LLM推理的阶段协调实现实时视频分析
 
 ### 速读区论文标签
-1. [MoVerse: Real-Time Video World Modeling with Panoramic Gaussian Scaffold](/202606/18/2606.13376v2-moverse-real-time-video-world-modeling-with-panoramic-gaussian-scaffold)  
+1. [Open-World Video Segmentation](/202606/19/2606.15632v2-open-world-video-segmentation)  
    标签：评分：7.0/10、query:mec-video
-   evidence：实时视频世界建模
-2. [Non-Equilibrium Model Selection via Finite-Time Thermodynamics](/202606/18/2606.16399v1-non-equilibrium-model-selection-via-finite-time-thermodynamics)  
+   evidence：零样本开放世界长时视频分割系统
+2. [SA-VIS: Sparse frame Annotations for training Video Instance Segmentation](/202606/19/2606.20140v1-sa-vis-sparse-frame-annotations-for-training-video-instance-segmentation)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：视频实例分割与稀疏标注
+3. [CogGuard: Cognitive and Operational Profiling for Proactive Warning in Edge Intelligent Services](/202606/19/2606.15199v1-cogguard-cognitive-and-operational-profiling-for-proactive-warning-in-edge-intelligent-services)  
    标签：评分：6.0/10、query:mec-video
-   evidence：利用有限时间热力学类比进行模型选择理论
+   evidence：边缘智能服务中的画像和主动预警
+4. [Sustainable Face Recognition on Low-Power Devices with VQ-VAE Embeddings](/202606/19/2606.15355v1-sustainable-face-recognition-on-low-power-devices-with-vq-vae-embeddings)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：低功耗设备上可部署的边缘人脸识别
+5. [Triangular Consistency as a Universal Constraint for Learning Optical Flow](/202606/19/2606.19938v1-triangular-consistency-as-a-universal-constraint-for-learning-optical-flow)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：光流约束方法适用于视频分析和实时处理
 
 
 <div class="dpr-home-promo-card">

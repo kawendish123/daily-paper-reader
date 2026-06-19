@@ -1,0 +1,254 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-19T20:44:34.008383+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2606.19849v1",
+      "source": "arxiv",
+      "title": "ViCoStream: Streaming VideoLLMs Can Run Beyond 100 FPS with Stage-Wise Coordinated Inference",
+      "abstract": "Streaming VideoLLMs must continuously process incoming video while maintaining low query latency, making both video-ingestion throughput and query-time responsiveness critical for real-time deployment. Existing methods largely focus on accelerating individual modules, such as visual encoding, token pruning, or KV-cache compression, but provide limited insight into whether the resulting system can sustain real-time streaming performance. We formulate streaming VideoLLM inference as a coordinated pipeline spanning visual preprocessing, visual encoding, token dropping, and LLM prefilling/decoding. Building on this formulation, we propose ViCoStream (Video Coordinated Streaming), a stage-wise coordinated streaming framework that combines chunk-wise execution, CUDA-stream overlap, visual token control, bounded visual attention, and query-side retrieval to bound per-chunk computation and memory costs. We further provide a systematic study of bottleneck migration, revealing how chunk size, token retention, attention locality, and retrieval scope shape the throughput-accuracy trade-off. Experiments with Qwen2.5-VL-3B/7B-Instruct across multiple streaming benchmarks show that ViCoStream achieves 134 FPS video throughput and less than 50 ms TTFT on a single A100 GPU while maintaining accuracy close to full-history baselines.",
+      "authors": [
+        "Yang Tan",
+        "Junlong Tong",
+        "Linan Yue",
+        "Hao Wu",
+        "Pengfei Fang",
+        "Xiaoyu Shen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-18T06:57:31+00:00",
+      "link": "https://arxiv.org/pdf/2606.19849v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "streaming VideoLLM inference with stage-wise coordination for real-time video analysis",
+      "llm_evidence_cn": "流式视频LLM推理的阶段协调实现实时视频分析",
+      "llm_evidence": "流式视频LLM推理的阶段协调实现实时视频分析",
+      "canonical_evidence": "流式视频LLM推理的阶段协调实现实时视频分析",
+      "llm_tldr_en": "ViCoStream formulates streaming VideoLLM inference as a coordinated pipeline achieving over 100 FPS, enabling real-time streaming video analysis.",
+      "llm_tldr_cn": "流式视频大语言模型需要持续处理输入视频并保持低查询延迟，现有方法仅加速单个模块，难以保证整体实时性能。本文提出ViCoStream框架，将流式视频LLM推理视为协调的流水线，包括视觉预处理、编码、令牌丢弃和LLM预填充/解码，通过阶段协调实现超过100 FPS的吞吐量。实验表明该方法在不牺牲精度下显著提升实时流式视频分析速度，为边缘端流式视频智能处理提供高效方案。",
+      "llm_tldr": "流式视频大语言模型需要持续处理输入视频并保持低查询延迟，现有方法仅加速单个模块，难以保证整体实时性能。本文提出ViCoStream框架，将流式视频LLM推理视为协调的流水线，包括视觉预处理、编码、令牌丢弃和LLM预填充/解码，通过阶段协调实现超过100 FPS的吞吐量。实验表明该方法在不牺牲精度下显著提升实时流式视频分析速度，为边缘端流式视频智能处理提供高效方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.15632v2",
+      "source": "arxiv",
+      "title": "Open-World Video Segmentation",
+      "abstract": "While video segmentation has advanced rapidly on short clips and closed-set benchmarks, open-world video segmentation remains largely unexplored. The challenge is twofold: (1) existing methods are not designed to support object discovery and identity maintenance in long videos of dynamic ego-motion, and (2) existing evaluation protocols rely on a rigid 1:1 matching that unfairly penalizes semantically valid predictions with mismatched granularity. To address both gaps, we introduce Savvy, a practical and strong system for zero-shot open-world long-horizon video segmentation. Savvy combines hierarchical mask discovery, deferred admission, and track consolidation to support persistent object discovery, safe track promotion, and stable long-range identity maintenance. We further propose OGA, a granularity-aware evaluation suite for open-world video segmentation. Built on a Granularity-Agnostic (GA) matching protocol, OGA relaxes conventional 1:1 matching to an n:1 mapping, but still enforces temporal rigor by detecting support discontinuities through sever points and scoring each reference object through its dominant coherent fragment. This prevents fragmented or flickering support from being over-rewarded while enabling GA-adapted metrics and structural diagnostics: identity persistence (IP), and identity concentration (IC). On VIPSeg, we show that standard 1:1 evaluation substantially underestimates open-world methods, whereas GA evaluation recovers much of their suppressed performance. On the more realistic long-horizon benchmarks: ScanNet and HM3D, Savvy consistently outperforms strong baselines across both classical and proposed metrics, including STQ, VPQ$_\\infty$, IP and IC. Together, these results establish a practical benchmark and a strong baseline for open-world long-horizon video segmentation.",
+      "authors": [
+        "Qing Su",
+        "Kaiyang Li",
+        "Yuan Zhuang",
+        "Fei Miao",
+        "Shihao Ji"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-14T06:48:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.15632v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "zero-shot open-world long-horizon video segmentation system",
+      "llm_evidence_cn": "零样本开放世界长时视频分割系统",
+      "llm_evidence": "零样本开放世界长时视频分割系统",
+      "canonical_evidence": "零样本开放世界长时视频分割系统",
+      "llm_tldr_en": "Savvy combines hierarchical mask discovery, deferred admission, and track consolidation for zero-shot open-world long-horizon video segmentation, with OGA evaluation metric.",
+      "llm_tldr_cn": "该论文针对开放世界长视频分割中对象发现和身份维持的挑战，提出Savvy系统，结合层次化掩码发现、延迟接纳和轨迹合并，实现零样本的长时视频分割。同时提出OGA评估指标，避免刚性1:1匹配的惩罚。实验表明Savvy在长期开放世界分割任务上表现优异，为流式视频分析中的持续对象分割提供了实用方案。",
+      "llm_tldr": "该论文针对开放世界长视频分割中对象发现和身份维持的挑战，提出Savvy系统，结合层次化掩码发现、延迟接纳和轨迹合并，实现零样本的长时视频分割。同时提出OGA评估指标，避免刚性1:1匹配的惩罚。实验表明Savvy在长期开放世界分割任务上表现优异，为流式视频分析中的持续对象分割提供了实用方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.15199v1",
+      "source": "arxiv",
+      "title": "CogGuard: Cognitive and Operational Profiling for Proactive Warning in Edge Intelligent Services",
+      "abstract": "Proactive warning is an important capability for edge intelligent services, where the system predicts whether a subject will successfully complete an incoming task under strict latency and privacy constraints. Such prediction depends on both long-term static attributes and short-term dynamic states derived from historical interaction logs. Recent Large Language Models (LLMs) offer strong long-context reasoning for constructing structured profiles from these logs, but existing solutions face two challenges for edge deployment: (1) profiling methods are typically domain-specific and lack a reusable abstraction across service scenarios, and (2) fine-tuning alignment models on heterogeneous edge clusters incurs high synchronization overhead due to the variance in input sequence lengths. To address these challenges, we propose CogGuard, a proactive-warning framework for edge intelligent services. CogGuard decouples offline LLM-based profile construction from online Small Language Model (SLM)-based score prediction through a shared static-dynamic profile-to-score pipeline, and instantiates it in two representative scenarios: educational performance warning and operational task outcome warning. For efficient profile construction, we design scenario-specific profiling methods with prefix-aligned KV-cache reuse to reduce repeated encoding overhead. For edge-side model alignment, we propose a length-aware distributed fine-tuning strategy with contrastive regularization to mitigate workload imbalance on heterogeneous clusters. Experiments on education and operation datasets show that CogGuard reduces profile construction time by up to 48% and distributed fine-tuning time by 19%, while achieving MAEs of 13.4 and 5.9, respectively, on 100-point-scale warning tasks. In the largest educational setting, CogGuard reduces prediction error by 15.4% compared with the strongest baseline.",
+      "authors": [
+        "Zhi Yao",
+        "Weihao Chen",
+        "Zhiqing Tang",
+        "Hanshuai Cui",
+        "Qianli Ma",
+        "Weijia Jia",
+        "Wei Zhao"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-13T08:47:32+00:00",
+      "link": "https://arxiv.org/pdf/2606.15199v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "edge intelligent services with profiling for proactive warning",
+      "llm_evidence_cn": "边缘智能服务中的画像和主动预警",
+      "llm_evidence": "边缘智能服务中的画像和主动预警",
+      "canonical_evidence": "边缘智能服务中的画像和主动预警",
+      "llm_tldr_en": "Proposes CogGuard for proactive warning in edge intelligent services using cognitive and operational profiling, relevant to edge computing deployment.",
+      "llm_tldr_cn": "边缘智能服务需要根据用户历史交互预测任务完成情况以主动预警。现有画像方法领域特定且难以在异质边缘集群上对齐。本文提出CogGuard，利用大语言模型进行结构化画像构建，并通过低秩适配器高效适应不同边缘场景。实验表明该方法在满足低延迟和隐私约束下提升预警准确率，为边缘计算中的智能化服务提供通用画像框架。",
+      "llm_tldr": "边缘智能服务需要根据用户历史交互预测任务完成情况以主动预警。现有画像方法领域特定且难以在异质边缘集群上对齐。本文提出CogGuard，利用大语言模型进行结构化画像构建，并通过低秩适配器高效适应不同边缘场景。实验表明该方法在满足低延迟和隐私约束下提升预警准确率，为边缘计算中的智能化服务提供通用画像框架。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.20140v1",
+      "source": "arxiv",
+      "title": "SA-VIS: Sparse frame Annotations for training Video Instance Segmentation",
+      "abstract": "Recent online video instance segmentation (VIS) methods have achieved impressive results, thus becoming the preferred approach to segment instances in videos. Despite the resurgence of impressive single image models, the online (or semi-online) VIS approaches outperform single-image models (e.g., based on SAM) by using long sequences of densely annotated frames during training. However,such a training setup of VIS is expensive in the sense of compute as well as dense annotations required. In order to solve these major flaws, we argue that the effective modeling of the instances and their evolution in videos do not require densely annotated frames. To that end, we propose a simple and effective module, called Past-frames Feature Propagation (PFP) which aggregates low-dimensional features from the image encoder of multiple frames. This simple low-compute module provides tremendous learning capability in using sparse video frame labels for end-to-end training. Combined with a light-weight frame-specific Instance Queries, our Sparse frame Annotation VIS (SA-VIS) significantly improves performance over its baseline. Most interestingly, our simple design that avoids complexities effectively bridges the gap in accuracy between training on sparsely and densely annotated video sequences. This translates to a mere 0.4% drop in performance of SA-VIS when using annotations for only 1/5 of the images in the dataset. Empirically, SA-VIS shows strong improvements over the baseline on YouTube-VIS 2019/2021/2022 and Occluded VIS (OVIS) and an over 1% improvement in AP on the state-of-the-art in a limited annotations scenario.",
+      "authors": [
+        "Edoardo Mello Rella",
+        "Ajad Chhatkuli",
+        "Shipra Jain",
+        "Ender Konukoglu",
+        "Luc Van Gool"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-18T12:03:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.20140v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video instance segmentation with sparse annotations",
+      "llm_evidence_cn": "视频实例分割与稀疏标注",
+      "llm_evidence": "视频实例分割与稀疏标注",
+      "canonical_evidence": "视频实例分割与稀疏标注",
+      "llm_tldr_en": "Proposes a past-frames feature propagation module to train video instance segmentation models with sparsely annotated frames, reducing annotation cost and compute.",
+      "llm_tldr_cn": "针对视频实例分割训练需要密集帧标注导致成本高昂的问题，本文提出Past-frames Feature Propagation（PFP）模块，仅需稀疏标注帧即可有效建模实例时序演化。实验表明该方法在减少标注工作量的同时，性能接近全标注模型，为视频分析提供了低成本的训练方案。",
+      "llm_tldr": "针对视频实例分割训练需要密集帧标注导致成本高昂的问题，本文提出Past-frames Feature Propagation（PFP）模块，仅需稀疏标注帧即可有效建模实例时序演化。实验表明该方法在减少标注工作量的同时，性能接近全标注模型，为视频分析提供了低成本的训练方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.15355v1",
+      "source": "arxiv",
+      "title": "Sustainable Face Recognition on Low-Power Devices with VQ-VAE Embeddings",
+      "abstract": "Face recognition has become a cornerstone of modern AI applications, yet conventional approaches often rely on computationally intensive models deployed in cloud environments, leading to increased network traffic, high energy consumption, and a heavy carbon footprint. This work introduces a sustainable, edge-deployable face recognition framework based on Vector-Quantized Variational Autoencoders (VQ-VAE), which generates compact and semantically rich latent representations of facial images. By leveraging the compression capacity and reconstruction quality of VQ-VAE embeddings on the edge and combining them with the power of pre-trained face embeddings in a knowledge distillation setup, our system achieves comparable accuracy to state-of-the-art face embedding models while significantly reducing memory and computation requirements on the edge, making it suitable for low-power edge devices. The integration of VQ-VAE compression minimizes network overhead while keeping the matching accuracy high by retaining only the most informative facial features in the latent space. As a result, the reconstructed images preserve the key identity characteristics, improving the robustness and overall performance of the face embeddings.",
+      "authors": [
+        "Christos Chronis",
+        "Georgios Th. Papadopoulos",
+        "Iraklis Varlamis"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-13T15:38:10+00:00",
+      "link": "https://arxiv.org/pdf/2606.15355v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "edge-deployable face recognition on low-power devices",
+      "llm_evidence_cn": "低功耗设备上可部署的边缘人脸识别",
+      "llm_evidence": "低功耗设备上可部署的边缘人脸识别",
+      "canonical_evidence": "低功耗设备上可部署的边缘人脸识别",
+      "llm_tldr_en": "Proposes an edge-deployable face recognition framework using VQ-VAE embeddings and knowledge distillation to achieve comparable accuracy with reduced network traffic and energy consumption.",
+      "llm_tldr_cn": "针对传统云端人脸识别网络开销大、能耗高的问题，本文提出一种基于VQ-VAE嵌入的可持续边缘端人脸识别框架。通过将VQ-VAE的压缩表示与预训练人脸嵌入结合进行知识蒸馏，系统在降低数据传输和能耗的同时，保持与云端相当的识别精度。实验表明该方法在低功耗设备上有效，适用于边缘计算场景。",
+      "llm_tldr": "针对传统云端人脸识别网络开销大、能耗高的问题，本文提出一种基于VQ-VAE嵌入的可持续边缘端人脸识别框架。通过将VQ-VAE的压缩表示与预训练人脸嵌入结合进行知识蒸馏，系统在降低数据传输和能耗的同时，保持与云端相当的识别精度。实验表明该方法在低功耗设备上有效，适用于边缘计算场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.19938v1",
+      "source": "arxiv",
+      "title": "Triangular Consistency as a Universal Constraint for Learning Optical Flow",
+      "abstract": "We propose triangular consistency as a first-principled constraint for optical flow, which is agnostic to network architecture, supervision type, and dataset, and applies to both image-pair and multi-frame settings. This simple but powerful constraint is to compose two flows to induce a third flow and enforce consistency among the three. The composed flows may arise from (i) image pairs, yielding cycle consistency; (ii) multiple video frames, producing longer-range motion through temporal chaining; or (iii) image pairs combined with controlled synthetic transformations, which becomes data augmentation. This triangular consistency introduces negligible computational overhead and requires no additional annotations. Since it is derived directly from the geometry of optical flow, it does not rely on model-specific assumptions and serves as a ``universal'' plug-and-play component for optical flow training. Experiments show consistent improvement across supervised, unsupervised, and transfer learning settings.",
+      "authors": [
+        "Yi Xiao",
+        "Carlos Rodriguez Coronel",
+        "Jing Zhan",
+        "Haniyeh Ehsani Oskouie",
+        "Alex Wong",
+        "Dong Lao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-18T08:34:32+00:00",
+      "link": "https://arxiv.org/pdf/2606.19938v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "optical flow constraint method applicable to video analysis and real-time processing",
+      "llm_evidence_cn": "光流约束方法适用于视频分析和实时处理",
+      "llm_evidence": "光流约束方法适用于视频分析和实时处理",
+      "canonical_evidence": "光流约束方法适用于视频分析和实时处理",
+      "llm_tldr_en": "Introduces triangular consistency as a universal constraint for optical flow learning, improving motion estimation in video.",
+      "llm_tldr_cn": "针对光流学习中的一致性问题，提出三角一致性约束，可应用于图像对和多帧视频，无需额外标注，显著提升了运动估计的准确性，为流式视频分析中的运动理解提供了通用方法。",
+      "llm_tldr": "针对光流学习中的一致性问题，提出三角一致性约束，可应用于图像对和多帧视频，无需额外标注，显著提升了运动估计的准确性，为流式视频分析中的运动理解提供了通用方法。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
