@@ -6,38 +6,30 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-19
-- 运行时间：2026-06-19 20:49:45 UTC
+- 最新运行日期：2026-06-20
+- 运行时间：2026-06-20 21:32:05 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：1
-- 速读区：5
+- 本次总论文数：3
+- 精读区：0
+- 速读区：3
 
 ### 今日简报（AI）
-今日推荐6篇论文，重点精读《ViCoStream》，该研究实现流式视频大模型推理速度超100FPS。值得关注的方向是高效视频理解与实例分割，《ViCoStream》的协同推理机制和《SA-VIS》的稀疏标注训练方法最具实践价值。建议普通读者优先精读《ViCoStream》，再速读视频分割相关论文以把握领域前沿。
-- 详情：[/202606/19/README](/202606/19/README)
+今日速读3篇论文，分别聚焦视频息肉分割、事件目标检测和LLM边缘端微调。最值得关注的是《ARTEMIS》提出的代理引导时序掩码进化方法（7.0分），以及《FATE》中频域感知训练方案（6.0分）。建议普通读者优先了解LLM在边缘设备上的低秩适配内存优化技巧。
+- 详情：[/202606/20/README](/202606/20/README)
 
 ### 精读区论文标签
-1. [ViCoStream: Streaming VideoLLMs Can Run Beyond 100 FPS with Stage-Wise Coordinated Inference](/202606/19/2606.19849v1-vicostream-streaming-videollms-can-run-beyond-100-fps-with-stage-wise-coordinated-inference)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：流式视频LLM推理的阶段协调实现实时视频分析
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Open-World Video Segmentation](/202606/19/2606.15632v2-open-world-video-segmentation)  
+1. [ARTEMIS: Agent-guided Reliability-aware Temporal Mask Evolution for Imperfectly Supervised Video Polyp Segmentation](/202606/20/2606.20161v1-artemis-agent-guided-reliability-aware-temporal-mask-evolution-for-imperfectly-supervised-video-polyp-segmentation)  
    标签：评分：7.0/10、query:mec-video
-   evidence：零样本开放世界长时视频分割系统
-2. [SA-VIS: Sparse frame Annotations for training Video Instance Segmentation](/202606/19/2606.20140v1-sa-vis-sparse-frame-annotations-for-training-video-instance-segmentation)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：视频实例分割与稀疏标注
-3. [CogGuard: Cognitive and Operational Profiling for Proactive Warning in Edge Intelligent Services](/202606/19/2606.15199v1-cogguard-cognitive-and-operational-profiling-for-proactive-warning-in-edge-intelligent-services)  
+   evidence：弱监督视频分割中的时间一致性
+2. [FATE: Pillar Encoding and Frequency-Aware Training for Event-Based Object Detection](/202606/20/2606.17334v1-fate-pillar-encoding-and-frequency-aware-training-for-event-based-object-detection)  
    标签：评分：6.0/10、query:mec-video
-   evidence：边缘智能服务中的画像和主动预警
-4. [Sustainable Face Recognition on Low-Power Devices with VQ-VAE Embeddings](/202606/19/2606.15355v1-sustainable-face-recognition-on-low-power-devices-with-vq-vae-embeddings)  
+   evidence：基于事件的目标检测、视频分析
+3. [Techniques for Peak Memory Reduction for LoRA Fine-tuning of LLMs on Edge Devices](/202606/20/2606.19528v1-techniques-for-peak-memory-reduction-for-lora-fine-tuning-of-llms-on-edge-devices)  
    标签：评分：6.0/10、query:mec-video
-   evidence：低功耗设备上可部署的边缘人脸识别
-5. [Triangular Consistency as a Universal Constraint for Learning Optical Flow](/202606/19/2606.19938v1-triangular-consistency-as-a-universal-constraint-for-learning-optical-flow)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：光流约束方法适用于视频分析和实时处理
+   evidence：边缘设备上大模型微调的内存减少
 
 
 <div class="dpr-home-promo-card">

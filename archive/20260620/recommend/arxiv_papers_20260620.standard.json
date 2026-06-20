@@ -1,0 +1,134 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-20T21:29:41.000202+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2606.20161v1",
+      "source": "arxiv",
+      "title": "ARTEMIS: Agent-guided Reliability-aware Temporal Mask Evolution for Imperfectly Supervised Video Polyp Segmentation",
+      "abstract": "Imperfectly supervised video polyp segmentation (VPS) aims to learn dense, temporally consistent masks from inexpensive supervision, including weak annotations (points, scribbles) and semi-supervision with few densely labeled frames. This setting is clinically valuable but challenging due to weak contrast, ambiguous boundaries, motion blur, and specular highlights, compounded by sparse pixel-level guidance. While SAM2 can generate dense masks from sparse inputs, direct pseudo-labeling often yields geometry-degraded masks with boundary leakage, underutilizes temporal consistency, and ignores reliability. To address these issues, we propose ARTEMIS, a unified framework for imperfectly supervised VPS driven by agent-guided reliability-aware temporal mask evolution. ARTEMIS initializes coarse masks from available supervision: SAM2 converts points/scribbles, while dense labels serve as reliable anchors. A debate-and-judge vision-language agent selects reliable temporal anchors under weak supervision, which are propagated bidirectionally with SAM2 to refine unreliable or unlabeled frames. Finally, ARTEMIS trains the segmenter using temporal reliability-aware robust learning, incorporating reliability-guided reference selection, a Reference Prototype Transport Module, and reliability-aware robust loss. These components assess mask reliability, evolve anchors over time, transport target identity across frames, and down-weight noisy supervision instead of discarding difficult samples. Experiments on SUN-SEG and CVC-ClinicDB-612 under scribble, point, and limited-label settings demonstrate that ARTEMIS achieves state-of-the-art performance. Code will be released at https://github.com/wangtong627/ARTEMIS.",
+      "authors": [
+        "Tong Wang",
+        "Siwen Wang",
+        "Yaolei Qi",
+        "Jinxing Zhou",
+        "Yuting He",
+        "Guanyu Yang",
+        "Yutong Xie"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-18T12:27:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.20161v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video segmentation with temporal consistency under weak supervision",
+      "llm_evidence_cn": "弱监督视频分割中的时间一致性",
+      "llm_evidence": "弱监督视频分割中的时间一致性",
+      "canonical_evidence": "弱监督视频分割中的时间一致性",
+      "llm_tldr_en": "Proposes ARTEMIS for imperfectly supervised video polyp segmentation using agent-guided reliability-aware temporal mask evolution.",
+      "llm_tldr_cn": "该论文针对弱监督视频息肉分割中边界泄漏和时间一致性不足的问题，提出ARTEMIS框架。通过智能体引导的可靠性感知时间掩码演化，从稀疏标注生成密集且时间一致的掩码。实验表明在多个医学视频分割数据集上显著优于现有方法。",
+      "llm_tldr": "该论文针对弱监督视频息肉分割中边界泄漏和时间一致性不足的问题，提出ARTEMIS框架。通过智能体引导的可靠性感知时间掩码演化，从稀疏标注生成密集且时间一致的掩码。实验表明在多个医学视频分割数据集上显著优于现有方法。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.17334v1",
+      "source": "arxiv",
+      "title": "FATE: Pillar Encoding and Frequency-Aware Training for Event-Based Object Detection",
+      "abstract": "Event cameras are bio-inspired sensors that asynchronously capture logarithmic intensity changes, offering inherent advantages in high-speed and high-dynamic-range scenarios. However, the sparse and asynchronous nature of event streams poses a fundamental challenge for modern deep learning architectures. To enable compatibility with standard models, most existing approaches partition the accumulation window into fixed temporal sub-bins. While effective for spatial processing, this internal discretization discards fine-grained temporal structure and constrains inference to the low temporal frequencies imposed by training supervision. To address this limitation, we propose FATE, a unified framework built upon a novel Pillar Encoding (PE). While operating over discrete macro-accumulation windows dictated by the target frequency, PE avoids internal temporal sub-binning. It organizes events into spatial pillars and approximates their intra-window evolution via projection onto a continuous-time orthogonal polynomial basis. This formulation yields an L2-optimal representation that retains rich temporal dynamics in a dense pseudo-image, mitigating information loss under sparse event conditions. To fully leverage this representation, we introduce Frequency-Aware Training (FAT), a soft mean-teacher curriculum that generates temporally dense pseudo-labels, effectively bridging the mismatch between low-frequency supervision and high-frequency inference. Extensive experiments demonstrate that FATE generalizes across architectural paradigms and consistently outperforms strong baselines. It enables robust object detection at high temporal resolutions up to 200 Hz, while incurring minimal overhead in parameter count and inference latency",
+      "authors": [
+        "Md Tawheedul Islam Bhuian",
+        "Kyoung-Don Kang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-15T22:32:09+00:00",
+      "link": "https://arxiv.org/pdf/2606.17334v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "event-based object detection, video analytics",
+      "llm_evidence_cn": "基于事件的目标检测、视频分析",
+      "llm_evidence": "基于事件的目标检测、视频分析",
+      "canonical_evidence": "基于事件的目标检测、视频分析",
+      "llm_tldr_en": "Proposes FATE, a pillar encoding and frequency-aware training framework for event-based object detection, preserving temporal structure.",
+      "llm_tldr_cn": "针对事件相机数据稀疏异步的特点，提出FATE框架，采用柱状编码保留细粒度时间结构，并引入频率感知训练避免低频偏置。该方法在高速和高动态范围场景下实现了更优的检测精度和时序感知能力，适用于视频分析中的实时目标检测任务。",
+      "llm_tldr": "针对事件相机数据稀疏异步的特点，提出FATE框架，采用柱状编码保留细粒度时间结构，并引入频率感知训练避免低频偏置。该方法在高速和高动态范围场景下实现了更优的检测精度和时序感知能力，适用于视频分析中的实时目标检测任务。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.19528v1",
+      "source": "arxiv",
+      "title": "Techniques for Peak Memory Reduction for LoRA Fine-tuning of LLMs on Edge Devices",
+      "abstract": "Fine-tuning of Large Language Models (LLMs) using Low-Rank Adaptation (LoRA) on an end-user's data offers personalized experiences while keeping data private, but faces severe memory constraints on consumer hardware. Peak memory during fine-tuning often exceeds device limits, especially for models with billions of parameters and long-context training data. This paper introduces a suite of complementary techniques to reduce memory footprint without sacrificing model quality: (1) base model quantization with on-the-fly dequantization, (2) memory-efficient checkpointing combining selective activation caching and disk offloading, (3) softmax approximation using semantically relevant token subsets, and (4) logits masking. Experiments on Llama-3.2 3B and Qwen-2.5 3B demonstrate up to $26\\times$ and $28\\times$ reduction in peak memory, enabling fine-tuning on resource-constrained devices.",
+      "authors": [
+        "Hassan Dbouk",
+        "Matthias Reisser",
+        "Prathamesh Mandke",
+        "Likhita Arun Navali",
+        "Christos Louizos"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-17T19:20:06+00:00",
+      "link": "https://arxiv.org/pdf/2606.19528v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "memory reduction for LLM fine-tuning on edge devices",
+      "llm_evidence_cn": "边缘设备上大模型微调的内存减少",
+      "llm_evidence": "边缘设备上大模型微调的内存减少",
+      "canonical_evidence": "边缘设备上大模型微调的内存减少",
+      "llm_tldr_en": "Introduces a suite of techniques (quantization, checkpointing, softmax approximation) to reduce peak memory for LoRA fine-tuning on edge devices.",
+      "llm_tldr_cn": "针对边缘设备上LLM LoRA微调的内存瓶颈，提出组合技术：基模型量化与动态反量化、选择性激活缓存与磁盘卸载、软最大近似和logits掩码。实验在Llama-3.2上验证了在保持模型质量的前提下大幅降低峰值内存，使边缘设备上的个性化微调成为可能。",
+      "llm_tldr": "针对边缘设备上LLM LoRA微调的内存瓶颈，提出组合技术：基模型量化与动态反量化、选择性激活缓存与磁盘卸载、软最大近似和logits掩码。实验在Llama-3.2上验证了在保持模型质量的前提下大幅降低峰值内存，使边缘设备上的个性化微调成为可能。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
