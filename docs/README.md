@@ -6,30 +6,35 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-20
-- 运行时间：2026-06-20 21:32:05 UTC
+- 最新运行日期：2026-06-21
+- 运行时间：2026-06-21 20:45:07 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：0
-- 速读区：3
+- 本次总论文数：5
+- 精读区：3
+- 速读区：2
 
 ### 今日简报（AI）
-今日速读3篇论文，分别聚焦视频息肉分割、事件目标检测和LLM边缘端微调。最值得关注的是《ARTEMIS》提出的代理引导时序掩码进化方法（7.0分），以及《FATE》中频域感知训练方案（6.0分）。建议普通读者优先了解LLM在边缘设备上的低秩适配内存优化技巧。
-- 详情：[/202606/20/README](/202606/20/README)
+今日重点精读V2X系统编码优化与流视频生成服务两篇高分论文；最值得关注CABLE的云辅助带宽高效编码方案及TurboServe的经济高效视频流服务；建议深入探索云边协同在视频与通信场景的落地应用。
+- 详情：[/202606/21/README](/202606/21/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [CABLE: Cloud-Assisted Bandwidth-efficient LMM-based Encoding for V2X Systems](/202606/21/2606.19258v1-cable-cloud-assisted-bandwidth-efficient-lmm-based-encoding-for-v2x-systems)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：边缘-云视频感知，通过ROI上传实现高效视频分析
+2. [TurboServe: Serving Streaming Video Generation Efficiently and Economically](/202606/21/2606.19271v1-turboserve-serving-streaming-video-generation-efficiently-and-economically)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：流式视频生成服务系统，支持实时分块交付
+3. [Query-aware Routing for Filtered Approximate Nearest Neighbors Search](/202606/21/2606.19898v1-query-aware-routing-for-filtered-approximate-nearest-neighbors-search)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：查询感知路由为过滤ANN搜索按查询选择最佳方法，体现了模型选择。
 
 ### 速读区论文标签
-1. [ARTEMIS: Agent-guided Reliability-aware Temporal Mask Evolution for Imperfectly Supervised Video Polyp Segmentation](/202606/20/2606.20161v1-artemis-agent-guided-reliability-aware-temporal-mask-evolution-for-imperfectly-supervised-video-polyp-segmentation)  
+1. [An affordable hardware-aware neural architecture search for deploying convolutional neural networks on ultra-low-power computing platforms](/202606/21/2606.16290v1-an-affordable-hardware-aware-neural-architecture-search-for-deploying-convolutional-neural-networks-on-ultra-low-power-computing-platforms)  
    标签：评分：7.0/10、query:mec-video
-   evidence：弱监督视频分割中的时间一致性
-2. [FATE: Pillar Encoding and Frequency-Aware Training for Event-Based Object Detection](/202606/20/2606.17334v1-fate-pillar-encoding-and-frequency-aware-training-for-event-based-object-detection)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：基于事件的目标检测、视频分析
-3. [Techniques for Peak Memory Reduction for LoRA Fine-tuning of LLMs on Edge Devices](/202606/20/2606.19528v1-techniques-for-peak-memory-reduction-for-lora-fine-tuning-of-llms-on-edge-devices)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：边缘设备上大模型微调的内存减少
+   evidence：面向边缘设备的硬件感知神经架构搜索实现自动模型选择
+2. [Neural Events: Discrete Asynchronous Autoencoders for Event-Based Vision](/202606/21/2606.19835v1-neural-events-discrete-asynchronous-autoencoders-for-event-based-vision)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：实时事件视觉处理
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,210 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-21T20:42:09.664987+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2606.19258v1",
+      "source": "arxiv",
+      "title": "CABLE: Cloud-Assisted Bandwidth-efficient LMM-based Encoding for V2X Systems",
+      "abstract": "Cloud-hosted large multimodal models (LMMs) can provide strong open-vocabulary perception for Vehicle-to-Everything systems, but naively transmitting full-resolution frames from edge to cloud causes severe communication overhead and high cloud-side prefill latency. We present CABLE, a cloud-assisted bandwidth-efficient LMM-based encoding framework for edge-cloud perception. CABLE propagates the previous cloud segmentation mask on the edge using ego-motion compensation, refines it with residual-motion cues, and consolidates disconnected regions via a corridor envelope to form a robust region of interest (ROI). Only ROI-masked images are uploaded, while the cloud segmentation output is fed back as the prior for the next frame, forming a mask-to-ROI-to-LMM feedback loop. Experiments on five datasets (nuScenes, WOD-ZB, Waymo, KITTI, and CADC) show consistent communication savings while largely preserving perception, achieving $73$--$87\\%$ ROI pixel-coverage reduction with $5$--$8\\times$ estimated LMM prefill speedup at a modest detection-quality trade-off relative to full-frame inference.",
+      "authors": [
+        "Haohua Que",
+        "Zhipeng Bao",
+        "Qianyi Wu",
+        "Handong Yao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-06-17T16:35:23+00:00",
+      "link": "https://arxiv.org/pdf/2606.19258v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "edge-cloud video perception with ROI upload for efficient video analytics",
+      "llm_evidence_cn": "边缘-云视频感知，通过ROI上传实现高效视频分析",
+      "llm_evidence": "边缘-云视频感知，通过ROI上传实现高效视频分析",
+      "canonical_evidence": "边缘-云视频感知，通过ROI上传实现高效视频分析",
+      "llm_tldr_en": "CABLE uses ego-motion compensation to upload only ROI images from edge to cloud for perception, reducing bandwidth while maintaining accuracy.",
+      "llm_tldr_cn": "车联网边缘-云视频感知面临高带宽和延迟挑战。CABLE提出基于自运动补偿的ROI生成方法，利用前一帧云分割掩码，仅上传ROI区域，形成闭环反馈。实验表明该方法在保持高感知精度的同时显著降低通信开销和云侧处理延迟，为边缘视频分析提供了高效传输方案。",
+      "llm_tldr": "车联网边缘-云视频感知面临高带宽和延迟挑战。CABLE提出基于自运动补偿的ROI生成方法，利用前一帧云分割掩码，仅上传ROI区域，形成闭环反馈。实验表明该方法在保持高感知精度的同时显著降低通信开销和云侧处理延迟，为边缘视频分析提供了高效传输方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing applications in video analytics",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.19271v1",
+      "source": "arxiv",
+      "title": "TurboServe: Serving Streaming Video Generation Efficiently and Economically",
+      "abstract": "Streaming video generation is emerging as a new serving workload in which users interact with long-lived sessions that generate video progressively, chunk by chunk. Unlike offline video generation or typical LLM serving, streaming video generation must preserve session state across active and idle periods, repeatedly schedule ongoing sessions, and deliver each chunk under a tight latency target. This creates two key serving challenges in multi-user, multi-GPU environments: session duration heterogeneity, where long-running sessions make placement decisions suboptimal over time, and temporal user-demand heterogeneity, where the number of active sessions fluctuates sharply across bursts and idle periods.   We present TurboServe, the first serving system designed specifically for streaming video generation workloads. TurboServe formulates serving as an online scheduling problem that jointly coordinates session placement and GPU provisioning. Its closed-loop scheduling algorithm combines a migration-aware placement controller, which rebalances sessions across GPUs to reduce the maximum per-chunk latency, with a load-driven autoscaling controller, which adapts the GPU budget to workload variation for improved cost efficiency. To support these decisions at runtime, TurboServe implements coalesced chunk processing for batching concurrent active sessions on the same GPU, GPU-CPU offloading for session suspension and resumption, and NCCL-based GPU-GPU migration for online rebalancing. We evaluate TurboServe on real-world production traces from Shengshu Technology across multiple model sizes and GPU clusters with up to 64 NVIDIA B300 GPUs. Compared with baseline serving configurations, TurboServe reduces worst-case per-chunk latency by 37.5% and total GPU operating cost by 37.2% on average. Our code is publicly available at https://github.com/shengshu-ai/TurboServe.",
+      "authors": [
+        "Youhe Jiang",
+        "Haoxu Wang",
+        "Haotong Bao",
+        "Kai Jiang",
+        "Jianfei Chen",
+        "Jun Zhu",
+        "Fangcheng Fu",
+        "Jintao Zhang"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-06-17T16:48:36+00:00",
+      "link": "https://arxiv.org/pdf/2606.19271v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "streaming video generation serving system with real-time chunk delivery",
+      "llm_evidence_cn": "流式视频生成服务系统，支持实时分块交付",
+      "llm_evidence": "流式视频生成服务系统，支持实时分块交付",
+      "canonical_evidence": "流式视频生成服务系统，支持实时分块交付",
+      "llm_tldr_en": "TurboServe is the first serving system for streaming video generation, addressing session heterogeneity and temporal demand fluctuations to deliver each chunk under tight latency targets in multi-user GPU environments.",
+      "llm_tldr_cn": "流式视频生成作为一种新兴工作负载，面临会话时长异质性和用户需求波动等挑战。本文提出TurboServe，首个面向流式视频生成的服务系统，通过优化会话调度和资源分配，在多人GPU环境中实现低延迟视频块的实时生成，显著提升服务效率和经济性。",
+      "llm_tldr": "流式视频生成作为一种新兴工作负载，面临会话时长异质性和用户需求波动等挑战。本文提出TurboServe，首个面向流式视频生成的服务系统，通过优化会话调度和资源分配，在多人GPU环境中实现低延迟视频块的实时生成，显著提升服务效率和经济性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.19898v1",
+      "source": "arxiv",
+      "title": "Query-aware Routing for Filtered Approximate Nearest Neighbors Search",
+      "abstract": "Filtered ANN search, which combines vector similarity with attribute predicates, is a core primitive in modern vector databases and retrieval-augmented generation. We benchmark all major categorical filtered ANN methods across multiple datasets under three predicates and find that no single method dominates. Moreover, even within a single dataset and predicate type, the best method for a query can vary. Therefore, we propose a query-aware routing framework. A lightweight ML model predicts each candidate method's recall on the query, and the router consults an offline benchmark table that maps every method and parameter setting to its measured recall and QPS, then selects the method with the best recall--QPS trade-off. Our ablation study narrows 22 candidate features to a minimal set of three and we adopt regression rather than classification as the prediction target to sharpen accuracy. Our model is trained on six real-world datasets and applied to five unseen validation datasets. The final result shows that our router achieves state-of-the-art recall and QPS balance across all five validation datasets compared to existing filtered ANN baselines, while incurring negligible latency overhead.",
+      "authors": [
+        "Qianqian Xiong",
+        "Mengxuan Zhang"
+      ],
+      "primary_category": "cs.DB",
+      "categories": [
+        "cs.DB",
+        "cs.IR"
+      ],
+      "published": "2026-06-18T07:54:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.19898v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Query-aware routing selects best method per query for filtered ANN search, exemplifying model selection.",
+      "llm_evidence_cn": "查询感知路由为过滤ANN搜索按查询选择最佳方法，体现了模型选择。",
+      "llm_evidence": "查询感知路由为过滤ANN搜索按查询选择最佳方法，体现了模型选择。",
+      "canonical_evidence": "查询感知路由为过滤ANN搜索按查询选择最佳方法，体现了模型选择。",
+      "llm_tldr_en": "Proposes a query-aware routing framework that uses a lightweight ML predictor to select the best filtered ANN method per query based on recall-QPS tradeoff, demonstrating effective model selection.",
+      "llm_tldr_cn": "该论文针对过滤近似最近邻搜索中单一方法无法在所有查询上占优的问题，提出了一个查询感知路由框架，利用轻量级ML模型预测每个候选方法在查询上的召回率，并结合离线基准表选择最优方法。实验表明该框架能有效平衡召回率和查询性能，实现了查询级别的模型选择，对优化检索系统有重要意义。",
+      "llm_tldr": "该论文针对过滤近似最近邻搜索中单一方法无法在所有查询上占优的问题，提出了一个查询感知路由框架，利用轻量级ML模型预测每个候选方法在查询上的召回率，并结合离线基准表选择最优方法。实验表明该框架能有效平衡召回率和查询性能，实现了查询级别的模型选择，对优化检索系统有重要意义。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.16290v1",
+      "source": "arxiv",
+      "title": "An affordable hardware-aware neural architecture search for deploying convolutional neural networks on ultra-low-power computing platforms",
+      "abstract": "Hardware-aware neural architecture search (HW-NAS) allows the integration of Convolutional Neural Networks (CNNs) in microcontrollers devices by automatically designing neural architectures that can fit prearranged hardware constraints. However, state-of-the-art HW-NAS target high-performance microcontrollers, whose power consumption does not meet sensing nodes requirements. This work presents a HW-NAS generating tiny CNNs that can run on ultra-low-power microcontrollers, featuring a lightweight search procedure enabling its execution even on embedded devices. Empirical results on three well-known benchmarks for tiny computer vision proved that the proposed HW-NAS was able to generate tiny CNNs while preserving state-of-the-art classification accuracy.",
+      "authors": [
+        "Andrea Mattia Garavagno",
+        "Edoardo Ragusa",
+        "Antonio Frisoli",
+        "Paolo Gastaldo"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-15T06:51:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.16290v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "hardware-aware neural architecture search for edge device model selection",
+      "llm_evidence_cn": "面向边缘设备的硬件感知神经架构搜索实现自动模型选择",
+      "llm_evidence": "面向边缘设备的硬件感知神经架构搜索实现自动模型选择",
+      "canonical_evidence": "面向边缘设备的硬件感知神经架构搜索实现自动模型选择",
+      "llm_tldr_en": "HW-NAS generates tiny CNNs for ultra-low-power MCUs via lightweight search, enabling automated model selection for edge computer vision.",
+      "llm_tldr_cn": "现有硬件感知神经架构搜索（HW-NAS）针对高性能微控制器，功耗不满足传感节点需求。本文提出一种轻量级HW-NAS，为超低功耗微控制器自动设计微型卷积神经网络，搜索过程可在嵌入式设备上运行。在三个小视觉基准上的实验证明了其生成高效模型的能力。该方法为边缘计算场景下的模型选择提供了可迁移的自动化方案。",
+      "llm_tldr": "现有硬件感知神经架构搜索（HW-NAS）针对高性能微控制器，功耗不满足传感节点需求。本文提出一种轻量级HW-NAS，为超低功耗微控制器自动设计微型卷积神经网络，搜索过程可在嵌入式设备上运行。在三个小视觉基准上的实验证明了其生成高效模型的能力。该方法为边缘计算场景下的模型选择提供了可迁移的自动化方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.19835v1",
+      "source": "arxiv",
+      "title": "Neural Events: Discrete Asynchronous Autoencoders for Event-Based Vision",
+      "abstract": "Event cameras capture dynamic scenes with exceptional temporal fidelity by representing them as a continuous stream of microsecond resolution \\textit{events}. Each individual event, however, only carries minimal semantic value, merely signaling a localized brightness change. To derive meaningful signals, downstream algorithms need to quickly integrate cues from a potentially massive torrent of low-information events. Current architectures, however, are easily overwhelmed, struggling to balance capturing fine-grained temporal dynamics and maintaining a manageable data throughput. This paper proposes a framework to re-tokenize event streams into a small set of highly informative \\textit{neural events}, each representing a local spatio-temporal context window with a discrete learnable code. Every time this code flips, a neural event is triggered, yielding a highly compressed data stream. We demonstrate that, across object detection and classification, networks trained on neural events are on par or surpass the performance of state-of-the-art approaches while reducing the event rate by a factor of 2.0.",
+      "authors": [
+        "Roberto Pellerito",
+        "Daniel Gehrig",
+        "Shintaro Shiba",
+        "Davide Scaramuzza"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-18T06:26:25+00:00",
+      "link": "https://arxiv.org/pdf/2606.19835v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "real-time event-based vision processing",
+      "llm_evidence_cn": "实时事件视觉处理",
+      "llm_evidence": "实时事件视觉处理",
+      "canonical_evidence": "实时事件视觉处理",
+      "llm_tldr_en": "Proposes neural events framework to re-tokenize event streams into informative representations for efficient processing.",
+      "llm_tldr_cn": "事件相机产生微秒级分辨率的事件流，但单个事件语义少，下游算法处理大量事件困难。本文提出神经事件框架，将事件流重标记为一小组高信息量的神经事件，每个表示局部时空上下文。该方法平衡了细粒度时序动态和数据吞吐量。实验表明，神经事件在多个事件视觉任务上提升了效率并保持了准确性。",
+      "llm_tldr": "事件相机产生微秒级分辨率的事件流，但单个事件语义少，下游算法处理大量事件困难。本文提出神经事件框架，将事件流重标记为一小组高信息量的神经事件，每个表示局部时空上下文。该方法平衡了细粒度时序动态和数据吞吐量。实验表明，神经事件在多个事件视觉任务上提升了效率并保持了准确性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
