@@ -6,35 +6,28 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-21
-- 运行时间：2026-06-21 20:45:07 UTC
+- 最新运行日期：2026-06-22
+- 运行时间：2026-06-22 22:27:34 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：3
-- 速读区：2
+- 本次总论文数：2
+- 精读区：1
+- 速读区：1
 
 ### 今日简报（AI）
-今日重点精读V2X系统编码优化与流视频生成服务两篇高分论文；最值得关注CABLE的云辅助带宽高效编码方案及TurboServe的经济高效视频流服务；建议深入探索云边协同在视频与通信场景的落地应用。
-- 详情：[/202606/21/README](/202606/21/README)
+今日精读《FrequencyFormer》提出频域ViT的传感器-处理器协同设计，速读《EdgeZSAD》关注边缘端零样本异常检测。  
+最值得关注的结论：频域ViT推理通过软硬件协同优化可大幅提升效率，边缘设备零样本检测具备实用潜力。  
+建议普通读者重点关注频域ViT与边缘AI结合的实际部署路径。
+- 详情：[/202606/22/README](/202606/22/README)
 
 ### 精读区论文标签
-1. [CABLE: Cloud-Assisted Bandwidth-efficient LMM-based Encoding for V2X Systems](/202606/21/2606.19258v1-cable-cloud-assisted-bandwidth-efficient-lmm-based-encoding-for-v2x-systems)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：边缘-云视频感知，通过ROI上传实现高效视频分析
-2. [TurboServe: Serving Streaming Video Generation Efficiently and Economically](/202606/21/2606.19271v1-turboserve-serving-streaming-video-generation-efficiently-and-economically)  
+1. [FrequencyFormer: A Co-Designed Sensor-to-Processor Pipeline for Frequency-Domain Vision Transformer Inference](/202606/22/2606.19574v1-frequencyformer-a-co-designed-sensor-to-processor-pipeline-for-frequency-domain-vision-transformer-inference)  
    标签：评分：8.0/10、query:mec-video
-   evidence：流式视频生成服务系统，支持实时分块交付
-3. [Query-aware Routing for Filtered Approximate Nearest Neighbors Search](/202606/21/2606.19898v1-query-aware-routing-for-filtered-approximate-nearest-neighbors-search)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：查询感知路由为过滤ANN搜索按查询选择最佳方法，体现了模型选择。
+   evidence：传感器边缘视觉Transformer推理，频域压缩，高效边缘部署
 
 ### 速读区论文标签
-1. [An affordable hardware-aware neural architecture search for deploying convolutional neural networks on ultra-low-power computing platforms](/202606/21/2606.16290v1-an-affordable-hardware-aware-neural-architecture-search-for-deploying-convolutional-neural-networks-on-ultra-low-power-computing-platforms)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：面向边缘设备的硬件感知神经架构搜索实现自动模型选择
-2. [Neural Events: Discrete Asynchronous Autoencoders for Event-Based Vision](/202606/21/2606.19835v1-neural-events-discrete-asynchronous-autoencoders-for-event-based-vision)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：实时事件视觉处理
+1. [EdgeZSAD: Practical Zero-Shot Anomaly Detection on Edge Devices](/202606/22/2606.16119v1-edgezsad-practical-zero-shot-anomaly-detection-on-edge-devices)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：边缘设备上的零样本异常检测，高效ViT骨干，可在Jetson上部署
 
 
 <div class="dpr-home-promo-card">

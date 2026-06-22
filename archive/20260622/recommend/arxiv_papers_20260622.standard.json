@@ -1,0 +1,96 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-22T22:25:49.296303+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2606.19574v1",
+      "source": "arxiv",
+      "title": "FrequencyFormer: A Co-Designed Sensor-to-Processor Pipeline for Frequency-Domain Vision Transformer Inference",
+      "abstract": "Deploying vision transformers (ViTs) on sensor-edge systems is limited not only by on-device compute, but also by the energy and bandwidth required to transmit high-dimensional image data from the sensor to the processor. While in-sensor and near-sensor computing reduce this cost through early feature extraction, existing methods often provide only modest compression. We observe that the frequency domain provides a naturally compact representation of visual information and can be exploited at the sensor level to reduce sensor-to-processor data movement. Building on this insight, we present FrequencyFormer, a co-designed sensor-to-processor pipeline for efficient ViT inference. FrequencyFormer includes: (1) a multi-scale DCT tokenizer that compresses a 224x224 image into compact frequency-domain tokens, achieving up to 128x reduction in off-chip data volume with modest accuracy loss; (2) a LUT-based near-sensor hardware implementation that leverages fixed DCT coefficients for multiplier-free, energy- and area-efficient tokenization; and (3) a modified MIPI-based low-power communication architecture that further reduces transfer energy. FrequencyFormer serves as a drop-in replacement for standard ViT patch embedding and remains compatible with pretrained backbones across classification, detection, and segmentation tasks. The pipeline achieves 28.8 TOPS/W, reduces communication energy by 230x, and lowers total sensor-side energy by 2.22x, demonstrating frequency-domain tokenization as a scalable foundation for in-sensor ViT deployment.",
+      "authors": [
+        "Chengwei Zhou",
+        "Ovishake Sen",
+        "Xuming Chen",
+        "Rishith Paramasivam",
+        "Shaahin Angizi",
+        "Swarup Bhunia",
+        "Baibhab Chatterjee",
+        "Gourav Datta"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "published": "2026-06-17T20:28:16+00:00",
+      "link": "https://arxiv.org/pdf/2606.19574v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "sensor-edge vision transformer inference, frequency-domain compression, efficient edge deployment",
+      "llm_evidence_cn": "传感器边缘视觉Transformer推理，频域压缩，高效边缘部署",
+      "llm_evidence": "传感器边缘视觉Transformer推理，频域压缩，高效边缘部署",
+      "canonical_evidence": "传感器边缘视觉Transformer推理，频域压缩，高效边缘部署",
+      "llm_tldr_en": "FrequencyFormer proposes a co-designed sensor-to-processor pipeline for efficient vision transformer inference on edge devices, using frequency-domain compression to reduce data movement.",
+      "llm_tldr_cn": "FrequencyFormer提出了一种传感器到处理器的协同设计流水线，通过频域压缩减少传感器与处理器之间的数据移动，从而在边缘设备上实现高效的视觉Transformer推理。该方法包含多分辨率子带感知器、轻量特征编码和融合注意力机制，显著降低了延迟和能耗。实验表明，在保持精度的前提下，传感器到处理器的数据传输量减少了一个数量级，非常适合边缘视频分析场景。",
+      "llm_tldr": "FrequencyFormer提出了一种传感器到处理器的协同设计流水线，通过频域压缩减少传感器与处理器之间的数据移动，从而在边缘设备上实现高效的视觉Transformer推理。该方法包含多分辨率子带感知器、轻量特征编码和融合注意力机制，显著降低了延迟和能耗。实验表明，在保持精度的前提下，传感器到处理器的数据传输量减少了一个数量级，非常适合边缘视频分析场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.16119v1",
+      "source": "arxiv",
+      "title": "EdgeZSAD: Practical Zero-Shot Anomaly Detection on Edge Devices",
+      "abstract": "Industrial inspection needs zero-shot anomaly detection (ZSAD) that remains useful under edge deployment constraints. Recent methods often rely on ViT-L foundation backbones (~300M parameters), which exceed the memory and operator budget of typical embedded hardware. We study this regime through EdgeZSAD, a compact reference system built around a TinyViT-21M-512 backbone, an asymmetric global-local readout (EdgeGLR), and a reproducible source-side training recipe (Real-IAD-DR). We train a single checkpoint in a source-trained, target-unseen protocol and evaluate it across six industrial benchmarks. Across three independent runs, the resulting model reaches an average image AUROC of 91.6 on MVTec-AD and 88.2 on VisA, while remaining directly deployable on Jetson Orin Nano Super (TensorRT FP16) and RB5 Gen2 (QNN GPU FP16). Across the six device-rescored benchmarks, image-AUROC drift stays below 0.2 points, indicating that the exported graph preserves host-side ranking behavior in the evaluated deployment setting.",
+      "authors": [
+        "Taewan Cho",
+        "Andrew Jaeyong Choi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-15T02:17:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.16119v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "zero-shot anomaly detection on edge devices, efficient ViT backbone, deployable on Jetson",
+      "llm_evidence_cn": "边缘设备上的零样本异常检测，高效ViT骨干，可在Jetson上部署",
+      "llm_evidence": "边缘设备上的零样本异常检测，高效ViT骨干，可在Jetson上部署",
+      "canonical_evidence": "边缘设备上的零样本异常检测，高效ViT骨干，可在Jetson上部署",
+      "llm_tldr_en": "EdgeZSAD presents a compact zero-shot anomaly detection system for edge devices using a TinyViT backbone, achieving strong performance while being deployable on Jetson platforms.",
+      "llm_tldr_cn": "EdgeZSAD提出了一个面向边缘设备的紧凑型零样本异常检测系统，采用TinyViT-21M骨干网络和不对称全局局部读取模块，在保持较低参数量的同时达到接近大模型的检测精度。在MVTec-AD和VisA基准上取得高AUROC，并可在Jetson嵌入式设备上直接运行。该方法为边缘视频分析中的异常检测提供了可落地的技术方案。",
+      "llm_tldr": "EdgeZSAD提出了一个面向边缘设备的紧凑型零样本异常检测系统，采用TinyViT-21M骨干网络和不对称全局局部读取模块，在保持较低参数量的同时达到接近大模型的检测精度。在MVTec-AD和VisA基准上取得高AUROC，并可在Jetson嵌入式设备上直接运行。该方法为边缘视频分析中的异常检测提供了可落地的技术方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+Title: EdgeZSAD: Practical Zero-Shot Anomaly Detection on Edge Devices
+
+URL Source: https://arxiv.org/pdf/2606.16119v1
+
+Published Time: Tue, 16 Jun 2026 01:34:06 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# EdgeZSAD: Practical Zero-Shot Anomaly Detection on Edge Devices 
+
+## Taewan Cho 1,2 Andrew Jaeyong Choi 11Gachon University 2Plaid Labs Inc. 
+
+## {taewan2002, andrewjchoi }@gachon.ac.kr technoking@plaid.ai.kr 
+
+## Abstract 
+
+Industrial inspection needs zero-shot anomaly detection (ZSAD) that remains useful under edge deployment con-straints. Recent methods often rely on ViT-L foundation backbones ( ∼300 M parameters), which exceed the mem-ory and operator budget of typical embedded hardware. We study this regime through EdgeZSAD , a compact ref-erence system built around a TinyViT-21M-512 backbone, an asymmetric global-local readout ( EdgeGLR ), and a re-producible source-side training recipe ( Real-IAD-DR ). We train a single checkpoint in a source-trained, target-unseen protocol and evaluate it across six industrial benchmarks. Across three independent runs, the resulting model reaches an average image AUROC of 91 .6 on MVTec-AD and 88 .2
+
+on VisA, while remaining directly deployable on Jetson Orin Nano Super (TensorRT FP16) and RB5 Gen2 (QNN GPU FP16). Across the six device-rescored benchmarks, image-AUROC drift stays below 0.2 points, indicating that the ex-ported graph preserves host-side ranking behavior in the evaluated deployment setting. 
+
+## 1. Introduction 
+
+Zero-shot anomaly detection (ZSAD) detects anoma-lous images and localizes defective regions in a source-trained, target-unseen cross-dataset setting, with no target-class sample seen during training. This protocol matches industrial inspection, where real defects are sparse, hetero-geneous, and rarely available before deployment. Recent methods push accuracy with large ViT-L foundation back-bones [1, 2], prompt learning, and high-resolution feature aggregation [3–8]. A 300M-parameter foundation back-bone may be acceptable on a workstation GPU, but it ex-ceeds the memory and operator budget of typical embedded hardware. This paper studies a practical operating point: one com-pact deployed graph, one source-trained checkpoint, and di-rect validation on real edge devices. Rather than chasing the host-only ceiling of large foundation models [8], we ask how much zero-shot utility remains once export and runtime 
+
+Figure 1. Accuracy–scale trade-off across industrial ZSAD meth-ods. The vertical axis reports MVTec image AUROC and the hori-zontal axis reports backbone parameters. EdgeZSAD operates at a much smaller scale than the CLIP-L and DINOv2-L families while remaining validated on real edge devices. 
+
+constraints are enforced. Our study centers on EdgeZSAD , a compact deployed system with three components. The deployed backbone is TinyViT-21M-512 [9]. EdgeGLR combines a stable global branch with a sparse local branch to form the image score. In the selected configuration, the local score uses a top-k ratio of 0.01 and a fusion weight λ = 0 .50 . The train-ing side uses Real-IAD-DR , a reproducible source-side recipe derived from Real-IAD [10] that increases source-side difficulty without enlarging the deployed graph. Our contributions are threefold. First, we define a deployment-constrained industrial ZSAD regime and in-stantiate it with a single compact TinyViT-21M-512 + EdgeGLR graph that remains exportable to real edge run-times. Second, we introduce Real-IAD-DR as a deter-ministic source-side recipe for compact zero-shot industrial AD, separating training-signal design from deployed-model 1                       
+
+> arXiv:2606.16119v1 [cs.CV] 15 Jun 2026 Figure 2. EdgeZSAD architecture and EdgeGLR. The TinyViT-21M-512 vision encoder produces a final-stage feature map F4that feeds two branches with different aggregation rules. The GRB (blue) applies global average pooling and a linear head to produce a stable ranking probability sg. The SCB (peach) applies a depthwise-separable mask head m(·)to predict a dense anomaly map P(x), then reduces
+> σ(P(x)) by sparse top-kpooling to a local correction term sl. The final image score uses global-local fusion, p(x)=(1 −λ)sg+λs l, with
+> λ=0 .50 and top-kratio 0.01 .
+
+complexity. Third, we evaluate the same checkpoint across six held-out targets and report accuracy, scale, runtime, and host-to-device fidelity as joint criteria, including mean and standard deviation over three runs for the main reported model and direct validation on Jetson Orin Nano Super and RB5 Gen2. 
+
+## 2. Related Work 
+
+2.1. Zero-Shot Anomaly Detection 
+
+Recent ZSAD methods are largely driven by large pre-trained encoders. CLIP-based systems such as WinCLIP, AnomalyCLIP, AdaCLIP, APRIL-GAN, and CLIP-AD im-prove prompting, window aggregation, or anomaly-aware embeddings on top of CLIP ViT-L/14 [1, 3–5, 11, 12]. Vision-only methods such as UniADet and VisualAD re-place language guidance with large visual backbones such as DINOv2 [2, 8, 13]. These methods define the current host-accuracy frontier, but they do not target the deploy-ment regime studied here. Our goal is narrower: zero-shot transfer that remains useful after the model is constrained to an embedded budget. 
+
+2.2. Efficient Backbones and Edge Anomaly Detec-tion 
+
+Compact industrial AD studies typically operate under a different protocol. EfficientAD and earlier industrial AD lines assume access to target-domain normal data, so they do not address cross-dataset zero-shot transfer [14–17]. Real-IAD broadens industrial AD with a larger multi-view benchmark [10]; we use it as the basis for Real-IAD-DR, a deterministic source-side extension (Section 3). Once the deployed model class is fixed, source-corpus design is one of the few remaining degrees of freedom. We also com-pare against neighboring efficient backbones—FastViT, Ef-ficientFormer, EfficientNet, EfficientNetV2, RegNetY, and MobileNetV3—spanning vision-transformer, hybrid, and convolutional designs [9, 18–23], to test whether the ob-served gains come from the source corpus alone or from its combination with the scoring head. This distinction motivates our setup. In large-backbone ZSAD, representation capacity often dominates the final re-sult. In compact edge models, source quality and score for-mation matter more because there is less capacity to com-pensate for weak supervision or noisy localization cues. Our method therefore varies the source corpus and the scor-ing head while keeping the deployed backbone class fixed. 
+
+2.3. Global-Local Scoring 
+
+Image-level ranking and pixel-level localization favor different signals. Prior work therefore separates global con-text from local detail [3, 4, 24, 25]. EdgeGLR keeps that separation in a compact, export-friendly form: the GRB handles ranking, the SCB predicts the anomaly map, and the final image score fuses the global score with a top-k re-duction of the local map. The design target is practical de-ployment, where decoders and heavier multi-stage feature aggregation can break the edge budget even when host-side accuracy is attractive. 23. Method 
+
+EdgeZSAD combines a compact deployed graph with a heavier off-device training recipe. Figure 2 summarizes the pipeline. At inference time, the deployed graph consists only of TinyViT-21M-512 and EdgeGLR. This split is deliberate. We keep the exported model sim-ple enough for TensorRT and QNN, and move additional ef-fort to source-corpus construction and checkpoint selection, which change the training procedure but not the deployed operator path. 
+
+3.1. TinyViT Backbone 
+
+We use TinyViT-21M-512 as the compact backbone [9]. It is a four-stage hierarchical encoder with channel widths 
+
+(96 , 192 , 384 , 576) . We denote its stage outputs by {Fi}4
+
+> i=1
+
+and use the final stage feature map for both prediction heads. This is a conservative choice. We do not rely on multi-stage decoders, memory banks, or auxiliary encoders at inference time. 
+
+3.2. EdgeGLR 
+
+Asymmetric pooling principle. Global image ranking and dense localization favor different aggregation rules. A pooled global descriptor carries a stable ranking signal but weak localization, while a dense map carries fine localiza-tion but noisier image-level evidence. EdgeGLR exploits this asymmetry with a stable global branch and a sparse lo-cal branch. In the reported evaluation setting, we use a top-k
+
+ratio of 0.01 and a fusion weight λ = 0 .50 . The asymmetry is therefore architectural: global average pooling forms the ranking branch, while sparse top-k pooling extracts local-ized evidence from the dense map. 
+
+Global-Ranking Branch (GRB). The final backbone feature map is pooled into a single descriptor and passed through a linear layer to predict a global image probability, 
+
+sg (x) = σ(h(GAP( F4))) , (1) where GAP is global average pooling and h is a linear head. The GRB supplies the stable ranking term used by the final image score. 
+
+Spatial-Correction Branch (SCB). The same final-stage feature map is passed to a lightweight convolutional predic-tor that produces a dense anomaly map, 
+
+P (x) = m(F4), (2) where m is a depthwise-separable convolutional predic-tor followed by bilinear upsampling. We then reduce the anomaly map to a scalar local score by averaging the top-k
+
+anomaly probabilities, with the top-k ratio set to 0.01 of the dense map (Table 2): 
+
+sl(x) = TopKMean( σ(P (x))) . (3) The reported image anomaly probability then fuses the global and sparse local scores, 
+
+p(x) = (1 − λ) sg (x) + λ s l(x), (4) where λ = 0 .50 in the selected configuration. This lets the global descriptor and sparse local evidence contribute equally to image-level ranking, while the local score re-mains selective through top-k pooling. The dense map 
+
+P (x) also serves as the pixel-level localization output re-ported in Tables 1 and 5. 
+
+3.3. Real-IAD-DR Source Corpus 
+
+Source-side difficulty reshaping. When the deployed graph is fixed by hardware, the source-side training recipe becomes a major accuracy lever. We frame this as source-side difficulty reshaping : restructuring training-time diffi-culty without changing the deployed graph. Real-IAD-DR is our instantiation—a deterministic recipe derived from the public Real-IAD multi-view object set [10], de-signed for compact-model training rather than as a new target benchmark. We preserve the original object, sam-ple, and view identifiers, and reshape difficulty offline in two ways. First, we synthesize local defects on normal regions with a GLASS-inspired recipe that favors subtle scratches, low-contrast contamination, and thin texture dis-continuities [17]. Second, we add edge-aware corruptions such as blur, compression, illumination shift, and mild sen-sor noise so the compact model sees anomaly cues under deployment-like image degradation. The construction remains conservative: for each par-ent row in Real-IAD we keep at most one canonical local-synthesis sample and one canonical corruption sample, then retain only the final filtered release rows (Figure 3). The 
+
+> Figure 3. Composition of the Real-IAD-DR training split: origi-nal images dominate, with an edge-corruption family and a small filtered local-defect set.
+
+3Table 1. Industrial ZSAD reference comparison. Each cell reports image AUROC / pixel AUROC / pixel PRO (mean ± std over 3 runs for Ours). The best, second-best, and third-best results for each metric and dataset are highlighted in red, blue, and green. Baseline numbers are taken from [8].                                                                                     
+
+> Dataset WinCLIP APRIL-GAN CLIP-AD AnomalyCLIP AdaCLIP VisualAD (CLIP) VisualAD (DINOv2) Ours (3 runs)
+> Backbone CLIP-L CLIP-L CLIP-L CLIP-L CLIP-L CLIP-L DINOv2-L TinyViT
+> Params (M) 303 303 303 303 303 303 304 21 (↓14 ×)
+> FLOPs (G) 382 382 382 382 382 382 1014 54 (↓7×)
+> MVTec-AD 90.4/82.3/62.0 86.1/87.5/43.7 74.1/77.9/55.7 91.6/91.0/81.7 92.0/88.5/47.6 92.2/90.8/87.5 90.1/91.3/88.6 91.6 ±0.3 / 79.3 ±0.6 / 67.8 ±2.2 VisA 75.6/73.2/51.1 77.4/93.8/86.5 66.2/93.0/80.2 81.0/95.4/86.4 79.7/95.1/71.3 84.7/95.8/91.0 83.1/95.3/88.2 88.2 ±1.0 / 92.9 ±0.6 / 74.2 ±2.8 BTAD 68.2/72.7/27.3 73.7/91.3/21.0 66.7/80.9/41.4 88.7/93.0/71.0 90.0/87.7/17.1 94.9/91.1/80.4 88.2/93.4/76.7 88.3 ±1.0 / 86.4 ±1.4 / 54.5 ±1.9 KSDD2 93.5/94.1/77.6 90.4/94.5/39.2 81.7/95.6/73.5 91.9/98.0/90.8 94.9/96.1/40.8 98.0/98.5/98.5 97.7/98.9/98.9 94.6 ±0.4 / 88.1 ±1.0 / 71.8 ±1.1 DAGM 91.8/87.6/65.7 94.4/84.4/12.7 62.1/69.1/36.1 98.0/96.9/89.2 98.3/88.6/37.6 99.5/92.2/89.3 93.2/89.5/84.5 91.2 ±1.3 / 81.3 ±2.1 / 56.6 ±4.7 DTD-Syn 95.1/79.5/51.5 94.9/61.0/33.8 75.1/86.6/63.2 93.7/97.5/87.9 92.1/95.1/34.3 97.5/98.1/94.8 91.0/96.7/92.4 92.4 ±1.3 / 81.4 ±0.1 / 63.5 ±1.5
+
+more aggressive local-defect synthesis is heavily filtered before release, so the final corpus shifts difficulty more than semantic content. The released training split contains 
+
+216 ,917 images across 30 object categories ( 136 ,205 orig-inal, 79 ,688 edge-corruption, 1,024 local-defect) together with a disjoint 14 ,845 -image validation split, all determin-istically reproducible from the public Real-IAD source. The construction is fully reproducible: we release the generation script, per-row manifests with content hashes, and split identifiers so the source can be deterministi-cally regenerated from the public Real-IAD release (we cannot redistribute the derived raw images per upstream terms). Real-IAD-DR changes only the source-side train-ing difficulty—the deployed EdgeGLR graph, runtime path, and target-side benchmark protocol are unchanged—so any gain reflects a source-side data effect rather than a hidden 
+
+Table 2. Architecture and training hyperparameters for the default reported configuration. 
+
+Setting Value 
+
+Architecture 
+
+Backbone TinyViT-21M-512 Feature stage used by heads Stage 4 only Image head GAP + linear Mask head depthwise 3×3 + GELU + 1×1 conv Image score fusion (1 − λ)sg + λs l
+
+Local top-k ratio 0.01 Fusion weight ( λ) 0.50 
+
+Supervision loss weight 
+
+Image BCE 1.0 Mask BCE 2.0 
+
+Optimization 
+
+Optimizer AdamW Learning rate 1 × 10 −4
+
+LR schedule Cosine Weight decay 1 × 10 −4
+
+Batch size 32 Steps 2000 EMA decay 0.999 
+
+change in the deployed model. The total training objective combines image-level super-vision and pixel-level localization supervision: 
+
+L = λimg Limg + λmask Lmask , (5) where Limg is binary cross-entropy on the fused image anomaly score and Lmask is binary cross-entropy on the dense anomaly map. In the selected recipe we use λimg = 1 
+
+and λmask = 2, train with AdamW for 2000 steps, and keep an exponential moving average (EMA) of the model weights. At inference time, only the TinyViT backbone with EdgeGLR is executed. 
+
+## 4. Experiments 
+
+4.1. Setup 
+
+Datasets, protocol, and metrics. We evaluate on the in-dustrial benchmark scope used by VisualAD [8]: MVTec-AD [26], VisA [27], BTAD [28], KSDD2 [29], DAGM [30], and DTD-Synthetic [8, 31]. A single EdgeZSAD check-point, trained on the Real-IAD-DR source corpus (Sec-tion 3), is used for the host-side benchmark rows: no sam-ple from any target benchmark, normal or anomalous, is seen during training. Following standard ZSAD conven-tion [3, 4, 11], zero-shot here refers to disjoint target classes at training time, not to the absence of training. We do not retrain the VisualAD baselines; we use their reported num-bers from [8] only as an accuracy–scale reference because source data, optimization, and deployment constraints dif-fer. Image-level metrics are AUROC, F1-max, and AP; pixel-level metrics are AUROC and PRO. The proposed EdgeZSAD results in Tables 1 and 5 are reported as mean and standard deviation over three independent runs. 
+
+Model, deployment, and training. Our default model is TinyViT-21M-512 with EdgeGLR. We target Jetson Orin Nano Super and RB5 Gen2 as representatives of two distinct edge ecosystems—NVIDIA’s embedded GPU stack (Ten-sorRT) and Qualcomm’s mobile-class SoC (QNN)—that 4Table 3. Source-corpus comparison under the same EdgeGLR training recipe. Each cell reports image AUROC / pixel AUROC / pixel PRO. Only the source corpus differs between rows. These are independent ablation runs (single seed each) and therefore differ from the main checkpoint in Table 1 by run-level variance. 
+
+Source corpus MVTec-AD VisA BTAD KSDD2 Real-IAD 89.56 / 72.02 / 48.68 84.58 / 81.92 / 47.99 78.27 / 75.37 / 40.61 93.25 / 82.13 / 66.09 
+
+Real-IAD-DR 92.43 / 78.22 / 66.57 88.67 / 92.71 / 74.54 88.90 / 86.60 / 53.06 94.78 / 82.94 / 61.93 
+
+Table 4. Accuracy, scale, and edge-runtime summary by backbone family. Parameters and FLOPs are measured for the vision backbone only. Edge runtime (ms / FPS) is the mean of 100 inference passes after 20 warm-up iterations. Large-backbone edge values are backbone-only feasibility probes, not full-method runtime. Backbone Input Scale Host image AUROC Edge runtime Params (M) FLOPs (G) MVTec-AD VisA Jetson RB5 CLIP ViT-L/14 family 336 303.51 381.92 92.2 84.7 130.26 / 7.68 403.42 / 2.48 DINOv2 ViT-L/14 family 518 304.37 1013.61 90.1 83.1 301.33 / 3.32 Resize fail 
+
+TinyViT-21M-512 (ours) 512 21.27 53.77 91.6 88.2 32.83 / 30.46 139.97 / 7.14 Table 5. Edge-device evaluation (mean ± std over 3 runs). Image-level cells report AUROC / F1-max / AP and pixel-level cells report AUROC / PRO. Max host-vs-device AUROC drift remains below 0.2 points across all runs. 
+
+Dataset Jetson image-level Jetson pixel-level RB5 image-level RB5 pixel-level MVTec 91.6 ±0.3 / 92.1 ±0.2 / 95.6 ±0.1 79.3 ±0.6 / 67.8 ±2.2 91.6 ±0.3 / 92.1 ±0.2 / 95.6 ±0.1 79.3 ±0.6 / 67.8 ±2.2 VisA 88.2 ±1.0 / 85.4 ±0.8 / 91.6 ±0.5 92.9 ±0.6 / 74.2 ±2.8 88.2 ±1.0 / 85.4 ±0.8 / 91.6 ±0.5 92.9 ±0.6 / 74.2 ±2.8 BTAD 88.3 ±1.0 / 82.2 ±0.5 / 81.2 ±0.6 86.4 ±1.4 / 54.5 ±1.9 88.3 ±1.0 / 82.2 ±0.5 / 81.2 ±0.6 86.4 ±1.4 / 54.5 ±1.9 KSDD2 94.6 ±0.4 / 84.2 ±0.7 / 88.1 ±0.4 88.1 ±1.0 / 71.8 ±1.1 94.6 ±0.4 / 84.2 ±0.7 / 88.1 ±0.4 88.1 ±1.0 / 71.8 ±1.1 DAGM 91.2 ±1.3 / 79.1 ±1.0 / 79.2 ±1.2 81.3 ±2.1 / 56.6 ±4.7 91.2 ±1.3 / 79.1 ±1.0 / 79.2 ±1.2 81.3 ±2.1 / 56.6 ±4.7 DTD-Syn 92.4 ±1.3 / 94.2 ±0.4 / 97.7 ±0.2 81.4 ±0.1 / 63.5 ±1.5 92.4 ±1.3 / 94.2 ±0.4 / 97.7 ±0.2 81.4 ±0.1 / 63.5 ±1.5 
+
+Table 6. EdgeGLR ablation under the full held-out protocol (single-seed). Each cell reports image AUROC / pixel AUROC / pixel PRO. 
+
+GRB-only and SCB-only variants share the same dense pixel head as the main recipe and differ only in image-score fusion, so their pixel columns match the main row by construction; Simple head replaces both branches. 
+
+Variant MVTec-AD VisA BTAD KSDD2 
+
+Main EdgeGLR 91.34 / 78.74 / 65.66 89.17 / 92.26 / 71.32 89.25 / 87.75 / 56.38 94.96 / 87.11 / 72.85 
+
+GRB-only score 91.17 / 78.74 / 65.66 89.41 / 92.26 / 71.32 88.77 / 87.75 / 56.38 95.16 / 87.11 / 72.85 SCB-only score 88.30 / 78.74 / 65.66 79.32 / 92.26 / 71.32 88.84 / 87.75 / 56.38 89.69 / 87.11 / 72.85 Simple head 81.44 / 72.28 / 53.03 66.96 / 71.00 / 44.47 73.05 / 73.64 / 40.79 90.83 / 67.85 / 34.54 
+
+differ in compute primitives, operator coverage, and quan-tization tooling. Edge deployment uses TensorRT FP16 on Jetson (MAXN 25W mode) and QNN GPU FP16 on RB5, with disable node optimizations=true for a sta-ble RB5 graph. For the current host-side recipe, we train directly from Real-IAD-DR source labels and pixel masks with AdamW (lr 1 × 10 −4, weight decay 1 × 10 −4), batch size 32 , input 512 × 512 , fp16 mixed precision, and an ex-ponential moving average (EMA) with decay 0.999 . Un-less otherwise noted, host checkpoints are trained for 2000 
+
+steps and evaluated on held-out industrial targets at the same 
+
+512 ×512 resolution. Table 2 lists the architecture and train-ing settings used by this compact-student path. 
+
+4.2. Industrial Zero-Shot Benchmark 
+
+Table 1 places EdgeZSAD beside large-backbone indus-trial ZSAD references reported by VisualAD. All baselines use CLIP ViT-L/14 or DINOv2 ViT-L/14 backbones (303– 304M parameters), whereas EdgeZSAD uses a 21.27M TinyViT backbone. The comparison is intentionally indi-rect: these references were not retrained under our source corpus, optimization schedule, or deployment path. We 5therefore use Table 1 only to show where one deployable compact checkpoint falls within the broader accuracy–scale landscape defined by recent large-backbone references. Under that lens, the full-set results support two claims. First, the compact model remains competitive on image-level ranking under the full benchmark splits rather than re-duced subsets: EdgeZSAD stays within the operating range of large-backbone references on MVTec-AD, VisA, BTAD, and KSDD2 (Table 1) while using a much smaller encoder. Second, the pixel metrics remain less even than the im-age metrics. EdgeZSAD keeps solid pixel AUROC on VisA and BTAD, but pixel PRO on several datasets still trails the strongest CLIP-L and DINOv2-L baselines. This fits the un-derlying trade-off: the compact backbone and lightweight scoring head preserve ranking quality, but thin or weakly contrasted defects stress the stage-4 feature map more than they stress the larger foundation encoders. In that sense, Ta-ble 1 shows that the image-level gap narrows more than the localization gap. KSDD2 is a useful sanity check: image AUROC can sat-urate on the small balanced subsets that are sometimes re-ported in the literature, so we use the full held-out evalua-tion and report the more conservative numbers ( 94 .6 ± 0.4
+
+image AUROC, 88 .1 ± 1.0 pixel AUROC). Table 3 isolates the effect of the source corpus. With the same backbone, EdgeGLR, and optimization settings, replacing Real-IAD with Real-IAD-DR improves image-level ranking on all four datasets and improves pixel met-rics on three of four (KSDD2 pixel PRO is the exception). The largest gains appear on MVTec-AD (image AUROC 
+
+89 .56 →92 .43 , pixel PRO 48 .68 →66 .57 ) and BTAD (image AUROC 78 .27 →88 .90 ). We report AUROC and PRO here because they are more stable than pixel AP under severe positive-pixel imbalance. These gains suggest that source-side difficulty reshaping changes the training signal rather than simply adding more images. 
+
+4.3. Accuracy–Scale–Deployment Summary 
+
+Table 4 summarizes the trade-off at the backbone-family level, and Figure 1 visualizes the same view. EdgeZSAD occupies a much smaller parameter and FLOP region than the CLIP-L and DINOv2-L families while remaining val-idated on edge devices. Feasibility is backend-specific rather than FLOPs-only: CLIP-L runs on both devices under a stripped backbone-only path, while DINOv2-L fails on RB5 because the QNN GPU backend rejects the embedding-stage Resize operator. TinyViT-21M-512 + EdgeGLR therefore occupies a deployable region of the trade-off curve. EdgeZSAD’s MVTec point in Figure 1 sits above the compact-backbone region expected from parameter count alone. Our aim is not to beat large-backbone methods on every metric, but to show that a 21M-parameter model can remain useful under a strict deployment budget with direct validation on both Jetson and RB5. 
+
+4.4. Edge Device Evaluation 
+
+Table 5 reports device-output accuracy with image-level cells as AUROC / F1-max / AP and pixel-level cells as AUROC / PRO. Runtime is summarized in Table 4. Fig-ure 4 provides qualitative host-versus-device examples on MVTec-AD. The device table serves a different purpose from the host table. Table 1 establishes the quality of the host checkpoint under a standard zero-shot protocol. Table 5 asks whether that same checkpoint survives deployment with minimal drift on the device-rescored benchmarks. It does: the Jet-son and RB5 outputs remain close to the host outputs for the reported rows, and Figure 4 shows that both the ranking signal and the spatial anomaly pattern are preserved after export. This distinction matters because host-side parameter or FLOP counts do not guarantee successful export. Anomaly methods that look small on paper can still depend on opera-tors or feature reshapes that an embedded runtime does not support, as observed for the DINOv2-L Resize operator on RB5 (Table 4). The present TinyViT-21M-512 + EdgeGLR path avoids that failure mode: the final graph uses only a compact backbone, a global pooling path, a shallow mask head, and a simple score fusion rule. This narrows the de-ployment gap beyond what a pure FLOP count would sug-gest. 
+
+4.5. Ablation Study 
+
+Protocol. Host tables follow the full VisualAD metric set. Table 6 isolates the scoring head under the full held-out evaluation on MVTec-AD, VisA, BTAD, and KSDD2. Ta-ble 8 extends the same evaluation to a broader compact-backbone sweep, and Table 7 keeps the architecture fixed while varying the training schedule on full VisA. In all three cases we change one factor at a time so the ablations remain interpretable. 
+
+Findings. The ablation shows that the fused GRB+SCB design provides cross-dataset stability rather than a clear per-dataset win. GRB-only narrowly exceeds the fused score on VisA and KSDD2 while the fused design wins on MVTec-AD and BTAD; either way, the fused design keeps                      
+
+> Table 7. Training-schedule comparison on full VisA. Each cell reports image AUROC / image AP / pixel AUROC / pixel PRO.
+> Schedule Image AUROC Image AP Pixel AUROC Pixel PRO Fixed LR, no EMA 85.57 89.00 97.48 83.49 EMA only 87.56 90.76 92.01 72.38 Cosine only 86.19 88.49 97.88 85.93 Cosine + EMA 88.05 91.05 88.47 67.96
+
+6Figure 4. Host and edge anomaly maps on MVTec-AD. Rows show four defect categories; columns show the input image, the binary ground-truth mask, and the predicted anomaly map on the host GPU, Jetson Orin Nano Super, and RB5 Gen2. Table 8. Backbone sweep under the full held-out protocol. Each cell reports image AUROC / pixel AUROC / pixel PRO. These are independent single-seed sweep runs and differ from the main checkpoint in Table 1 by run-level variance. The alternatives span vision-transformer, hybrid, and convolutional designs commonly used as efficient backbones. 
+
+Backbone Input MVTec-AD VisA BTAD KSDD2 DAGM DTD-Synthetic 
+
+TinyViT-21M 512 91.87 / 79.82 / 70.05 87.14 / 93.51 / 77.00 87.31 / 85.02 / 52.55 94.24 / 89.16 / 70.67 89.97 / 83.36 / 61.29 91.08 / 81.39 / 64.92 FastViT-MA36 512 78.26 / 79.44 / 67.48 78.39 / 94.97 / 83.91 87.23 / 80.54 / 56.45 87.86 / 71.98 / 69.30 91.48 / 77.76 / 57.01 92.65 / 87.53 / 75.27 EfficientNetV2-S 384 78.19 / 73.32 / 64.21 75.04 / 90.24 / 78.39 77.07 / 62.44 / 42.51 91.23 / 85.55 / 85.53 87.18 / 86.89 / 75.85 89.65 / 85.86 / 78.43 EfficientNet-B5 456 84.01 / 80.12 / 73.40 76.52 / 90.44 / 77.24 90.85 / 76.77 / 53.16 95.78 / 90.98 / 91.57 92.69 / 91.22 / 80.96 91.01 / 89.12 / 82.54 EfficientNet-B6 528 84.59 / 81.74 / 75.27 78.58 / 94.61 / 86.24 89.45 / 82.14 / 58.50 94.66 / 90.03 / 90.49 93.03 / 87.89 / 77.96 93.18 / 90.26 / 83.36 RegNetY-080 224 79.84 / 81.90 / 68.43 72.90 / 94.10 / 81.69 80.56 / 82.41 / 55.68 94.77 / 90.31 / 84.84 77.89 / 81.17 / 60.42 91.39 / 90.44 / 79.33 RegNetY-160 224 59.57 / 72.28 / 41.74 49.41 / 83.04 / 55.45 51.24 / 57.02 / 22.47 53.13 / 57.99 / 30.57 55.80 / 61.11 / 26.34 55.27 / 73.80 / 38.65 MobileNetV3-Large 224 69.09 / 67.64 / 50.62 65.77 / 77.68 / 59.17 80.81 / 70.52 / 35.22 86.70 / 76.13 / 66.29 62.51 / 61.76 / 28.29 76.71 / 74.51 / 51.06 EfficientFormer-L3 224 69.63 / 43.89 / 12.63 67.00 / 56.48 / 15.11 58.39 / 54.34 / 18.07 83.60 / 17.76 / 2.21 63.56 / 39.03 / 7.32 78.50 / 41.27 / 11.95 EfficientFormer-L7 224 63.62 / 58.46 / 21.47 58.92 / 62.64 / 22.46 49.14 / 67.02 / 26.87 74.83 / 70.47 / 39.74 50.83 / 45.29 / 10.86 55.80 / 56.67 / 19.75 
+
+the explicit local correction available across the bench-mark set. The SCB-only variant is weaker and much less balanced, especially on VisA and KSDD2. The simple head drops clearly on every dataset, indicating that the EdgeGLR structure itself—not just the backbone or the source corpus—contributes to the final result. The backbone sweep ranks compact families against TinyViT under the same recipe. TinyViT-21M-512 re-mains the strongest balanced option. EfficientNet-B5 and B6 substantially improve over EfficientNetV2-S on four of six datasets, indicating extra capacity helps when available; RegNetY-080 is a useful lighter convolutional alternative on KSDD2 and DTD-Synthetic. FastViT-MA36 keeps strong pixel AUROC on VisA and DTD-Synthetic but loses too much image AUROC on MVTec-AD and KSDD2. MobileNetV3-Large, RegNetY-160, and 7both EfficientFormer-L3 and L7 underperform across most datasets. Under a fixed deployment budget the evidence keeps TinyViT as the all-round choice, with EfficientNet-B5/B6 and RegNetY-080 as plausible compact alternatives. The schedule study explains the VisA behavior. On full VisA, cosine-only training gives the highest pixel AUROC and PRO, while cosine plus EMA gives the highest image-level metrics. The current VisA limitation is therefore a calibration trade-off within the same model family, not an evaluator bug or a missing architecture block. We treat the architecture as fixed and use schedule choice to shift the VisA image-level / pixel-level balance. 
+
+## 5. Discussion 
+
+5.1. Main Contribution 
+
+EdgeZSAD’s main contribution is to make adeployment-constrained ZSAD regime concrete and measurable rather than to introduce a new host-only accu-racy frontier. The systems novelty lies in the regime itself: one compact graph, one source-trained checkpoint, one export path, and direct validation on real edge runtimes. Two levers matter inside that regime. EdgeGLR shapes the image score: Table 6 shows that SCB-only on VisA falls to 79 .32 AUROC versus 89 .41 for GRB-only, so the dense map alone is too noisy as an image score, whereas sparse top-k fusion preserves useful local evidence. Real-IAD-DR 
+
+shapes the training signal: Table 3 shows that the source-corpus recipe matters more once the deployed backbone is small and the model has less capacity to absorb weak supervision. 
+
+5.2. Limitations 
+
+Three boundary conditions remain. First, localization is still the main accuracy bottleneck: MVTec-AD pixel PRO ( 67 .8) sits below the strongest baseline ( 88 .6), and BTAD/KSDD2 show similar gaps. Second, dataset behav-ior remains uneven: on DAGM, image AUROC trails the strongest reference by about 8 points ( 91 .2 vs. 99 .5), and pixel PRO remains far lower ( 56 .6 vs. 89 .3). Third, the deployment evidence is limited to FP16 outputs, and sev-eral auxiliary ablations remain single-seed even though the main reported model uses three-run means. Real-IAD-DR construction is deterministic, so Table 3 remains verifiable from the recipe even though we cannot redistribute the de-rived raw images. 
+
+5.3. Future Work 
+
+Backend operator coverage—not FLOPs alone— dominates edge feasibility (Tables 4, 5). A natural extension is fixed-function NPU deployment on Hailo-8 [32] or DeepX DX-M1 [33], which require INT8 quantization and restricted operator sets; EfficientNetV2 and RegNetY from our backbone sweep are reasonable starting points [21, 22]. More broadly, recent post-training quantization results for vision transformers suggest that low-bit deployment can retain useful accuracy when the quantization scheme respects transformer-specific sen-sitivities [34]; bringing that level of quantization-aware evaluation into industrial ZSAD is a natural next step. Other extensions include multi-seed training, learnable fusion weights, and multi-source corpus mixing to narrow the remaining synthetic-texture gap without enlarging the deployed graph. 
+
+## 6. Conclusion 
+
+We presented EdgeZSAD, a deployment-constrained industrial ZSAD study that combines TinyViT-21M-512, EdgeGLR, and Real-IAD-DR. Across three runs, it reaches an average image AUROC of 91 .6 on MVTec-AD and 88 .2
+
+on VisA, and its exported graph runs on both Jetson Orin Nano Super and RB5 Gen2 with sub-0.2-point host-versus-device AUROC drift on the device-rescored benchmarks. The main practical result is that compact zero-shot trans-fer remains viable when the source corpus, score formation, and export path are designed together from the outset. 
+
+## Acknowledgments 
+
+Supported by the 2026 Re:Startup Success Package (Project No. 20396577) through the Seoul Center for Creative Economy & Innovation, Republic of Korea, and by the Gachon University research fund (GCU-202500670001). 
+
+## References               
+
+> [1] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agar-wal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever, “Learning transferable visual models from natural lan-guage supervision,” arXiv preprint arXiv:2103.00020 , 2021. [2] M. Oquab, T. Darcet, T. Moutakanni, H. Vo, M. Szafraniec, V. Khali-dov, P. Fernandez, D. Haziza, F. Massa, A. El-Nouby, M. Assran, N. Ballas, W. Galuba, R. Howes, P. Huang, S. Li, I. Misra, M. Rab-bat, V. Sharma, G. Synnaeve, H. Xu, H. J´ egou, J. Mairal, P. Labatut, A. Joulin, and P. Bojanowski, “Dinov2: Learning robust visual fea-tures without supervision,” arXiv preprint arXiv:2304.07193 , 2023. [3] J. Jeong, Y. Zou, T. Kim, D. Zhang, A. Ravichandran, and O. Dabeer, “Winclip: Zero-/few-shot anomaly classification and segmentation,” in CVPR , pp. 19606–19616, 2023. [4] Q. Zhou, G. Pang, Y. Tian, S. He, and J. Chen, “Anomalyclip: Object-agnostic prompt learning for zero-shot anomaly detection,” in ICLR , 2024. [5] Y. Cao, J. Zhang, L. Frittoli, Y. Cheng, W. Shen, and G. Boracchi, “Adaclip: Adapting clip with hybrid learnable prompts for zero-shot anomaly detection,” in ECCV , pp. 55–72, 2024. [6] Z. Qu, X. Tao, X. Gong, S. Qu, Q. Chen, Z. Zhang, X. Wang, and G. Ding, “Bayesian prompt flow learning for zero-shot anomaly de-tection,” in CVPR , pp. 30398–30408, 2025. [7] B. Gao, Y. Zhou, J. Yan, Y. Cai, W. Zhang, M. Wang, J. Liu, Y. Liu, L. Wang, and C. Wang, “Adaptclip: Adapting clip for universal visual anomaly detection,” in AAAI , 2026.
+
+8[8] Y. Hou, P. Li, Z. Liu, Y. Wang, Y. Ruan, J. Qiu, and K. Xu, “Visualad: Language-free zero-shot anomaly detection via vision transformer,” 
+
+arXiv preprint arXiv:2603.07952 , 2026. [9] K. Wu, J. Zhang, H. Peng, M. Liu, B. Xiao, J. Fu, and L. Yuan, “Tinyvit: Fast pretraining distillation for small vision transformers,” in ECCV , pp. 68–85, 2022. [10] Q. Wang, H. Zhang, Y. Zhou, Y. Gu, J. Hou, Y. Qu, X. Li, T. Shen, D. Liu, W. Wang, and X. Bai, “Real-iad: A real-world multi-view dataset for benchmarking versatile industrial anomaly detection,” in 
+
+CVPR , pp. 23652–23662, 2024. [11] X. Chen, Y. Han, and J. Zhang, “April-gan: A zero-/few-shot anomaly classification and segmentation method for cvpr 2023 vand workshop challenge tracks 1&2: 1st place on zero-shot ad and 4th place on few-shot ad,” arXiv preprint arXiv:2305.17382 , 2023. [12] X. Chen, J. Zhang, G. Tian, H. He, W. Zhang, Y. Wang, C. Wang, and Y. Liu, “Clip-ad: A language-guided staged dual-path model for zero-shot anomaly detection,” arXiv preprint arXiv:2311.00453 ,2023. [13] B. Gao and C. Wang, “One language-free foundation model is enough for universal vision anomaly detection,” arXiv preprint arXiv:2601.05552 , 2026. [14] K. Batzner, L. Heckler, and R. K¨ onig, “Efficientad: Accurate visual anomaly detection at millisecond-level latencies,” in WACV , pp. 127– 137, 2024. [15] K. Roth, L. Pemula, J. Zepeda, B. Sch¨ olkopf, T. Brox, and P. Gehler, “Towards total recall in industrial anomaly detection,” in CVPR ,2022. [16] V. Zavrtanik, M. Kristan, and D. Skoˇ caj, “DRAEM – a discrimina-tively trained reconstruction embedding for surface anomaly detec-tion,” in ICCV , 2021. [17] Q. Chen, H. Luo, C. Lv, and Z. Zhang, “A unified anomaly synthesis strategy with gradient ascent for industrial anomaly detection and localization,” in ECCV , 2024. [18] P. K. A. Vasu, J. Gabriel, J. Zhu, O. Tuzel, and A. Ranjan, “Fastvit: A fast hybrid vision transformer using structural reparameterization,” in ICCV , pp. 5762–5772, 2023. [19] Y. Li, G. Yuan, Y. Wen, E. Hu, G. Evangelidis, S. Tulyakov, Y. Wang, and J. Ren, “Efficientformer: Vision transformers at mo-bilenet speed,” in NeurIPS , 2022. [20] M. Tan and Q. V. Le, “EfficientNet: Rethinking model scaling for convolutional neural networks,” in International Conference on Ma-chine Learning , pp. 6105–6114, 2019. [21] M. Tan and Q. Le, “EfficientNetV2: Smaller models and faster train-ing,” in International Conference on Machine Learning , pp. 10096– 10106, 2021. [22] I. Radosavovic, R. P. Kosaraju, R. Girshick, K. He, and P. Doll´ ar, “Designing network design spaces,” in CVPR , pp. 10428–10436, 2020. [23] A. Howard, M. Sandler, G. Chu, L.-C. Chen, B. Chen, M. Tan, W. Wang, Y. Zhu, R. Pang, V. Vasudevan, Q. V. Le, and H. Adam, “Searching for MobileNetV3,” in ICCV , pp. 1314–1324, 2019. [24] C. Yu, J. Wang, C. Peng, C. Gao, G. Yu, and N. Sang, “Bisenet: Bi-lateral segmentation network for real-time semantic segmentation,” in ECCV , pp. 325–341, 2018. [25] C. R. Chen, Q. Fan, R. Panda, H. S. Malik, R. Feris, and A. Oliva, “Crossvit: Cross-attention multi-scale vision transformer for image classification,” in ICCV , pp. 357–366, 2021. [26] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, “The mvtec anomaly detection dataset: A comprehensive real-world dataset for unsupervised anomaly detection,” IJCV , vol. 129, no. 4, pp. 1038– 1059, 2021. [27] Y. Zou, J. Jeong, L. Pemula, D. Zhang, and O. Dabeer, “Spot-the-difference self-supervised pre-training for anomaly detection and segmentation,” in ECCV , pp. 392–408, 2022. [28] P. Mishra, R. Verk, D. Fornasier, C. Piciarelli, and G. L. Foresti, “Vt-adl: A vision transformer network for image anomaly detection and localization,” in IEEE 30th International Symposium on Industrial Electronics (ISIE) , pp. 01–06, 2021. [29] J. Boˇ ziˇ c, D. Tabernik, and D. Skoˇ caj, “Mixed supervision for surface-defect detection: From weakly to fully supervised learning,” Com-puters in Industry , vol. 129, p. 103459, 2021. [30] M. Wieler, T. Hahn, and F. A. Hamprecht, “Weakly supervised learning for industrial optical inspection.” DAGM 2007 benchmark dataset, 2007. [31] M. Cimpoi, S. Maji, I. Kokkinos, S. Mohamed, and A. Vedaldi, “De-scribing textures in the wild,” in CVPR , pp. 3606–3613, 2014. [32] Hailo, “Hailo-8 AI Accelerator.” Product page. Accessed 2026-05-23. [33] DEEPX, “DX Model Zoo.” Product page. Accessed 2026-05-23. [34] Z. Liu, Y. Wang, K. Han, W. Zhang, S. Ma, and W. Gao, “Post-training quantization for vision transformer,” in NeurIPS , 2021. 
+
+9
