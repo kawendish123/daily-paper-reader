@@ -1,0 +1,323 @@
+Title: TivTok: Broadcasting Time-Invariant Tokens for Scalable Video Tokenization
+
+URL Source: https://arxiv.org/pdf/2606.17590v1
+
+Published Time: Wed, 17 Jun 2026 00:43:27 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# TivTok: Broadcasting Time-Invariant Tokens for Scalable Video Tokenization 
+
+Weiliang Chen · Yuanhui Huang · Xuebo Wang · Yueqi Duan Abstract Video tokenization is fundamental to scal-able video generation, as the number of tokens directly determines the computational cost and the length of videos that can be modeled. Existing tokenizers mainly improve scalability by compressing videos into fewer tokens, but they often continue to represent persistent content, such as static backgrounds and consistent object appearances, repeatedly across frames and chunks. In this paper, we propose TivTok (Time-Invariant Token-izer ), a reuse-aware video tokenizer that makes persis-tent information reusable across time. TivTok represents a clip with Time-Invariant (TIV) tokens that encode in-formation shared across frames and Time-Variant (TV) tokens that encode frame-specific residuals. To obtain this factorization, we introduce Scope-Induced Factori-zation (SIF), which assigns different attention scopes to the two token groups: TIV tokens attend to the full clip, whereas each TV token only accesses its corresponding frame together with the TIV tokens. In the decoder, Invariant Broadcasting (IB) reuses the same TIV tokens across frames and chunks for parallel reconstruction and long-video tokenization. Experiments show that TivTok achieves an rFVD of 12.65 on the standard 16 ×256 ×256 benchmark and improves compression ef-   
+
+> Weiliang Chen 1
+> E-mail: cwl24@mails.tsinghua.edu.cn Yuanhui Huang 2
+> E-mail: huangyh22@mails.tsinghua.edu.cn Xuebo Wang 3
+> E-mail: wangxuebo@kuaishou.com Yueqi Duan 1, B
+> E-mail: duanyueqi@tsinghua.edu.cn
+> 1Department of Electronic Engineering, Tsinghua University, Beijing, 100084, China
+> 2Department of Automation, Tsinghua University, Beijing, 100084, China
+> 3Kuaishou Technology, Beijing, China
+
+ficiency by 2.91 × for 128-frame videos compared with the evaluated baselines, while using only 1.1% of the tokens required by downsample-based tokenizers in our evaluation. 
+
+Keywords Video tokenization · Temporal redundancy ·
+
+Video compression · Video generation · Long video modeling 
+
+1 Introduction 
+
+Generative models have achieved remarkable success across diverse downstream applications, including visual content generation (Blattmann et al., 2023a,b; Huang et al., 2025b; Liu et al., 2024; Rombach et al., 2022; Shu et al., 2026; Zhang et al., 2025), cinematic produc-tion (Chen et al., 2024b; Huang et al., 2025a, 2024), and industrial simulation (Agarwal et al., 2025; Chen et al., 2025b; Ren et al., 2024a,b; Zheng et al., 2024a). A key factor behind this progress is compact visual token-ization: pixel-space visuals are highly redundant, and projecting them into lower-dimensional latent spaces significantly reduces computation and shifts focus to semantic structure, enabling sharper and higher-quality generations (Blattmann et al., 2023a; Rombach et al., 2022; Yang et al., 2021). However, video tokenization re-mains challenging, since videos introduce an additional temporal dimension, causing the amount of visual data and the number of tokens to grow with sequence length. At the same time, this temporal structure creates an opportunity for reuse: consecutive frames often share substantial content, suggesting that persistent informa-tion can be represented once and reused rather than re-encoded (Xu et al., 2023). Consider what changes and what remains stable across consecutive frames. In many videos, scene lay-            
+
+> arXiv:2606.17590v1 [cs.CV] 16 Jun 2026 2W. Chen et al. TiV Tok.
+> Intersection across frames
+> TV Tok. Trad. Tok
+> Intersect.
+> Intersect. Recon.
+> Recon.
+> T
+> T
+> TIV Recon. TV Recon.
+> TIV Recon. TV Recon.
+> TIV broadcasting
+> Fig. 1 Overview of TivTok and its reuse-aware video tokenization. Top-left: reconstruction FVD is compared across video lengths, with marker size indicating the number of tokens; TivTok keeps a compact token budget while maintaining competitive reconstruction quality in long-video settings. Bottom-left: conventional tokenization treats persistent content and frame-specific variation uniformly when allocating representation capacity. Right: in contrast, the boxing and billiards examples illustrate how TivTok separates reusable Time-Invariant (TIV) tokens from frame-specific Time-Variant (TV) tokens. TIV tokens capture content shared over time, such as scene layout and object appearance, while TV tokens represent frame-specific changes such as object position and local motion. Broadcasting TIV tokens across frames and chunks allows persistent information to be reused rather than re-encoded at every frame.
+
+out, background appearance, and object identity remain largely consistent over time, while frame-specific factors such as object position, pose, and local motion vary from frame to frame. The billiards example in Fig. 1 illustrates this structure: the table and ball appearances are shared across the sequence, whereas the ball posi-tions and interactions change over time. Reusing the shared component becomes increasingly beneficial as video length grows, because information encoded once can be reused by an increasing number of frames. An ef-fective tokenizer should therefore treat shared and chang-ing content differently, encoding persistent information once while reserving per-frame capacity for temporal residuals. Existing video tokenizers are largely compression-focused. Downsample-based methods extend image tokenizers with temporal modules or 3D convolu-tions (Agarwal et al., 2025; Blattmann et al., 2023b; HaCohen et al., 2024; Li et al., 2024; Zhao et al., 2024), while holistic tokenizers use transformers to compress video patches into compact latent tokens (Li et al., 2025; Wang et al., 2024a; Yan et al., 2024; Yu et al., 2024a). These designs reduce token counts, but they usually allocate representation capacity over the clip without explicitly separating reusable content from frame-specific variation. Another line introduces pre-scribed decompositions, such as reference frames with motion residuals (Tan et al., 2024; Tian et al., 2024b; Wang et al., 2025; Yu et al., 2024b) or frequency-based separation (Liu et al., 2025). Such decompositions sim-plify the representation, but they are still primarily used for compression within a clip rather than for reusing persistent information across frames and chunks. This leaves room for a reuse-aware tokenizer that can discover persistent information and broadcast it over time. Driven by this observation, we propose TivTok (Time-Invariant Tokenizer ), a reuse-aware video token-izer that makes persistent information reusable across TivTok 3
+
+time. TivTok represents a clip with two types of tokens: Time-Invariant (TIV) tokens encode information shared across frames, while Time-Variant (TV) tokens encode frame-specific residuals, as illustrated in Fig. 1. Tiv-Tok realizes this factorization with two complementary mechanisms. In the encoder, Scope-Induced Factori-zation (SIF) assigns different attention scopes to the two token groups: TIV tokens attend to the full clip to aggregate shared information, whereas each TV token only accesses its corresponding frame together with the TIV tokens. This structural constraint encourages the model to place reusable information in TIV tokens and frame-specific residuals in TV tokens. In the de-coder, Invariant Broadcasting (IB) reuses the same TIV tokens for every frame and combines them with the corresponding TV tokens for parallel reconstruction, reducing decoding complexity from O(T 2) to O(T ) in video length. For long videos, TivTok reuses TIV tokens across chunks, allowing the shared representation to sup-port a longer temporal range. With this design, TivTok achieves an rFVD of 12.65 in the standard 16 ×256 ×256 setting and improves compression efficiency by 2 .91 ×
+
+for 128 ×256 ×256 videos compared with baselines. Our main contributions are as follows: 
+
+– We formulate video tokenization from a reuse per-spective, showing that persistent structure can be represented once and reused across frames and chunks. Based on this view, we propose TivTok, a reuse-aware tokenizer with Time-Invariant (TIV) and Time-Variant (TV) tokens. 
+
+– We introduce Scope-Induced Factorization (SIF) and Invariant Broadcasting (IB). SIF uses asymmetric attention scopes to separate shared information from frame-specific residuals, while IB broadcasts TIV tokens for parallel frame reconstruction, reducing decoding complexity from O(T 2) to O(T ). 
+
+– We validate TivTok on video reconstruction and generation benchmarks, including long-video settings. TivTok achieves an rFVD of 12.65 on 16 ×256 ×256 videos and improves compression efficiency by 2 .91 ×
+
+on 128 ×256 ×256 videos, while using only 1.1% of the tokens required by baselines. 
+
+2 Related Work 
+
+2.1 From Image Tokenizer to Video Tokenizer Following the progress of the encode-generate paradigm in image generation (Rombach et al., 2022), researchers have developed video tokenizers by extending image tokenization methods to the temporal dimension. These approaches can be categorized into two main lines of work. Downsample-based video tokenizers. Early work (Blattmann et al., 2023b) adapts image tokenizers for video by encoding videos frame-by-frame. Subse-quent methods (Agarwal et al., 2025; Chen et al., 2024a; Tang et al., 2024; Zhao et al., 2024) extend 2D convo-lutions to 3D for temporal downsampling, achieving higher compression ratios through various optimiza-tion techniques. CV-VAE (Zhao et al., 2024) leverages image-pretrained 2D convolutions to regularize video tokenizers, improving training efficiency. VidTok (Tang et al., 2024) incorporates FSQ to improve codebook utilization and compression efficiency. Cosmos (Agarwal et al., 2025) employs 3D Haar wavelets to enhance model performance. 
+
+Holistic video tokenizers. TiTok (Yu et al., 2024a) pioneered transformer-based tokenization by compress-ing images into compact 1D learnable tokens via global receptive fields, inspiring subsequent works for im-ages (Huang et al., 2025b; Tian et al., 2024a) and videos (Li et al., 2025; Wang et al., 2024a; Yan et al., 2024). Directly applying such methods to videos re-mains challenging because the number of video patches grows with temporal length, increasing attention cost and limiting scalability in long-video settings. Both downsample-based and holistic tokenizers reduce token counts, but they typically allocate representation capac-ity over the clip without explicitly separating reusable content from frame-specific variation. TivTok follows a reuse-aware design by representing shared content with TIV tokens and frame-specific residuals with TV tokens. 2.2 Decomposition-based Video Tokenizers Traditional video compression standards exploit tem-poral redundancy through decomposed encoding, as in H.264 and AV1 (De Rivaz and Haughton, 2019; Richard-son, 2004). P-frames encode residuals relative to pre-viously decoded frames, reusing shared content across consecutive frames. Recent learned methods also build on temporal redundancy and decomposed representa-tions (Jin et al., 2024; Wang et al., 2026; Wu et al., 2024; Yu et al., 2024b). CMD (Yu et al., 2024b) encodes videos into a 2D content frame and low-dimensional motion latents. Reducio (Tian et al., 2024b) uses an image-conditioned decoder with a reference image. Sweet-Tok (Tan et al., 2024) encodes the first frame and sub-sequent residual frames, while HiVAE (Liu et al., 2025) separates high- and low-frequency components. Despite their similarity to P-frame coding, these methods primarily target compression within a single video. They simplify what each component represents, but do not explicitly reuse persistent structure across 4 W. Chen et al. 
+
+clips and chunks. In contrast, TivTok brings the reuse philosophy of H.264 into learned tokenization: Scope-Induced Factorization (SIF) discovers video-adaptive invariants that can be reused across frames and chunks. 
+
+3 Method 
+
+3.1 Preliminary: Transformer-based Holistic Visual Tokenizer Pioneered by TiTok (Yu et al., 2024a), transformer-based holistic tokenizers have become a popular choice for visual tokenization. Their key idea is to distill a compact set of 1D global latents from all input patches by leveraging the transformer’s global receptive field. Given a video V ∈ R3×T ×W ×H , the tokenizer first 
+
+patchifies V with downsampling ratio ( fT , f W , f H ). This produces a grid of patch features X with temporal-spatial size ( T /f T ) × (W/f W ) × (H/f H ) and channel dimension d. The flattened patches are then concate-nated with learnable tokens Z ∈ Rd×Nz to form ˜Z =[Flatten( X); Z]. This combined sequence is then passed through a transformer encoder E(·). Through self-attention, the latent tokens absorb global information from all patches across the video. After encoding, the latent tokens are quantized with Q(·) to form a compact representation ˆZ that captures the essential content of the video in a discrete code space. During decoding, learnable patch queries Qp and the latent codes ˆZ are processed by a symmetric transformer decoder D(·) to recover patch features ˆX = D([ Qp; ˆZ]), which are then upsampled to the original resolution. This entire process can be summarized as ˆZ = Quant  E( ˜Z),
+
+ˆV = Unpatchify  D([ Qp; ˆZ]) . (1) However, because the number of patches increases lin-early with video length, the computational cost of self-attention grows quadratically; both encoding and de-coding scale as O(T 2). 3.2 Decoupling Time-Invariant and Time-Variant Tokens We view the temporal invariant of a video clip as the reusable component C that is informative for multiple frames. This component is not limited to pixel-level static content; it can include semantically stable struc-ture such as scene geometry, object identity, and con-sistent visual patterns that persist throughout the se-quence. Encoding such information once and reusing it across frames can reduce repeated representation of scene-level content, leaving frame-specific residuals to be represented per frame. This reuse can be motivated from an information-theoretic perspective. Suppose a video is represented by a shared component C and per-frame residuals con-ditioned on C. Compared with encoding each frame separately, the amount of repeatedly encoded informa-tion can be written as 
+
+Hindep − Hshared =
+
+> T
+
+X
+
+> t=1
+
+I(Xt; C) − H(C)
+
+≈ (T − 1) H(C) > 0.
+
+(2) where Hindep denotes the sum of per-frame entropies, and Hshared = H(C) + PTt=1 H(Xt | C) corresponds to encoding the shared component once together with frame-wise residuals. The approximation holds when 
+
+C is recoverable from most frames. Under this condi-tion, the potential saving grows with video length T ,motivating a tokenizer that represents reusable content separately from frame-specific variation. Building on this analysis, we factorize a video V into two complementary token groups: 
+
+– Time-Invariant (TIV) tokens , ZTIV ∈ RNTIV ×D : en-code the shared semantic structure across all frames, and can be reused to extend representations to longer videos. 
+
+– Time-Variant (TV) tokens , ZTV ∈ RT ×NTV ×D : pre-serve frame-specific residual details unique to each time step. A clip is represented as [ ZTIV , Z (1) TV , . . . , Z (T )TV ], while frame t is reconstructed from [ ZTIV , Z (t)TV ]. We enforce this factorization with SIF (Sec. 3.3) and exploit it with IB (Sec. 3.4). 3.3 Scope-Induced Factorization Our encoder is guided by a single design principle: the information flow of a token should match its represen-tational role . A token intended to capture temporal in-variants must see the entire sequence; a token intended to capture frame-specific residuals must be prevented from absorbing cross-frame information. We realize this through Scope-Induced Factorization (SIF), which en-forces the TIV/TV decoupling through asymmetric at-tention scoping in the encoder. Specifically, TIV tokens are granted global visibility: for a video V = {X1, . . . , X T }, each TIV token attends to all frame patches {Xt} as well as all TV tokens. In contrast, each TV token at time step t has only local TivTok 5Scope -Induced Factorization 
+
+Vid. Tok. 
+
+> Vid. Tok.
+
+Lat. Tok. 
+
+> Lat. Tok.
+
+# Invariant Broadcasting 
+
+# Parallel 
+
+# ViT Decoder 
+
+Recon. 
+
+Loss 
+
+Learnable Token 
+
+Vis. / Invis .
+
+TIV Token 
+
+TV Token 
+
+Temporal. 
+
+> Temporal.
+
+!! !" !# !$ !! !" !# !$
+
+# Compressed Tokens  
+
+> Fig. 2 TivTok architecture overview. Given an input video, the encoder applies Scope-Induced Factorization (SIF) by assigning different attention scopes to the two token groups: TIV tokens attend to the full clip to aggregate shared information, while each TV token attends to its corresponding frame together with the TIV tokens to model frame-local variation. The compressed representation contains a shared set of TIV tokens and per-frame TV tokens. In the decoder, Invariant Broadcasting (IB) reuses the same TIV tokens at every time step and combines them with the corresponding TV tokens for parallel reconstruction.
+
+visibility, restricted to its own frame patches Xt, the TIV tokens, and itself. We define two key-value scopes: 
+
+G = [ ZTIV , Z (1) TV , . . . , Z (T )TV , X 1, . . . , X T ],
+
+Lt = [ ZTIV , Z (t)TV , X t] (3) where G is the global scope visible to TIV queries and 
+
+Lt is the frame-local scope visible to TV queries at time step t. We use Attn (A, B ) to denote an attention update in which tokens in A provide the queries and only tokens in B are used as keys and values. The encoder updates are then written compactly as 
+
+Z′ 
+
+> TIV
+
+= Attn( ZTIV , G),Z(t)′ 
+
+> TV
+
+= Attn( Z(t)TV , Lt). (4) This asymmetric scoping encourages TIV tokens to ag-gregate shared information across frames while keep-ing TV tokens focused on frame-local residuals, so the TIV/TV factorization is induced by the architecture rather than imposed through explicit supervision. Us-ing causal masking for TV tokens may appear suit-able for autoregressive generation, but it would allow TV tokens to absorb cross-frame information that over-laps with the TIV tokens and would raise encoding cost to quadratic in T . Restricting TV tokens to single-frame visibility keeps the token roles separated and re-duces encoding complexity from O T 2 · (NTIV + NTV )
+
+to O T 2 · NTIV + T · NTV 
+
+.3.4 Invariant Broadcasting Having extracted TIV tokens that capture shared se-mantics across all frames, we design the decoder to exploit this structure directly through Invariant Broad-casting (IB). Rather than decoding frames sequentially, the same TIV tokens are broadcast to every time step and combined with the corresponding TV tokens, so that each frame is decoded as ˆXt = D [ZTIV , Z (t)TV ], t = 1 , . . . , T. (5) where D(·) denotes the transformer decoder. Since each frame’s decoding depends only on the shared TIV tokens and its own TV tokens, all frames can be reconstructed in parallel. This design reduces decoding complexity from O(T 2) to O(T ) in video length and supports long-video tokenization through cross-chunk TIV reuse, as described in the following section. 6 W. Chen et al. 
+
+3.5 Cross-Chunk TIV Reuse for Long Video Tokenization The reuse motivation in Eq. 2 also applies to long videos. For a K-chunk video, some persistent content can remain shared across chunks, so representing it independently in each chunk can introduce repeated tokens. TivTok reduces this repetition by reusing a single set of TIV tokens across all chunks. Specifically, for a long video 
+
+{X1: T K } composed of K chunks of length T , we first encode all K chunks in parallel and merge their TIV tokens by averaging: ¯ZTIV = 1
+
+K
+
+> K
+
+X
+
+> i=1
+
+Z(i)TIV . (6) The merged TIV tokens ¯ZTIV capture the global shared semantics of the entire video, and the full representation is reorganized as: 
+
+Z = [ ¯ZTIV , {Z(i,t )TV }i=1 ,...,K ; t=1 ,...,T ]. (7) where Z(i,t )TV denotes the TV tokens of the t-th frame in chunk i. During decoding, ¯ZTIV is broadcast to ev-ery frame following the IB mechanism (Sec. 3.4), en-abling parallel reconstruction across all chunks. The full training procedure is detailed in Algorithm 1. This design yields three concrete benefits: it reduces total token count by eliminating redundant TIV tokens across chunks; it cuts computational complexity from O(K2)to O(K) in the number of chunks; and it eases optimiza-tion by shortening the effective token sequence length during training. 
+
+4 Experiments 
+
+4.1 Implementation Details Our tokenizer is built upon a ViT-based SoftVQ-VAE (Chen et al., 2025a). Unless otherwise specified, the encoder and decoder use 12 layers with hidden dimension 768, patch size 4 × 8 × 8, and 3D RoPE positional embeddings. All tokenizers are trained on a mixture of UCF-101 (Soomro et al., 2012) and K600 (Carreira et al., 2018) for 100K iterations at 256 × 256 resolution. For long-video tokenization, we conduct an additional 50K iterations for cross-chunk TIV reuse. We use AdamW with weight decay 10 −4,momentum ( β1, β 2) = (0 .9, 0.95), global batch size 64, base learning rate 10 −4, 5K warmup steps, and cosine learning-rate decay. Standard horizontal flipping and center cropping are used for data augmentation. 
+
+Algorithm 1: Cross-Chunk TIV Reuse Train-ing for Long Video Tokenization 
+
+Input: Long video {X1: T K } with K chunks of length T ;
+
+Output: Reconstructed video ˆX1: T K ;
+
+1. Parallel Encoding: for i = 1 , . . . , K do 
+
+Encode chunk X(i)1: T → Z(i)TIV , {Z(i,t )TV }Tt=1 
+
+2. TIV Token Merging: 
+
+¯ZTIV = 1
+
+K
+
+PKi=1 Z(i)TIV 
+
+3. Token Reorganization: 
+
+Z = [ ¯ZTIV , {Z(i,t )TV }i,t ]
+
+4. Invariant Broadcasting (IB): for each frame (i, t ) in parallel do 
+
+ˆX(i,t ) = D [ ¯ZTIV , Z (i,t )TV ]
+
+5. Update: 
+
+Compute L(X, ˆX), update parameters; 
+
+Complexity: O(K2) → O (K); Our model ϕ is optimized using a composite loss function that combines reconstruction quality with per-ceptual and adversarial objectives: 
+
+L = Lrecon + λ1Lpercept + λ2λ∇Ladv ,λ∇ = ∇ϕ(Lrecon + λ1Lpercept )
+
+∇ϕLadv 
+
+. (8) This objective incorporates L1 reconstruction loss Lrecon ,perceptual loss Lpercept (Johnson et al., 2016; Larsen et al., 2016), and adversarial loss Ladv (Goodfellow et al., 2020). We set λ1 = 1 and λ2 = 0 .2, use a DINOv2-S discriminator starting from 30K iterations, and set LeCAM regularization to 0.001. For video generation, we adapt the LightningDiT architecture (Yao et al., 2025) for class-conditional gen-eration on UCF-101. The generation model uses hidden dimension 1152, 28 layers, 16 attention heads, patch size 1, and absolute positional embeddings. It is trained for 100K iterations with AdamW, global batch size 512, learning rate 10 −4, constant learning-rate schedule, and center cropping. During inference, we use the Euler sampler with 50 diffusion steps, CFG interval start 0.1, and timestamp shift 2. For reconstruction, we report PSNR, SSIM (Wang et al., 2004), LPIPS (Zhang et al., 2018), and reconstruction FVD (rFVD) (Unterthiner et al., 2018). For generation, we report generation FVD (gFVD). TivTok 7 
+
+> Table 1 Comparison of Video Reconstruction on UCF-101. We compare different categories of video tokenizers with similar compression ratios. We additionally report the token-to-pixel ratio (T/P (%)) for intuitive comparison, which is crucial for generation model efficiency. Bold values indicate best performance; underlined values show second-best results.
+
+Method #Tokens #Dim. T/P (%) ↓ PSNR ↑ SSIM ↑ LPIPS ↓ rFVD ↓
+
+Downsample-based video tokenizer 
+
+SDXL-VAE (Podell et al., 2023) 16384 4 1.563 - - - 23.68 OpenSora (Zheng et al., 2024b) 4096 16 0.391 - - - 67.52 Cosmos-M (Agarwal et al., 2025) 2048 16 0.195 31.70 0.9177 0.0575 13.67 Cosmos-S (Agarwal et al., 2025) 512 16 0.049 28.26 0.8577 0.1046 104.51 CV-VAE (Zhao et al., 2024) 4096 4 0.391 29.47 0.8849 0.0685 52.43 
+
+Holistic video tokenizer (∗:Video resolution 16 ×128 ×128) LARP (Wang et al., 2024a) ∗ 1024 16 0.391 28.65 0.9003 0.0425 23.93 LARP (Wang et al., 2024a) 1024 16 0.098 25.53 0.8262 0.0973 51.45 ElasticTok (Yan et al., 2024) 1024 16 0.391 - - - 390 AdapTok (Li et al., 2025) 2048 16 0.781 26.38 0.8539 0.0599 27.97 
+
+Decomposition-based video tokenizer 
+
+Omni (Wang et al., 2024b) 4096 8 0.391 29.34 0.9250 0.0487 14.53 Omni-DV (Wang et al., 2024b) 4096 8 0.391 28.06 0.9095 0.0637 27.12 VidTwin (Wang et al., 2025) 1008 4/8 0.126 28.14 0.8044 0.2414 388.86 TivTok-T128 128 128 0.012 30.13 0.9010 0.0614 21.29 TivTok-T512 512 32 0.049 30.26 0.8982 0.0533 12.65 
+
+TivTok-T1024 1024 16 0.098 29.54 0.8897 0.0607 17.97 4.2 Video Reconstruction Comparison We evaluate video reconstruction quality on UCF-101 (Soomro et al., 2012) at 256 ×256 resolution with 16-frame sequences, comparing against representative baselines from three categories: downsample-based, holistic, and decomposition-based tokenizers, all con-figured at similar compression ratios for meaningful comparison. As shown in Table 1, TivTok achieves competi-tive reconstruction quality with a much smaller token budget, and TivTok-T512 obtains the lowest rFVD among the evaluated 256 ×256 settings. Notably, TivTok-T512 achieves the best reconstruction quality among our model variants, suggesting a favorable balance be-tween token count and dimensionality: too few tokens limit spatial resolution while overly low-dimensional tokens restrict representational capacity. The small dif-ferences across TivTok-T128/T512/T1024 indicate that the framework is stable across this trade-off, offering flexible operating points for different efficiency require-ments. Compared with decomposition-based methods, Tiv-Tok achieves stronger compression on both UCF-101 (Table 1) and WebVid (Table 7). We attribute this to the emergent nature of our TIV/TV factorization: rather than restricting the invariant component to a pre-scribed definition such as “motion” or “high-frequency”, Scope-Induced Factorization discovers video-adaptive invariants that generalize across diverse content, leading to more efficient and accurate redundancy elimination. 4.3 Long Video Tokenization To evaluate temporal invariant reuse in longer sequences, we explore long video tokenization. The experimental results in Table 2 reveal distinct behavioral patterns as temporal length T increases. Downsample-based video tokenizers such as CV-VAE (Zhao et al., 2024) main-tain relatively stable reconstruction quality, but their token counts grow with video length. Holistic video to-kenizers such as LARP (Wang et al., 2024a) use fewer tokens than downsample-based tokenizers, but show degraded reconstruction quality and higher latency at longer lengths. In contrast, TivTok reuses TIV tokens across chunks and achieves 2 .91 × higher compression efficiency for 128-frame videos compared with the eval-uated baselines. In our evaluation, TivTok uses 1.1% of the tokens required by downsample-based methods, in-dicating its potential for improving generation efficiency under long-video settings. 8 W. Chen et al.  
+
+> Table 2 Comparison of long video tokenization. We retrain baseline methods under their evaluated tokenization settings and compare against CoordTok (Jang et al., 2025). We report reconstruction metrics together with inference latency for computational efficiency assessment.
+
+Method #Tokens #Dim. Latency (s) ↓ PSNR ↑ SSIM ↑ LPIPS ↓ rFVD ↓
+
+Video resolution 32 ×256 ×256 
+
+CV-VAE (Zhao et al., 2024) 8192 4 1.78 29.12 0.8809 0.0692 64.21 LARP (Wang et al., 2024a) 2048 16 1.75 23.15 0.7479 0.1757 226.79 TivTok-T128 160 128 0.20 29.05 0.8831 0.0719 38.49 TivTok-T512 640 32 - 30.25 0.8948 0.0591 23.26 
+
+TivTok-T1024 1280 16 - 29.13 0.8857 0.0711 61.46 
+
+Video resolution 128 ×256 ×256 ( ∗:Video resolution 128 ×128 ×128) 
+
+CV-VAE (Zhao et al., 2024) 32768 4 7.12 29.00 0.8831 0.0729 72.91 
+
+LARP (Wang et al., 2024a) 8192 16 22.78 14.85 0.2924 0.6251 3223.55 CoordTok (Jang et al., 2025) ∗ 1280 8 - 27.25 0.7503 0.2346 1108.76 TivTok-T128 352 128 0.71 26.23 0.8210 0.1057 92.09 GT Ours(0.179%) Omni(1.042%) Omni -DV(1.042%) CVVAE(0.521% )LARP(0.521%) GT  
+
+> (a)
+> (b)
+> (c)
+> (d)
+> Fig. 3 Long Video Reconstruction Comparison on UCF-101. Compression ratios are shown in parentheses (lower is better). Our method operates at a significantly lower compression ratio than baselines, yet demonstrates superior detail preservation, as highlighted by the red circles in the magnified regions.
+
+We further provide qualitative comparisons at a reso-lution of 128 × 256 × 256 from two complementary views. Figure 4 shows full-frame reconstructions, where TivTok preserves coherent global appearance despite using a substantially lower compression rate than the baselines. Figure 3 then zooms into local details, showing the re-tained numerical text and ball in (a), the horse head in (b), the fine details around the foot in (c), and the subtle hand reflection on the piano surface in (d). To-gether, the full-frame and magnified visualizations show that TivTok preserves global coherence and selected local details under a smaller token budget, supporting the benefit of reusing temporal invariants in long-video reconstruction. 4.4 Video Generation Comparison Table 3 reports the generation performance for class-conditional video synthesis on UCF-101 (Soomro et al., 2012) under different video lengths. Unless otherwise specified, all videos are generated at a resolution of 256 × 256. Under the conventional 16-frame setting, TivTok 9CVVAE( 0.521%) Omni -DV(1.042%) Omni(1.042%) Ours(0.179%) GT  
+
+> Fig. 4 Full-frame reconstruction comparison on UCF-101. Compression ratios are shown in parentheses (lower is better). This figure complements the magnified details in Fig. 3 by showing complete reconstructed frames. TivTok preserves coherent global appearance while using substantially fewer tokens than the baselines.
+
+TivTok-T1024/T512 achieve lower FVD than the evalu-ated baselines while maintaining competitive computa-tional cost. By further reducing the number of tokens, TivTok-T128 improves generation efficiency yet still re-tains competitive FVD performance, demonstrating a favorable trade-off between efficiency and visual quality. These efficiency advantages become more pronounced as the video length increases. While existing methods require rapidly growing token counts, computational cost, and memory consumption when scaling to longer sequences, TivTok maintains a compact token represen-tation and stable resource usage. As a result, it reduces time, memory, and TFLOPs in the evaluated long-video settings while keeping FVD competitive. 4.5 Analysis of Time-Invariant Tokens A key property of TIV tokens is that they capture 
+
+semantic invariants rather than pixel-level persistence. To illustrate this, we compare TIV token reconstructions against a simple pixel-intersection baseline, retaining only regions with minimal pixel variation across frames (red boxes in Figure 5). If TIV tokens merely encoded static pixels, their reconstructions would align closely with these intersections. Our results show otherwise. In Figure 5(a), the background advertising boards change position across frames while the two skaters remain consistent, yet TIV tokens faithfully capture the skaters’ detailed appearance and clothing textures rather than the pixel-stable background. In the pool-table example in Figure 1, stationary balls are captured as invariant while moving balls are delegated to TV 10 W. Chen et al.  
+
+> Table 3 Comprehensive Comparison of Video Generation. The comparison includes inference speed, GPU memory usage, computational cost (TFLOPs), and generation quality (FVD). Results of MeBT (Yoo et al., 2023), PVDM (Yu et al., 2023), HVDM (Kim et al., 2024), CoordTok (Jang et al., 2025)+SiT-L/2 (Ma et al., 2024) are taken from MALT (Yu et al., 2025). ( ∗:Video resolution 128 ×128 ×128).
+
+Method Len. #Tokens Time/Step (s) ↓ Mem. (GB) ↓ TFLOPs ↓ FVD ↓
+
+Cosmos-S 16 512 0.047 2.62 0.49 191 Omni 16 4096 0.437 4.69 5.82 191 LARP 16 1024 0.083 2.73 1.05 107 CV-VAE 16 4096 0.437 4.69 5.82 262 TivTok-T1024 16 1024 0.083 2.73 1.05 99 
+
+TivTok-T512 16 512 0.047 2.62 0.49 101 TivTok-T128 16 128 0.021 2.58 0.12 149 CV-VAE 32 8192 1.261 10.82 15.97 370 TivTok-T128 32 160 0.021 2.58 0.15 300 
+
+MeBT ∗ 128 8192 6.53 13.3 - 968 PVDM ∗ 128 16384 0.26 4.33 - 505 HVDM ∗ 128 32768 1.514 12.1 - 550 CoordTok+SiT-L/2 ∗ 128 1280 - - - 369 MALT ∗ 128 4096 - - - 220 TivTok-T128 ∗ 128 352 0.031 2.60 0.33 208 
+
+TivTok-T128 128 352 0.031 2.60 0.33 316 (a)     
+
+> (b)
+> (c)
+> (d)
+> TiV Tok. Intersection across frames TV Tok. Recon.
+> Fig. 5 TIV Token and TV Token Visualization and Analysis. The intersection images (red boxes) display pixel-level persistence across frames, where we retain regions with minimal pixel variation. Results demonstrate that our TIV tokens capture temporal invariants including semantic information and scene geometry rather than merely pixel-level persistence.
+
+tokens. These examples show that Scope-Induced Fac-torization discovers what is semantically stable rather than pixel-static. Importantly, this behavior is not a foreground-background or motion-static split. A moving object can still be assigned to the invariant branch when its identity and appearance remain stable, while TV tokens only need to describe pose, location, and other transient changes. This flexibility distinguishes SIF from hand-crafted decompositions based on reference frames, motion masks, or frequency bands, and makes the learned invariant more suitable for reuse. This emergent factorization has a direct practical consequence: TIV tokens provide reusable reconstruc-tion priors, while TV tokens focus on temporal residu-als. Such decoupling explains why TIV tokens can be TivTok 11 FVD   
+
+> Compression Ratio (%)
+> Fig. 6 Trend induced by TIV-token capacity. The visualiza-tion complements Table 4 by showing the quality–efficiency trade-off as the number of TIV tokens changes. FVD
+> Compression Ratio (%)
+> Fig. 7 Trend induced by TIV/TV allocation. The visualiza-tion complements Table 5 by showing how token allocation changes the balance between reconstruction quality and com-pression efficiency.
+
+broadcast across chunks and why the compression gain becomes more pronounced in long videos. 4.6 Invariance Capacity and Token Allocation We next study how much capacity should be assigned to the invariant branch. Tables 4 and 5 report the exact reconstruction and compression metrics, while Figures 6 and 7 visualize the corresponding trade-offs. This sepa-ration avoids relying on a single scalar score: the tables provide precise operating points, and the figures make the quality–efficiency trend easier to inspect. The first study varies the number of TIV tokens. As shown in Table 4 and Figure 6, increasing TIV capacity improves reconstruction quality because the model can store richer reusable structure, but it also increases the token budget and weakens compression efficiency. The second study varies the TIV/TV allocation. Table 5 and Figure 7 show that assigning more capacity to TV tokens improves frame-specific detail modeling, whereas assigning more capacity to TIV tokens favors compact long-video representation. These results suggest that TivTok should allocate enough invariant capacity to capture reusable semantics, while leaving sufficient TV capacity for fast-changing residuals. 4.7 Ablation Study Table 6 presents ablation studies on the 32 ×256 ×256 setting. Removing TIV/TV factorization leads to signif-icant performance degradation, confirming that holistic tokenization struggles to exploit the persistent structure inherent to videos. Removing Scope-Induced Factoriza-tion (SIF) or Invariant Broadcasting (IB) causes severe reconstruction collapse, highlighting that these two com-ponents are mutually dependent: SIF structures the encoder to produce factorized representations, while IB relies on this structure for parallel decoding. Ablating Cross-Chunk TIV Reuse results in noticeable but re-coverable performance drops, suggesting that temporal invariants are indeed shared across chunks and that explicit cross-chunk reuse further enhances their extrac-tion and utilization. Together, these results validate that each proposed component addresses a distinct and necessary aspect of scalable video tokenization. 4.8 Scalability of TivTok Table 7 evaluates the scalability of our method with respect to model size, dataset scale, and resolution. Per-formance improves consistently as model size increases, indicating that larger models more effectively capture complex spatiotemporal dynamics. Expanding the train-ing data—e.g., with WebVid-10M (Bain et al., 2021) and VidProM (Wang and Yang, 2024)—further enhances performance by providing greater diversity and coverage. Compared with other decomposition-based video token-izers such as CMD (Yu et al., 2024b) and HiVAE (Liu et al., 2025), our method avoids manually imposing fixed decomposition patterns. Instead, it explicitly ex-tracts and reuses time-invariant information, leading to superior performance on WebVid-10M (Bain et al., 2021) and demonstrating stronger scalability. Regarding resolution, experiments on VidProM show that our ap-proach remains effective for higher-resolution video data, highlighting its robustness and potential for large-scale, high-resolution scenarios. Overall, these results confirm that our method scales effectively across model size, dataset scale, and resolution, enabled by the general principle of reusing time-invariant information and a clean, streamlined design. 12 W. Chen et al.      
+
+> Table 4 Quantitative effect of the number of TIV tokens. Experiments are conducted at 128 ×256 ×256 resolution; the table reports exact reconstruction and compression metrics.
+
+Method Num TIV Tokens Dim Comp. Rate (%) ↓ PSNR ↑ SSIM ↑ LPIPS ↓ rFVD ↓
+
+CV-VAE - 32768 4 0.521 29.00 0.8831 0.0729 72.91 TivTok 8 1024 128 0.521 30.07 0.9003 0.0618 28.96 TivTok 4 640 128 0.326 28.97 0.8825 0.0739 39.84 TivTok 2 448 128 0.228 27.20 0.8453 0.0951 81.18 TivTok 1 352 128 0.179 26.23 0.8210 0.1057 92.09      
+
+> Table 5 Quantitative effect of TIV/TV token allocation. Experiments are conducted at 128 ×256 ×256 resolution; the table reports exact reconstruction and compression metrics.
+
+Method TIV:TV Ratio Comp. Rate (%) ↓ PSNR ↑ SSIM ↑ LPIPS ↓ rFVD ↓
+
+CV-VAE - 0.521 29.00 0.8831 0.0729 72.91 TivTok 1:3 0.318 28.24 0.8663 0.0761 41.33 TivTok 1:1 0.229 27.52 0.8503 0.0887 64.76 TivTok 3:1 0.179 26.23 0.8210 0.1057 92.09  
+
+> Table 6 Ablation studies on the proposed components of TivTok.
+
+Methods PSNR ↑ SSIM ↑ LPIPS ↓ rFVD ↓
+
+w/o TIV/TV factorization 27.24 0.8530 0.0748 91.99 w/o Scope-Induced Factorization (SIF) 19.67 0.5691 0.5691 1359.38 w/o Invariant Broadcasting (IB) 17.69 0.4665 0.6083 3694.34 w/o Cross-Chunk TIV Reuse 25.81 0.8219 0.1069 93.49 TivTok 29.05 0.8831 0.0719 38.49 5 Discussion 
+
+TivTok is most beneficial when videos contain reusable structure over many frames. SIF encourages TIV tokens to aggregate shared semantics, while IB reuses these tokens across frames and chunks. As video length in-creases, this reuse avoids repeatedly encoding the same persistent content, explaining the larger efficiency gain observed in the long-video setting. The token visual-izations further show that the reusable component is not limited to pixel-static background, but can include semantic structure that remains stable under motion. The main limitation is that the assumption of reusable temporal invariants may be weaker for videos with abrupt scene cuts, highly non-stationary camera motion, rapidly changing objects, or little persistent content. In such cases, fewer tokens can be safely shared across time and the benefit of broadcasting may decrease. Jointly optimizing TivTok with larger downstream video generation models is also left for future work. 
+
+6 Conclusion 
+
+We present TivTok (Time-Invariant Tokenizer ), areuse-aware video tokenizer that represents persistent information with Time-Invariant (TIV) tokens and frame-specific residuals with Time-Variant (TV) tokens. TivTok realizes this representation through two com-plementary mechanisms. Scope-Induced Factorization (SIF) assigns different attention scopes to the two token groups, encouraging TIV tokens to aggregate informa-tion shared across frames while keeping TV tokens focused on frame-local variation. Invariant Broadcasting (IB) reuses the same TIV tokens during reconstruc-tion and across chunks, enabling parallel decoding and long-video tokenization with a smaller token budget. Our analysis and visualizations show that TIV tokens capture reusable semantic structure beyond pixel-level persistence, supporting their reuse across frames and chunks. Experiments show that TivTok achieves an rFVD of 12.65 on the standard 16 ×256 ×256 benchmark and improves compression efficiency by 2 .91 × for 128-frame videos compared with the evaluated baselines. These results suggest that separating reusable and TivTok 13 
+
+Table 7 Scalability of TivTok. TivTok consistently improves with larger models and datasets, and maintains strong performance across different video resolutions. 
+
+Method Comp. Rate (%) ↓ PSNR ↑ SSIM ↑ LPIPS ↓ rFVD ↓
+
+Scalability of Model Size. Tested on UCF-101 
+
+TivTok-Small 0.52 27.73 0.861 0.081 47.31 TivTok-Base 0.52 30.13 0.901 0.061 21.29 TivTok-Large 0.52 30.94 0.912 0.049 13.11 
+
+Scalability of Dataset Size and Resolution 
+
+CMD-WebVid-256 (Yu et al., 2024b) 6.85 26.55 0.795 0.110 98.62 HiVAE-WebVid-256 (Liu et al., 2025) 0.27 29.35 0.834 0.096 61.94 TivTok-WebVid-256 0.26 28.61 0.829 0.073 22.96 TivTok-WebVid-256 0.52 31.69 0.896 0.048 7.15 TivTok-VidProM-256 0.52 33.17 0.938 0.028 5.63 TivTok-VidProM-512 0.52 33.56 0.937 0.043 9.08 frame-specific content provides a practical direction for scalable video tokenization. 
+
+References 
+
+Agarwal N, Ali A, Bala M, Balaji Y, Barker E, Cai T, Chat-topadhyay P, Chen Y, Cui Y, Ding Y, et al. (2025) Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:250103575 Bain M, Nagrani A, Varol G, Zisserman A (2021) Frozen in time: A joint video and image encoder for end-to-end retrieval. In: Proceedings of the IEEE/CVF international conference on computer vision, pp 1728–1738 Blattmann A, Dockhorn T, Kulal S, Mendelevitch D, Kilian M, Lorenz D, Levi Y, English Z, Voleti V, Letts A, et al. (2023a) Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:231115127 Blattmann A, Rombach R, Ling H, Dockhorn T, Kim SW, Fi-dler S, Kreis K (2023b) Align your latents: High-resolution video synthesis with latent diffusion models. In: Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition, pp 22563–22575 Carreira J, Noland E, Banki-Horvath A, Hillier C, Zisserman A (2018) A short note about kinetics-600. arXiv preprint arXiv:180801340 Chen H, Wang Z, Li X, Sun X, Chen F, Liu J, Wang J, Raj B, Liu Z, Barsoum E (2025a) Softvq-vae: Efficient 1-dimensional continuous tokenizer. In: Proceedings of the Computer Vision and Pattern Recognition Conference, pp 28358–28370 Chen L, Li Z, Lin B, Zhu B, Wang Q, Yuan S, Zhou X, Cheng X, Yuan L (2024a) Od-vae: An omni-dimensional video compressor for improving latent video diffusion model. arXiv preprint arXiv:240901199 Chen W, Liu F, Wu D, Sun H, Lu J, Duan Y (2024b) Dreamcin-ema: Cinematic transfer with free camera and 3d character. arXiv preprint arXiv:240812601 Chen W, Bi J, Huang Y, Zheng W, Duan Y (2025b) Scenecom-pleter: Dense 3d scene completion for generative novel view synthesis. arXiv preprint arXiv:250610981 De Rivaz P, Haughton J (2019) Av1 bitstream & decoding process specification. The Alliance for Open Media 1:2 Goodfellow I, Pouget-Abadie J, Mirza M, Xu B, Warde-Farley D, Ozair S, Courville A, Bengio Y (2020) Generative adver-sarial networks. Communications of the ACM 63(11):139– 144 HaCohen Y, Chiprut N, Brazowski B, Shalem D, Moshe D, Richardson E, Levin E, Shiran G, Zabari N, Gordon O, et al. (2024) Ltx-video: Realtime video latent diffusion. arXiv preprint arXiv:250100103 Huang K, Huang Y, Wang X, Lin Z, Ning X, Wan P, Zhang D, Wang Y, Liu X (2025a) Filmaster: Bridging cinematic principles and generative ai for automated film generation. arXiv preprint arXiv:250618899 Huang Y, Zheng W, Gao Y, Tao X, Wan P, Zhang D, Zhou J, Lu J (2024) Owl-1: Omni world model for consistent long video generation. arXiv preprint arXiv:241209600 Huang Y, Chen W, Zheng W, Duan Y, Zhou J, Lu J (2025b) Spectralar: Spectral autoregressive visual generation. arXiv preprint arXiv:250610962 Jang H, Yu S, Shin J, Abbeel P, Seo Y (2025) Efficient long video tokenization via coordinate-based patch reconstruc-tion. In: Proceedings of the Computer Vision and Pattern Recognition Conference, pp 22853–22863 Jin Y, Sun Z, Xu K, Chen L, Jiang H, Huang Q, Song C, Liu Y, Zhang D, Song Y, et al. (2024) Video-lavit: Unified video-language pre-training with decoupled visual-motional tokenization. arXiv preprint arXiv:240203161 Johnson J, Alahi A, Fei-Fei L (2016) Perceptual losses for real-time style transfer and super-resolution. In: European conference on computer vision, Springer, pp 694–711 Kim K, Lee H, Park J, Kim S, Lee K, Kim S, Yoo J (2024) Hy-brid video diffusion models with 2d triplane and 3d wavelet representation. In: European Conference on Computer Vi-sion, Springer, pp 148–165 Larsen ABL, Sønderby SK, Larochelle H, Winther O (2016) Autoencoding beyond pixels using a learned similarity metric. In: International conference on machine learning, PMLR, pp 1558–1566 Li Y, Tian C, Xia R, Liao N, Guo W, Yan J, Li H, Dai J, Li H, Yang X (2025) Learning adaptive and temporally causal video tokenization in a 1d latent space. arXiv preprint arXiv:250517011 Li Z, Zhang J, Lin Q, Xiong J, Long Y, Deng X, Zhang Y, Liu X, Huang M, Xiao Z, et al. (2024) Hunyuan-dit: A power-ful multi-resolution diffusion transformer with fine-grained 14 W. Chen et al. chinese understanding. arXiv preprint arXiv:240508748 Liu F, Wang H, Chen W, Sun H, Duan Y (2024) Make-your-3d: Fast and consistent subject-driven 3d content generation. In: European Conference on Computer Vision, Springer, pp 389–406 Liu H, Sun W, Zhang Q, Di D, Gong B, Li H, Wei C, Zou C (2025) Hi-vae: Efficient video autoencoding with global and detailed motion. arXiv preprint arXiv:250607136 Ma N, Goldstein M, Albergo MS, Boffi NM, Vanden-Eijnden E, Xie S (2024) Sit: Exploring flow and diffusion-based generative models with scalable interpolant transformers. In: European Conference on Computer Vision, Springer, pp 23–40 Podell D, English Z, Lacey K, Blattmann A, Dockhorn T, M¨ uller J, Penna J, Rombach R (2023) Sdxl: Improving latent diffusion models for high-resolution image synthesis. arXiv preprint arXiv:230701952 Ren X, Huang J, Zeng X, Museth K, Fidler S, Williams F (2024a) Xcube: Large-scale 3d generative modeling using sparse voxel hierarchies. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp 4209–4219 Ren X, Lu Y, Liang H, Wu Z, Ling H, Chen M, Fidler S, Williams F, Huang J (2024b) Scube: Instant large-scale scene reconstruction using voxsplats. Advances in Neural Information Processing Systems 37:97670–97698 Richardson IE (2004) H. 264 and MPEG-4 video compression: video coding for next-generation multimedia. John Wiley & Sons Rombach R, Blattmann A, Lorenz D, Esser P, Ommer B (2022) High-resolution image synthesis with latent diffusion models. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp 10684–10695 Shu Y, Qiu Z, Yao T, Mei T (2026) Guidedvdm: Con-trollable video generation with long-term consistency. In-ternational Journal of Computer Vision 134(6), DOI 10.1007/s11263-026-02901-4 Soomro K, Zamir AR, Shah M (2012) Ucf101: A dataset of 101 human actions classes from videos in the wild. arXiv preprint arXiv:12120402 Tan Z, Xue B, Jia J, Wang J, Ye W, Shi S, Sun M, Wu W, Chen Q, Jiang P (2024) Sweettok: Semantic-aware spatial-temporal tokenizer for compact video discretization. arXiv preprint arXiv:241210443 Tang A, He T, Guo J, Cheng X, Song L, Bian J (2024) Vidtok: A versatile and open-source video tokenizer. arXiv preprint arXiv:241213061 Tian K, Jiang Y, Yuan Z, Peng B, Wang L (2024a) Visual autoregressive modeling: Scalable image generation via next-scale prediction. Advances in neural information processing systems 37:84839–84865 Tian R, Dai Q, Bao J, Qiu K, Yang Y, Luo C, Wu Z, Jiang YG (2024b) Reducio! generating 1k video within 16 seconds using extremely compressed motion latents. arXiv preprint arXiv:241113552 Unterthiner T, Van Steenkiste S, Kurach K, Marinier R, Michalski M, Gelly S (2018) Towards accurate generative models of video: A new metric & challenges. arXiv preprint arXiv:181201717 Wang H, Suri S, Ren Y, Chen H, Shrivastava A (2024a) Larp: Tokenizing videos with a learned autoregressive generative prior. arXiv preprint arXiv:241021264 Wang J, Jiang Y, Yuan Z, Peng B, Wu Z, Jiang YG (2024b) Omnitokenizer: A joint image-video tokenizer for visual generation. Advances in Neural Information Processing Systems 37:28281–28295 Wang S, Shen L, Xiao J, Tian Z, Wang F, Hu X, Zhu Y, Feng G (2026) Breaking redundancy via 3d sparse geom-etry: 3d-aware neural compression for multi-view videos. International Journal of Computer Vision 134(1), DOI 10.1007/s11263-025-02604-2 Wang W, Yang Y (2024) Vidprom: A million-scale real prompt-gallery dataset for text-to-video diffusion models. Advances in Neural Information Processing Systems 37:65618–65642 Wang Y, Guo J, Xie X, He T, Sun X, Bian J (2025) Vidtwin: Video vae with decoupled structure and dynamics. In: Pro-ceedings of the Computer Vision and Pattern Recognition Conference, pp 22922–22932 Wang Z, Bovik AC, Sheikh HR, Simoncelli EP (2004) Image quality assessment: from error visibility to structural simi-larity. IEEE transactions on image processing 13(4):600–612 Wu J, Yin S, Feng N, He X, Li D, Hao J, Long M (2024) ivideogpt: Interactive videogpts are scalable world mod-els. Advances in Neural Information Processing Systems 37:68082–68119 Xu X, Wang Y, Wang L, Yu B, Jia J (2023) Conditional tem-poral variational autoencoder for action video prediction. International Journal of Computer Vision 131(10):2699– 2722, DOI 10.1007/s11263-023-01832-8 Yan W, Mnih V, Faust A, Zaharia M, Abbeel P, Liu H (2024) Elastictok: Adaptive tokenization for image and video. arXiv preprint arXiv:241008368 Yang C, Shen Y, Zhou B (2021) Semantic hierarchy emerges in deep generative representations for scene synthesis. In-ternational Journal of Computer Vision 129(5):1451–1466, DOI 10.1007/s11263-020-01429-5 Yao J, Yang B, Wang X (2025) Reconstruction vs. generation: Taming optimization dilemma in latent diffusion models. In: Proceedings of the Computer Vision and Pattern Recog-nition Conference, pp 15703–15712 Yoo J, Kim S, Lee D, Kim C, Hong S (2023) Towards end-to-end generative modeling of long videos with memory-efficient bidirectional transformers. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp 22888–22897 Yu Q, Weber M, Deng X, Shen X, Cremers D, Chen LC (2024a) An image is worth 32 tokens for reconstruction and generation. Advances in Neural Information Processing Systems 37:128940–128966 Yu S, Sohn K, Kim S, Shin J (2023) Video probabilistic diffusion models in projected latent space. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp 18456–18466 Yu S, Nie W, Huang DA, Li B, Shin J, Anandkumar A (2024b) Efficient video diffusion models via content-frame motion-latent decomposition. arXiv preprint arXiv:240314148 Yu S, Hahn M, Kondratyuk D, Shin J, Gupta A, Lezama J, Essa I, Ross D, Huang J (2025) Malt diffusion: Memory-augmented latent transformers for any-length video genera-tion. arXiv preprint arXiv:250212632 Zhang R, Isola P, Efros AA, Shechtman E, Wang O (2018) The unreasonable effectiveness of deep features as a perceptual metric. In: Proceedings of the IEEE conference on computer vision and pattern recognition, pp 586–595 Zhang Y, Wang X, Chen H, Qin C, Hao Y, Mei H, Zhu W (2025) Scenariodiff: Text-to-video generation with dynamic transformations of scene conditions. International Jour-nal of Computer Vision 133(7):4909–4922, DOI 10.1007/ s11263-025-02413-7 Zhao S, Zhang Y, Cun X, Yang S, Niu M, Li X, Hu W, Shan Y (2024) Cv-vae: A compatible video vae for latent generative video models. Advances in Neural Information Processing TivTok 15 Systems 37:12847–12871 Zheng W, Chen W, Huang Y, Zhang B, Duan Y, Lu J (2024a) Occworld: Learning a 3d occupancy world model for au-tonomous driving. In: European conference on computer vision, Springer, pp 55–72 Zheng Z, Peng X, Yang T, Shen C, Li S, Liu H, Zhou Y, Li T, You Y (2024b) Open-sora: Democratizing efficient video production for all. arXiv preprint arXiv:241220404

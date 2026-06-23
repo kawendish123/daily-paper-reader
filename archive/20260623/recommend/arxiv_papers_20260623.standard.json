@@ -1,0 +1,240 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-23T22:11:34.971038+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2606.22403v1",
+      "source": "arxiv",
+      "title": "Maximum Likelihood Criterion for Non-nested Model Selection",
+      "abstract": "Penalization is a widely used approach to model selection with roots in information theory and Bayesian inference. We study a model selection problem involving non-nested candidate models for which penalization is counterproductive. We propose a Maximum Likelihood Criterion for this non-nested setting that selects the candidate model with the highest maximum likelihood. This criterion does not take into consideration the number of parameters of a candidate model. It is well-suited for situations where all candidate models are regarded as equal with no preference for models having fewer parameters. We establish the consistency of this criterion and compare its performance with that of existing penalization-based criteria.",
+      "authors": [
+        "Min Tsao"
+      ],
+      "primary_category": "stat.ME",
+      "categories": [
+        "stat.ME"
+      ],
+      "published": "2026-06-21T09:18:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.22403v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Maximum Likelihood Criterion for non-nested model selection",
+      "llm_evidence_cn": "非嵌套模型选择的最大似然准则",
+      "llm_evidence": "非嵌套模型选择的最大似然准则",
+      "canonical_evidence": "非嵌套模型选择的最大似然准则",
+      "llm_tldr_en": "Proposes a Maximum Likelihood Criterion for selecting among non-nested models without penalization, proven consistent.",
+      "llm_tldr_cn": "该论文针对非嵌套候选模型的选择问题，提出一种最大似然准则（Maximum Likelihood Criterion），该准则不考虑模型参数数量，直接选择具有最高最大似然值的模型。作者证明了该准则的一致性，并与现有基于惩罚的准则进行了比较，表明在非嵌套设置中惩罚可能适得其反。该方法适用于无偏好简化模型的情境，为模型选择提供了新的理论工具。",
+      "llm_tldr": "该论文针对非嵌套候选模型的选择问题，提出一种最大似然准则（Maximum Likelihood Criterion），该准则不考虑模型参数数量，直接选择具有最高最大似然值的模型。作者证明了该准则的一致性，并与现有基于惩罚的准则进行了比较，表明在非嵌套设置中惩罚可能适得其反。该方法适用于无偏好简化模型的情境，为模型选择提供了新的理论工具。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.22804v1",
+      "source": "arxiv",
+      "title": "CoVStream: Edge-Cloud Collaboration for Understanding of Long Video Streams",
+      "abstract": "Long, continuous video streams are an increasingly critical driver of multimedia intelligence. Existing efforts often handle long videos with a sample-encode-reason approach using large models. However, they overlook a crucial deployment fact: the stream is often produced by computationally constrained devices. This forces an untenable compromise: cloud offloading unlocks strong reasoning but incurs prohibitive bandwidth overhead, while on-device processing remains limited by edge hardware capacity. Therefore, we propose CoVStream, the first edge-cloud collaborative framework for understanding long video streams. The edge node distills raw video streams into compact visual features and semantic captions for transmission to the cloud, minimizing bandwidth costs, while the cloud server integrates this data into an entity graph and global visual context, activating the heavy reasoning model only when a user query arrives. Experiments on VideoMME-Long, LVBench, and RTV-Bench show that CoVStream reduces bandwidth usage by 87.6% while retaining 99.2% of the cloud baseline accuracy on LVBench.",
+      "authors": [
+        "Xu Liu",
+        "Guikun Chen",
+        "Zihao Yan",
+        "Kanzhi Wu",
+        "Wenguan Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-22T03:29:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.22804v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "edge-cloud collaboration for long video stream understanding",
+      "llm_evidence_cn": "端云协作理解长视频流",
+      "llm_evidence": "端云协作理解长视频流",
+      "canonical_evidence": "端云协作理解长视频流",
+      "llm_tldr_en": "CoVStream proposes an edge-cloud collaborative framework that distills long video streams into compact features and captions on the edge, reducing bandwidth while enabling cloud-level reasoning.",
+      "llm_tldr_cn": "针对长视频流理解中边缘设备计算受限与云端带宽开销大的矛盾，CoVStream提出首个端云协作框架：边缘节点将原始视频流蒸馏为紧凑视觉特征和语义描述再上传云端，大幅降低传输带宽；云端利用强推理能力完成理解任务。实验表明该方法在保持高准确率的同时，显著减少带宽消耗，为实时视频分析提供可行的部署方案。",
+      "llm_tldr": "针对长视频流理解中边缘设备计算受限与云端带宽开销大的矛盾，CoVStream提出首个端云协作框架：边缘节点将原始视频流蒸馏为紧凑视觉特征和语义描述再上传云端，大幅降低传输带宽；云端利用强推理能力完成理解任务。实验表明该方法在保持高准确率的同时，显著减少带宽消耗，为实时视频分析提供可行的部署方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.21929v1",
+      "source": "arxiv",
+      "title": "Selective Ensemble Based on Preference-Directed Multi-Objective Bandits",
+      "abstract": "Selective ensemble for modern machine learning systems requires choosing promising model candidates under limited evaluation budgets, while downstream tasks often specify only partial preferences over capabilities such as accuracy, robustness, and reasoning. This setting naturally gives rise to a sequential decision problem under partially specified linear preferences. We formalize it as preference-directed multi-objective bandits (PDMOB), where admissible trade-offs are represented by a polyhedral preference cone. Based on this formulation, we introduce Pareto $C$-optimality, which recovers standard Pareto optimality and single-weight scalarization as special cases. We then propose the preference-directed upper confidence bound (PrefUCB) algorithm, which maintains directional confidence intervals to guide exploration. We analyze both indicator-based and gap-weighted regret, and establish instance-dependent logarithmic bounds for both criteria, recovering the optimal logarithmic dependence on the horizon $T$ in classical special cases. Experiments on large pre-trained model selective ensemble tasks and online asset allocation under institutional mandates validate the efficacy of our method.",
+      "authors": [
+        "Lanjihong Ma",
+        "Zhen-Yu Zhang",
+        "Masashi Sugiyama",
+        "Zhi-Hua Zhou"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-20T07:52:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.21929v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "proposes a selective ensemble method using multi-objective bandits for model selection under partial preferences",
+      "llm_evidence_cn": "提出基于偏好多目标Bandits的选择性集成方法，用于模型选择，可应用于边缘计算",
+      "llm_evidence": "提出基于偏好多目标Bandits的选择性集成方法，用于模型选择，可应用于边缘计算",
+      "canonical_evidence": "提出基于偏好多目标Bandits的选择性集成方法，用于模型选择，可应用于边缘计算",
+      "llm_tldr_en": "Models model selection as a multi-objective bandit problem with partial preferences, proposing PrefUCB algorithm that adaptively selects candidate models.",
+      "llm_tldr_cn": "该论文将模型选择形式化为部分偏好下的多目标Bandit问题，提出PrefUCB算法，能够根据偏好锥自适应选择模型，其方法可迁移至边缘计算中模型选择任务，具有较高方法价值。",
+      "llm_tldr": "该论文将模型选择形式化为部分偏好下的多目标Bandit问题，提出PrefUCB算法，能够根据偏好锥自适应选择模型，其方法可迁移至边缘计算中模型选择任务，具有较高方法价值。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.17590v1",
+      "source": "arxiv",
+      "title": "TivTok: Broadcasting Time-Invariant Tokens for Scalable Video Tokenization",
+      "abstract": "Video tokenization is fundamental to scalable video generation, as the number of tokens directly determines the computational cost and the length of videos that can be modeled. Existing tokenizers mainly improve scalability by compressing videos into fewer tokens, but they often continue to represent persistent content, such as static backgrounds and consistent object appearances, repeatedly across frames and chunks. In this paper, we propose \\textbf{TivTok} (\\textit{Time-Invariant Tokenizer}), a reuse-aware video tokenizer that makes persistent information reusable across time. TivTok represents a clip with Time-Invariant (TIV) tokens that encode information shared across frames and Time-Variant (TV) tokens that encode frame-specific residuals. To obtain this factorization, we introduce Scope-Induced Factorization (SIF), which assigns different attention scopes to the two token groups: TIV tokens attend to the full clip, whereas each TV token only accesses its corresponding frame together with the TIV tokens. In the decoder, Invariant Broadcasting (IB) reuses the same TIV tokens across frames and chunks for parallel reconstruction and long-video tokenization. Experiments show that TivTok achieves an rFVD of 12.65 on the standard $16{\\times}256{\\times}256$ benchmark and improves compression efficiency by 2.91$\\times$ for 128-frame videos compared with the evaluated baselines, while using only 1.1\\% of the tokens required by downsample-based tokenizers in our evaluation.",
+      "authors": [
+        "Weiliang Chen",
+        "Yuanhui Huang",
+        "Xuebo Wang",
+        "Yueqi Duan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-16T06:52:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.17590v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Video tokenization method that separates time-invariant and time-variant tokens for efficient analysis",
+      "llm_evidence_cn": "视频令牌化方法，分离时不变与时变令牌以实现高效分析",
+      "llm_evidence": "视频令牌化方法，分离时不变与时变令牌以实现高效分析",
+      "canonical_evidence": "视频令牌化方法，分离时不变与时变令牌以实现高效分析",
+      "llm_tldr_en": "Proposes TivTok tokenizer that separates persistent content (time-invariant) from frame-specific residuals, reducing token redundancy for scalable video representation.",
+      "llm_tldr_cn": "现有视频令牌化方法重复编码持续内容（如背景），导致令牌冗余。TivTok提出分离时不变令牌（编码帧间共享信息）和时变令牌（编码帧特定残差），实现更紧凑的视频表示。实验表明，该方法在保持生成质量的同时显著减少令牌数量，为流式视频分析中的高效特征提取提供了基础。该工作有助于降低边缘端视频处理的计算开销。",
+      "llm_tldr": "现有视频令牌化方法重复编码持续内容（如背景），导致令牌冗余。TivTok提出分离时不变令牌（编码帧间共享信息）和时变令牌（编码帧特定残差），实现更紧凑的视频表示。实验表明，该方法在保持生成质量的同时显著减少令牌数量，为流式视频分析中的高效特征提取提供了基础。该工作有助于降低边缘端视频处理的计算开销。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.22296v1",
+      "source": "arxiv",
+      "title": "SCENIC: Semantic-Conditioned Edge-Aware Neural Framework for Structured IoT Command Generation",
+      "abstract": "Edge Internet of Things (IoT) agents are often constrained by memory capacity, privacy requirements, communication latency, and recurring inference cost. Current smart-home assistants commonly rely on API-level command interfaces or cloud-based language models that remain difficult to deploy on edge devices. This paper addresses edge IoT command generation as a many-to-one structured output task, where multiple natural-language instructions map to the same canonical command string for deterministic smart-home parsing. To support this setting, we propose Semantic-Conditioned Edge-Aware Neural Framework for Structured IoT Command Generation (SCENIC), an end-to-end framework covering model architecture selection, Smart Home Instruct data generation, triplet-loss contrastive supervised fine-tuning, pruning and quantization, and deployment-oriented export. We evaluate sub-0.2B-scale transformer backbones, which are, to the best of our knowledge, among the smallest language-model backbones studied for edge IoT structured command generation. On Smart Home Instruct-Bench, the strongest dense decoder-only row reaches 99.0% EM@1, while the encoder-decoder model retains stronger high-sparsity behavior. A representative pruned INT8 encoder-decoder export preserves 91.0% EM@1 and 99.0% EM@5 while reducing exported model size by 25.38%. TensorRT profiling of the NVIDIA 2:4 sparse encoder export further shows up to 1.8x encoder-component speedup, indicating that the selected encoder-decoder deployment path can retain structured command accuracy under edge-oriented compression while hardware acceleration evidence remains component-level. The SCENIC code and experimental artifacts are open sourced to support reproducibility.",
+      "authors": [
+        "Luke Ztz Hu",
+        "Hongbing Lang",
+        "Songping Mai"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-21T01:41:35+00:00",
+      "link": "https://arxiv.org/pdf/2606.22296v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "model architecture selection on edge IoT devices",
+      "llm_evidence_cn": "边缘IoT设备上的模型架构选择",
+      "llm_evidence": "边缘IoT设备上的模型架构选择",
+      "canonical_evidence": "边缘IoT设备上的模型架构选择",
+      "llm_tldr_en": "SCENIC proposes an edge-aware neural framework with model architecture selection for structured IoT command generation, enabling efficient deployment on edge devices.",
+      "llm_tldr_cn": "该论文针对边缘IoT设备在内存、延迟和隐私方面的约束，提出语义条件边缘感知神经框架SCENIC，核心包括模型架构选择模块，以在边缘设备上部署结构化命令生成模型。通过将多自然语言指令转换为唯一命令字符串，SCENIC实现了确定性解析，并在智能家居数据集上验证了其高效性和准确性，为边缘计算中的模型选择提供了新思路。",
+      "llm_tldr": "该论文针对边缘IoT设备在内存、延迟和隐私方面的约束，提出语义条件边缘感知神经框架SCENIC，核心包括模型架构选择模块，以在边缘设备上部署结构化命令生成模型。通过将多自然语言指令转换为唯一命令字符串，SCENIC实现了确定性解析，并在智能家居数据集上验证了其高效性和准确性，为边缘计算中的模型选择提供了新思路。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.23078v1",
+      "source": "arxiv",
+      "title": "A Systematic Survey on Event Camera Representation Learning",
+      "abstract": "Event cameras offer distinctive advantages, including microsecond-level latency and high dynamic range, rendering them promising for challenging perception tasks. Inspired by biological vision, they output asynchronous and sparse event streams rather than dense image frames, creating a fundamental mismatch with mainstream neural networks. This survey reviews recent advances in event camera representation learning from the perspective of converting raw event streams into learnable representations. We organize existing methods into two main categories: (1) dense-based representations, which transform raw event streams into regular grid-like structures to leverage mature RGB backbones and multimodal fusion pipelines, and (2) sparse-based representations, which retain events as discrete spatio-temporal structures to preserve fine-grained temporal dynamics and data sparsity. This representation-centric organization clarifies how different representations balance structural regularity, temporal fidelity, sparsity preservation, and architectural compatibility. For each category, we examine the underlying design choices, modeling principles, and task-level implications.We further summarize standard benchmarks and evaluation settings across representative high-level perception and low-level vision tasks. Finally, we discuss open problems and outline future research directions toward more efficient, scalable, and robust event-based perception systems.",
+      "authors": [
+        "Hongwei Ren",
+        "Youxin Jiang",
+        "Tuopusen Huang",
+        "Xiangqian Wu"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV"
+      ],
+      "published": "2026-06-22T09:26:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.23078v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Survey on event camera representations for streaming video analysis",
+      "llm_evidence_cn": "关于事件相机表示用于流式视频分析的综述",
+      "llm_evidence": "关于事件相机表示用于流式视频分析的综述",
+      "canonical_evidence": "关于事件相机表示用于流式视频分析的综述",
+      "llm_tldr_en": "A comprehensive survey categorizing dense and sparse event representations for high-speed vision, providing a taxonomy directly applicable to streaming video analysis.",
+      "llm_tldr_cn": "事件相机以微秒级延迟捕捉动态场景，但输出异步稀疏事件流，为流式视频分析带来挑战。该综述系统梳理了将事件流转化为密集网格或保留稀疏性的两类表示方法，分析了它们在实时边缘视频分析场景中精度与效率的权衡。研究表明，稀疏表示在低延迟任务中优势明显，而密集表示便于复用现有深度学习模型。该综述为边缘端流式视频分析中的事件表示选择提供了系统指导。",
+      "llm_tldr": "事件相机以微秒级延迟捕捉动态场景，但输出异步稀疏事件流，为流式视频分析带来挑战。该综述系统梳理了将事件流转化为密集网格或保留稀疏性的两类表示方法，分析了它们在实时边缘视频分析场景中精度与效率的权衡。研究表明，稀疏表示在低延迟任务中优势明显，而密集表示便于复用现有深度学习模型。该综述为边缘端流式视频分析中的事件表示选择提供了系统指导。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

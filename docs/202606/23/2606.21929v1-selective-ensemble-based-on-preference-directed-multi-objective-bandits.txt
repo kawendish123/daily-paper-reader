@@ -1,0 +1,2983 @@
+Title: Selective Ensemble Based on Preference-Directed Multi-Objective Bandits
+
+URL Source: https://arxiv.org/pdf/2606.21929v1
+
+Published Time: Tue, 23 Jun 2026 01:50:05 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+Selective Ensemble Based on Preference-Directed Multi-Objective Bandits 
+
+Lanjihong Ma ∗ MALANJIHONG @ZJGSU .EDU .CN 
+
+Department of Computer Science, Zhejiang Gongshang University, China 
+
+Zhen-Yu Zhang ∗ ZHEN -YU .ZHANG @RIKEN .JP 
+
+Center for Advanced Intelligence Project, RIKEN, Japan 
+
+Masashi Sugiyama SUGI @K.U-TOKYO .AC .JP 
+
+Center for Advanced Intelligence Project, RIKEN, Japan Graduate School of Frontier Sciences, The University of Tokyo, Japan 
+
+Zhi-Hua Zhou ZHOUZH @LAMDA .NJU .EDU .CN 
+
+National Key Laboratory for Novel Software Technology, Nanjing University, China School of Artificial Intelligence, Nanjing University, China 
+
+Abstract 
+
+Selective ensemble for modern machine learning systems requires choosing promising model candidates under limited evaluation budgets, while downstream tasks often specify only partial preferences over capabilities such as accuracy, robustness, and reasoning. This setting naturally gives rise to a sequential decision problem under partially specified linear preferences. We formalize it as preference-directed multi-objective bandits (PDMOB), where admissible trade-offs are represented by a polyhedral preference cone. Based on this formulation, we introduce 
+
+Pareto C-optimality , which recovers standard Pareto optimality and single-weight scalarization as special cases. We then propose the preference-directed upper confidence bound (PrefUCB) algorithm, which maintains directional confidence intervals to guide exploration. We analyze both indicator-based and gap-weighted regret, and establish instance-dependent logarithmic bounds for both criteria, recovering the optimal logarithmic dependence on the horizon T in classical special cases. Experiments on large pre-trained model selective ensemble tasks and online asset allocation under institutional mandates validate the efficacy of our method. 
+
+Keywords: multi-objective bandits, ensemble, Pareto optimality 
+
+1. Introduction 
+
+Machine learning models have achieved remarkable success across a wide range of real-world tasks (Goodfellow et al., 2016; Brown et al., 2020; Zhou, 2021), yet their performance differs across abilities such as predictive accuracy, worst-case robustness, reasoning, and memorization (Roughgarden, 2021; Jelassi et al., 2024). The choice of model therefore depends on which abilities are most relevant to the downstream application. For example, in safety-critical applications such as autonomous driving and medical diagnosis, both predictive accuracy and worst-case robustness should be considered, as a single failure under extreme conditions could lead to catastrophic consequences (Wang et al., 2021; Robey et al., 2022). The diverse capabilities of machine learning models imply that users may prioritize different model capabilities for different downstream tasks . Crucially, such preferences are often partially specified : users can usually describe acceptable trade-offs, such as giving up some multi-tasking ability for stronger reasoning in legal document review tasks (Keeling et al., 2022), without specifying a precise scalar utility function. This form of preference falls into an important but overlooked gap between standard Pareto optimality (Censor, 1977), which treats all objectives as equally non-substitutable, and scalarization (Miettinen, 1999), which requires exact weights over capabilities that users often cannot provide in practice. A natural way to address such preferences is the selective ensemble paradigm (Zhou et al., 2002; Zhou, 2012), which selects from a pool of base models to explore diverse capability profiles without retraining for each task. Since evaluating every base model on the full downstream dataset is computationally expensive, we cast the selection process as a multi-objective bandit (MOB) problem (Drugan and Nowé, 2013), in which only the selected          
+
+> 1. ∗Lanjihong Ma and Zhen-Yu Zhang contributed equally to this work.
+> ©2024 .
+> arXiv:2606.21929v1 [cs.LG] 20 Jun 2026 MA, Z HANG , S UGIYAMA ,AND ZHOU
+> Figure 1: Visualization of preference-directed Pareto C-optimality in three cases using LLM performance data. Each point is an LLM’s normalized reasoning (x-axis) and multitasking (y-axis) score; negative values indicate relaxable trade-offs. The blue region shows the preference cone C, defining admissible trade-offs between objectives. Gray and blue points denote non-optimal and Pareto C-optimal LLMs, highlighting how Cgeneralizes standard Pareto optimality by incorporating user-specified trade-off structures.
+
+models are queried on a subset of the data and suitable candidates are identified through exploration-exploitation trade-offs. However, existing MOB algorithms fall into two extremes: Pareto-based methods do not exploit user input on acceptable trade-offs, while scalarized methods require a fully specified utility that users typically cannot provide. As a result, both approaches fail to capture the partial preferences that arise in practice. In this paper, we formulate selective ensemble with partial preferences as the preference-directed multi-objective bandit (PDMOB) problem. Specifically, we formalize the preference direction as a polyhedral set that represents trade-offs between different model capabilities. Based on this formalization, we extend the standard Pareto optimality to the preference-directed Pareto optimality , which generalizes the traditional Pareto optimality by incorporating directional trade-offs between objectives. As shown in Figure 1, standard Pareto optimality uses a 90-degree polyhedral cone that treats both objectives equally, whereas our preference-directed formulation allows varying angular regions that reflect relative importance and acceptable trade-offs across scenarios. Based on the extended Pareto optimality, the PDMOB problem involves a learner in sequentially evaluating models on subsets of the dataset while facing two central challenges: meeting the extended optimality condition that requires joint evaluation across preference directions, and managing a modified exploration-exploitation trade-off to account for directional uncertainties. To handle these challenges, we propose a novel Preference-directed Upper Confidence Bound (PrefUCB) algorithm, which maintains directional confidence intervals and balances exploration and exploitation along preference directions. Theoretically, we prove that PrefUCB achieves an optimal instance-dependent regret bound that matches the lower bounds of classical multi-armed bandits and standard multi-objective bandits in their respective special cases. Experiments on model selection tasks validate the efficacy of our approach. We summarize the main contributions as follows: 
+
+• We formulate the preference-directed multi-objective bandit (PDMOB) problem, a stochastic bandit framework in which partially specified preferences are encoded as a polyhedral cone C, and introduce the notion of Pareto 
+
+C-optimality, which subsumes standard Pareto optimality and full scalarization as special cases. 
+
+• We propose PrefUCB , an optimistic algorithm for learning under cone-induced preferences, and establish instance-dependent logarithmic regret bounds under two complementary criteria, recovering the classical optimal rates in the Pareto and scalarization limits. 
+
+• We test PrefUCB on several selective ensemble tasks, showing that preference-directed exploration more efficiently identifies candidates aligned with task-specific trade-offs. 
+
+2. Problem Formulation 
+
+In this section, we first introduce preference directions and Pareto C-optimality, then formalize the PDMOB problem with its performance measures, and finally discuss the core challenges.      
+
+> 2SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS
+
+2.1 Preference Direction and Pareto C-Optimality 
+
+In this part, we first introduce the definitions of preference directions and Pareto C-optimality. 
+
+Definition 1 (Preference Direction) Given W ∈ RM ×d, where each row encodes a linear preference over the d
+
+sub-objectives, the preference direction is the closed polyhedral cone 
+
+C := {x ∈ Rd | Wx ≥ 0}.
+
+Definition 2 ( C-Dominance and Pareto C-Optimality) For x, y ∈ Rd, we say x C-dominates y, written x ⪰C
+
+y, if x − y ∈ C. For actions i, j , we abbreviate r(i) ⪰C r(j) as i ⪰C j. An action is Pareto C-optimal if no other action C-dominates it, and we let 
+
+P ∗ 
+
+> C
+
+:= {i ∈ [K] | ∄ j ∈ [K] \ { i} : j ⪰C i},
+
+where [K] := {1, . . . , K }. When C is not pointed, ⪰C is a cone-induced preorder. 
+
+The following example shows how different choices of C recover standard multi-objective formulations and express partial trade-off information. 
+
+Example 1 The preference cone C generalizes classical settings (Censor, 1977): (i) taking W = Id gives 
+
+C = Rd
+
+> +
+
+, recovering standard Pareto optimality; (ii) a single row W = w⊤ (M = 1 ) reduces C to a half-space, recovering linear scalarization; (iii) with M > 1 general rows, C is the intersection of half-spaces, modeling partially specified linear preferences built from user trade-offs (e.g., “favor sub-objective 1 over 2” corresponds to a row [1 , −1, 0, . . . , 0] ). 
+
+Before stating the learning objective and regret bounds, we introduce normalized projections along each preference direction and the corresponding preference gaps. 
+
+Definition 3 (Normalized Preference Projections) For direction k ∈ [M ], the normalized projection of r ∈ Rd
+
+is 
+
+Sk(r) := w⊤ 
+
+> k
+
+r − Lk
+
+Uk − Lk
+
+, Lk = X
+
+> i
+
+min(0 , wk,i ), U k = X
+
+> i
+
+max(0 , wk,i ),
+
+so that Sk(r) ∈ [0 , 1] whenever r ∈ [0 , 1] d.
+
+Assumption 1 (Strict Separability) Every non-Pareto-C-optimal action a / ∈ P ∗ 
+
+> C
+
+admits some Pareto-C-optimal dominator a∗ ∈ D (a) with 
+
+min   
+
+> k∈[M]
+
+w⊤
+
+> k
+
+r(a∗) − r(a) > 0.
+
+Remark 1 Assumption 1 plays the same role as the positive-gap condition in classical stochastic bandits: it rules out weakly dominated actions, for which instance-dependent logarithmic regret bounds in 1/∆a are generally unattainable. 
+
+Definition 4 (Preference Gaps) Let D(a) = {a∗ ∈ P ∗ 
+
+> C
+
+: a∗ ⪰C a, a ∗̸ = a}. For a / ∈ P ∗ 
+
+> C
+
+, define 
+
+∆a := max  
+
+> a∗∈D (a)
+
+min  
+
+> k∈[M]
+
+w⊤ 
+
+> k
+
+[r(a∗) − r(a)] 
+
+Uk − Lk
+
+> 0,
+
+and set ∆a := 0 for a ∈ P ∗ 
+
+> C
+
+.  
+
+> 3MA, Z HANG , S UGIYAMA ,AND ZHOU
+
+At each t ∈ [T ]: 
+
+> 1:
+
+The learner selects at ∈ [K] and incurs unobserved regrets ℓ01  
+
+> t
+
+(at) = I(at /∈ P ∗ 
+
+> C
+
+) and 
+
+ℓgap  
+
+> t
+
+(at) = ∆ at I(at /∈ P ∗ 
+
+> C
+
+); 
+
+> 2:
+
+The learner observes yt ∈ [0 , 1] d with E[yt] = r(at).
+
+Objective. Minimize R01  
+
+> T
+
+= PTt=1 I(at /∈ P ∗ 
+
+> C
+
+) and Rgap  
+
+> T
+
+= PTt=1 ∆at I(at /∈ P ∗ 
+
+> C
+
+). 
+
+> Figure 2: The Preference-Directed Multi-Objective Bandits (PDMOB) problem.
+
+2.2 Preference-Directed Multi-Objective Bandits 
+
+In this part, we formalize the PDMOB problem induced by the preference cone C. We consider an action set 
+
+A := [ K], where each a ∈ [K] has an unknown reward vector r(a) ∈ [0 , 1] d. At round t ∈ [T ], the learner selects 
+
+at and observes a noisy reward yt ∈ [0 , 1] d with E[yt | at] = r(at). Since Pareto C-optimality of at is not directly observable, the goal is to play Pareto C-optimal actions as often as possible. We evaluate performance via two complementary measures: the indicator regret , capturing whether a chosen action is Pareto C-optimal, and the gap-weighted regret , capturing how severely a suboptimal choice violates preference-directed optimality. 
+
+Definition 5 (Cumulative Regrets) Over T rounds, the cumulative indicator and gap-weighted regrets are 
+
+R01  
+
+> T
+
+:= 
+
+> T
+
+X
+
+> t=1
+
+I(at /∈ P ∗ 
+
+> C
+
+), Rgap  
+
+> T
+
+:= 
+
+> T
+
+X
+
+> t=1
+
+∆at I(at /∈ P ∗ 
+
+> C
+
+).
+
+Together, these definitions yield the PDMOB protocol summarized in Figure 2. 
+
+2.3 Core Challenges 
+
+In this part, we discuss the core challenges of the PDMOB problem, focusing on two structural difficulties that do not arise in standard Pareto- or scalarization-based bandits. 
+
+• Joint confidence across directions. Standard Pareto dominance is verified coordinate-wise, so per-objective estimation errors decouple. Pareto C-optimality requires all M polyhedral constraints to hold jointly : an error along any single direction can misclassify a suboptimal arm, forcing simultaneous confidence control over all directions. 
+
+• Directional, arm-dependent gaps. Unlike fixed coordinate-wise gaps in MOB, the effective gap ∆a depends on both the chosen dominator a∗ and the tightest separating direction. Different suboptimal arms are hardest to distinguish along different directions, so uniform exploration across coordinates or arms cannot adapt to this geometry. 
+
+3. Algorithm and Theory 
+
+In this section, we first give a directional characterization of C-dominance, turning the cone-based preference relation to scalar comparisons. This characterization yields structural requirements that guide the design of an optimistic algorithm for PDMOB. We then state the regret guarantee of the proposed algorithm. 
+
+3.1 A Directional Characterization of C-Dominance 
+
+By Definition 2, action i C -dominates action j, written i ⪰C j, if and only if 
+
+r(i) − r(j) ∈ C.      
+
+> 4SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS
+
+Algorithm 1 Preference-Directed Upper Confidence Bound (PrefUCB)  
+
+> 1:
+
+Input: action set A, preference direction matrix W, horizon T 
+
+> 2:
+
+Initialization: pull each action a ∈ A once; set n(a) ← 1 and initialize br(a) using the observed reward vector  
+
+> 3:
+
+for t = |A| + 1 , |A| + 2 , . . . , T do  
+
+> 4:
+
+for each action a ∈ A do  
+
+> 5:
+
+for each direction k ∈ [M ] do  
+
+> 6:
+
+Compute bSk(a) by (2)  
+
+> 7:
+
+Compute Ua,k (t) by (3)  
+
+> 8:
+
+end for  
+
+> 9:
+
+Set Ua(t) ← min k∈[M ] Ua,k (t) 
+
+> 10:
+
+end for  
+
+> 11:
+
+Select at ∈ arg max a∈A Ua(t) 
+
+> 12:
+
+Observe feedback yt(at) ∈ [0 , 1] d 
+
+> 13:
+
+Update 
+
+n(at) ← n(at) + 1 , br(at) ← (n(at) − 1) br(at) + yt(at)
+
+n(at) 
+
+> 14:
+
+end for 
+
+Since C is defined by the preference direction matrix W = [ w⊤ 
+
+> 1
+
+, w⊤ 
+
+> 2
+
+, . . . , w⊤ 
+
+> M
+
+] ∈ RM ×d, this is equivalent to 
+
+W(r(i) − r(j)) ≥ 0. Using the normalized directional projections Sk(·) from Definition 3, which are positive affine transformations of w⊤ 
+
+> k
+
+r, we get the equivalent form 
+
+i ⪰C j ⇐⇒ min  
+
+> k∈[M]
+
+Sk(r(i)) − Sk(r(j))  ≥ 0. (1) Eq. (1) shows that C-dominance can be verified via M scalar comparisons, avoiding explicit cone geometry. When the reward vectors are known, Pareto-C-optimality can be checked pairwise in O(M K 2) time for K := |A| 
+
+actions. More importantly, Eq. (1) suggests that a sequential algorithm for the PDMOB problem should estimate rewards along preference directions and aggregate them through a worst-case criterion. 
+
+3.2 Preference-Directed Upper Confidence Bound 
+
+In this part, we introduce our proposed algorithm. The characterization in Eq. (1) leads to three requirements on the optimistic algorithm for the PDMOB problem: 
+
+• Directional estimation. C-dominance is checked along directions, not coordinates. So confidence must be tracked for each w⊤ 
+
+> k
+
+r(a), not for each coordinate of r(a). Tracking coordinates wastes effort on directions orthogonal to C.
+
+• Worst-direction aggregation. Pareto-C-optimality requires an action to compete on all directions at once (the min k in Eq. (1) ). A worst-direction score gives a conservative single-index certificate aligned with this component-wise dominance structure. Averages or sums may accept actions that are strong on some directions but fail on others. 
+
+• KL-sharp confidence. The projections Sk(r(a)) yield bounded [0 , 1] feedback, so each direction is a scalar bounded-mean problem, where KL-type bounds are instance-optimal. These requirements motivate the Preference-Directed Upper Confidence Bound (PrefUCB) algorithm, whose main components are summarized in Algorithm 1. 
+
+Directional empirical rewards. Let br(a) be the empirical mean reward vector of action a and let n(a) be its pull count. For direction k ∈ [M ], the directional empirical reward is 
+
+bSk(a) = Sk(br(a)) = w⊤ 
+
+> k
+
+br(a) − Lk
+
+Uk − Lk
+
+, (2)   
+
+> 5MA, Z HANG , S UGIYAMA ,AND ZHOU
+
+with Lk and Uk from Definition 3. Since Sk(·) is affine, Sk(yt(a)) stays in [0 , 1] and 
+
+E[Sk(yt(a))] = Sk(r(a)) .
+
+So for each direction, estimating Sk(r(a)) is a scalar bounded-mean problem. 
+
+Directional confidence index. Let 
+
+KL( x, q ) = x log xq + (1 − x) log 1 − x
+
+1 − q
+
+be the Bernoulli KL divergence. Following the instance-optimal bound for bounded scalar means (Garivier and Cappe, 2011), we set the directional confidence index for each action a and direction k at round t as 
+
+Ua,k (t) = sup 
+
+n
+
+q ∈ [ bSk(a), 1] : n(a)KL   bSk(a), q  ≤ βt
+
+o
+
+, (3) where βt = log t. This is the KL-UCB confidence index applied to the scalar directional feedback Sk(yt(a)) .Since Sk(yt(a)) ∈ [0 , 1] , each preference direction becomes a one-dimensional bounded-mean bandit problem; the Bernoulli KL index above is the standard KL-UCB confidence index for bounded rewards and provides an optimistic upper confidence bound for Sk(r(a)) .
+
+Worst-direction aggregation as a C-dominance certificate. The directional indices are combined into a single score 
+
+Ua(t) = min   
+
+> k∈[M]
+
+Ua,k (t).
+
+The minimum is not the only possible way to use directional confidence bounds; one could also design pairwise dominance tests or maintain an optimistic estimate of the full Pareto-C frontier. We use the worst-direction score because it is a simple single-index certificate that is monotone with respect to componentwise directional comparisons: if an arm is uniformly below a Pareto-C-optimal dominator in all preference directions, then its minimum directional index is also below that dominator’s minimum directional index. This property is exactly what the elimination argument in Appendix A exploits. Finally, PrefUCB picks the action with the largest score: 
+
+at ∈ arg max  
+
+> a∈A
+
+Ua(t). (4) This rule is a selection policy rather than a Pareto-C frontier identification procedure: PrefUCB only needs to avoid non-Pareto-C-optimal actions under the regret criteria, not to enumerate all actions in P ∗ 
+
+> C
+
+.The same structure explains why two natural baselines fall short. A coordinate-wise Pareto-UCB tracks confidence on each objective dimension i ∈ [d] and checks pairwise Pareto dominance. This spends effort on directions orthogonal to C and gives a rate that scales with d rather than M , which is loose when M ≪ d. A scalarized UCB goes the other way and collapses the reward onto a single w⊤r. It recovers only one face of the Pareto-C-optimal set and cannot check C-dominance on the other M − 1 directions, so it is inconsistent with Definition 2 whenever M > 1. PrefUCB sits between these two extremes: directional enough to respect C, and aggregated tightly enough to scale with M rather than d.For fixed a and k, the set in Eq. (3) is an interval because q 7 → KL( bSk(a), q ) is continuous and strictly increasing on [ bSk(a), 1] . So each Ua,k (t) can be computed by one-dimensional binary search. The per-round cost is linear in the number of actions and directions, up to the precision of the root-finding routine. 
+
+3.3 Theoretical Results 
+
+In this part, we show the instance-dependent regret guarantee for the PrefUCB algorithm.      
+
+> 6SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS
+
+Theorem 1 Under Assumption 1, for a PDMOB problem with preference direction matrix W ∈ RM ×d, Algo-rithm 1 satisfies 
+
+ER01 
+
+> T
+
+ = O
+
+ X 
+
+> a / ∈P∗
+> C
+
+ M log T
+
+∆2
+
+> a
+
++ 1 
+
+ ,
+
+where ∆a is the preference gap from Definition 4. The full proof is in Appendix A. 
+
+The bound matches the structural analysis of Section 3.2: the log T factor comes from KL-optimal per-direction estimation, the M factor from a union bound over the M directions (not from the ambient dimension d), and the 
+
+∆−2 
+
+> a
+
+factor from the uniform directional margin given by C-dominance. Each term maps to a specific part of the cone-induced structure, not to a generic UCB template. 
+
+Proof sketch. Fix any non-Pareto-C-optimal action a. By the gap definition and the separability assumption, there exists a Pareto-C-optimal dominator a⋆ that is uniformly better than a along every normalized preference direction, with margin ∆a. PrefUCB estimates exactly these directional projections. Once a has been sampled enough for its directional confidence widths to be smaller than this margin, the worst-direction optimistic score of 
+
+a falls below that of a⋆, unless one of two bad events occurs: a’s empirical projection is overly optimistic in some direction, or the confidence index of a⋆ fails to cover its true directional value. The first type of event is controlled by concentration over the sample counts of a, and the second by the standard adaptive KL-UCB coverage bound. Taking a union bound over the M preference directions gives the arm-wise logarithmic pull bound, and summing over all non-Pareto-C-optimal actions yields the theorem. 
+
+Corollary 1 Under the same conditions as Theorem 1, Algorithm 1 satisfies 
+
+ERgap 
+
+> T
+
+ = O
+
+ X 
+
+> a / ∈P∗
+> C
+
+ M log T
+
+∆a
+
++ ∆ a
+
+ .
+
+Remark 2 Several classical settings are degenerate cases of PDMOB, obtained by collapsing the cone. Setting 
+
+W = Id drops the preference information and makes C the positive orthant, which gives standard Pareto bandits (Drugan and Nowé, 2013); here PrefUCB’s M -dependence becomes d, matching the known rate 
+
+O
+
+P 
+
+> a / ∈P∗
+> C
+
+d log T / ∆2
+
+> a
+
+
+
+. Setting M = 1 collapses C to a halfspace and removes the multi-direction struc-ture, giving scalarized bandits (Lai and Robbins, 1985; Auer, 2002) with the classical O P  
+
+> a:∆ a>0
+
+log T / ∆2
+
+> a
+
+
+
+rate. Further setting d = 1 gives the classical multi-armed bandit with the same optimal bound. These reductions show that PrefUCB’s structure is active only when the cone is nontrivial; when it degenerates, the algorithm and the bound reduce to the matching classical benchmark. 
+
+Remark 3 PrefUCB depends on the number of preference directions M , not directly on the objective dimension d.So when the preferences are sparse ( M ≪ d), the algorithm stays efficient in high-dimensional objective spaces. 
+
+4. Experiments 
+
+In this section, we evaluate PrefUCB on two complementary tasks: selective ensemble of LLMs with simulated preferences and online asset allocation with mandates learned from historical data. Both settings naturally fit the MOB framework where multi-dimensional rewards are observed only for selected actions. 
+
+4.1 Selective Ensemble on LLMs 
+
+We test PrefUCB on selective ensemble tasks where a learner sequentially selects models from a candidate pool under user-defined multi-criteria preferences. This naturally fits the MOB setting: each model is an action with multi-dimensional rewards, and due to high LLM evaluation costs, feedback is observed only for the selected 
+
+> 7
+
+MA, Z HANG , S UGIYAMA , AND ZHOU 
+
+Figure 3: Cumulative regret across benchmark and real-world scenarios. Shaded areas represent one standard deviation over repeated runs. PrefUCB consistently performs well across both synthetic and practical tasks.                                                                                                                                                      
+
+> Performance Method Customer Service Legal Document Review High-frequency Trade Scientific Discovery
+> Main Objective ( ↑)ScalarizedUCB r.r. .590 ±.181 .627 ±.192 .650 ±.235 .593 ±.171 ParetoUCB .533 ±.190 .522 ±.203 .511 ±.210 .531 ±.184 GT-PF .573 ±.176 .557 ±.202 .536 ±.216 .567 ±.172 PrefUCB .625 ±.171 .699 ±.154 .804 ±.144 .640 ±.157
+> Relaxable Objective ( ↓)ScalarizedUCB r.r. .560 ±.196 .585 ±.186 .466 ±.209 .463 ±.181 ParetoUCB .518 ±.205 .532 ±.191 .518 ±.201 .511 ±.209 GT-PF .557 ±.200 .571 ±.177 .539 ±.201 .539 ±.218 PrefUCB .457 ±.196 .460 ±.160 .374 ±.166 .436 ±.154
+> Optimal Selection Ratio ( ↑)ScalarizedUCB r.r. .645 ±.191 .681 ±.170 .695 ±.167 .646 ±.186 ParetoUCB .571 ±.248 .568 ±.249 .569 ±.252 .555 ±.257 GT-PF .612 ±.223 .593 ±.235 .577 ±.244 .587 ±.238 PrefUCB .690 ±.157 .801 ±.080 .946 ±.014 .722 ±.138
+
+Table 1: Performance of PrefUCB on four real-world LLM selection tasks. Each entry reports mean ± standard deviation over 10 trials. The main objective is the prioritized capability; the relaxable objective can be traded off. The optimal selection ratio ( ↑) denotes the proportion of optimal actions selected. Bold highlights best results. 
+
+model. We run experiments for T = 10 ,000 rounds with stochastic feedback sampled from a Beta distribution with concentration c = 1 , reporting averages over 10 independent trials. 
+
+Experimental setups. We construct our action set from the Open LLM Leaderboard 1, selecting K = 42 
+
+representative models characterized by d = 7 capabilities: accuracy, advanced problem-solving, reasoning, domain knowledge, interaction consistency, multitasking, and processing speed. We evaluate on four real-world scenarios with distinct preference structures: Legal Document Review prioritizes reasoning while trading off multitasking; 
+
+Customer Service prioritizes multitasking while trading off problem-solving; High-frequency Trade prioritizes speed while trading off problem-solving; and Scientific Discovery prioritizes problem-solving while trading off speed. Details are provided in Appendix B.2. 
+
+Baselines. We compare PrefUCB against ParetoUCB (Drugan and Nowé, 2013), ScalarizedUCB r.r. (Drugan and Nowé, 2013), and GT-PF (ground truth Pareto front). Details are provided in Appendix B.1. 
+
+Main results. Since the indicator and gap-weighted regret follow the same trend, we report only the latter in Figure 3. When W = Id, PrefUCB matches ParetoUCB, as expected: the cone reduces to the classical Pareto order and no directional structure is available. Once preferences induce asymmetric trade-offs, the gap widens. Pareto-based methods are too coarse in this regime, since they treat actions as equivalent even when they differ along user-relevant directions; uniform sampling from the Pareto set, as in GT-PF, therefore ignores the finer  
+
+> 1. https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard
+
+8SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS  
+
+> Figure 4: Temporal trends of sub-objectives across real-world scenarios, grouped by preference level. Solid lines denote the 100-round moving average, and shaded regions indicate the true rewards. PrefUCB consistently achieves better trade-offs by prioritizing preferred objectives, relaxing less critical ones, and maintaining moderate objectives.
+
+structure given by the cone. PrefUCB instead exploits this structure to concentrate exploration on profiles aligned with the target trade-off. Table 1 shows that the gain extends beyond cumulative regret: PrefUCB more reliably preserves prioritized capabilities, relaxes secondary ones, and selects preference-optimal models more often. 
+
+Trends in sub-objective performance. Figure 4 shows how PrefUCB adapts performance across objectives according to the specified preferences. It consistently improves preferred objectives, stabilizes moderate objectives after initial exploration, and trades off relaxable objectives when beneficial. Compared with baselines, which exhibit more uniform performance patterns across objectives, PrefUCB achieves more targeted preference-directed trade-offs. Table 1 summarizes these trade-offs quantitatively. 
+
+4.2 Online Asset Allocation 
+
+We evaluate PrefUCB on online asset allocation, formulated as a PDMOB where the learner sequentially selects investment strategies to satisfy institutional mandates. 
+
+Experimental setups. We use the NYSE(O) dataset with 36 NYSE stocks over 22 years (Li and Hoi, 2014) and construct a pool of K = 10 base strategies ranging from passive benchmarks (Uniform Buy-and-Hold) to risk-aware approaches (Risk Parity) (Cover, 1991). At each day t, the learner selects a strategy and observes a 7-dimensional reward vector: Cumulative Wealth Growth (CWG), Sharpe Ratio (SR), Maximum Drawdown 
+
+> 9
+
+MA, Z HANG , S UGIYAMA , AND ZHOU 0 1000 2000 3000 4000 5000                                       
+
+> Time Step
+> 0
+> 500
+> 1000
+> 1500
+> 2000
+> Cumulative Regret
+> Aggressive Growth
+> 01000 2000 3000 4000 5000
+> Time Step
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> Cumulative Regret
+> Market Neutral Hedge
+> 01000 2000 3000 4000 5000
+> Time Step
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> Cumulative Regret
+> High Frequency Trading
+> 01000 2000 3000 4000 5000
+> Time Step
+> 0
+> 2000
+> 4000
+> Cumulative Regret
+> Income Focused
+> 01000 2000 3000 4000 5000
+> Time Step
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> Cumulative Regret
+> Low Volatility
+> 01000 2000 3000 4000 5000
+> Time Step
+> 0
+> 500
+> 1000
+> 1500
+> Cumulative Regret
+> Momentum Concentrated
+> 01000 2000 3000 4000 5000
+> Time Step
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> Cumulative Regret
+> Risk Parity Enhanced
+> 01000 2000 3000 4000 5000
+> Time Step
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> Cumulative Regret
+> Balanced Growth
+> PrefUCB (Ours) Scalarization r. r. ParetoUCB GTPF
+
+Figure 5: Cumulative gap-weighted regret analysis for online asset allocation tasks. Shaded areas represent standard deviation. PrefUCB demonstrates robust performance across diverse financial environments. 
+
+Scenario PrefUCB ScalarizedUCB r.r. ParetoUCB GT-PF Aggressive Growth 0.142 ± 0.004 (1) 0.288 ± 0.003 (2) • 0.295 ± 0.004 (3) • 0.351 ± 0.035 (4) •
+
+Market Neutral Hedge 0.280 ± 0.008 (1) 0.469 ± 0.005 (2) • 0.679 ± 0.008 (4) • 0.601 ± 0.042 (3) •
+
+High Frequency Trading 0.808 ± 0.004 (2) 0.819 ± 0.009 (3) • 0.806 ± 0.003 (1) ◦ 0.847 ± 0.028 (4) •
+
+Income Focused 0.867 ± 0.007 (1) 0.941 ± 0.002 (3) • 0.909 ± 0.002 (2) • 0.997 ± 0.007 (4) •
+
+Low Volatility 0.790 ± 0.017 (1) 0.815 ± 0.006 (3) • 0.806 ± 0.004 (2) • 0.848 ± 0.044 (4) •
+
+Momentum Concentrated 0.059 ± 0.004 (1) 0.130 ± 0.002 (2) • 0.199 ± 0.003 (3) • 0.238 ± 0.052 (4) •
+
+Risk Parity Enhanced 0.818 ± 0.015 (1) 0.862 ± 0.004 (2) • 0.899 ± 0.003 (4) • 0.864 ± 0.017 (3) •
+
+Balanced Growth 0.672 ± 0.010 (1) 0.710 ± 0.004 (2) • 0.710 ± 0.004 (2) • 0.767 ± 0.080 (4) •
+
+Avg. Rank 1.13 2.38 2.63 3.75 
+
+Table 2: Averaged gap-weighted regret results across financial market scenarios. Values report averaged cumulative regret over time horizon (mean ± std), with ranks shown in parentheses; lower is better. The best performance in each scenario is highlighted in bold. Statistical significance (t-test): • indicates the baseline is significantly worse than PrefUCB ( p < 0.05 ); 
+
+◦ indicates no significant difference. PrefUCB achieves the best average rank (1.13) and wins in 7 out of 8 scenarios. 
+
+(MDD), Sortino Ratio, Alpha, Turnover (TO), and Calmar Ratio (CR). We run experiments for all data T = 5 ,651 
+
+days’ stock price, averaged over 20 independent trials. Unlike the previous experiments, preference directions are now constructed according to eight real-world financial mandates that encode distinct institutional investment profiles: Aggressive Growth , Market Neutral Hedge , High Frequency Trading , Income Focused , Low Volatility , Momentum Concentrated , Risk Parity Enhanced ,and Balanced Growth . Each mandate is specified by a preference direction W ∈ R3×7 derived from historical performance data to reflect realistic institutional priorities and trade-offs. Details are provided in Appendix B. 
+
+Baselines. Following the same evaluation protocol as in the previous experiment, we compare PrefUCB against ParetoUCB (Drugan and Nowé, 2013), ScalarizedUCB r.r. (Drugan and Nowé, 2013), and GT-PF. Details are provided in Appendix B.1. 
+
+Main Results. Since the indicator and gap-weighted regret follow the same trend, we report only the latter in Figure 5 and Table 2. When the mandate is broadly aligned with the standard Pareto order, PrefUCB matches ParetoUCB, indicating that our formulation does not sacrifice performance in near-Pareto regimes. The gain emerges when the mandate specifies directed trade-offs rather than uniform improvement across objectives. In this regime, Pareto-based exploration is too diffuse, wasting pulls on directions that are Pareto-valid but irrelevant to the mandate, while scalarized baselines commit to a fixed aggregation and are brittle when the trade-off is only partially specified. PrefUCB instead uses the cone to focus exploration on reward directions consistent with the mandate, which speeds up discrimination among strategies that look alike under the standard Pareto criterion but differ under directional preferences. The weaker performance of GT-PF confirms that the challenge here is not identifying the Pareto set, but resolving the finer structure the mandate induces within it. Preference-directed optimism is thus most useful when institutional requirements refine, rather than replace, the standard notion of multi-objective optimality. 
+
+10 SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS 
+
+Trends in sub-objective performance. We also analyze performance trends at the sub-objective level. For clarity of presentation, the details are provided in Appendix B.5. 
+
+5. Related Works 
+
+Multi-objective optimization and selective ensemble . Selective ensemble naturally involves trade-offs among predictive accuracy, diversity, and model complexity (Zhou, 2012; Zhou et al., 2002). Existing methods typically cast ensemble pruning/selection as an offline multi-objective optimization problem and approximate the Pareto frontier via evolutionary or pruning-based procedures (Qian et al., 2015; Zhou et al., 2019). More broadly, preference-guided multi-objective optimization biases the search toward desirable regions of the frontier through scalarization (Paria et al., 2019), preference-aware constraints (Abdolshah et al., 2019; Chen et al., 2024), or cone-based dominance relations (Censor, 1977; Nasrabadi et al., 2019; Korhonen et al., 2016). In comparison, we study selective ensemble as a budgeted sequential learning problem over a fixed model pool, where multi-objective performance is revealed through stochastic evaluations on sampled data. Accordingly, the preference cone is used to shape online evaluation and selection, rather than to refine an accessible frontier. Selective ensemble and model selection have also been studied in active learning, where ensemble-based querying can jointly address data selection and model selection under limited labeling budgets (Sugiyama and Rubens, 2008b,a). 
+
+Multi-objective bandits with preferences . Classical multi-objective bandits study vector-valued rewards under the standard componentwise Pareto order, either through Pareto-regret minimization (Drugan and Nowé, 2013; Xu and Klabjan, 2023) or Pareto-front identification (Auer et al., 2016; Crépon et al., 2024); contextual variants have also been studied (Lu et al., 2019). A separate line assumes fully specified preferences, including scalarized criteria such as the generalized Gini index (Busa-Fekete et al., 2017), dominant-objective formulations (Tekin and Turgay, 2018), lexicographic orders (Hüyük and Tekin, 2021), and hierarchical Pareto-lexicographic rules (Cheng et al., 2024). Another line learns a complete utility model from user feedback, e.g., through pairwise comparisons (Roijers et al., 2017; Reymond et al., 2024) or preference estimation (Cao et al., 2026). Preference-based feedback has also been studied in dueling bandits, including recent distributed formulations that address collaborative exploration from preference comparisons (Raveh et al., 2025). Closest to our work, recent pure-exploration studies model incomplete preferences by a polyhedral cone (Ararat and Tekin, 2023; Karagozlu et al., 2024) and analyze fixed-confidence identification under cone-induced optimality (Shukla and Basu, 2024). We instead study regret minimization under cone-induced partial preferences. The key distinction is that we must make high-quality decisions throughout learning, not only certify the correct set at stopping. To the best of our knowledge, this regret-minimizing formulation has not been studied before, and it subsumes both Pareto-based and scalarization-based bandit models as special cases. 
+
+6. Conclusion 
+
+We formulate the preference-directed multi-objective bandit problem by modeling partially specified linear preferences via a polyhedral cone C, and introduce Pareto C-optimality, which unifies standard Pareto optimality and scalarization as special cases. We propose PrefUCB, an optimistic algorithm that maintains directional confidence bounds aligned with the preference cone, and establish instance-dependent logarithmic regret bounds under both indicator-based and gap-weighted criteria, recovering the optimal log T rate in classical settings. Experiments on selective ensemble and portfolio allocation further demonstrate the effectiveness of preference-directed exploration. While these results capture the essential difficulty of the problem, our analysis incurs a linear dependence on the number of preference directions M due to a union bound across directions; this dependence may be loose when the directions are highly correlated, where the effective dimensionality of the cone is smaller than M . Obtaining a tighter characterization that replaces M with a geometry-dependent quantity, together with matching lower bounds, remains open.   
+
+> 11 MA, Z HANG , S UGIYAMA ,AND ZHOU
+
+References 
+
+M. Abdolshah, A. Shilton, S. Rana, S. Gupta, and S. Venkatesh. Multi-objective bayesian optimisation with preferences over objectives. In Advances in Neural Information Processing Systems 32 (NeurIPS) , pages 12214–12224, 2019. C. Ararat and C. Tekin. Vector optimization with stochastic bandit feedback. In Proceedings of the 26th International Conference on Artificial Intelligence and Statistics (AISTATS) , pages 2165–2190, 2023. P. Auer. Using confidence bounds for exploitation-exploration trade-offs. Journal of Machine Learning Research ,3:397–422, 2002. P. Auer, C. Chiang, R. Ortner, and M. M. Drugan. Pareto front identification from stochastic bandit feedback. In Proceedings of the 19th International Conference on Artificial Intelligence and Statistics (AISTATS) , pages 939–947, 2016. T. Brown, B. Mann, N. Ryder, M. Subbiah, J. D. Kaplan, P. Dhariwal, A. Neelakantan, P. Shyam, G. Sastry, A. Askell, et al. Language models are few-shot learners. Advances in Neural Information Processing Systems (NeurIPS) , 33:1877–1901, 2020. R. Busa-Fekete, B. Szörényi, P. Weng, and S. Mannor. Multi-objective bandits: Optimizing the generalized gini index. In Proceedings of the 34th International Conference on Machine Learning (ICML) , pages 625–634, 2017. L. Cao, M. Shi, and N. B. Shroff. Provably efficient multi-objective bandit algorithms under preference-centric customization. In Proceedings of the 40th AAAI Conference on Artificial Intelligence (AAAI) , pages 19889– 19897, 2026. Y. Censor. Pareto optimality in multiobjective problems. Applied Mathematics and Optimization , 4(1):41–59, 1977. L. Chen, A. F. M. Saif, Y. Shen, and T. Chen. FERERO: A flexible framework for preference-guided multi-objective learning. In Advances in Neural Information Processing Systems 37 (NeurIPS) , pages 18758–18805, 2024. J. Cheng, B. Xue, J. Yi, and Q. Zhang. Hierarchize pareto dominance in multi-objective stochastic linear bandits. In Proceedings of the 38th AAAI Conference on Artificial Intelligence (AAAI) , pages 11489–11497, 2024. T. M. Cover. Universal portfolios. Mathematical Finance , 1(1):1–29, 1991. É. Crépon, A. Garivier, and W. M. Koolen. Sequential learning of the pareto front for multi-objective bandits. In Proceedings of the 27th International Conference on Artificial Intelligence and Statistics (AISTATS) , pages 3583–3591, 2024. M. M. Drugan and A. Nowé. Designing multi-objective multi-armed bandits algorithms: A study. In Proceedings of the 23rd International Joint Conference on Neural Networks (IJCNN) , pages 1–8, 2013. A. Garivier and O. Cappe. The KL-UCB algorithm for bounded stochastic bandits and beyond. In Proceedings of the 24th Annual Conference on Learning Theory (COLT) , pages 359–376, 2011. I. Goodfellow, Y. Bengio, and A. Courville. Deep Learning . MIT Press, 2016. A. Hüyük and C. Tekin. Multi-objective multi-armed bandit with lexicographically ordered and satisficing objectives. Machine Learning , 110(6):1233–1266, 2021. S. Jelassi, C. Mohri, D. Brandfonbrener, A. Gu, N. Vyas, N. Anand, D. Alvarez-Melis, Y. Li, S. M. Kakade, et al. Mixture of parrots: Experts improve memorization more than reasoning. In The 13th International Conference on Learning Representations , 2024.      
+
+> 12 SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS
+
+E. M. Karagozlu, Y. C. Yildirim, C. Ararat, and C. Tekin. Learning the pareto set under incomplete preferences: Pure exploration in vector bandits. In Proceedings of the 27th International Conference on Artificial Intelligence and Statistics (AISTATS) , pages 3070–3078, 2024. R. Keeling, A. Guo, P. Gronvall, N. Huber-Fliflet, and J. Zhang. Integration of rule-based reasoning and transfer learning in legal document review. In Proceedings of the 2022 IEEE International Conference on Big Data ,pages 2279–2284, 2022. P. J. Korhonen, M. Soleimani-Damaneh, and J. Wallenius. Dual cone approach to convex-cone dominance in multiple criteria decision making. European Journal of Operational Research , 249(3):1139–1143, 2016. T. L. Lai and H. Robbins. Asymptotically efficient adaptive allocation rules. Advances in Applied Mathematics , 6 (1):4–22, 1985. B. Li and S. C. Hoi. Online portfolio selection: A survey. ACM Computing Surveys , 46(3):1–36, 2014. S. Lu, G. Wang, Y. Hu, and L. Zhang. Multi-objective generalized linear bandits. In Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI) , pages 3080–3086, 2019. K. Miettinen. Nonlinear Multiobjective Optimization , volume 12 of International Series in Operations Research & Management Science . Springer, 1999. N. Nasrabadi, A. Dehnokhalaji, P. Korhonen, and J. Wallenius. Using convex preference cones in multiple criteria decision making and related fields. Journal of Business Economics , 89(6):699–717, 2019. B. Paria, K. Kandasamy, and B. Póczos. A flexible framework for multi-objective bayesian optimization using random scalarizations. In Proceedings of the 35th Conference on Uncertainty in Artificial Intelligence (UAI) ,pages 766–776, 2019. C. Qian, Y. Yu, and Z. Zhou. Pareto ensemble pruning. In Proceedings of the 29th AAAI Conference on Artificial Intelligence (AAAI) , pages 2935–2941, 2015. O. Raveh, J. Honda, and M. Sugiyama. Multi-player approaches for dueling bandits. In Proceedings of the 28th International Conference on Artificial Intelligence and Statistics (AISTATS) , pages 1540–1548, 2025. M. Reymond, E. Bargiacchi, D. M. Roijers, and A. Nowé. Interactively learning the user’s utility for best-arm identification in multi-objective multi-armed bandits. In Proceedings of the 23rd International Conference on Autonomous Agents and Multiagent Systems (AAMAS) , pages 1611–1620, 2024. A. Robey, L. Chamon, G. J. Pappas, and H. Hassani. Probabilistically robust learning: Balancing average and worst-case performance. In Proceedings of the 39th International Conference on Machine Learning (ICML) ,pages 18667–18686, 2022. D. M. Roijers, L. M. Zintgraf, and A. Nowé. Interactive thompson sampling for multi-objective multi-armed bandits. In Proceedings of the 5th International Conference on Algorithmic Decision Theory , pages 18–34, 2017. T. Roughgarden. Beyond the worst-case analysis of algorithms . Cambridge University Press, 2021. A. Shukla and D. Basu. Preference-based pure exploration. In Advances in Neural Information Processing Systems 37 (NeurIPS) , pages 17313–17347, 2024. M. Sugiyama and N. Rubens. Active learning with model selection in linear regression. In Proceedings of the 2008 SIAM International Conference on Data Mining , pages 518–529, 2008a.   
+
+> 13 MA, Z HANG , S UGIYAMA ,AND ZHOU
+
+M. Sugiyama and N. Rubens. A batch ensemble approach to active learning with model selection. Neural Networks ,21(9):1278–1286, 2008b. C. Tekin and E. Turgay. Multi-objective contextual multi-armed bandit with a dominant objective. IEEE Transactions on Signal Processing , 66(14):3799–3813, 2018. J. Wang, A. Pun, J. Tu, S. Manivasagam, A. Sadat, S. Casas, M. Ren, and R. Urtasun. Advsim: Generating safety-critical scenarios for self-driving vehicles. In Proceedings of the IEEE/CVF conference on Computer Vision and Pattern Recognition (CVPR) , pages 9909–9918, 2021. Y. Wu, Y. He, C. Qian, and Z. Zhou. Multi-objective evolutionary ensemble pruning guided by margin distribution. In Proceedings of the 17th International Conference on Parallel Problem Solving from Nature , pages 427–441, 2022. M. Xu and D. Klabjan. Pareto regret analyses in multi-objective multi-armed bandit. In Proceedings of the 40th International Conference on Machine Learning (ICML) , pages 38499–38517, 2023. Z. Zhou. Ensemble methods: foundations and algorithms . CRC press, 2012. Z. Zhou. Machine learning . Springer nature, 2021. Z. Zhou, J. Wu, and W. Tang. Ensembling neural networks: Many could be better than all. Artificial Intelligence ,137(1-2):239–263, 2002. Z. Zhou, Y. Yu, and C. Qian. Evolutionary Learning: Advances in Theories and Algorithms . Springer, 2019. 
+
+> 14
+
+SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS 
+
+## Appendix 
+
+Appendix A. Proof of Theorem 1 and Corollary 1 
+
+In this section, we provide a complete proof of Theorem 1. We first establish several auxiliary lemmas and then derive an arm-wise pull-count bound for every suboptimal action. Theorem 1 follows by summing these bounds over all suboptimal actions, and Corollary 1 is then immediate. 
+
+A.1 Auxiliary Lemmas 
+
+To justify the use of KL-style confidence bounds on bSk(a), we note the following property. 
+
+Lemma 1 For each k ∈ [M ], define the scalar transformed feedback Zt,k (a) := Sk(yt(a)) . Since yt(a) ∈ [0 , 1] d,by the construction of Lk and Uk in Definition 3, we have Zt,k (a) ∈ [0 , 1] and E[Zt,k (a)] = Sk(r(a)) . Moreover, 
+
+bSk(a) = 1
+
+> n(a)
+
+P   
+
+> τ:aτ=a
+
+Zτ,k (a). Since the reward vectors {yt(a)}t≥1 are independent and identically distributed for each arm a (cf. Section 2), bSk(a) is the empirical mean of [0 , 1] -bounded independent observations with common expectation Sk(r(a)) .
+
+Lemma 1 ensures that for each preference direction k, the empirical projection bSk(a) is the sample mean of [0 , 1] -bounded random variables with expectation Sk(r(a)) . This allows us to apply standard KL-UCB-style concentration arguments for [0 , 1] -bounded random variables (Garivier and Cappe, 2011) to each directional projection. For each action a ∈ [K] and direction k ∈ [M ], write 
+
+Sk(a) := Sk(r(a)) 
+
+for the true normalized projection of action a along direction k.For the analysis, it is convenient to index transformed observations by sample order within each arm. Specifi-cally, for each (a, k ), let {Za,k,s }s≥1 denote the scalar sequence obtained by applying the projection Sk(·) to the successive reward observations of arm a:
+
+Za,k,s := Sk(ya,s ),
+
+where ya,s ∈ [0 , 1] d is the s-th reward sample generated by arm a. By Lemma 1 in the main text, for every fixed 
+
+(a, k ), the sequence {Za,k,s }s≥1 is i.i.d., takes values in [0 , 1] , and satisfies 
+
+E[Za,k,s ] = Sk(a).
+
+For each round t, let nt(a) denote the number of times arm a has been pulled before round t, and define 
+
+bSk(a, t ) := 1
+
+nt(a)
+
+> nt(a)
+
+X
+
+> s=1
+
+Za,k,s .
+
+Since PrefUCB pulls each arm once during initialization, we always have nt(a) ≥ 1 whenever the index is evaluated. We also define the directional KL-UCB index 
+
+UCB k(a, t ) := sup 
+
+n
+
+q ∈ [ bSk(a, t ), 1] : d( bSk(a, t ) ∥ q) ≤ log tnt(a)
+
+o
+
+,
+
+where 
+
+d(x∥y) := x log xy + (1 − x) log 1 − x
+
+1 − y
+
+is the binary Kullback–Leibler divergence. The PrefUCB index of arm a at round t is therefore 
+
+It(a) := min   
+
+> k∈[M]
+
+UCB k(a, t ).
+
+15 MA, Z HANG , S UGIYAMA , AND ZHOU 
+
+Lemma 2 (Chernoff–KL Concentration for Bounded Variables) Let X1, . . . , X n be i.i.d. random variables taking values in [0 , 1] with mean p. Then for any ε > 0,
+
+Pr 
+
+"
+
+1
+
+n
+
+> n
+
+X
+
+> i=1
+
+Xi ≥ p + ε
+
+#
+
+≤ exp( −n d (p + ε ∥ p)) , (5) 
+
+Pr 
+
+"
+
+1
+
+n
+
+> n
+
+X
+
+> i=1
+
+Xi ≤ p − ε
+
+#
+
+≤ exp( −n d (p − ε ∥ p)) , (6) 
+
+where d(·∥· ) denotes the binary KL divergence. Moreover, for all p, q ∈ [0 , 1] ,
+
+d(q∥p) ≥ 2( q − p)2. (7) 
+
+Proof The tail bounds (5) – (6) are standard Chernoff–KL inequalities for [0 , 1] -bounded random variables (Garivier and Cappe, 2011). Inequality (7) is the usual Pinsker-type lower bound for binary relative entropy. 
+
+Lemma 3 (UCB Width Bound) For any action a, direction k, and round t,
+
+UCB k(a, t ) ≤ bSk(a, t ) + 
+
+s
+
+log t
+
+2 nt(a) .
+
+Proof Let bp := bSk(a, t ) and let q ≥ bp. By (7), 
+
+d(bp∥q) ≥ 2( q − bp)2.
+
+Hence, if 
+
+q > bp +
+
+s
+
+log t
+
+2 nt(a) ,
+
+then 
+
+d(bp∥q) > 2 · log t
+
+2 nt(a) = log tnt(a) ,
+
+so such a q cannot belong to the feasible set defining UCB k(a, t ). Therefore, 
+
+UCB k(a, t ) ≤ bSk(a, t ) + 
+
+s
+
+log t
+
+2 nt(a) .
+
+Lemma 4 (UCB Coverage) For any action a, direction k, and horizon T ,
+
+> T
+
+X
+
+> t=K+1
+
+Pr[UCB k(a, t ) < S k(a)] ≤ Ckl (1 + log T ),
+
+where Ckl > 0 is a universal constant. 
+
+> 16
+
+SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS 
+
+Proof Fix (a, k ) and write p := Sk(a). The observations {Za,k,s }s≥1 form an i.i.d. [0 , 1] -bounded stream with mean p, and the index UCB k(a, t ) is the usual KL-UCB index evaluated at the adaptively chosen sample count 
+
+nt(a). By the standard self-normalized coverage lemma for KL-UCB with bounded rewards (Garivier and Cappe, 2011), for any adaptive sampling rule, 
+
+> T
+
+X
+
+> t=K+1
+
+Pr 
+
+h
+
+sup 
+
+n
+
+q ∈ [ bSk(a, t ), 1] : nt(a)d( bSk(a, t )∥q) ≤ log t
+
+o
+
+< p 
+
+i
+
+≤ Ckl (1 + log T ).
+
+We use this lemma only as a standard adaptive-sampling coverage result; the problem-specific step is the reduction of each preference direction to a bounded scalar feedback stream. The event inside the probability is exactly 
+
+{UCB k(a, t ) < S k(a)} by definition, which proves the claim. 
+
+Lemma 5 (Selection Elimination) Fix any suboptimal action a / ∈ P ∗ 
+
+> C
+
+. Let a⋆ ∈ D (a) be a dominating Pareto-C-optimal action achieving the preference gap ∆a, namely, 
+
+∆a = min  
+
+> k∈[M]
+
+ Sk(a⋆) − Sk(a).
+
+Define 
+
+m0 := 
+
+ 2 log T
+
+∆2
+
+> a
+
+
+
+.
+
+Suppose that at round t the following two events hold: (G1) For all k ∈ [M ],
+
+bSk(a, t ) < S k(a) + ∆a
+
+2 ;
+
+(G2) For all k ∈ [M ],
+
+UCB k(a⋆, t ) ≥ Sk(a⋆).
+
+If, in addition, nt(a) ≥ m0, then action a cannot be selected by PrefUCB at round t.
+
+Proof Assume that (G1) holds and that nt(a) ≥ m0. By Lemma 3, for every k ∈ [M ],
+
+UCB k(a, t ) ≤ bSk(a, t ) + 
+
+s
+
+log t
+
+2 nt(a) .
+
+Since t ≤ T and nt(a) ≥ m0, s
+
+log t
+
+2 nt(a) ≤
+
+r log T
+
+2 m0
+
+≤ ∆a
+
+2 .
+
+Combining these inequalities with (G1) yields, for every k ∈ [M ],
+
+UCB k(a, t ) < S k(a) + ∆a
+
+2 + ∆a
+
+2 = Sk(a) + ∆ a.
+
+Because a⋆ achieves the gap ∆a,
+
+∆a = min  
+
+> k∈[M]
+
+ Sk(a⋆) − Sk(a),
+
+and therefore, for every k ∈ [M ],
+
+Sk(a⋆) − Sk(a) ≥ ∆a, equivalently Sk(a) + ∆ a ≤ Sk(a⋆).
+
+17 MA, Z HANG , S UGIYAMA , AND ZHOU 
+
+Hence, for all k ∈ [M ],
+
+UCB k(a, t ) < S k(a⋆).
+
+This is a componentwise comparison before applying the worst-direction aggregation. Taking the minimum over k
+
+gives 
+
+It(a) = min   
+
+> k∈[M]
+
+UCB k(a, t ) < min   
+
+> k∈[M]
+
+Sk(a⋆).
+
+On the other hand, under (G2), 
+
+It(a⋆) = min   
+
+> k∈[M]
+
+UCB k(a⋆, t ) ≥ min   
+
+> k∈[M]
+
+Sk(a⋆).
+
+Thus the scalar comparison between It(a) and It(a⋆) follows from componentwise dominance across all preference directions. Consequently, 
+
+It(a) < I t(a⋆),
+
+which implies that PrefUCB cannot select arm a at round t.
+
+A.2 Main Proof Proof [Proof of Theorem 1] If T ≤ K, the algorithm performs only the initialization phase, so each arm is pulled at most once and the theorem is immediate. We therefore consider the case T > K .Fix any suboptimal action a / ∈ P ∗ 
+
+> C
+
+, and let a⋆ ∈ D (a) and m0 be as in Lemma 5. We begin by bounding the expected number of pulls of arm a.Since arm a is pulled once during initialization, the number of rounds in which arm a can be selected while its pre-round pull count is still smaller than m0 is at most m0. Therefore, 
+
+Na(T ) ≤ m0 +
+
+> T
+
+X
+
+> t=K+1
+
+I(at = a, n t(a) ≥ m0) . (8) Taking expectations gives 
+
+E[Na(T )] ≤ m0 +
+
+> T
+
+X
+
+> t=K+1
+
+Pr( at = a, n t(a) ≥ m0) . (9) By Lemma 5, on the event {at = a, n t(a) ≥ m0} at least one of the good events (G1) or (G2) must fail. Define the corresponding bad events 
+
+B1(t) := 
+
+n
+
+∃ k ∈ [M ] : bSk(a, t ) ≥ Sk(a) + ∆a
+
+> 2
+
+o
+
+,B2(t) := 
+
+n
+
+∃ k ∈ [M ] : UCB k(a⋆, t ) < S k(a⋆)
+
+o
+
+.
+
+Then 
+
+{at = a, n t(a) ≥ m0} ⊆ B1(t) ∪ B2(t).
+
+Substituting this into (9), we obtain 
+
+E[Na(T )] ≤ m0 +
+
+> T
+
+X
+
+> t=K+1
+
+Pr( at = a, n t(a) ≥ m0, B 1(t)) + 
+
+> T
+
+X
+
+> t=K+1
+
+Pr( B2(t)) . (10) 
+
+Step 1: Bounding the B1 contribution. For m ≥ 1, write 
+
+¯Sk,m (a) := 1
+
+m
+
+> m
+
+X
+
+> s=1
+
+Za,k,s .
+
+18 SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS 
+
+If arm a is selected at a round with pre-round count nt(a) = m, then bSk(a, t ) = ¯Sk,m (a). Moreover, for each fixed m, arm a can be selected with pre-round count m at most once. Therefore, 
+
+> T
+
+X
+
+> t=K+1
+
+I(at = a, n t(a) ≥ m0, B 1(t)) ≤
+
+> T
+
+X
+
+> m=m0
+
+I
+
+
+
+∃ k ∈ [M ] : ¯Sk,m (a) ≥ Sk(a) + ∆a
+
+2
+
+
+
+.
+
+Taking expectations and applying a union bound over directions gives 
+
+> T
+
+X
+
+> t=K+1
+
+Pr( at = a, n t(a) ≥ m0, B 1(t)) ≤
+
+> T
+
+X
+
+> m=m0
+> M
+
+X
+
+> k=1
+
+Pr 
+
+
+
+¯Sk,m (a) ≥ Sk(a) + ∆a
+
+2
+
+
+
+≤ M
+
+> T
+
+X
+
+> m=m0
+
+exp 
+
+
+
+− m∆2
+
+> a
+
+2
+
+
+
+. (11) Here Sk(a) + ∆ a/2 ≤ 1 for every k, because the choice of a⋆ gives Sk(a) + ∆ a ≤ Sk(a⋆) ≤ 1. The last step uses the Chernoff–KL bound (5) and Pinsker’s inequality (7), since 
+
+d Sk(a) + ∆a 
+
+> 2
+
+Sk(a) ≥ ∆2
+
+> a
+
+2
+
+for every k ∈ [M ]. Since ∆a ∈ (0 , 1] , we have 1 − exp( −∆2
+
+> a
+
+/2) ≥ ∆2
+
+> a
+
+/4. Therefore, 
+
+> T
+
+X
+
+> m=m0
+
+exp 
+
+
+
+− m∆2
+
+> a
+
+2
+
+
+
+≤ exp( −m0∆2
+
+> a
+
+/2) 1 − exp( −∆2
+
+> a
+
+/2) ≤ 4
+
+T ∆2
+
+> a
+
+,
+
+where the last step uses m0 ≥ 2 log T / ∆2
+
+> a
+
+. Thus, 
+
+> T
+
+X
+
+> t=K+1
+
+Pr( at = a, n t(a) ≥ m0, B 1(t)) ≤ 4MT ∆2
+
+> a
+
+≤ 4M
+
+∆2
+
+> a
+
+. (12) 
+
+Step 2: Bounding the B2 contribution. Lemma 4 and a union bound over directions imply 
+
+> T
+
+X
+
+> t=K+1
+
+Pr( B2(t)) ≤ M C kl (1 + log T ). (13) 
+
+Step 3: Combining the bounds. Combining (10), (12), and (13), we obtain 
+
+E[Na(T )] ≤ m0 + 4M
+
+∆2
+
+> a
+
++ M C kl (1 + log T ).
+
+Since 
+
+m0 =
+
+ 2 log T
+
+∆2
+
+> a
+
+
+
+≤ 2 log T
+
+∆2
+
+> a
+
++ 1 ,
+
+and since ∆a ∈ (0 , 1] and log T ≥ 1 for T ≥ 3, the last display implies that there exists a universal constant 
+
+C0 > 0 such that 
+
+E[Na(T )] ≤ C0
+
+(M + 1) log T
+
+∆2
+
+> a
+
++ 1 . (14) For the remaining finite cases K < T < 3, the bound (14) is trivially valid after increasing C0 if necessary. Finally, using 
+
+R01  
+
+> T
+
+= X 
+
+> a / ∈P∗
+> C
+
+Na(T ),
+
+19 MA, Z HANG , S UGIYAMA , AND ZHOU 
+
+taking expectations and summing (14) over all suboptimal actions yields 
+
+E[R01  
+
+> T
+
+] ≤ X 
+
+> a / ∈P∗
+> C
+
+
+
+C0
+
+(M + 1) log T
+
+∆2
+
+> a
+
++ 1 
+
+
+
+,
+
+which proves Theorem 1. 
+
+Proof [Proof of Corollary 1] By definition, 
+
+Rgap  
+
+> T
+
+= X 
+
+> a / ∈P∗
+> C
+
+∆a Na(T ).
+
+Taking expectations and applying the arm-wise pull-count bound (14), we obtain 
+
+E[Rgap  
+
+> T
+
+] = X 
+
+> a / ∈P∗
+> C
+
+∆a E[Na(T )] 
+
+≤ X 
+
+> a / ∈P∗
+> C
+
+∆a
+
+
+
+C0
+
+(M + 1) log T
+
+∆2
+
+> a
+
++ 1 
+
+
+
+= X 
+
+> a / ∈P∗
+> C
+
+
+
+C0
+
+(M + 1) log T
+
+∆a
+
++ ∆ a
+
+
+
+,
+
+which proves Corollary 1. The proof above is intentionally conservative in order to match the theorem statement in the main text. The linear dependence on M arises from union bounds over the M preference directions, reflecting the fact that PrefUCB evaluates each arm through the worst-direction score min k∈[M ] UCB k(a, t ). Sharper leading constants are possible with a more refined treatment of the coverage events, but such refinements are not needed for the stated result. 
+
+Appendix B. Experimental Details and Additional Results 
+
+This appendix provides a comprehensive description of the preference construction methodology, the specific logic defining each financial mandate, and detailed performance visualizations. 
+
+B.1 Contenders and Implementation Details 
+
+We compare the proposed PrefUCB algorithm with: 
+
+• ParetoUCB (Drugan and Nowé, 2013). As there are currently no algorithms explicitly designed for minimizing preference-directed regret, we adapt this state-of-the-art multi-objective bandit algorithms into selective ensemble methods, which selects base models according to standard Pareto optimality definition, without considering the preference direction; 
+
+• ScalarizedUCB r.r. (Drugan and Nowé, 2013), which first converts multi-objective feedback into scalar rewards by randomly selecting a row from the preference direction matrix as the scalarization vector, which is taken as input of the selection algorithm; 
+
+• GT-PF ( ground t ruth P areto f ront). Given that existing selective ensemble methods lack mechanisms for incorporating user-specific preferences, GT-PF serves as an oracle-based benchmark that conducts random selection from the standard Pareto-optimal set, assuming complete knowledge of the true Pareto-optimal set, and thus providing the best possible performance for the preference-agnostic multi-objective selective ensemble methods (Qian et al., 2015; Wu et al., 2022) under perfect information assumptions. 
+
+> 20
+
+SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS 
+
+Category Scenario and Description Preference Matrix W
+
+Standard Benchmarks Standard : Standard Pareto optimality benchmark I7
+
+Scalarization : Simple weighted combination [.2, . 1, . 2, . 2, . 1, . 1, . 1] 
+
+Single-objective : Classical MAB reduction [1 , 0, . . . , 0] 
+
+Real-world Applications Customer Service : Major preference on multitasking, maintain acceptable accuracy and reasoning, sacrifice advanced problem-solving for more multitasking ability 
+
+1 0 1 0 0 2 10 −1 0 0 0 1 0
+
+
+
+Legal Document Review : Major preference on reasoning, maintain acceptable advanced problem-solving and domain knowledge, sacrifice multitasking for more reasoning 
+
+0 1 2 1 0 0 00 0 1 0 0 −1 0
+
+
+
+High-frequency Trade : Major preference on processing speed, maintain acceptable domain-knowledge, sacrifice advanced problem-solving for more speed 
+
+0 0 0 1 0 0 20 −1 0 0 0 0 1
+
+
+
+Scientific Discovery : Major preference on advanced problem-solving, maintain acceptable reasoning, domain knowledge and consistency, sacrifice speed for more advanced problem-solving ability 
+
+0 2 1 1 1 0 00 1 0 0 0 0 −1
+
+
+
+Table 3: Preference direction matrices for various scenarios. The sub-objectives considered are accuracy, advanced problem-solving capability, reasoning, domain knowledge, interaction consistency, multitasking ability, and processing speed. Higher numerical values indicate stronger preferences, while negative values signify sub-objectives that can be relaxed. 
+
+Table 4: Financial Mandates and Preference Logic. The weight vectors ( W ) are constructed to enforce specific trade-offs, such as penalizing volatility (negative weights) while maximizing Alpha (positive weights). 
+
+Mandate Theoretical Goal Preference Construction Logic (Excerpt) Aggressive Growth Absolute Return + Alpha + Risk Tol-erance Maximize CWG ( w ≈ 0.63 ) and Alpha ( w ≈ 0.37 ). Neg-ative penalties applied to MDD and TO are relaxed or removed to allow aggressive positioning. 
+
+Market Neutral Alpha + Calmar + Downside Protec-tion Primary focus on Alpha ( w = 1 .0) and CR. Strong neg-ative penalties on correlation and drawdown to ensure neutrality. 
+
+High Frequency Trading Sharpe + Sortino + High Turnover Tolerance Balanced emphasis on SR ( w ≈ 0.50 ) and Sortino ( w ≈
+
+0.50 ). Turnover penalties are removed to accommodate high-frequency rebalancing. 
+
+Income Focused Consistent Yield + Low Volatility Balanced weights on CWG ( ≈ 0.60 ) and SR ( ≈ 0.40 ). Negative weights on Turnover and Alpha to discourage speculative trading. 
+
+Low Volatility Double Risk Control (MDD +Sortino) Pure risk minimization: Weights distributed between MDD ( w ≈ 0.72 ) and Sortino ( w ≈ 0.28 ). Strategies with high volatility receive severe negative scores. 
+
+Momentum Conc. Alpha + CWG Maximization Similar to Aggressive Growth but with higher specific weight on Alpha ( ≈ 0.63 ) to capture trend-following pre-miums. 
+
+Risk Parity Enh. SR + MDD Balance Weights distributed between SR ( ≈ 0.29 ) and MDD ( ≈
+
+0.71 ) to enforce risk-adjusted returns over pure growth. 
+
+Balanced Growth Multi-Objective Equilibrium A complex mix of CWG, SR, and Sortino, ensuring no single metric dominates. Penalties are moderate. 21 MA, Z HANG , S UGIYAMA , AND ZHOU 
+
+Table 5: Detailed Weight Specifications for Financial Mandates. Each mandate is represented by three weight vectors 
+
+w1, w 2, w 3 ∈ R7, corresponding to the seven objectives: CWG, SR, MDD, Sortino, Alpha, TO, CR.                                                                                                                                                                                 
+
+> Mandate Vector CWG SR MDD Sortino Alpha TO CR Aggressive Growth
+> w10.633 0.000 -0.300 0.000 0.367 0.000 0.000
+> w21.000 0.000 0.000 -0.300 0.000 -0.300 0.000
+> w30.000 0.000 -0.300 0.000 0.475 -0.300 0.525
+> Market Neutral Hedge
+> w10.000 0.000 0.000 0.000 1.000 0.000 0.000
+> w2-0.300 0.000 0.000 0.000 0.475 0.000 0.525
+> w30.000 0.000 0.716 0.284 0.000 -0.300 0.000
+> High Frequency Trading
+> w10.000 0.505 0.000 0.495 0.000 0.000 0.000
+> w20.000 1.000 -0.300 0.000 -0.300 0.000 0.000
+> w30.000 0.000 0.000 0.510 0.000 -0.300 0.490
+> Income Focused
+> w10.595 0.405 -0.300 0.000 0.000 0.000 0.000
+> w20.000 0.000 0.000 1.000 -0.300 -0.300 0.000
+> w30.000 0.515 0.000 0.000 0.000 -0.300 0.485
+> Low Volatility
+> w10.000 0.000 0.716 0.284 0.000 0.000 0.000
+> w2-0.300 0.000 0.000 1.000 -0.300 -0.300 0.000
+> w30.000 0.287 0.713 0.000 0.000 0.000 -0.300
+> Momentum Concentrated
+> w10.633 0.000 0.000 0.000 0.367 0.000 0.000
+> w20.000 0.000 -0.300 -0.300 1.000 -0.300 0.000
+> w30.609 -0.300 0.000 0.000 0.000 -0.300 0.391
+> Risk Parity Enhanced
+> w10.000 0.287 0.713 0.000 0.000 0.000 0.000
+> w20.000 1.000 0.000 0.000 0.000 -0.300 0.000
+> w3-0.300 0.000 0.716 0.284 -0.300 0.000 0.000
+> Balanced Growth
+> w10.426 0.290 0.000 0.284 0.000 0.000 0.000
+> w20.000 0.515 -0.300 0.000 0.000 -0.300 0.485
+> w30.000 0.000 0.000 0.536 0.464 -0.300 0.000
+
+B.2 Preference Direction Details 
+
+Here, we show the preference direction details of some potential scenarios for LLM in the following Table 3. 
+
+B.3 Data-Driven Preference Construction 
+
+To evaluate our approach in realistic environments, we employ a rigorous data-driven heuristic to construct the preference matrix W for each mandate, utilizing the historical performance of base strategies on the training partition. 
+
+Construction Methodology. The preference matrix W is derived through a three-step procedure: 1. Metric Normalization: All seven objective metrics are normalized to the unit interval [0 , 1] . Objectives requiring minimization (MDD, TO) are inverted to create a unified maximization framework. 2. Variance-Based Priority: For primary objectives, we assign positive weights proportional to their historical variance. This emphasizes metrics with high distinguishability. 3. Regression-Based Penalties: We model trade-offs between conflicting objectives using linear regression. Negative weights are assigned to secondary objectives based on the regression coefficients ( β) to penalize strategies that violate the mandate’s risk tolerance. Each mandate is defined by a preference matrix W ∈ R3×7, where each row wi represents an alternative weighting scheme. The algorithm evaluates strategies against all three weight vectors to capture the multi-faceted nature of institutional mandates. 
+
+22 SELECTIVE ENSEMBLE BASED ON PREFERENCE -D IRECTED MULTI -O BJECTIVE BANDITS 0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0
+
+500 
+
+1000 
+
+1500 
+
+2000 
+
+> Cumulative Regret
+
+Cumulative Regret 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> Performance
+
+CWG 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.0 
+
+0.1 
+
+0.2 
+
+0.3 
+
+0.4 
+
+> Performance
+
+SR 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+> Performance
+
+MDD' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.1 
+
+0.2 
+
+0.3 
+
+0.4 
+
+> Performance
+
+Sortino 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+> Performance
+
+Alpha 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.2 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+> Performance
+
+TO' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.000 
+
+0.025 
+
+0.050 
+
+0.075 
+
+0.100 
+
+0.125 
+
+0.150 
+
+0.175 
+
+0.200 
+
+> Performance
+
+CR 
+
+Aggressive Growth 
+
+(a) Aggressive Growth 0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0
+
+500 
+
+1000 
+
+1500 
+
+2000 
+
+2500 
+
+3000 
+
+3500 
+
+4000 
+
+> Cumulative Regret
+
+Cumulative Regret 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.60 
+
+0.65 
+
+0.70 
+
+0.75 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+1.00 
+
+> Performance
+
+CWG 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+SR 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+> Performance
+
+MDD' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+Sortino 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+> Performance
+
+Alpha 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+0.50 
+
+> Performance
+
+TO' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.02 
+
+0.04 
+
+0.06 
+
+0.08 
+
+0.10 
+
+0.12 
+
+0.14 
+
+0.16 
+
+0.18 
+
+> Performance
+
+CR 
+
+Market Neutral Hedge 
+
+(b) Market Neutral Hedge 0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0
+
+1000 
+
+2000 
+
+3000 
+
+4000 
+
+5000 
+
+> Cumulative Regret
+
+Cumulative Regret 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.75 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+1.00 
+
+> Performance
+
+CWG 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+0.50 
+
+> Performance
+
+SR 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+> Performance
+
+MDD' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+0.50 
+
+> Performance
+
+Sortino 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+> Performance
+
+Alpha 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+TO' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.04 
+
+0.06 
+
+0.08 
+
+0.10 
+
+0.12 
+
+0.14 
+
+0.16 
+
+0.18 
+
+0.20 
+
+> Performance
+
+CR 
+
+High Frequency Trading 
+
+(c) High Frequency Trading 0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0
+
+1000 
+
+2000 
+
+3000 
+
+4000 
+
+5000 
+
+> Cumulative Regret
+
+Cumulative Regret 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.70 
+
+0.75 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+1.00 
+
+> Performance
+
+CWG 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+SR 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+> Performance
+
+MDD' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+Sortino 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+> Performance
+
+Alpha 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+TO' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.04 
+
+0.06 
+
+0.08 
+
+0.10 
+
+0.12 
+
+0.14 
+
+0.16 
+
+0.18 
+
+> Performance
+
+CR 
+
+Income Focused 
+
+(d) Income Focused performance PrefUCB Scalarized r. r. ParetoUCB GTPF 
+
+Figure 6: Temporal trends of sub-objectives across different mandate scenarios. 
+
+B.4 Mandate Descriptions and Weight Specifications 
+
+We constructed W for eight specific mandates. Table 4 details the theoretical goals and construction logic for each mandate, while Table 5 provides the exact weight vectors used in the experiments. Positive values indicate objectives to maximize, whereas negative values denote penalty terms for undesirable characteristics. 
+
+B.5 Temporal Dynamics of Objectives 
+
+Figures 6 and 7 illustrate the temporal trends of sub-objectives across different mandates. The solid lines represent the 100-round moving average, while the shaded regions correspond to the true reward values. The results confirm 
+
+23 MA, Z HANG , S UGIYAMA , AND ZHOU 0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0
+
+1000 
+
+2000 
+
+3000 
+
+4000 
+
+5000 
+
+> Cumulative Regret
+
+Cumulative Regret 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.75 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+1.00 
+
+> Performance
+
+CWG 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+SR 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+> Performance
+
+MDD' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+0.50 
+
+> Performance
+
+Sortino 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+> Performance
+
+Alpha 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+TO' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.02 
+
+0.04 
+
+0.06 
+
+0.08 
+
+0.10 
+
+0.12 
+
+0.14 
+
+0.16 
+
+> Performance
+
+CR 
+
+Low Volatility 
+
+(a) Low Volatility 0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0
+
+250 
+
+500 
+
+750 
+
+1000 
+
+1250 
+
+1500 
+
+> Cumulative Regret
+
+Cumulative Regret 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> Performance
+
+CWG 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.05 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+SR 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+> Performance
+
+MDD' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+Sortino 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+> Performance
+
+Alpha 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+0.50 
+
+0.55 
+
+> Performance
+
+TO' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.02 
+
+0.04 
+
+0.06 
+
+0.08 
+
+0.10 
+
+0.12 
+
+0.14 
+
+0.16 
+
+> Performance
+
+CR 
+
+Momentum Concentrated 
+
+(b) Momentum Concentrated 0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0
+
+1000 
+
+2000 
+
+3000 
+
+4000 
+
+5000 
+
+> Cumulative Regret
+
+Cumulative Regret 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+1.00 
+
+> Performance
+
+CWG 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+SR 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+> Performance
+
+MDD' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+Sortino 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+> Performance
+
+Alpha 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+TO' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.025 
+
+0.050 
+
+0.075 
+
+0.100 
+
+0.125 
+
+0.150 
+
+0.175 
+
+0.200 
+
+> Performance
+
+CR 
+
+Risk Parity Enhanced 
+
+(c) Risk Parity Enhanced 0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0
+
+1000 
+
+2000 
+
+3000 
+
+4000 
+
+5000 
+
+> Cumulative Regret
+
+Cumulative Regret 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.75 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+1.00 
+
+> Performance
+
+CWG 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+SR 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.125 
+
+0.150 
+
+0.175 
+
+0.200 
+
+0.225 
+
+0.250 
+
+0.275 
+
+0.300 
+
+0.325 
+
+> Performance
+
+MDD' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+Sortino 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.3 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+> Performance
+
+Alpha 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.15 
+
+0.20 
+
+0.25 
+
+0.30 
+
+0.35 
+
+0.40 
+
+0.45 
+
+> Performance
+
+TO' 
+
+0 1000 2000 3000 4000 5000 
+
+Time Step 
+
+0.04 
+
+0.06 
+
+0.08 
+
+0.10 
+
+0.12 
+
+0.14 
+
+0.16 
+
+0.18 
+
+> Performance
+
+CR 
+
+Balanced Growth 
+
+(d) Balanced Growth PrefUCB Scalarized r. r. ParetoUCB GTPF 
+
+Figure 7: Temporal trends of sub-objectives across different mandate scenarios. 
+
+that PrefUCB (shown in red) consistently prioritizes preferred objectives, compromises on relaxable ones, and maintains acceptable levels for moderate objectives, demonstrating superior trade-off capabilities. 
+
+24
