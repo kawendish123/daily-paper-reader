@@ -1,0 +1,831 @@
+Title: M^2C-EvDet: Multi-Domain Multi-Order Cross-Modal Knowledge Distillation for Event-based Object Detection
+
+URL Source: https://arxiv.org/pdf/2606.24248v1
+
+Published Time: Wed, 24 Jun 2026 00:38:43 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+> 1
+
+# M2C-EvDet: Multi-Domain Multi-Order Cross-Modal Knowledge Distillation for Event-based Object Detection 
+
+Wei Bao, Siqi Li, Shouan Pan, Yi Xie and Yue Gao, Senior Member, IEEE 
+
+Abstract —Event-based object Detection (EvDet), as a biologi-cally inspired visual perception paradigm, demonstrates superior performance in scenarios demanding high temporal resolution and a wide dynamic range. Nevertheless, the inherent sparse representations and inadequate visual semantics of event data result in a considerable performance disparity between EvDet and frame-based object detection. Previous works attempt to alleviate this cross-modal discrepancy through knowledge dis-tillation, yet they only focus on spatial visual semantics or pair-wise relational information, thus limiting performance in more complex scenarios. To address this challenge, this paper proposes M 2C-EvDet, a Multi-domain and Multi-order Cross-modal knowledge distillation framework for EvDet. Built upon frequency learning and hypergraph computation, M 2C-EvDet in-tegrates two specialized modules: Adaptive Frequency-Decoupled Feature Distillation (AF 2D2) and Multi-Order Relational Dis-tillation (MORD). Specifically, AF 2D2 conducts dynamic low-and high-frequency feature distillation via adaptive frequency decoupling, which eliminates the aliasing between modality-agnostic and modality-specific knowledge and thus enhances the transfer of global and local object semantics. MORD transfers both pair-wise low-order relations and multi-to-multi high-order relations via self-attention and hyper-attention mechanisms, re-spectively, thereby further extending the capability boundaries of feature distillation. Concretely, the hyper-attention employs an aggregation-and-distribution paradigm, where hyperedge fea-tures are utilized as an intermediate bridge to enable high-order information propagation among multiple feature nodes, thus effectively capturing intricate high-order relational knowledge. Extensive experiments on three RGB-Event object detection datasets demonstrate the effectiveness of our method. Specifically, M2C-EvDet achieves 3.6 mAP improvement and establishes a new state-of-the-art benchmark on the DSEC-Detection dataset. 
+
+Index Terms —Event-based Object Detection, Cross-Modal Dis-tillation, Hypergraph Computation. 
+
+I. I NTRODUCTION 
+
+Event cameras are a new type of bio-inspired vision sen-sor where each pixel asynchronously responds to brightness changes [1]. Let I(x, y, t ) denote the brightness of pixel (x, y )
+
+at timestamp t. When the logarithmic change of the bright-ness exceeds a specific threshold C, i.e. , | log( I(x, y, t )) −                                       
+
+> Wei Bao, Siqi Li, Shouan Pan and Yue Gao are with BNRist, THUIBCS, BLBCI, School of Software, Tsinghua University, Beijing 100084, China, and Yangtze Delta Region Institute, Tsinghua University, Jiax-ing 314006, China ( {baoweivvv, lisiqi19971013, kevin.gaoy }@gmail.com; psa24@mails.tsinghua.edu.cn). Yi Xie is with School of Economics and Management, Beijing Forestry University, Beijing 100083, China (yixie@bjfu.edu.cn). This work was supported in part by Brain Science and Brain-like In-telligence Technology—National Science and Technology Major Project (2025ZD0217300), National Natural Science Foundation of China (No. U25A20532), Project under the Key R&D and Transformation Program of Qinghai Province (Competition-based Funding Model): Research and Demonstration on Early Warning and Prevention Technologies for Human-Bear Conflicts in Qinghai Province (Phase III). ( Corresponding author: Siqi Li. )
+
+log( I(x, y, t ′)) | > C , an event will be triggered, where t′ is the timestamp of the previous event triggered at this pixel. The triggered event is denoted as e = ( x, y, t, p ), where t
+
+is the timestamp and p ∈ { 1, −1} is the polarity, indicating whether the brightness is increased or decreased. All events triggered asynchronously by all pixels of the event camera converge to form the output event stream. Due to their unique working principle, event cameras have advantages such as high temporal resolution (about 1 μs), high dynamic range (about 140 dB), and low latency, making them widely used in fields like sign language recognition [2], autonomous driving [3]– [5], feature tracking [5]. The high temporal resolution and high dynamic range characteristics have driven widespread attention to Ev ent-based Object Det ection (EvDet) in the computer vision com-munity. Over the past few years, numerous state-of-the-art event feature extraction networks, ranging from GNN-based models [6] and SNN-based models [7] to CNN/Transformer-based architectures [8], [9], have been developed to facilitate object perception tasks in complex scenes. RVT [8] proposes local-global self-attention and recurrent temporal attention to aggregate spatial and temporal information, respectively. EvRT-DETR [9] transforms image-based detectors into event-based detection models by modifying their frozen latent rep-resentation space in an efficient adaptation way. However, constrained by the intrinsic sparsity of event data and the lack of visual semantic information, EvDet approaches suffer from a significant performance discrepancy compared with conventional RGB frame-based detection methods. To address this challenge, DAGr [10] leverages the high temporal resolu-tion and inherent sparsity of event data and the rich but low temporal resolution information of RGB images to achieve efficient and high-performance object detection. Subsequently, a multitude of RGB-Event fusion approaches [11], [12] have been developed to fully leverage the complementary properties of multi-modal data. However, these methods still necessitate strictly synchronized RGB-event data pairs during the infer-ence phase, which significantly restricts their applicability to scenarios where RGB cameras are unavailable. To eliminate the dependency on RGB data during the inference stage, recent studies have embraced cross-modal knowledge distillation techniques, which enable the exploita-tion of the rich visual semantics inherent in RGB data [13]– [16] during the training phase. COFD [17] proposes an object-centric slot attention mechanism that enables effective object-centric spatial distillation and pairwise relational distillation. EA-DETR [18] leverages the sparsity of event data to generate an event-aware binary mask that identifies object-relevant regions and facilitates the transfer of more useful spatial  
+
+> arXiv:2606.24248v1 [cs.CV] 23 Jun 2026 2Event
+> Decoder
+> RGB
+> Encoder
+> RGB
+> Decoder
+> Spatial Semantics
+> Event
+> Encoder
+> Low -and High -Freq.
+> Decoupled Semantics
+
+(c) Ours: Multi -Domain Multi -Order Distillation  
+
+> Event
+> Decoder
+> RGB
+> Encoder
+> RGB
+> Decoder
+> Event
+> Encoder
+> Event
+> Decoder
+> RGB
+> Encoder
+> RGB
+> Decoder
+> Event
+> Encoder
+> Low -and High -
+> Order Relation
+> Pair -wise Low -Order Relation
+> Hypergraph
+> Modeling
+> Frequency
+> Domain
+> Self Attention Spatial Domain
+
+(a) Spatial Domain Distillation (b) Low -Order Relational Distillation  
+
+> Fig. 1. Comparison of our proposed M 2C-EvDet with existing methods , including (a) whole spatial domain distillation and (b) low-order relational distill. Our method (c) transfers low-frequency and high-frequency decoupled object semantics, and low-order and high-order object relations through frequency learning and hypergraph computation.
+
+semantics. It can be observed that existing cross-modal knowl-edge distillation methods for EvDet still perform object-centric knowledge distillation within a single spatial domain shown in Fig. 1(a) or simple pair-wise low-order relational distillation shown in Fig. 1(b), leading to insufficient information transfer capability in complex scenarios. Consequently, a more holistic and robust framework is critically required to facilitate ad-vanced visual knowledge transfer, overcoming the constraints of conventional distillation methods. Based on the aforementioned analysis, this paper pro-poses M 2C-EvDet, a Multi-domain Multi-order Cross-modal knowledge distillation framework used for event-based Ob-ject Det ection as shown in Fig. 1(c). M 2C-EvDet leverages frequency learning [19] and hypergraph computation [20] to enhance traditional spatial-domain feature distillation and pair-wise low-order relational distillation, leading to two key modules: Adaptive Frequency-Decoupled Feature Distillation (AF 2D2) and Multi-Order Relational Distillation (MORD). On the one hand, single spatial distillation methods tend to induce aliasing between modality-agnostic and modality-specific knowledge when processing cross-modal data, leading to constrained object semantic transfer capability. To mitigate this issue, AF 2D2 leverages frequency-domain knowledge to perform low- and high-frequency decoupled spatial distilla-tion, which enhances the transfer of global and local object semantics, respectively. Furthermore, to accommodate objects with diverse appearances and sizes across images, we realize adaptive low- and high-frequency separation through multi-scale wavelet decomposition and adaptive wavelet fusion. On the other hand, conventional relational distillation approaches commonly utilize self-attention mechanisms to transfer object relational knowledge from teacher models. However, this pair-wise low-order modeling framework struggles to cope with the sophisticated inter-object correlations present in complex real-world environments. To tackle this limitation, the proposed MORD module, building upon low-order relational distillation, designs hyper-attention via hypergraph computation theory to model and transfer multi-to-multi high-order relations, further extending the capability boundaries of feature distillation. Specifically, the hyper-attention employs an aggregation-and-distribution paradigm, where hyperedge features are utilized as an intermediate bridge to enable high-order information propagation among multiple feature nodes. By adapting and integrating the above two components into object detection framework, M 2C-EvDet can fully leverage the rich visual and texture information inherent in the RGB modality, thereby effectively enhancing the detection performance on event stream. The experimental results demonstrate the superior de-tection capabilities and state-of-the-art results of our proposed method. The main contributions of our paper are summarized as follows:  
+
+> •
+
+We propose M2C-EvDet, a multi-domain multi-order cross-modal distillation framework for event-based object detection, fully harnessing the rich visual and texture information inherent in the RGB modality.  
+
+> •
+
+An adaptive frequency-decoupled feature distillation is proposed to mitigate the aliasing between modality-agnostic and modality-specific knowledge through adap-tive low- and high-frequency decoupled distillation, boosting the transfer of global and local object semantics.  
+
+> •
+
+A multi-order relational distillation is proposed to model and transfer both pair-wise low-order relations and multi-to-multi high-order relations through self-attention and hypergraph attention, further expanding the capability boundaries of feature distillation.  
+
+> •
+
+We conduct comprehensive experiments on three RGB-guided event-based object detection datasets, which demonstrate that M 2C-EvDet achieves superior perfor-mance and establishes state-of-the-art (SOTA) results. II. R ELATED WORK 
+
+A. Event-Based Object Detection 
+
+Event-based object detection methods can be broadly split into two categories, i.e. , GNN/SNN-based models [6], [7] and CNN/Transformer-based models [8], [9]. GNN/SNN-based methods directly take raw event stream as input and extract the visual feature from sparse event stream. Due to the advanced performance, CNN/Transformer-based frameworks have emerged as the dominant paradigm. These methods [8], [9] extract spatial- and temporal-wise features to enhance the event representation. However, they lack semantic richness and lead to a substantial performance gap between EvOD and frame-based methods. Recently, many event-frame fused methods [10]–[12] have attempted to use the high temporal resolution and inherent sparsity of event data, and the rich but low temporal resolution information of RGB images to deal with highly dynamic scenarios. To further break the limit of strictly synchronized RGB-event data pairs during 3Cls Head 
+
+Reg Head 
+
+> L2 Loss
+> Low Pass
+> Low Pass
+> L2 Loss
+> Low Pass
+> Low Pass
+> L2 Loss
+> High Pass
+> L2 Loss
+> Self Attn
+> Self Attn
+> L2 Loss
+> Hyper Attn
+> Hyper Attn
+> L2 Loss
+> Self Attn
+> Self Attn
+> L2 Loss
+> Hyper Attn
+> Hyper Attn
+> Multi -Domain Multi -Order Cross -
+> Modal Feature Distillation
+> Multi -Domain Multi -Order Cross -
+> Modal Feature Distillation
+> Multi -Domain Multi -Order Cross -
+> Modal Feature Distillation
+
+Low -order and High -order 
+
+Relational Distillation 
+
+Low -freq and High -freq 
+
+Decoupled Distillation 
+
+Cls Head 
+
+Reg Head 
+
+Cls Head 
+
+Reg Head 
+
+Event 
+
+Decoder 
+
+> High Pass
+
+RGB 
+
+Encoder 
+
+Event 
+
+Encoder 
+
+Event 
+
+Encoder 
+
+RGB 
+
+Decoder 
+
+Event 
+
+Decoder 
+
+Inference Stage 
+
+Training Stage   
+
+> Fig. 2. Overview of the proposed M 2C-EvDet framework. During training phase, our method is built on a teacher-student architecture and takes event streams and RGB frames as inputs. The M 2CFD module is employed to implement low-order and high-order relational distillation, and low-frequency and high-frequency decoupled distillation. During inference phase, our method solely take event streams as inputs to perform object detection.
+
+the inference phase, COFD [17] and EA-DETR [18] leverage spatial or relational knowledge distillation which can transfer the rich object-relevant semantics and relations from RGB modality. A number of alternative RGB-guided event-based perception approaches [21]–[23] also accomplish the transfer of rich visual and texture information from the RGB modality during the training phase. Despite these advances, existing methods only focus on the knowledge in the single spatial domain or pair-wise low-order relations, leading to insufficient information transfer capability in complex scenarios. Differently, this work transfers low-frequency and high-frequency decoupled object semantics, and low-order and high-order object relations based on frequency learning and hypergraph computation. 
+
+B. Knowledge Distillation for Object Detection 
+
+Knowledge distillation [24]–[26] transfers rich knowledge from large-scale detectors to compact student detectors for model compression and acceleration. FKD [27] proposes to learn not only the feature of an individual pixel but also the relation between different pixels captured by non-local modules. FGD [28] decouples features into focal and global distillation, capturing fine-grained object features and global context to mitigate background interference. MGD [29] makes the student model generate the teacher feature with its masked feature instead of mimicking it directly. Additionally, several distillation methods [30]–[33], tailored for DETR models leverage query-related information to enhance the performance of feature distillation or logit distillation. DETRDistill [30] proposes a target-aware feature distillation strategy to enable the student model to learn from the object-centric features extracted by the teacher model. CLoCKDistill [33] distills the transformer encoder output, which encapsulates valuable global context and long-range dependencies. Notably, our method can leverage adaptive frequecny decoupling and hyper-attention to model and transfer global and local semantics, and high-order relational knowledge. 
+
+C. Frequency learning in Computer Vision 
+
+Images in the spatial domain can be transformed into fre-quencies in the spectral domain; conversely, frequencies can be losslessly converted back to images. Frequency domain anal-ysis [19], [34] has been widely applied in various computer vision tasks. WD-DETR [35] integrates wavelet transform into the backbone network to filter noise, as event representations or images can be easily treated as signals. In multi-modal images, low-frequency features primarily contain modality-agnostic information that is highly shared across different modalities, while high-frequency features tend to capture modality-specific information and are usually accompanied by more noise. FAD [36] employs a global filter in the frequency domain to adjust the frequencies of the student’s features under the guidance of the teacher’s features, failing to fully utilize frequency components for cross-modal knowledge transfer. FreeKD [37] generates pixel-wise frequency masks via Fre-quency Prompt to localize pixels of interest across various 4
+
+frequency bands. However, the frequency prompt is learned through the teacher network, which is prone to overfitting in cross-modal images. Unlike these methods, our approach fully leverages frequency-domain information to decouple the aliasing of low and high frequencies in cross-modal knowledge transfer, enhancing the global and local semantic information. 
+
+D. Visual Hypergraph Computation 
+
+Hypergraph is the extension of graph. A hypergraph G
+
+can be defined by the hyperedge set E and the vertex set 
+
+V, i.e. , G = {E , V} . Different from traditional graphs, each hyperedge of a hypergraph can connect multiple vertices, and thus complex correlations between multiple vertices can be modeled. Hypergraph learning can facilitate the correlation-guided analysis by capturing complex and higher-order corre-lations in data based on hypergraph structures. Gao et al. [20] propose a higher-order message spatial propagation method between vertices, which further enhance the capability of hypergraph learning. Recently, several works [38]–[41] have applied hypergraph computation to computer vision. HyperY-OLO [42] is the first work to apply hypergraph computation to object detection, proposing a semantic collecting and scatter-ing framework and modeling hyperedges as ϵ-ball centered at each feature point. YOLOv13 [43] advances hyperedge modeling by formulating them as global features, where each feature is generated via learnable prototypes combined with global offsets to facilitate hypergraph message propagation in a soft-connection manner. Notably, our method is the first work to apply hypergraph computation to knowledge distillation for object detection, designing hyper attention that acquires hyperedge features via K-means clustering to further transfer high-order relational knowledge. III. M ETHOD 
+
+In this section, we introduce our proposed M 2C-EvDet, an efficient RGB-guided cross-modal distillation framework for EvDet. The overview of our proposed method is first intro-duced in Sec. III-A. Then, Sec. III-B and Sec. III-C introduces the AF 2D2 module and MORD module, respectively. Finally, we give the overall loss in Sec. III-D. 
+
+A. Overview 
+
+Fig. 2 depicts the overall pipeline of our proposed M2C-EvDet. During the training phase, M 2C-EvDet takes event streams and RGB frames as inputs, adopting a teacher-student architecture to transfer knowledge from RGB frames to event data. Then, the multi-scale RGB frame features and event features are extracted by the RGB encoder and event encoder (typically composed of a backbone network plus FPN [44]/PAFPN [45]), respectively. Subsequently, our method employs Multi-Domain Multi-Order Cross-Modal Fea-ture Distillation (M 2CFD), which consists of AF 2D2 and MORD, to distill the rich visual and texture information inherent in the RGB modality. Specifically, MORD adopts self-attention and hyper-attention to implement low-order and high-order relational distillation, respectively. AF 2D2 employs Low Frequency Distillation High Frequency Distillation                       
+
+> L2 Loss L2 Loss
+> Adaptive
+> Low -Pass Filter
+> Adaptive
+> High -Pass Filter
+> Adaptive
+> Low -Pass Filter
+> Adaptive
+> High -Pass Filter
+> Linear ,,,B C H W ,B C
+> Avg Pool ,/B C r
+> ReLU ,/B C r,B T
+> Softmax
+> AFK
+> AFK 
+> Differential
+> modality
+> HPF(1)
+> HPF(2)
+> …
+> HPF(T)
+> DI
+> D
+> HF
+> Mask
+> DI
+> D
+> HF
+> Mask
+> AFK 
+> Common
+> modality
+> LPF(1)
+> LPF(2)
+> …
+> LPF(T)
+> D
+> I
+> D
+> LF
+> Mask D
+> I
+> D
+> LF
+> Mask
+> Low Pass Filter with L -level DWT LPF(T) Low Pass Filter with L -level DWT LPF(T) High Pass Filter with L -level DWT HPF(T)
+> DDiscrete Wavelet Transform ID Inverse Discrete Wavelet Transform
+> Linear
+> Fig. 3. Illustration of the AF 2D2module , which leverages adaptive low-pass and high-pass filter to achieve the decoupling of low-frequency and high-frequency feature distillation.
+
+low-pass and high-pass filtering modules to perform decoupled distillation of low-frequency and high-frequency components. During the inference stage, our method solely takes event streams as inputs and leverages the enhanced the multi-scale event features to achieve improved detection performance. It is worth noting that our method is a feature distillation approach, which can be applied to various detection frameworks. 
+
+B. Adaptive Frequency-Decoupled Feature Distillation 
+
+AF 2D2 is designed to decouple conventional whole spatial-domain feature distillation, overcoming its inherent perfor-mance limitations by leveraging frequency-domain analysis. For multimodal images, low-frequency features primarily en-code modality-agnostic information, which is highly shared across different modalities. In contrast, high-frequency fea-tures tend to capture modality-specific information and are typ-ically accompanied by more noise. Directly distilling semantic information from the spatial domain tends to result in the conflation of modality-general and modality-specific knowl-edge. Therefore, AF 2D2 leverages frequency-domain features to conduct separate low-frequency and high-frequency fea-ture distillation. Low-frequency distillation excludes modality-induced noise and learns global modality-shared knowledge, whereas high-frequency distillation acquires sharp object con-tours from RGB images and suppresses modality-specific noise components. In addition, objects exhibit variations in size and morphology across different images, and a single-scale high-low frequency decomposition strategy struggles to efficiently decouple the global and local semantics of targets. Consequently, we design a adaptive frequency-domain decomposition mechanism, enabling more effective high-low frequency distillation via multi-scale wavelet decomposition and adaptive wavelet fusion. As illustrated in Fig. 3, adaptive low-pass filtering and adap-tive high-pass filtering are adopted to realize low-frequency and high-frequency decomposition. The adaptive low-pass filtering component incorporates multi-level Low-Pass Filters (LPFs), while the adaptive high-pass filtering component is composed of multi-level High-Pass Filters (HPFs). To instan-tiate these filtering operations, we utilize the Discrete Wavelet Transform (DWT), low-/high-frequency masking mechanisms, 5
+
+and Inverse Discrete Wavelet Transform (IDWT) to achieve the LPF and HPF functionalities. Supposing that the multi-scale features of RGB modality after PAFPN is denoted as 
+
+Sl ∈ RCl×Hl×Wl and that of event modality is denoted as Tl ∈
+
+RCl×Hl×Wl , where l = 3 , 4, 5. Cl, Hl, and Wl is the channel dimension, height and width of l-th feature maps, respectively. For each level, we first adopt the spatial-to-frequency domain transformation to obtain frequency components, i.e. ,
+
+ˆStl = DWT t(Sl), ˆT tl = DWT t(Tl), (1) where ˆStl and ˆT tl denote the transformed frequency-domain values after the t-th level DWT. When the decomposition level 
+
+t is set to 1, the feature map can be partitioned into four frequency bands LL 1, HL 1, LH 1, HH 1, where LL 1 denotes the low-frequency band and the remaining three correspond to high-frequency bands. When the decomposition level t is set to 2, the LL 1 band can be further decomposed into four sub-bands LL 2, HL 2, LH 2, HH 2. We define the low-frequency mask operation Mlf t as setting all high-frequency bands to 0 for the t-th level DWT, and the high-frequency mask operation 
+
+Mhf t as setting the low-frequency band to 0 for the t-th level DWT. Hence, the high-frequency and low-frequency components of the RGB teacher features and Event student features in the t-th level can be formulated as: 
+
+ˆT hf (t) 
+
+> l
+
+= Mthf ( ˆT tl ), ˆT lf (t) 
+
+> l
+
+= Mtlf ( ˆT tl )ˆShf (t) 
+
+> l
+
+= Mthf ( ˆStl ), ˆSlf (t) 
+
+> l
+
+= Mtlf ( ˆStl ) . (2) Finally, we use frequency-to-spatial domain transformation to obtain the reconstructed low-frequency and high-frequency features, i.e. ,
+
+T hf (t) 
+
+> l
+
+= IDWT t( ˆT hf (t) 
+
+> l
+
+), T lf (t) 
+
+> l
+
+= IDWT t( ˆT lf (t) 
+
+> l
+
+)
+
+Shf (t) 
+
+> l
+
+= IDWT t( ˆShf (t) 
+
+> l
+
+), Slf (t) 
+
+> l
+
+= IDWT t( ˆSlf (t) 
+
+> l
+
+) . (3) Subsequent to multi-scale wavelet decomposition, this work proposes an adaptive wavelet fusion module that leverages Attention over Filter Kernels (AFK) to aggregate multi-scale wavelet components in accordance with their respective at-tention weights. In multimodal image data, low-frequency components encapsulate modality-general knowledge that en-codes the common characteristics across diverse modalities, while high-frequency components embody modality-specific knowledge that captures the discriminative traits unique to individual modalities. Building upon the shared properties and discriminative discrepancies inherent in multimodal images, AFK adopts a two-layer linear network to output attention scores for low-frequency features Alf l and attention scores for high-frequency features Ahf l , as follows: 
+
+Alf l = AFK (Tl + Sl)
+
+Ahf l = AFK (Tl − S l)
+
+AFK (F ) = SM (ReLU (AvgPool (F )W1)W2)
+
+, (4) where AvgPool is the average pooling, ReLU is the relu activation function and SM is the softmax activation function. 
+
+W1 ∈ RCl×Cl/r and W2 ∈ RCl/r ×T are weights of linear layers, where T is the number of DWT levels and r is reduction ratio. We use Tl + Sl to represent common modality Low Order Relational Distillation High Order Relational Distillation                  
+
+> L2 Loss L2 Loss
+> SR(k ×k) WW
+> WW
+> S.M.
+> WW
+> WW
+> WW
+> S.M.
+> WW
+> WW
+> Kmeans
+> WWWW
+> WW
+> S.M.
+> WWˆNdMdMN
+> WW→→
+> Self Attention Hyper Attention
+> SR(k ×k) WWLinear layer Spatial Reduction S.M. Softmax
+> Pair -wise Multi -to -Multi ˆ
+> Self Attention Hyper Attention
+> Fig. 4. Illustration of the MORD module , which leverages self attention and hyper attention to transfer low-order and high-order relations.
+
+and Tl − S l to represent differential modality. The final high-frequency and low-frequency components of the RGB teacher features and Event student features can be obtained as: 
+
+Slf l =
+
+> T
+
+X
+
+> t=1
+
+Alf (t) 
+
+> l
+
+· S lf (t) 
+
+> l
+
+, Shf l =
+
+> T
+
+X
+
+> t=1
+
+Ahf (t) 
+
+> l
+
+· S hf (t)
+
+> l
+
+T lf l =
+
+> T
+
+X
+
+> t=1
+
+Alf (t) 
+
+> l
+
+· T lf (t) 
+
+> l
+
+, T hf l =
+
+> T
+
+X
+
+> t=1
+
+Ahf (t) 
+
+> l
+
+· T hf (t)
+
+> l
+
+. (5) Finally, the distillation loss function Lfreq in the frequency domain is obtained as follows: 
+
+Lfreq = λ1 · L lf  
+
+> freq
+
++ λ2 · L hf 
+
+> freq
+
+Llf  
+
+> freq
+
+= X
+
+> l∈L
+
+X  
+
+Slf l − T lf l
+
+2
+
+Lhf  
+
+> freq
+
+= X
+
+> l∈L
+
+X  
+
+Shf l / Shf l 2
+
+− T hf l / T hf l 2
+
+2
+
+, (6) where L is the number of feature maps levels, λ1 and λ2
+
+are weight adjustment coefficients, Llf  
+
+> freq
+
+and Lhf  
+
+> freq
+
+denote the high-frequency and low-frequency feature distillation losses, respectively. ∥ · ∥ 2 denotes the L2 norm. Since high-frequency features inherently contain substantial noise and are prone to generating abnormally large values, leading to excessive gra-dient magnitudes during training, normalization is exclusively applied to the high-frequency features. 
+
+C. Multi-Order Relation Distillation in Spatial Domain 
+
+The relational information between distinct pixels encapsu-lates valuable knowledge and has been leveraged to enhance the performance of detection tasks. Relation distillation has been proven effective in improving the performance of knowl-edge distillation by capturing the global correlational relation-ships of features [27]. Nevertheless, these approaches gener-ally utilize non-local or attention-based modules to model pair-wise associations between feature points, overlooking global multi-to-multi high-order correlations, which restricts distilla-tion performance in complex scenarios. Our proposed MORD leverages spatial-reduction self-attention and hypergraph at-tention based on hypergraph computation to separately model low-order and high-order relations among pixels, enabling the transfer of complex correlational structures from the teacher 6
+
+model to the student model. The low-order and high-order rela-tions are retrieved via the following procedures, respectively. For the convenience of formula presentation in the relation distillation section, we reshape the tensor Sl ∈ RCl×Hl×Wl
+
+and Tl ∈ RCl×Hl×Wl into Sl ∈ RNl×Cl and Tl ∈ RNl×Cl ,respectively. Here, Nl = HlWl represents the number of all feature points in the l-th level feature map, and no further elaboration will be provided in subsequent content. 
+
+Low-Order Relational Distillation. Self-attention mech-anisms have been extensively validated for their efficacy in modeling global associative relationships, yet they incur pro-hibitive computational costs in the context of high-resolution object detection scenarios. Several existing works have shown that partial spatial attenuation can effectively reduce compu-tational complexity while still enabling efficient modeling of pairwise relationships. PVT [46] achieves maximal retention of spatial information through spatial attenuation applied to the Key and Value tensors in the self-attention module. Therefore, as illustrated in the Fig. 4, this work adopts the spatial atten-uation to model the low-order relationships from the teacher network. The loss function Llr  
+
+> relation
+
+of Low-Order Relational Distillation (LORD) is expressed as follows: 
+
+Llr  
+
+> relation
+
+= X
+
+> l∈L
+
+X   Rlr (Sl) − R lr (Tl)2
+
+Rlr (Xl) = Xl +
+
+"
+
+SM XlW lr q (X sr l W lr k )⊤
+
+√Cl
+
+!
+
+X sr l W lr v
+
+#
+
+W lr o
+
+X sr l = Re ClHlWl→NlCl (Conv k×k(Re NlCl→ClHlWl (Xl))) 
+
+,
+
+(7) where W lr q ∈ RCl×Cl , W lr k ∈ RCl×Cl , W lr v ∈ RCl×Cl and 
+
+W lr o ∈ RCl×Cl denote linear layers, Rlr (·) captures the pair-wise low-order correlations, and √Cl is to avoid gradient explosion. X sr l is the feature after spatial reduction which can be achieved by a convolution layers with the kernel size and stride both as k × k. Re ClHlWl→NlCl denotes the reshape operation which convert the size of tensor from Cl ×Hl ×Wl to 
+
+Nl × Cl. Re NlCl→ClHlWl is inverse operation. In addition, we incorporate a multi-head attention mechanism [47] to augment the diversity of the captured relational correlations. 
+
+High-Order Relational Distillation. LORD is limited to lo-cal information aggregation and pairwise correlation modeling, lacking the capability to capture global multi-to-multi high-order correlations. Hence, High-Order Relational Distillation (HORD) is proposed to model high-order correlations via hy-pergraph computation. Hypergraph is the extension of graph, and can be defined by the hyperedge set E and the vertex set V, i.e. , G = {E , V} . In contrast to conventional graph edges that are restricted to linking two vertices, a hyperedge can connect multiple vertices in a single association. Thus, hypergraph could model high-order correlations between mul-tiple vertices. HORD designs the hyper-attention which adopts an aggregation-and-distribution paradigm, leveraging adaptive hyperedge features as an intermediate bridge to facilitate high-order information propagation between multiple feature points. Hyperedge construction serves as the cornerstone of hyper-graph computation. Recently, YOLOv13 defines hyperedges as learnable features, which simplifies hypergraph construction while ensuring that the model’s inference speed does not incur excessive overhead. In this work, hypergraph computation is introduced only during the training phase. Thus, leveraging the insight of adaptive hyperedge feature construction, we employ the Fuzzy K-Means algorithm [48] to perform feature clustering to get hyperegde features, i.e. ,
+
+X E 
+
+> l
+
+= KM (Xl) = K-Means (Xl), (8) where X E 
+
+> l
+
+∈ RMl×Cl is the hyperegde features, and Ml is the number of hyperegde. To achieve multi-to-multi high-order information modeling, hypergraph convolution is conducted to perform feature aggregation and distribution. Specifically, hyperedges first collect features from all vertices and applies multi-head cross attention mechanism to refine the hyperedge feature. Then, the hyperedge features are disseminated back to the vertices to update their representations. The high-order correlations modeling can be formulated as: 
+
+Rhr (Xl, X E 
+
+> l
+
+) = Rhr  
+
+> E→V
+
+(Xl, Rhr  
+
+> V→E
+
+(Xl, X E 
+
+> l
+
+)) 
+
+Rhr  
+
+> V→E
+
+= X E 
+
+> l
+
++
+
+"
+
+SM X E 
+
+> l
+
+W hr q1 (XlW hr k1 )⊤
+
+√Cl
+
+!
+
+XlW hr v1
+
+#
+
+W hr o1
+
+Rhr  
+
+> E→V
+
+= Xl +
+
+"
+
+SM XlW hr q2 (X E 
+
+> l
+
+W hr k2 )⊤
+
+√Cl
+
+!
+
+X E 
+
+> l
+
+W hr v2
+
+#
+
+W hr o2
+
+,
+
+(9) where Rhr  
+
+> V→E
+
+represents the massage passing from vertices to hyperedge, while where Rhr  
+
+> E→V
+
+represents the massage passing from hyperedge to vertices. W lr q1 ∈ RCl×Cl , W lr k1 ∈ RCl×Cl ,
+
+W lr v1 ∈ RCl×Cl and W lr o1 ∈ RCl×Cl denote convolutional layers for Rhr  
+
+> V→E
+
+, while W lr q2 ∈ RCl×Cl , W lr k2 ∈ RCl×Cl ,
+
+W lr v2 ∈ RCl×Cl and W lr o2 ∈ RCl×Cl denote convolutional layers for Rhr  
+
+> E→V
+
+. The loss function Lhr  
+
+> relation
+
+of HORD is expressed as follows: 
+
+Lhr  
+
+> relation
+
+= X
+
+> l∈L
+
+X   Rhr (Sl, KM (Sl)) − R hr (Tl, KM (Tl)) 2 .
+
+(10) In addition, we also incorporate a multi-head attention mecha-nism [47] to augment the diversity of the captured high-order relational correlations. It is worth noting that we do not focus on the construction process of hyper attention herein; instead, we emphasize that the concept of hypergraph computation can enhance the high-order relation transfer capability of conventional pairwise relation distillation methods. After the low-order and high-order relational distillation, the final loss function of MORD in spatial domain can be expressed as: 
+
+Lrelation = λ3 · L lr  
+
+> relation
+
++ λ4 · L hr 
+
+> relation
+
+, (11) where λ3 and λ4 are weight adjustment coefficients to balance the optimization process. 
+
+D. Overall loss 
+
+The overall loss function for our proposed M 2C-EvDet can be formulated as: 
+
+L = Lbase + Lfreq (S, T ) + Lrelation (S, T )= Lbase + λ1 · L lf 
+
+> freq
+
+(S, T ) + λ2 · L hf 
+
+> freq
+
+(S, T )+ λ3 · L lr 
+
+> relation
+
+(S, T ) + λ4 · L hr 
+
+> relation
+
+(S, T ),
+
+(12) 7                                                                                                                            
+
+> TABLE I QUANTITATIVE COMPARISON RESULTS ON THE DSEC-D ETECTION DATASET [10]. O UR PROPOSED METHOD IS COMPARED WITH THE EVENT -BASED DETECTION METHODS ,AND RGB-GUIDED EVENT -BASED DISTILLED DETECTION METHODS .Detectors Pedestrian Rider Car Bus Truck Bicycle Motorcycle mAP50 mAP Params(M)
+> Event-based Detection
+> DAGr [10] --------14.0 -AED [49] -------43.2 27.1 15.5 VIT-S5 [50] -------38.7 23.8 18.2 RVT [8] -------44.2 27.7 18.5 D-FINE-S [51] 15.2 37.7 42.4 20.7 17.0 32.5 7.1 42.0 24.7 10.2
+> RGB-guided Event-based Distilled Detection
+> EA-DETR [18] -------27.2 14.7 -FKD [27] 17.6 41.9 42.7 19.9 20.2 37.2 8.8 44.6 26.9 10.2 FGD [28] 17.4 43.6 42.5 23.8 20.7 36.1 7.1 45.5 27.3 10.2 FreeKD [28] 17.4 40.6 42.8 22.8 20.9 34.5 8.2 44.7 26.7 10.2 M2C-EvDet (RGB) 39.8 58.4 61.5 45.9 36.5 53.2 33.1 69.9 46.9 10.2 M2C-EvDet (Event) 17.8 44.5 43.0 24.5 21.8 37.5 9.0 45.9 28.3 10.2
+
+where Lbase is the standard object detection loss function, which typically consists of classification loss, bounding box loss, and Intersection over Union (IoU) loss. IV. E XPERIMENTS 
+
+In this section, we first elaborate on the experimental set-tings, including datasets, implementation details, and metrics, in Sec. IV-A. Subsequently, quantitative comparisons between our proposed method and state-of-the-art approaches are pre-sented in Sec. IV-B. In Sec. IV-C, ablation experiments are performed to verify the effectiveness of each proposed module and validate the generalizability of our method. Finally, several visualization results are provided in Sec. IV-D. 
+
+A. Experimental Settins 
+
+Datasets. We conduct experiments on three existing large-scale RGB-event object detection datasets, i.e. , DSEC-Detection dataset [10], DSEC-Det dataset [52], and PKU-DAVIS-SOD dataset [53].  
+
+> •
+
+DSEC-Detection dataset [10] is a driving-centric dataset featuring two event cameras (640 × 480 pixels) and two RGB cameras ( 1440 × 1080 pixels). It provides 60 sequences (70379 frames, 390118 bounding boxes) across 8 object classes: Pedestrians, Riders, Cars, Buses, Trucks, Bicycles, and Motorcycles.  
+
+> •
+
+DSEC-Det [52] dataset is another verson of DSEC dataset, and comprises 41 sequences with a total of 52,727 frames. This version emphasizes high-precision annotations for these critical classes in autonomous driv-ing: Car, Person, and Large Vehicle. The annotations are generated on RGB frames, and then transferred to the event data through homographic transformation.  
+
+> •
+
+PKU-DAVIS-SOD dataset [53] is a large-scale event-based detection dataset, which simultaneously records event streams and RGB frames. The dataset contains 220 sequences, comprising over 1.08 million bounding boxes, and covering three categories, i.e. , Cars, Pedestrians, and Two-Wheelers. 
+
+Implementation Details. We select D-FINE [51] as the basic event-based object detection method. The proposed M2CFD module is performed in the multi-scale feature maps from PAFPN. Our model is implemented based on PyTorch and is trained on NVIDIA 4090 GPUs. We trained the model for 12 epochs with a batch size of 16 using an AdamW optimizer. The learning rate is initialized at 0.0002 and kept constant throughout the entire training process. In the AF 2D2
+
+module, we employ wavelet transforms with T = 3 scales, and the scaling factor r of AFK is set to 4. For the MORD module, the spatial attenuation factor k corresponding to the 3rd, 4th, and 5th-level feature maps is configured as 8, 4, and 1, respectively. We adopt the adaptive average pooling as the initialization of hyperedges and set the number of hyperedges as 16 for all levels. In terms of weight configuration, we set 
+
+λ1 = 0 .00002 , λ 2 = 4 , λ 3 = 0 .00001 , λ 4 = 0 .00001 .
+
+Evaluation Metrics. We choose mean average precision (e.g. , COCO mAP [54]) as the core evaluation metric, a standard benchmark extensively employed in object detection research. We give a comprehensive evaluation using average precision with various IoUs ( e.g. , mAP, mAP50). 
+
+B. Quantitative Comparisons 
+
+Table I presents the quantitative performance compar-isons of various methods evaluated on the DSEC-Detection dataset [10]. Our proposed method is benchmarked against two distinct categories of baseline approaches: event-based detec-tion methods and RGB-guided event-based distillation detec-tion methods. The former category encompasses DAGr [10], AED [49], VIT-S5 [50] and RVT [8] and D-FINE [51]. The latter category comprises EA-DETR [18], FKD [27], FGD [28] and FreeKD [37]. As can be observed from Table I, our teacher model M 2C-EvDet (RGB) achieves a mAP of 46.9 and a mAP50 of 69.9, which significantly outperforms all event-based methods. This result clearly demonstrates that a 8                                
+
+> TABLE II ABLATION EXPERIMENTS ON THE DSEC-D ETECTION DATASET [10]. WE VALIDATE THE PERFORMANCE OF OUR METHOD WITH AND WITHOUT THE PROPOSED MORD AND AF 2D2.MORD AF 2D2
+> mAP50 mAP Low-order High-order Low-freq High-freq 42.0 24.7
+> !43.6 26.2
+> !44.2 26.8
+> !!44.5 27.2
+> !44.3 26.6
+> !44.7 26.7
+> !!44.9 27.4
+> !!!!45.9 28.3
+
+substantial performance gap exists between event-only and RGB-based detection approaches. Guided by the knowledge distillation from our teacher model, our proposed method M2C-EvDet (Event) achieves state-of-the-art detection per-formance on the DSEC-Detection dataset. When compared with RVT [8], the leading performer among pure event-based detection methods, our approach yields a notable improvement in both mAP and mAP50, with values increasing from 27.7 and 44.2 to 28.3 and 45.9, respectively. Moreover, our model reduces the number of parameters by a significant margin of 8.3M. This result fully validates the significance and efficacy of integrating RGB semantic information into the training pipeline. From Table I, we can also observe that compared with RGB-guided event-based distilled detection methods, our method also achieves significant performance improvements on mAP and mAP50. Specifically, compared to the second-best method, FGD [28], our method can improve the mAP50 and mAP by 0.4 and 1, respectively. Significant performance improvements are also attained by our approach for each category. Moreover, as RGB information is introduced in the training stage for all these methods, the number of model parameters is kept constant. 
+
+C. Ablation Study 
+
+Table II presents the quantitative results of the ablation experiments on the DSEC-Detection dataset [10]. We utilize variants of the model with and without the low-order, high-order, low-frequency and high-frequency components to verify the effectiveness of MORD and AF 2D2.
+
+Low-Order and High-order Relational Distillation. It can be seen from Table II that adding low-order and high-order relational distillation separately both contributes to the enhancement of mAP. Specifically, low-order relational distil-lation increases the mAP from 24.7 to 26.2, while high-order relational distillation elevates the mAP to 26.8. These compre-hensive performance improvements verify the significance of low-order and high-order relationships in relational distillation. Furthermore, when both low-order and high-order relational distillation are adopted simultaneously, the mAP and mAP50 can be further improved to 27.2 and 44.5, respectively, which are higher than those achieved by either module alone. This            
+
+> TABLE III COMPARISON RESULTS BETWEEN THE PLAIN SPATIAL DISTILLATION WITHOUT FREQUENCY DECOUPLING AND THE PROPOSED AF 2D2MODULE .Method Frequency Decoupling mAP50 mAP PSD 43.5 25.8 AF 2D2!44.9 27.4
+
+phenomenon fully demonstrates that low-order and high-order relationships are not conflicting, but rather two complemen-tary distillation paradigms, which jointly model the abundant and complex object relationships in multi-modal images and effectively accomplish cross-modal knowledge transfer. 
+
+Low-frequency and High-frequency Feature Distillation. 
+
+It can be seen from Table II that adding low-frequency and high-frequency feature distillation separately both contribute to the enhancement of mAP. Specifically, low-frequency dis-tillation increases the mAP from 24.7 to 26.6, while high-frequency distillation elevates the mAP to 26.7. These com-prehensive performance improvements verify the significance of low-frequency and high-frequency distillation. Furthermore, when both low-frequency and high-frequency feature distilla-tion are adopted simultaneously, the mAP and mAP50 can be further improved to 27.4 and 44.9, respectively, which are higher than those achieved by either module alone. To further verify the effectiveness of frequency-domain decoupling, we additionally conduct comparison experiments on distillation with and without frequency decoupling, as shown in Table III. Specifically, the PSD refers to the plain spatial-domain distilla-tion without frequency decoupling. It can be observed that the mAP of PSD is only 25.8, which is far lower than that of high-and low-frequency decoupled distillation. This phenomenon fully demonstrates that our AF 2D2 can alleviate the aliasing between modality-agnostic and modality-specific knowledge. 
+
+Multi-Domain Multi-order Cross-modal Distillation Ta-ble II show that the integration of MORD and AF 2D2 leads to continuous improvement, with the final results reaching 28.3 for mAP and 45.9 for mAP50. This phenomenon arises because MORD and AF 2D2 are knowledge transfer methods from two distinct perspectives: the former focuses on the object semantic information while the latter emphasizes the complex correlation relationships among objects. 
+
+Parameter Sensitivity Analysis. Fig. 5 shows the perfor-mance of our proposed method under different distillation loss weights. From the Fig. 5a, we can observe that when the MORD loss weights λ1 and λ2 changes from 0.25 × 10 −5
+
+to 4 × 10 −5, the mAP remains basically stable, ranging from 25.2 to 27.1. In addition, we find that the effectiveness of high-order relational distillation is superior to that of low-order relational distillation, which also indicates that multi-to-multi relationships are more widely prevalent in visual object detection tasks, and our hyper-attention can effectively capture these relationships. As for the AF 2D2 module in Fig. 5b, when 
+
+λ3 changes from 0.25 ×10 −5 to 4×10 −5 and λ4 changes from 
+
+0.25 to 4, the model’s performance remains stable, oscillating between 25.4 and 27.1, which indicates that our method is insensitive to its weight. 90.25 0.5 1 2 4weight ( λ1 × 10 5, λ 2 × 10 5)24 25 26 27 28 29 mAP 
+
+> baseline low order( λ1)high order( λ2)
+
+(a) λ1 and λ20.25 0.5 1 2 4weight ( λ3 × 10 5, λ 4)24 25 26 27 28 29 mAP  
+
+> baseline low freq( λ3)high freq( λ4)
+
+(b) λ3 and λ4
+
+Fig. 5. Experimental results of sensitivity analysis of distillation loss weight on the DSEC-Detection dataset [10]. TABLE IV EXPERIMENTAL RESULTS OF SENSITIVITY ANALYSIS OF INITIALIZATION AND NUMBER OF HYPEREDGE ON THE 
+
+DSEC-D ETECTION DATASET [10]. Hyperedge Initialization Hyperedge Number Mode mAP50 mAP M mAP50 mAP AdaAvg. 45.9 28.3 4 45.3 27.8 AdaMax. 46.0 28.1 9 45.7 28.0 Rand. 1 45.6 28.1 16 45.9 28.3 Rand. 2 45.8 28.2 25 45.7 28.2 
+
+The Initialization and the Number of Hyperedges. We conduct extensive experiments to verify the sensitivity of the MORD module to initialization schemes and the number of hyperedges. For hyperedge initialization, we evaluate four strategies: adaptive average pooling (AdaAvg.), adaptive max pooling (AdaMax.), and random initialization with different seeds (Rand. 1 and 2). As shown in Table IV, our method is highly insensitive to the initialization of the K-Means clustering algorithm, with mAP values maintained in a narrow range from 28.0 to 28.3, which validates the stability of our MORD module. Regarding the number of hyperedges M ,we test M = 4 , 9, 16 , 25 . The results show that performance gradually improves with increasing M and achieves the peak mAP of 28.3 at M = 16 . Further increasing M leads to performance saturation. Accordingly, we set the number of hyperedges to 16 to strike a balance between computational efficiency and relational modeling capacity. 
+
+Robustness Analysis for AF 2D2 module. In real-world scenarios, RGB-Event datasets are prone to modal noise and spatial misalignment, which pose significant challenges to the robustness of detection methods. To empirically demonstrate this robustness, we conducted sensitivity experiments on the DSEC-Detection dataset [52] by introducing random spatial offsets and random Gaussian noise in the training process. We let p denote the range of spatial offsets and r represent the kernel radius of Gaussian noise. The results presented in Table V demonstrate that our method preserves superior performance under small-scale perturbations. For instance, with an 8-pixel random spatial offset, our model still attains 44.8 mAP50 and 27.2 mAP, respectively. When interference becomes extreme (i.e., p and r become larger), the perfor-mance starts to decline. This phenomenon is reasonable and fully validate the robustness and practical stability of the proposed AF 2D2.
+
+TABLE V ROBUSTNESS EXPERIMENT FOR AF 2 D2 MODULE ON 
+
+DSEC-D ETECTION DATASET [10]. Random Spatial Shift Random Gaussian Noise 
+
+p mAP50 mAP r mAP50 mAP 0 44.9 27.4 0 44.9 27.4 4 45.0 27.3 2 45.0 27.4 8 44.8 27.2 3 44.7 27.2 16 44.5 26.8 5 43.9 26.6 TABLE VI COMPARISON RESULTS ON CHALLENGING AND OVERALL SCENARIOS OF DSEC-D ETECTION DATASET [10]. Detectors Challenging-DSEC-Detection DSEC-Detection mAP50 mAP mAP50 mAP Baseline 25.5 13.1 42.0 24.7 M2C-EvDet 27.4 14.4 45.9 28.3 
+
+Performance on Challenging Scenarios. To further ver-ify the effectiveness of our methods in challenging scenar-ios, we selected 1220 low-quality frames from the DSEC-Detection [52] to construct a subset, named Challenging-DSEC-Detection. This set includes 420 frames with se-vere motion blur (the interlaken 00 b folder) and 800 frames from low-light night sequences (the zurich city 12 a
+
+folder). As shown in the performance comparison in Table VI, AF 2D2 still achieves an improvement of 1.9 mAP50 and 1.3 mAP on the Challenging-DSEC compared to the baseline. These results fully verify that M 2C-EvDet possesses the ability to enhance detection performance under motion blur or low-light scenarios, demonstrating strong adaptability to degraded guidance. We also observe that the improvement margin is relatively lower compared to the entire DSEC-Detection dataset, which inspires us to further expand high-quality RGB-guided event datasets and design more advanced methods for transferring knowledge from low-quality teacher images. 
+
+Performance on Other Datasets. To validate the gener-alization capability of our proposed approach, we also con-duct experiments on two additional datasets, namely DSEC-Det dataset [52] and PKU-DAVIS-SOD [53]. The detection results on these two datasets are presented in the Table VII, where ‘T.W.’ and ‘L.V.’ refer to ‘Two-Wheels’ and ‘Large-Vehicle’, respectively. It can be observed that our method still achieves remarkable performance improvements, with the mAP increased by 0.7 and 2.8, respectively. Furthermore, the performance of each category has also been significantly im-proved, which further verifies the effectiveness of our method in more realistic scenarios. 
+
+TABLE VII DETECTION PERFORMANCE ON DSEC-D ET [52] DATASET AND 
+
+PKU-DAVIS-SOD [53] DATASET .Detectors PKU-DAVIS-SOD DSEC-Det Car Pedestrian T.W. mAP Car Person L.V. mAP Baseline 31.5 10.4 26.4 22.7 41.7 12.9 30.2 28.3 M2C-EvDet 31.9 11.4 27.4 23.5 43.6 15.7 34.0 31.1 10                 
+
+> TABLE VIII GENERALIZATION EXPERIMENT WITH DIFFERENT DETECTION ARCHITECTURES AND BACKBONE NETWORK ON
+> DSEC-D ETECTION DATASET [10]. Detectors Backbone Distillation mAP50 mAP YOLOv8s Darknet53 39.9 22.8
+> !42.6 25.6 GFL ResNet50 60.1 38.2
+> !63.2 41.0
+> Fig. 6. Visual comparison of feature activation maps between the baseline and M 2C-EvDet on the DSEC-Detection dataset [10].
+
+Performance on Other Detection Architectures. To fur-ther demonstrate the broad generalization capability of our distillation strategy across various architectures, we conducted additional experiments using the YOLOv8 [55] and GFL [56] frameworks. As presented in Table VIII, the results consis-tently show performance gains across different backbones. With the proposed distillation strategy, YOLOv8 achieves an improvement of 2.7 and 2.8 in mAP50 and mAP, respectively, while GFL obtains corresponding gains of 3.1 and 2.8. All these performance improvements fully validate the general-ization ability of our proposed method. 
+
+D. Visualization Results 
+
+Visualization of Feature Maps . We adopt the Grad-CAM visualization method to intuitively present the feature acti-vation maps of our method across diverse scenarios. Fig. 6 displays the RGB image, event representation, features of the baseline, and features of our M 2C-EvDet from left to right, respectively. It can be observed that the features of the baseline merely cover partial regions in a coarse manner and fail to focus on target areas, resulting in suboptimal performance under complex scenarios such as low-light conditions and high-speed motion. In contrast, the features of our method exhibit remarkable advantages, as they can accurately locate the latent semantic regions that contain the objects of interest, validating the effectiveness of transferring frequency-domain semantics and multi-order correlations from RGB images.  
+
+> Fig. 7. Visual comparison of detection results between the baseline and M2C-Det on the DSEC-Detection dataset [10].
+> Fig. 8. Visualization of adaptive hyperedges for MORD module on the DSEC-Detection dataset [10].
+
+Visualization of Detection Results . Fig. 7 presents the RGB image, detection results of the baseline method, out-puts of our proposed M 2C-EvDet, and the Ground Truth (GT) annotations from left to right, respectively. It is evident from the visualization that the baseline method—plagued by insufficient texture details and inadequate semantic feature learning—exhibits substantial missed detections of objects in traffic intersection scenarios, thereby restricting its real-world applicability. On the contrary, our approach integrates object semantic representations and high-order object correlations in the training pipeline, which allows the model to exploit contextual scene information for improved detection accuracy and holds significant promise for practical deployment in safety-critical scenarios such as autonomous driving. 
+
+Visualization of Adaptive Hyperedges . Fig. 8 illustrates the distribution of hyperedges in scenarios characterized by an extensive density of small objects. It can be observed that the proposed MORD method constructs hyperedge connections across various semantic correlations, enabling precise discrim-ination among ”person,” ”motorcycle,” and ”car” categories in crowded scenes via high-order information propagation. Furthermore, comparing the hyperedge distributions in the first and second columns of the first row in Fig. 8 reveals that MORD facilitates finer-grained high-order interactions between distinct instances of the same category. This further strengthens the high-order knowledge distillation capability and enhances detection performance in dense small-object scenarios. 
+
+E. Limitation and Failure Case Analysis 
+
+M2C-EvDet leverages the rich visual and texture informa-tion inherent in the RGB modality to fundamentally enhance the feature extraction capability of the event data. Our methods 11 
+
+Fig. 9. Visual results of failure case for M 2C-Det on the DSEC-Detection dataset [10]. 
+
+mitigates the cross-modal gap but cannot completely eliminate modal discrepancies, due to the low-quality RGB images and the inadequate model optimization process. As illustrated in the low-light scenarios of Fig. 9, while our relational distillation successfully enables the model to detect objects, the lack of sufficient texture information in the RGB teacher can lead to semantic confusion. For example, motorcycles are occasionally misclassified as bicycles due to the extreme loss of discriminative features. Similarly, in overexposed scenarios, our method generates several false positives due to inadequate information transfer. These failure cases also point out the direction for us to design more effective transfer methods and improve the generalizability and practicality of the proposed framework in future work. V. C ONCLUSION 
+
+This paper introduces M 2C-EvDet, a RGB-guided EvOD method that pioneers the limitations of existing cross-modal knowledge distillation methods that only focus on single spatial semantics or pairwise relations via frequency learn-ing and hypergraph computation. Specifically, we propose AF 2D2 , which breaks the limitations of conventional spatial-domain distillation by adaptively decoupling low-frequency and high-frequency components. This design effectively alle-viates the aliasing between modality-agnostic and modality-specific knowledge, while boosting the transfer of both global and local object semantics. MORD extends the scope of relational distillation by modeling both pairwise low-order relations and multi-to-multi high-order relational struc-tures. To capture high-order relations, we design a hyper-attention mechanism that employs K-means clustering for hyperedge feature construction, facilitating the aggregation-and-distribution paradigm among multiple feature points. Ex-tensive experiments on three datasets validate that M 2C-EvDet achieves significant performance improvements and estab-lishes a new state-of-the-art benchmark. Future research will focus on optimizing the efficiency of hypergraph construc-tion and developing logit distillation techniques specifically tailored for cross-modal information transfer, with the goal of further improving the generalizability and practicality of the proposed framework. REFERENCES [1] G. Guillermo, D. Tobi, M. O. Garrick, B. Chiara, T. Brian, C. Andrea, L. Stefan, D. Andrew, C. Jorg, D. Kostas, and S. Davide, “Event-Based Vision: A Survey,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2020. [2] Y. Jiang, Y. Wang, S. Li, Y. Zhang, Q. Guo, Q. Chu, and Y. Gao, “EVCSLR: Event-guided Continuous Sign Language Recognition and Benchmark,” IEEE Transactions on Multimedia , 2024. [3] S. Li, Z. Wu, Y. Li, Z. Xue, Y.-S. Liu, and Y. Gao, “RGB-D Visual Per-ception for Occluded Scenes via Event Camera,” International Journal of Computer Vision , pp. 1–22, 2025. [4] Y. Jiang, Y. Wang, S. Li, Y. Zhang, M. Zhao, and Y. Gao, “Event-based Low-illumination Image Enhancement,” IEEE Transactions on Multimedia , vol. 26, pp. 1920–1931, 2023. [5] S. Li, Z. Zhou, Z. Xue, Y. Li, S. Du, and Y. Gao, “3D Feature Tracking via Event Camera,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2024, pp. 18 974–18 983. [6] S. Schaefer, D. Gehrig, and D. Scaramuzza, “AEGNN: Asynchronous Event-based Graph Neural Networks,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2022, pp. 12 371–12 381. [7] J. Zhang, B. Dong, H. Zhang, J. Ding, F. Heide, B. Yin, and X. Yang, “Spiking Transformers for Event-based Single Object Tracking,” in 
+
+Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2022, pp. 8801–8810. [8] M. Gehrig and D. Scaramuzza, “Recurrent Vision Transformers for Object Detection with Event Cameras,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2023, pp. 13 884–13 893. [9] D. Torbunov, Y. Ren, A. Ghose, O. Dim, and Y. Cui, “EvRT-DETR: Latent Space Adaptation of Image Detectors for Event-based Vision,” in 
+
+Proceedings of the IEEE International Conference on Computer Vision ,2025, pp. 9812–9821. [10] D. Gehrig and D. Scaramuzza, “Low-Latency Automotive Vision with Event Cameras,” Nature , vol. 629, no. 8014, pp. 1034–1040, 2024. [11] D. Lu, L. Kong, G. Lee, C. Chane, and W. Ooi, “FlexEvent: Towards Flexible Event-Frame Object Detection at Varying Operational Frequen-cies,” arXiv preprint arXiv:2412.06708 , 2025. [12] H. Zhang, X. Wang, C. Xu, X. Wang, F. Xu, H. Yu, L. Yu, and W. Yang, “Frequency-Adaptive Low-Latency Object Detection Using Events and Frames,” arXiv preprint arXiv:2412.04149 , 2024. [13] J. Zhang, L. Gao, B. Hao, H. Huang, J. Song, and H. Shen, “From Global to Local: Multi-Scale Out-of-Distribution Detection,” IEEE Transactions on Image Processing , vol. 32, pp. 6115–6128, 2023. [14] J. Zhang, X. Luo, L. Gao, D. Zou, H. Shen, and J. Song, “From Channel Bias to Feature Redundancy: Uncovering the” Less is More” Principle in Few-Shot Learning,” arXiv e-prints , pp. arXiv–2310, 2023. [15] J. Zhang, S. Wu, L. Gao, J. Song, N. Sebe, and H. T. Shen, “A Closer Look at Conditional Prompt Tuning for Vision-Language Models,” arXiv preprint arXiv:2506.23856 , 2025. [16] J. Zhang, J. Song, L. Gao, N. Sebe, and H. T. Shen, “Reliable Few-shot Learning under Dual Noises,” 2025. [17] L. Li, A. Linger, M. Millhaeusler, V. Tsiminaki, Y. Li, and D. Dai, “Object-Centric Cross-Modal Feature Distillation for Event-based Ob-ject Detection,” in Proceedings of the IEEE International Conference on Robotics and Automation . IEEE, 2024, pp. 15 440–15 447. [18] D. Rossi, P. Vasseur, F. Morbidi, C. Demonceaux, and F. Rameau, “Event-Aware Distilled DETR for Object Detection in an Automotive Context,” in IEEE Intelligent Vehicles Symposium , 2025. [19] Q. Li, L. Shen, S. Guo, and Z. Lai, “Wavelet Integrated CNNs for Noise-robust Image Classification,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2020, pp. 7245–7254. [20] Y. Gao, Y. Feng, S. Ji, and R. Ji, “HGNN +: General Hypergraph Neural Networks,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 45, no. 3, pp. 3181–3199, 2023. [21] Y. Burkhardt, S. Schaefer, and S. Leutenegger, “SuperEvent: Cross-Modal Learning of Event-based Keypoint Detection,” arXiv preprint arXiv:2504.00139 , 2025. [22] L. Bartolomei, E. Mannocci, F. Tosi, M. Poggi, and S. Mattoccia, “Depth AnyEvent: A Cross-Modal Distillation Paradigm for Event-Based Monocular Depth Estimation,” in Proceedings of the IEEE International Conference on Computer Vision , 2025, pp. 19 669–19 678. [23] H. Liu, G. Yu, H. Cao, S. Qu, F. Lu, Y. Zhong, Z. Lu, L. Leng, and G. Chen, “I2EKD: Efficient and Versatile Image-to-Event Knowledge Distillation,” IEEE Transactions on Circuits and Systems for Video Technology , 2025. 12 
+
+[24] Z. Li, P. Xu, X. Chang, L. Yang, Y. Zhang, L. Yao, and X. Chen, “When Object Detection Meets Knowledge Distillation: A Survey,” IEEE Trans-actions on Pattern Analysis and Machine Intelligence , vol. 45, no. 8, pp. 10 555–10 579, 2023. [25] A. Yang, S. Lin, C.-H. Yeh, M. Shu, Y. Yang, and X. Chang, “Context Matters: Distilling Knowledge Graph for Enhanced Object Detection,” 
+
+IEEE Transactions on Multimedia , vol. 26, pp. 487–500, 2023. [26] S. Fu, J. Yan, Q. Yang, X. Wei, X. Xie, and W.-S. Zheng, “A Hier-archical Semantic Distillation Framework for Open-Vocabulary Object Detection,” IEEE Transactions on Multimedia , 2025. [27] L. Zhang and K. Ma, “Improve Object Detection with Feature-Based Knowledge Distillation: Towards Accurate and Efficient Detectors,” in 
+
+Proceedings of the International Conference on Learning Representa-tions , 2020. [28] Z. Yang, Z. Li, X. Jiang, Y. Gong, Z. Yuan, D. Zhao, and C. Yuan, “Focal and Global Knowledge Distillation for Detectors,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2022, pp. 4643–4652. [29] Z. Yang, Z. Li, M. Shao, D. Shi, Z. Yuan, and C. Yuan, “Masked Generative Distillation,” in Proceedings of the European Conference on Computer Vision . Springer, 2022, pp. 53–69. [30] X. Chen, J. Chen, Y. Liu, and G. Zeng, “D 3ETR: Decoder Distillation for Detection Transformer,” arXiv preprint arXiv:2211.09768 , 2022. [31] J. Chang, S. Wang, H.-M. Xu, Z. Chen, C. Yang, and F. Zhao, “DE-TRDistill: A Universal Knowledge Distillation Framework for DETR-families,” in Proceedings of the IEEE International Conference on Computer Vision , 2023, pp. 6898–6908. [32] Y. Wang, X. Li, S. Weng, G. Zhang, H. Yue, H. Feng, J. Han, and E. Ding, “KD-DETR: Knowledge Distillation for Detection Transformer with Consistent Distillation Points Sampling,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2024, pp. 16 016–16 025. [33] Q. Lan and Q. Tian, “CLoCKDistill: Consistent Location-and-Context-aware Knowledge Distillation for DETRs,” arXiv preprint arXiv:2502.10683 , 2025. [34] L. Chen, Y. Fu, L. Gu, C. Yan, T. Harada, and G. Huang, “Frequency-aware Feature Fusion for Dense Image Prediction,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2024. [35] Y. Cui, B. Gao, Y. Zhang, X. Dong, J. Xiang, D. Li, and Z. Tu, “WD-DETR: Wavelet Denoising-Enhanced Real-Time Object Detection Transformer for Robot Perception with Event Cameras,” arXiv preprint arXiv:2506.09098 , 2025. [36] C. Pham, V.-A. Nguyen, T. Le, D. Phung, G. Carneiro, and T.-T. Do, “Frequency Attention for Knowledge Distillation,” in Proceedings of the IEEE Winter Conference on Applications of Computer Vision , 2024, pp. 2277–2286. [37] Y. Zhang, T. Huang, J. Liu, T. Jiang, K. Cheng, and S. Zhang, “FreeKD: Knowledge Distillation via Semantic Frequency Prompt,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition ,2024, pp. 15 931–15 940. [38] X. Ma, W. Liu, Q. Tian, and Y. Gao, “Learning Representation on Opti-mized High-order Manifold for Visual classification,” IEEE Transactions on Multimedia , vol. 24, pp. 3989–4001, 2021. [39] Y. Zhang, H. Wang, S. Zhang, and B. Leng, “CrossHypergraph: Consis-tent High-order Semantic Network for Few-shot Image Classification,” 
+
+IEEE Transactions on Multimedia , pp. 1–12, 2025. [40] Y. Xu, Y. Feng, X. Zhong, Y. Gao, and Z. Wu, “Hypergraph-Based Remaining Prototype Alignment for Open-Set Cross-Domain Image Retrieval,” IEEE Transactions on Multimedia , 2025. [41] Y. Xu, Y. Feng, X. Zhuang, J. Wang, Z. Wu, and Y. Gao, “Residual Fuzzy Alignment on Hypergraph for Open-Set 3D Cross-Modal Retrieval,” 
+
+IEEE Transactions on Multimedia , 2025. [42] Y. Feng, J. Huang, S. Du, S. Ying, J.-H. Yong, Y. Li, G. Ding, R. Ji, and Y. Gao, “Hyper-YOLO: When Visual Object Detection Meets Hypergraph Computation,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2024. [43] M. Lei, S. Li, Y. Wu, H. Hu, Y. Zhou, X. Zheng, G. Ding, S. Du, Z. Wu, and Y. Gao, “YOLOv13: Real-Time Object Detection with Hypergraph-Enhanced Adaptive Visual Perception,” arXiv preprint arXiv:2506.17733 , 2025. [44] T.-Y. Lin, P. Doll´ ar, R. Girshick, K. He, B. Hariharan, and S. Belongie, “Feature Pyramid Networks for Object Detection,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2017, pp. 2117–2125. [45] S. Liu, L. Qi, H. Qin, J. Shi, and J. Jia, “Path Aggregation Network for Instance Segmentation,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2018, pp. 8759–8768. [46] W. Wang, E. Xie, X. Li, D.-P. Fan, K. Song, D. Liang, T. Lu, P. Luo, and L. Shao, “Pyramid Vision Transformer: A versatile Backbone for Dense Prediction without Convolutions,” in Proceedings of the IEEE International Conference on Computer Vision , 2021, pp. 568–578. [47] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is All You Need,” in Proceedings of the Advances in Neural Information Processing Systems , vol. 30, 2017. [48] Y. Han, P. Wang, S. Kundu, Y. Ding, and Z. Wang, “Vision HGNN: An Image is More than a Graph of Nodes,” in Proceedings of the IEEE International Conference on Computer Vision , 2023, pp. 19 878–19 888. [49] B. Liu, C. Xu, W. Yang, H. Yu, and L. Yu, “Motion Robust High-Speed Light-Weighted Object Detection with Event Camera,” IEEE Transactions on Instrumentation and Measurement , vol. 72, pp. 1–13, 2023. [50] N. Zubic, M. Gehrig, and D. Scaramuzza, “State Space Models for Event Cameras,” in Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , 2024, pp. 5819–5828. [51] Y. Peng, H. Li, P. Wu, Y. Zhang, X. Sun, and F. Wu, “D-FINE: Redefine Regression Task in DETRs as Fine-grained Distribution Refinement,” 
+
+arXiv preprint arXiv:2410.13842 , 2024. [52] A. Tomy, A. Paigwar, K. S. Mann, A. Renzaglia, and C. Laugier, “Fusing event-based and rgb camera for robust object detection in adverse conditions,” in IEEE International Conference on Robotics and Automation . IEEE, 2022, pp. 933–939. [53] D. Li, Y. Tian, and J. Li, “SODFormer: Streaming Object Detection with Transformer using Events and Frames,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 45, no. 11, pp. 14 020–14 037, 2023. [54] T.-Y. Lin, M. Maire, S. Belongie, J. Hays, P. Perona, D. Ramanan, P. Doll´ ar, and C. L. Zitnick, “Microsoft COCO: Common Objects in Context,” in Proceedings of the European Conference on Computer Vision . Springer, 2014, pp. 740–755. [55] G. Jocher, A. Chaurasia, and J. Qiu, “Ultralytics YOLO,” Jan. 2023. [Online]. Available: https://github.com/ultralytics/ultralytics [56] X. Li, W. Wang, L. Wu, S. Chen, X. Hu, J. Li, J. Tang, and J. Yang, “Generalized Focal Loss: Learning Qualified and Distributed Bounding Boxes for Dense Object Detection,” Proceedings of the Advances in Neural Information Processing Systems , vol. 33, pp. 21 002–21 012, 2020.

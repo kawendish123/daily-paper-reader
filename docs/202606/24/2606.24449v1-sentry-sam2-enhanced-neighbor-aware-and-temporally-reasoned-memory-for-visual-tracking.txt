@@ -1,0 +1,991 @@
+Title: SENTRY: SAM2-Enhanced Neighbor-Aware and Temporally Reasoned Memory for Visual Tracking
+
+URL Source: https://arxiv.org/pdf/2606.24449v1
+
+Published Time: Wed, 24 Jun 2026 00:54:16 GMT
+
+Number of Pages: 38
+
+Markdown Content:
+## SENTRY : SAM2-Enhanced Neighbor-Aware and Temporally Reasoned Memory for Visual Tracking 
+
+Mohamad Alansari 1⋆ , Yonathan Michael 1∗ , Hasan AlMarzouqi 1 ,Muzammal Naseer 1,2 , Naoufel Werghi 1 , and Sajid Javed 1
+
+> 1
+
+Khalifa University, Abu Dhabi, UAE 2University of Western Australia, Australia 
+
+{100061914,100053679,hasan.almarzouqi,muhammadmuzammal.naseer, naoufel.werghi,sajid.javed}@ku.ac.ae 
+
+https://hamadya.github.io/SENTRY/ 
+
+Abstract. We revisit the memory update mechanism in SAM2-based visual object tracking and identify confidence-only mask selection as the dominant cause of drift under occlusion, rapid motion, and dis-tractors. We introduce SENTRY, a training-free, plug-and-play, refine-before-write module that validates each memory update for short-horizon temporal consistency before committing it. SENTRY aggregates diverse segmentation hypotheses per frame, backtracks them into short tracklets, and uses neighbor-aware cycle-consistent matching against recent trajec-tories to favor temporally and geometrically consistent masks. It leaves the base architecture untouched, replacing confidence-driven writes with consistency-validated ones. For fair evaluation, we re-evaluate major open-source SAM2-based trackers across all available scales and datasets, fill-ing gaps in prior reports. Integrated into five strong baselines, SENTRY delivers consistent gains across nine benchmarks, achieving new zero-shot SOTA on LaSOT, LaSOT ext , GOT-10k, VOT20, VOT22, and DiDi. De-spite these checks, the SAM2-L version runs at 32.8 FPS on an A100, and across compatible hosts adds only about 0.4–0.6 GB VRAM. Our results provide the first unified all-scale evaluation of SAM2-based trackers and show that enforcing temporal validity at write time stabilizes memory-augmented tracking without retraining. 
+
+Keywords: Segment Anything · Temporal Verification · Visual Object Tracking 
+
+1 Introduction 
+
+Memory-based architectures have become central to visual object tracking (VOT) by maintaining feature histories that help recover from occlusion, motion blur, and appearance changes. Instead of processing frames independently [2, 8, 36, 41, 50, 62, 67, 69, 75], recent trackers build temporal associations by querying a memory bank of past representations, improving robustness and identity preser-vation [16, 31–34, 72, 78].  
+
+> ⋆
+
+Equal contribution. 
+
+> arXiv:2606.24449v1 [cs.CV] 23 Jun 2026
+
+2 M. Alansari, Y. Michael et al. LaSOT LaSOT 𝑒𝑥𝑡         
+
+> TNL2K GOT-10k VOT20 VOT24 DiDi 76.3
+> SENTRY-D4S DAM4SAM SENTRY-SR SAMURAI SENTRY-S2 SAM2
+> TrackingNet VOT22 75.13 75.1 74.23 70.15 68.5 61.79 60.69 61.51 59.54 56.96 56.75 61.29 59.82 59.59 57.93 56.75 50.62 82.1 81.8 81.6 81.3 81.1 80.8 85.8 85.74 82.44 85.29 85.31 85.37 72.8 72.3 68.8 68.6 68.1 67.4 75.6 75 71.5 70.1 69.3 69.2 71.5 68.1 67.3 66.9 66.1 64.7 66 67 68.5 69.4 70.2 71.1
+> (a) SAM2
+> + SENTRY
+> SAMURAI
+> + SENTRY
+> DAM4SAM
+> + SENTRY
+> 66
+> 67
+> 68
+> 69
+> 70
+> 71
+> 72
+> AUC (%)
+> 66.8
+> 67.8
+> 70.3
+> 67.7
+> 70.5
+> 71.3
+> Baseline
+> SENTRY (b)
+
+Fig. 1: SENTRY performs favorably against SAM2-based variants across major track-ing benchmarks. We denote SENTRY applied to SAM2, SAMURAI, and DAM4SAM as SENTRY-S2, SENTRY-SR, and SENTRY-D4S. (a) AUC per benchmark; (b) aver-age AUC across [22, 23, 47, 60]. 
+
+SAM2 [51] follows this trend with streaming memory and multiple mask hy-potheses per frame. Its main weakness is confidence-driven mask selection: the highest-confidence mask is chosen without verifying short-term temporal consis-tency. Under occlusion, fast motion, or distractors, this cue is often unreliable, causing incorrect masks to be written into memory and triggering drift (Fig. 2(a)). Existing extensions attempt to mitigate this with motion filtering [71] or distractor checks [58], but they still rely heavily on SAM2’s confidence-based mask selection. Motion filters can break under nonlinear trajectories, and heuris-tic thresholds often fail in cluttered scenes, leading to similar error accumulation (Figs. 2b,c). To our knowledge, current SAM2-based trackers lack a systematic, trajectory-level mechanism to verify short-term temporal consistency before a memory write .We address this gap with SAM2-Enhanced Neighbor-aware and Temporally 
+
+Reasoned memor Y (SENTRY), a training-free inference-time memory-admission module that reduces incorrect memory writes. SENTRY targets a different in-terface from prior motion- or distractor-aware extensions: the memory-write de-cision. Rather than only improving current-frame prediction or score, it veri-fies which candidate mask should become future evidence in the autoregressive memory stream. SENTRY replaces confidence-driven selection with a refine-before-write mechanism that explicitly tests each hypothesis for short-horizon temporal plausibility. For every candidate, SENTRY (i) propagates it backward over a fixed window, (ii) applies neighbor-aware checks that penalize identity swaps with nearby instances or distractors, and (iii) evaluates cycle-consistency by requiring that forward–backward trajectories remain aligned with the target’s recent motion. This trajectory-level verification, absent in existing SAM2-style architectures, adds a lightweight temporal reasoning layer without modifying the backbone or memory. Because SENTRY operates entirely outside the backbone and memory module, it integrates cleanly with existing SAM2-based variants SENTRY 3SENTRY-SAM2         
+
+> SAM2
+> Groundtruth
+> Reliable Prediction Occluded Drifted / Misdetection
+> (a) SENTRY-SAMURAI
+> SAMURAI
+> Groundtruth
+> Reliable Prediction Occluded Drifted / Misdetection (b) SENTRY-DAM4SAM
+> DAM4SAM
+> Groundtruth
+> Reliable Prediction Occluded Drifted / Misdetection (c)
+
+Fig. 2: Qualitative comparison under occlusion, abrupt motion, and distractor inter-ference. We visualize decoder attention to highlight spatial focus during tracking. (a) SAM2 [51] loses target identity after occlusion, (b) SAMURAI [71] drifts under rapid motion, and (c) DAM4SAM [58] misidentifies distractors due to heuristic filtering. The last row shows SENTRY maintaining accurate localization and consistent masks. 
+
+and substantially improves robustness when confidence cues are unreliable (see the bottom row in Fig. 2). Our contributions are: 1. We propose SENTRY, a training-free refine-before-write module that en-forces short-horizon temporal consistency before any memory update in SAM2-based trackers. It replaces confidence-driven selection with a unified mechanism that evaluates multi-source mask candidates through backward re-tracking and neighbor-aware trajectory matching. 2. To the best of our knowledge, we conduct the first unified, all-scale re-evaluation of five open-source SAM2-based trackers across nine benchmarks and four model sizes, establishing consistent and reproducible baselines. Experiments across nine benchmarks including LaSOT [23], LaSOT ext [22], TNL2K [60], GOT-10k [28], TrackingNet [47], VOT20/22 [31, 32], VOTS24 [33], and DiDi [58], demonstrate that integrating SENTRY into strong baselines yields consistent improvements and new zero-shot SOTA performance (Fig. 1), while preserving real-time operation (Sec. 4.4, App. J). 
+
+2 Related Work 
+
+2.1 Memory-Based Visual Object Tracking 
+
+Memory networks are widely used in VOT and video object segmentation (VOS) to maintain temporal coherence under appearance change, occlusion, and mo-tion. Key–value memory designs such as STM [49] and FEELVOS [59] estab-lished long-term feature propagation, later refined through kernelized or decom-posed attention [17,55,73] and transformer-based memory structures [16,72,78]. These ideas were further explored in segmentation-based tracking frameworks such as STMTrack [25], and inspired memory-augmented single- and multi-object trackers including RTracker [29], MeMOT [6], and multimodal variants like MemVLT [24]. Despite architectural diversity, memory-based VOS track-ers typically update memory using frame-level confidence, similarity metrics, or simple schedules. When predictions are unreliable due to occlusion, motion blur, or distractors, incorrect masks or features may enter memory and cause drift. Existing works explore restricted or hierarchical updates [16, 78], but they still assume the selected representation is temporally reliable. Explicit short-horizon verification of a mask’s temporal consistency before committing it to memory has received little attention. 4 M. Alansari, Y. Michael et al. 
+
+2.2 SAM2 and Its Extensions 
+
+SAM2 [51] generalizes memory-based reasoning to a promptable segmentation-tracking framework but retains a confidence-driven memory update, making it vulnerable to high-confidence but temporally inconsistent masks. Extensions stabilize this process from different directions: motion-based priors in SAMU-RAI [71], distractor filtering in DAM4SAM [58], long-term memory tree in SAM2Long [21], and improved scoring or hierarchical features in SAMITE [66] and HiM2SAM [10]. However, they do not explicitly validate competing candi-date masks through short-horizon backtracking before the selected prediction becomes future tracking state. Across SAM2-based variants [10,21,51,58,66,71], temporal consistency is treated mainly as a current-frame prediction, scoring, or trajectory-selection problem rather than as an explicit memory-admission decision at the write interface. We address this with a training-free mechanism that checks short-term consistency before storage, complementing existing SAM2 extensions without modifying their architectures or memory rules. For plug-in evaluation, we focus on five open-source SAM2-based trackers that operate in an online, frame-by-frame setting [10, 51, 58, 66, 71]. We report SAM2Long [21] as a standalone baseline rather than applying SENTRY to it, because SAM2Long performs constrained memory-tree inference over multiple branches, whereas SENTRY is a pre-write admission rule for a single online memory stream. Com-bining them would require redesigning branch expansion, pruning, or trajectory scoring, making it a new hybrid method rather than a controlled plug-in ablation. 
+
+3 Method 
+
+3.1 Preliminaries 
+
+SAM2 [51] consists of an image encoder, a prompt encoder, a memory module, and a mask decoder. Image Encoder. A hierarchical ViT backbone (Hiera [53]) produces patch tokens for each frame, which serve as visual features queried by the memory-augmented decoder. Prompt Encoder. User prompts (points, boxes, or masks) are encoded into tokens. In tracking, only the first frame is prompted; subsequent frames rely solely on memory-guided decoding. Memory Module. The memory bank Mem t stores embeddings of the initialization mask and a fixed-length queue of recent frame-mask pairs. Temporal cues are added to the recent frames to capture their order, while the initialization frame is left un-altered to serve as a fixed supervised anchor. Each memory token encodes frame features modulated by the predicted mask, and the queue is updated in FIFO order. Incorrect writes to Mem t propagate errors forward, causing drift, one of the key failure modes that SENTRY addresses. Mask Decoder. The decoder attends to Mem t and the current frame features to produce three candidate hypotheses ˜Mt 
+
+> dec
+
+= { ˜Mt
+
+> 1
+
+, ˜Mt
+
+> 2
+
+, ˜Mt
+
+> 3
+
+}, each with a predicted IoU score ˆIoU ti and occlusion score ˆoti. SAM2 selects the mask with the highest ˆIoU ti and writes it to memory; however, this selection relies solely on instantaneous confidence and often yields temporally inconsistent memory updates. SENTRY 5⋰
+
+> 𝑡
+> #𝟏
+> #𝒌
+
+⋰                        
+
+> 𝑡
+> #𝟏
+> #𝒌
+> SAM2 Automatic
+> Mask Generation
+> ⋰
+> 𝜂
+> ⋰⋰⋰⋰⋰⋰⋰
+> 𝑁 ௝𝑁 ௝ାଵ 𝑁 ௝ାଶ 𝑁 ௝ାଷ 𝑁 ௝ାସ 𝑁 ௝ାହ 𝑁 ௝ା଺
+> ⋰⋰⋰⋰⋰⋰⋰
+> 𝐶 ௜ାଵ 𝐶 ௜ାଶ 𝐶 ௜ାଷ 𝐶 ௜ାସ 𝐶 ௜ାହ 𝐶 ௜ା଺ 𝐶 ௜ା଻
+> ⋰
+> 𝐶 ௜
+> Neighbor Tracklet Pool
+> Candidate Tracklet Pool
+
+⋰
+
+> 𝑡
+> #𝟏
+> #𝒌
+> SAM2
+> Video Predictor
+> Similarity
+> Matching
+> Initial Box
+> Template
+> Memory Bank
+> Cycle-Consistent Matching
+> Update
+> Neighbor
+> Tracklet
+> Pool
+> Candidate Pool
+> 𝑡
+> 𝑡 − 𝜏
+> Unstable Mask
+> Prediction
+> Cycle-Consistent
+> Mask Prediction
+> 𝑡 − 1
+
+A
+
+B
+
+C
+
+D
+
+E
+
+F
+
+G
+
+H
+
+> Decoder Hypotheses
+> Initial Box
+
+Fig. 3: Overview of the SENTRY framework. Per-frame candidates combine Automatic Mask Generation (AMG) proposals (A–B) and decoder hypotheses (D) into a joint set (C). Each candidate is evaluated through cycle-consistent, neighbor-aware bipartite matching in trajectory space (E–F). The most consistent mask is written to memory (G–H) following the baseline update schedule. 
+
+3.2 SENTRY 
+
+SENTRY is a training-free, architecture-agnostic module adding a refine-before-write step to SAM2-based trackers. Unlike prior works that impose temporal consistency through training objectives [16,72], SENTRY performs explicit con-sistency validation at inference time, preventing erroneous memory updates on-line. Instead of relying on the highest-confidence decoder mask, SENTRY selects the mask with the highest short-horizon temporal consistency before it is written to memory. This makes temporal reasoning part of the tracker state transition: the admitted mask becomes the memory state used for future predictions, rather than a post-hoc correction of the current frame. As shown in Fig. 3, SENTRY consists of three stages: (i) candidate generation from Automatic Mask Gen-eration (AMG) (A–B) and decoder (D) to form Ct (C); (ii) cycle-consistent, neighbor-aware reasoning (E–F); and (iii) memory update (G–H). Algorithm 1 summarizes the refine-before-write procedure. Intuitively, SENTRY first collects multiple plausible masks for the target, then re-tracks each candidate backward over a short time window to test which one aligns best with the target’s recent motion before memory writing. 
+
+Candidate Mask Generation. SAM2 generates two sources of per-frame hy-potheses: (1) three decoder masks with predicted IoU and occlusion scores, and (2) a set of target-agnostic proposals from AMG. SENTRY filters and regularizes these hypotheses into a compact, diverse candidate set that preserves plausible target states. 
+
+Decoder hypotheses. The decoder outputs masks ˜Mt
+
+dec = { ˜Mti}3
+
+i=1 with corre-sponding IoU scores ˆIoU ti and occlusion scores ˆoti. SENTRY retains hypotheses that are (i) close to the best decoder prediction and (ii) not flagged as occluded: 
+
+Ct
+
+dec =
+
+
+
+˜Mti | ˆIoU ti > α max 
+
+j
+
+ˆIoU tj ∧ ˆoti > 0
+
+
+
+, (1) where α ∈ [0 , 1] controls tolerance to decoder uncertainty. 
+
+AMG proposals. AMG generates  N t target-agnostic proposals { ˜Mt
+
+AMG ,j }. Let the image regions covered by these masks be  Rtj . To identify proposals relevant to the target, SENTRY computes cosine similarity between proposal features and a 6 M. Alansari, Y. Michael et al. 
+
+first-frame template T 0, defined as the image region covered by the initialization mask ¯M0. Let f (·) denote image encoder features averaged over the region. The proposal template similarity is: 
+
+sj = f (Rtj ) · f (T 0)
+
+∥f (Rtj )∥2 ∥f (T 0)∥2
+
+. (2) We keep proposals that match the target relatively well: 
+
+Ct 
+
+> AMG
+
+=
+
+
+
+˜Mt 
+
+> AMG ,j
+
+sj ≥ β max  
+
+> k
+
+sk
+
+
+
+, (3) with β ∈ [0 , 1] controlling tolerance to appearance variation. Both thresholds ( α
+
+and  β) are fixed globally across all datasets (see App. A). 
+
+Candidate filtration. The union ¯Ct = Ct 
+
+> dec
+
+∪ C t 
+
+> AMG
+
+may contain redundant or overlapping hypotheses. Each mask is projected to its minimum-enclosing bound-ing box, and Soft-NMS [5] is applied in box space to suppress near duplicates while preserving spatial diversity. The remaining boxes are mapped back to their masks, yielding the refined candidate set ˆCt.
+
+Kalman motion prior. To maintain robustness under heavy occlusion, SENTRY includes a motion-only fallback derived from a constant-acceleration Kalman fil-ter. Using the center and scale of the previous refined mask ¯Mt−1, the filter predicts a new box center btκ. A motion-derived mask Mtκ is produced by trans-lating ¯Mt−1 so its bounding box aligns with btκ. Its shape is fixed since it is used only as a fallback. This prior is appended to the candidate pool,  Ct = ˆCt ∪{M tκ},but excluded from Soft-NMS, since its role is to provide a motion-only fallback rather than compete with appearance-derived proposals. 
+
+Neighbor Reasoning and Matching. Each candidate is evaluated through short-horizon temporal reasoning. SENTRY builds backward-propagated candi-date tracklets, forward-propagated neighbor tracklets for recent distractors, and performs cycle-consistent matching to select the mask with the strongest tem-poral support. Neighbor-aware means that candidates whose trajectories align strongly with distractor motions are penalized during matching, reducing the chance of drift in cluttered scenes. 
+
+Candidate tracklet pool. A mask that appears plausible at frame  t can still be inconsistent with the target’s recent motion. To evaluate temporal reliabil-ity, SENTRY builds a short backward tracklet for each candidate Mti ∈ C t.The mask Mti is used as a dense prompt in SAM2’s promptable segmenta-tion, and the previous τ frames (It−1, . . . , I t−τ ) are re-segmented to obtain 
+
+ξti = ( Mti, Mt−1 
+
+> i
+
+, . . . , Mt−τi ). These newly generated backward segmentations form the candidate tracklet pool, Ptc = {ξti | M ti ∈ C t}. For consistency eval-uation, SENTRY maintains a reference trajectory ηt = ( ¯Mt, . . . , ¯Mt−τ ) con-structed from previously selected refined masks. This trajectory serves as a tem-poral anchor against which all candidate tracklets are evaluated. The temporal consistency length τ is fixed to 10 for all datasets, with runtime analysis in Sec. 4.4. SENTRY 7
+
+Neighbor tracklet pool. To provide context during ambiguity, SENTRY maintains a small set of distractor tracklets. This pool encodes what the target is not ,giving contextual cues when candidates become ambiguous or visually similar. After selecting ¯Mt, the remaining candidate tracklets from frame t are retained as neighbors (i.e., masks not chosen for update). Each neighbor is updated one step forward by re-segmenting It+1 using its last mask as a prompt, keeping all sequences aligned within the τ -frame window. The resulting pool Pt+1  
+
+> n
+
+serves as a negative motion context: candidates whose trajectories align with these distractors are penalized during cycle-consistent matching. The pool requires no explicit pruning; neighbor tracklets naturally expire once they fall outside the 
+
+τ -frame window. This keeps the pool small, prevents unbounded growth, and avoids long-term drift. 
+
+Cycle-consistent matching. Given candidate and neighbor tracklets, SENTRY evaluates each hypothesis by comparing its backward-propagated trajectory against the forward-aligned target and neighbor tracklets over the same temporal win-dow. Following the notion of cycle consistency used in [14], a candidate is con-sidered reliable if tracking it backward produces a trajectory that overlaps well with the target’s recent forward track; conversely, candidates whose trajectories align more strongly with neighbor motion are treated as distractors. For every candidate tracklet ξti ∈ Ptc and neighbor or target tracklet ζtj ∈ Ptn ∪ { ηt}, we compute a trajectory similarity score 
+
+Sim( ξi, ζ j ) = 1
+
+τ
+
+> t−1
+
+X
+
+> k=t−τ
+
+IoU( bki , b kj ), (4) where bki and bkj are the corresponding boxes at frame k. These similarities form a bipartite matrix over candidates and neighbors/target. A complete bipartite graph is constructed with weights Sim( ξi, ζ j ), and the Hungarian algorithm [48] is applied to obtain a one-to-one assignment that maximizes total trajectory agreement. This matching acts as a motion-consistency filter: candidates that are temporally aligned with the target are favored, while those that match neighbor trajectories are suppressed. Although final selection uses candidate–target sim-ilarity, the Hungarian assignment implicitly penalizes candidates aligned with distractor motion. This assignment serves purely as a consistency filter; the final mask is determined solely by candidate–target similarity si under the threshold rules. Let si = Sim( ξti , η t) denote each candidate’s similarity to the target trajec-tory. We select the candidate with the highest si if it exceeds a reliability thresh-old θrel (max i si ≥ θrel ). When no strong match exists but at least one candidate is temporally plausible ( max i si ≥ θmin ), the highest-scoring candidate is used. If all candidates exhibit weak or inconsistent motion ( max i si < θ min ), SENTRY falls back to the Kalman prior Mtκ, which provides a motion-only estimate dur-ing severe occlusion or appearance failure. The selected mask ¯Mt is then written to memory under SAM2’s default update schedule. The thresholds θrel and θmin are fixed for all datasets (see App. A). IoU-based trajectory similarity is used instead of appearance distance because appearance 8 M. Alansari, Y. Michael et al. 
+
+cues become unreliable under occlusion, clutter, or lighting changes. Backward propagation uses each candidate mask as a segmentation prompt, so appear-ance information is already implicitly embedded in the resulting tracklet; using geometric motion as the comparison metric yields a more stable and robust signal [14]. 
+
+Algorithm 1: SENTRY: Refine-Before-Write Tracking 
+
+Require: Video frames {It}Tt=0 ; initial mask ¯M0; memory bank Mem 0; image encoder f (·); sampled-point grid G; backtrack horizon τ
+
+1: Init :2: Mem 0 ← Mem 0 ∪ { ¯M0}
+
+3: P0 
+
+> n
+
+← ∅ 
+
+4: for (It) ∈ (IT ) do :5: F t ← f (It)
+
+6: C dec  
+
+> t
+
+← DecodeCandidates (F t, Mem t−1)
+
+7: Ct 
+
+> AMG
+
+← DecodeFromGrid (F t, G)
+
+8: ˆCt ← Soft-NMS (Ct 
+
+> dec
+
+∪ C t
+
+> AMG
+
+)
+
+9: Mtκ ← MaskFromKF (BBox ( ¯Mt−1)) 
+
+10: Ct ← ˆCt ∪ {M tκ}
+
+11: Ptc ← { BacktrackPoints (Mti , τ ) | M ti ∈ C t}
+
+12: ηt ← CycleConsistentMatch (Ptc, Pt−1 
+
+> n
+
+)
+
+13: Ptn ← Ptc \ ηt
+
+14: Mem t ← UpdateMemory (Mem t−1, η t)
+
+15: ¯Mt ← SelectOutputMask (ηt, Mtκ)
+
+16: end for 
+
+4 Experiments 
+
+We integrate SENTRY into five SAM2-based trackers: SAM2 [51], SAMURAI [71], DAM4SAM [58], SAMITE [66], and HiM2SAM [10] (the latter two are evaluated in App. K). We denote SENTRY applied to SAM2, SAMURAI, and DAM4SAM as SENTRY-S2, SENTRY-SR, and SENTRY-D4S. In App. D, we further report a small generality study on non-SAM memory trackers and other SAM-family trackers, suggesting that the benefit stems from verified memory writes rather than SAM2-specific internals. We evaluate all models across nine standard tracking benchmarks covering long-term and short-term bounding box tracking (LaSOT, LaSOT ext , TNL2K, GOT-10k, TrackingNet) and the VOT/DiDi protocols. Each dataset’s official metrics are used. Comprehensive tables and per-scale results are provided in App. G and App. H, and ablation studies on scalabil-ity, candidate generation, and the temporal consistency window τ appear in Sec. 4.4. We additionally evaluate VOS benchmarks under the first-frame-mask pro-tocol in App. I, where SENTRY improves each corresponding host tracker. For fair comparison, we reproduce any missing baseline results using each method’s official implementation under the same evaluation protocol. In the quantitative tables, the top three entries in each column are marked using red for best, green 
+
+for second, and blue for third. Relative improvements of each SENTRY variant over its baseline are reported as percentage-point gains, shown in (↑).SENTRY 9
+
+Table 1: SENTRY provides consistent improvements across baselines and datasets. Method LaSOT [23] LaSOT ext [22] TNL2K [60] GOT-10k [28] TrackingNet [47] S NP P S NP P S NP P AO SR 0.50 SR 0.75 S NP P                                                                                                                                                                                                                                                                                     
+
+> Vision-Based
+> DiffusionTrack [63] 70.8 79.8 76.7 –––56.4 72.5 57.3 74.8 85.4 72.0 83.8 88.2 82.1 HIPTrack [7] 72.7 82.9 79.5 53.0 64.3 60.6 –––77.4 88.0 74.5 84.5 89.1 83.8 AQATrack 256 [64] 71.4 81.9 78.6 51.2 62.2 58.9 57.8 59.4 –73.8 83.2 72.1 83.8 88.6 83.1 ARPTrack 256 [38] 72.6 81.4 78.5 52.0 62.9 58.7 –––77.7 87.3 74.3 85.5 90.0 85.3 SPMTrack-B [8] 74.9 84.0 81.7 –––62.0 79.7 66.7 76.5 85.9 76.3 86.1 90.2 85.6
+> VLM
+> UVLTrack-B [43] 69.4 –74.9 49.2 –55.8 62.7 –65.4 –––83.4 –82.1 QueryNLT [56] 59.9 69.6 63.5 –––57.8 75.6 58.7 ––––––DUTrack 384 [36] 74.1 84.9 82.9 52.5 63.6 60.5 65.6 83.2 71.9 77.8 –––––MambaVLT [41] 66.6 77.3 71.0 –––66.5 90.9 69.9 ––––––CLDTracker [2] 74.0 83.9 81.1 53.1 64.8 60.6 61.5 82.2 64.3 77.5 85.4 75.6 85.1 89.7 84.9
+> Memory-Based  MemVLT [24] 72.9 85.7 80.5 52.1 63.3 59.8 63.3 80.9 67.4 ––––––RTracker-L [29] 74.7 84.5 –54.9 65.5 62.7 60.6 –63.7 77.9 87.0 76.9 –––
+> Zero-shot Method
+> SAM2-L [51] 68.5 76.1 73.6 56.8 71.1 67.0 56.7 75.4 62.5 80.8 91.3 75.5 85.3 91.3 88.2
+> SAMURAI-L [71] 74.2 82.7 80.2 61.0 73.9 72.2 50.6 67.5 54.2 81.7 92.2 76.9 85.3 88.2 85.0 DAM4SAM-L [58] 75.1 83.3 81.1 60.9 75.3 72.2 59.8 79.8 66.8 81.1 91.4 77.2 85.3 90.9 87.4 SENTRY-S2-L 70.2 ( 1.7 ↑) 77.2 ( 1.1 ↑) 74.5 ( 0.9 ↑) 57.0 ( 0.2 ↑) 71.7 ( 0.6 ↑) 67.1 ( 0.1 ↑) 57.9 ( 1.2 ↑) 76.9 ( 1.5 ↑)64.1 ( 1.6 ↑)81.1 ( 0.3 ↑) 91.4 ( 0.1 ↑) 76.5 ( 1.0 ↑) 85.7 ( 0.4 ↑)91.9 (0.6 ↑)88.9 (0.7 ↑)SENTRY-SR-L 75.1 (0.9 ↑)82.7 80.4 ( 0.2 ↑)61.5 (0.5 ↑) 75.0 ( 1.1 ↑)72.9 (0.7 ↑) 59.6 ( 9.0 ↑) 78.8 ( 11.3 ↑) 66.4 ( 12.2 ↑)81.8 (0.1 ↑)92.3 (0.1 ↑)77.1 (0.2 ↑)85.8 (0.5 ↑) 91.1 ( 2.9 ↑)88.1 (3.1 ↑)SENTRY-D4S-L 76.3 (1.2 ↑)84.7 (1.4 ↑)82.4 (1.3 ↑)61.8 (0.9 ↑)76.6 (1.3 ↑)73.8 (1.6 ↑) 61.3 ( 1.5 ↑) 81.3 ( 1.5 ↑)68.3 (1.5 ↑)82.1 (1.0 ↑)92.6 (1.2 ↑)78.2 (1.0 ↑)85.9 (0.6 ↑)91.5 (0.6 ↑) 87.9 ( 0.5 ↑)
+
+4.1 SOTA comparison on box benchmarks 
+
+Results on LaSOT, LaSOT ext , TNL2K, GOT-10k, and TrackingNet are sum-marized in Tab. 1. Full results across all trackers and model scales appear in App. G (Tab. 19). Attribute-level analyses are shown in Figs. 4(a)–(c) and in App. Tabs. 20, 21, and 22. SENTRY’s gains follow each dataset’s difficulty pro-file: smaller improvements on short or clean sequences (TrackingNet), moder-ate improvements on heterogeneous or appearance-diverse benchmarks (GOT-10k, LaSOT ext ), and larger improvements on long or rapidly changing sequences where baseline errors accumulate more (LaSOT, TNL2K). 
+
+LaSOT [23]. All SENTRY variants outperform their SAM2-based baselines across all metrics. SENTRY-D4S gains 1.6% S, 1.7% NP, and 1.6% P over DAM4SAM; SENTRY-SR improves SAMURAI by 1.2% S and 0.2% P; and SENTRY-S2 surpasses SAM2 by 2.5% S, 1.4% NP, and 1.2% P. LaSOT’s long sequences amplify small mask errors into drift, making it a setting where SEN-TRY’s stability-focused updates yield substantial improvements. LaSOT ext [22]. 
+
+SENTRY-D4S sets a new SOTA on LaSOT ext , improving over DAM4SAM by 1.5% S, 1.7% NP, and 2.2% P. Other variants show consistent gains: SENTRY-S2 adds 0.4% S, 0.8% NP, and 0.1% P, while SENTRY-SR improves SAMU-RAI by 0.8% S, 1.5% NP, and 1.0% P. LaSOT ext contains many small ob-jects and unseen categories, which frequently destabilize baseline predictions; SENTRY mitigates these cases, resulting in consistent gains. TNL2K [60]. 
+
+All SENTRY variants outperform their SAM2-based baselines. SENTRY-D4S gains 2.5% S, 1.9% NP, and 2.2% P over DAM4SAM; SENTRY-S2 adds 2.1% S, 2.0% NP, and 2.6% P; and SENTRY-SR yields the largest boost of 17.8% S, 16.7% NP, and 22.5% P over SAMURAI. TNL2K contains frequent appearance shifts, occlusions, and strongly non-linear motion, which disrupt SAMURAI’s Kalman filter-based linear update model; in contrast, SENTRY’s refine-before-write mechanism validates each memory update via temporal consistency rather than motion assumptions, yielding its largest gains specifically on this bench-mark. GOT-10k [28]. SENTRY-D4S achieves the best overall performance and sets a new SOTA. SENTRY-SR ranks second on AO and SR 0.5 , and third on SR 0.75 . Operating fully zero-shot, SENTRY-D4S even outperforms fine-tuned competitors, highlighting the scalability of reliability-aware refinement. Rela-10 M. Alansari, Y. Michael et al. ARC BC CM DEF FM FOC IV MB OV POC ROT SV VC 75.3 74.2 74 73.2 69.1 67.3 71.8 70.4 69.8 69.4 66.8 64.3 80.3 78.9 78.3 77.4 71.4 69 76.7 76.6 75.5 72.2 70.8 69.5 68.8 64.3 64 60.2 58.5 70.3 68.8 67.7 66.9 61.7 59.4 75.2 74.3 73.4 73.3 65.7 63.1 71.2 69.2 68.7 67.7 61.1 59.5 77.3 76.3 75.1 74.4 70.7 67.8 72.3 71 63 70.9 70.1 61.6 74.1 74 76 75.9 72.2 71.7 62.3 61.1 76 74.8 73.9 69.7 68 72.7 72.6 68.9 67.3       
+
+> SENTRY-D4S DAM4SAM SENTRY-SR SAMURAI SENTRY-S2 SAM2
+> LR 75 74.9 73.5 72.9 68.9 67.9
+
+(a) ARC BC CM DEF FM FOC IV MB OV POC ROT SV VC            
+
+> SENTRY-D4S DAM4SAM SENTRY-SR SAMURAI SENTRY-S2 SAM2
+> 60.5 59.2 58.1 57.7 55.1 54.9 57.2 55.4 54.4 53.3 50.6 50.2 76.5 76.1 75.4 74.7 62.4 61.1 75.9 75.2 75.1 73.1 73 51.7 51.4 51.3 49.8 45.4 45.3 52.1 51.4 51.3 50.4 46.6 46.3 70.3 67.9 68 67.5 49.4 49.3 68.3 67.6 67.1 61.1 61.1 59.9 59 58.6 55.9 55.8 67.5 65.7 64.3 63.2 62.7 62.3 61.6 60.4 58.9 58.8 57.6 57.5 52.1 51.5 50.3 49.9 49.8 49.1 47.4 47.3 46.6 LR 53.6 52.4 52.1 47.8 47.5
+
+(b) ARC BC CM DEF FM FOC IV LR MB OV POC ROT TC          
+
+> SENTRY-D4S DAM4SAM SENTRY-SR SAMURAI SENTRY-S2 SAM2
+> 64.7 SV VC AS MS 64.6 63.7 61 60.7 60.8 59.8 59.6 56.7 51 56.3 57.4 62.7 62.6 62 59 56.8 53 64.1 63.4 63 60.6 60.2 53.6 62.8 51.5 50.2 48 45.7 45.1 38.6 62 61.6 60 59.4 55.1 64.7 63.9 63.7 61.6 61.3 58.8 48.9 48.5 46.7 43.9 36.9 29.6 58 57.8 57.7 53.7 52.8 52 46 45.4 44.7 41.1 40.9 37.1 59.3 58.6 57.2 54.7 53.1 47 65.1 64.5 63.9 61.7 60.7 57.4 58.1 57.7 57.2 53.7 53.3 47.6 58.7 70.7 39.1 42.9 57.6 57.3 55 54.2 51.2 70.6 69.7 69 67.7 67.2 38.1 32.5 32 15.112.4 41.3 38.9 38.8 30.4 25.2
+
+(c) 
+
+Fig. 4: AUC of attributes on (a) LaSOT [23], (b) LaSOT ext [22], and (c) TNL2K [60]. 
+
+tive gains over baselines include 1.2% AO, 1.3% SR 0.5 , and 1.3% SR 0.75 for DAM4SAM; 0.4%, 0.1%, and 1.3% for SAM2; and 0.1%, 0.1%, and 0.3% for SAMURAI. GOT-10k’s category and appearance diversity induces mild incon-sistencies that SENTRY stabilizes. TrackingNet [47]. All SENTRY variants improve over their respective baselines. Integrating SENTRY into DAM4SAM yields 0.7% S, 0.7% NP, and 0.6% P; applying it to SAM2 adds 0.5% S, 0.7% NP, and 0.8% P; and enhancing SAMURAI provides the largest gains of 0.6% S, 3.3% NP, and 3.6% P. TrackingNet’s short, clean sequences leave limited room for correction, so SENTRY primarily smooths small prediction fluctuations, pro-ducing modest but consistent gains. Attribute-Wise Performance. Across all datasets (Figs. 4(a)–(c)), SENTRY delivers its strongest gains in conditions that destabilize per-frame masks, such as BC, motion changes, LR, and occlusions. These patterns are consistent across SAM2, SAMURAI, and DAM4SAM, re-flecting the shared sensitivity of SAM2-style memory updates to noisy frames. Differences emerge at the dataset level. On LaSOT, the long sequences magnify issues like MB and CM, making drift suppression the dominant source of im-provement. On LaSOT ext , many targets are small or visually scarce, so gains are driven by better handling of LR views, weak cues, and occlusions. On TNL2K, sudden appearance changes and non-linear motion are the main challenges, and SENTRY’s filtering stabilizes these rapid transitions. Across benchmarks, SEN-TRY consistently removes unreliable updates, but the specific attributes that benefit most align with each dataset’s characteristic failure modes. 
+
+4.2 SOTA comparison on VOT benchmarks 
+
+We evaluate SENTRY on VOT20 [32], VOT22 [31], and VOTS24 [33], with re-sults in Tabs. 2–4 and Figs. 5(a)–(c). We also assess DiDi [58], which focuses on visually similar non-negligible distractors, with results in Tab. 5 and Fig. 5(d). Additional results for model scales and baselines are in Appendices H and K. 
+
+VOT20 [32]. All SENTRY variants outperform their SAM2-based baselines, with relative gains up to 1.2% in Q, 3.4% in Acc , and 0.7% in Rob . Most VOT20 failures stem from unstable masks during fast motion and occlusions, which trig-ger resets; SENTRY filters these unreliable updates, reducing reset events and improving all metrics. SENTRY-D4S obtains the highest scores, setting a new SOTA. VOT22 [31]. All SENTRY variants again improve over their baselines, with gains up to 2.1% in Q, 3.1% in Acc , and 0.8% in Rob . VOT22 includes SENTRY 11 
+
+Table 2: Comparison on the VOT20 [32]. Method VOT20 Q Acc Rob ODTrack [77] 0.605 0.761 0.902 MixViT-L+AR [19] 0.584 0.755 0.890 SeqTrack-L [11] 0.561 - -MixFormer-L [18] 0.555 0.762 0.855 RPT [44] 0.530 0.700 0.869 OceanPlus [76] 0.491 0.685 0.842 AlphaRef [70] 0.482 0.754 0.777 AFOD [13] 0.472 0.713 0.795 
+
+Zero-shot Method 
+
+SAM2-L [51] 0.681 0.778 0.941 SAMURAI-L [71] 0.674 0.741 0.942 DAM4SAM-L [58] 0.723 0.796 0.961 
+
+SENTRY-S2-L 0.690 (0.9 ↑) 0.785 (0.7 ↑) 0.949 (0.8 ↑)SENTRY-SR-L 0.686 ( 1.2 ↑) 0.775 ( 3.4 ↑) 0.947 ( 0.5 ↑)SENTRY-D4S-L 0.732 (0.9 ↑) 0.804 (0.8 ↑) 0.970 (0.9 ↑)
+
+Table 3: Comparison on the VOT22 [31]. Method VOT22 Q Acc Rob MS_AOT [72] 0.673 0.781 0.944 DiffusionTrack [63] 0.634 - -DAMTMask [31] 0.624 0.796 0.891 MixFormer-M [18] 0.589 0.799 0.878 OSTrackSTS [75] 0.581 0.775 0.867 Linker [68] 0.559 0.772 0.861 SRATransTS [31] 0.547 0.743 0.866 TransT_M [12] 0.542 0.743 0.865 GDFormer [31] 0.538 0.744 0.861 TransLL [31] 0.530 0.735 0.861 LWL_B2S [4] 0.516 0.736 0.831 D3Sv2 [42] 0.497 0.713 0.827 
+
+Zero-shot Method 
+
+SAM2-L [51] 0.692 0.779 0.946 SAMURAI-L [71] 0.693 0.744 0.951 DAM4SAM-L [58] 0.750 0.797 0.971 
+
+SENTRY-S2-L 0.701 ( 0.9 ↑) 0.787 ( 0.8 ↑) 0.953 ( 0.7 ↑)SENTRY-SR-L 0.715 (2.1 ↑) 0.775 ( 3.1 ↑) 0.957 (0.6 ↑)SENTRY-D4S-L 0.759 (0.9 ↑) 0.805 (0.8 ↑) 0.979 (0.8 ↑)
+
+Table 4: Comparison on the VOTS24 [33]. Method VOTS24 [33] Q Acc Rob S3-Track [37] 0.722 0.784 0.889 
+
+DMAOT_SAM [74] 0.653 0.794 0.780 HQ-DMAOT [74] 0.639 0.754 0.790 DMAOT [74] 0.636 0.751 0.795 LY-SAM [33] 0.631 0.765 0.776 Cutie-SAM [15] 0.607 0.756 0.730 AOT [72] 0.550 0.698 0.767 LORAT [39] 0.536 0.725 0.784 
+
+Zero-shot Method 
+
+SAM2-L [51] 0.661 0.791 0.790 SAMURAI-L [71] 0.673 0.776 0.851 DAM4SAM-L [58] 0.711 0.793 0.864 
+
+SENTRY-S2-L 0.669 ( 0.8 ↑) 0.793 (0.2 ↑) 0.795 ( 0.5 ↑)SENTRY-SR-L 0.681 (0.8 ↑) 0.782 ( 0.6 ↑) 0.856 ( 0.5 ↑)SENTRY-D4S-L 0.715 (0.4 ↑) 0.794 (0.1 ↑) 0.867 (0.3 ↑)
+
+Table 5: Comparison on the DiDi [58]. Method DiDi [58] Q Acc Rob ODTrack [77] 0.608 0.740 0.809 Cutie [15] 0.575 0.704 0.776 AOT [72] 0.541 0.622 0.852 AQATrack [64] 0.535 0.693 0.753 SeqTrack [11] 0.529 0.714 0.718 KeepTrack [45] 0.502 0.646 0.748 TransT [12] 0.465 0.669 0.678 
+
+Zero-shot Method 
+
+SAM2Long [21] 0.646 0.719 0.883 SAM2-L [51] 0.649 0.720 0.887 SAMURAI-L [71] 0.680 0.722 0.930 DAM4SAM-L [58] 0.694 0.727 0.944 
+
+SENTRY-S2-L 0.660 ( 1.1 ↑) 0.729 (0.9 ↑) 0.897 ( 1.0 ↑)SENTRY-SR-L 0.693 (1.3 ↑) 0.734 (1.2 ↑) 0.943 (1.3 ↑)SENTRY-D4S-L 0.705 (1.1 ↑) 0.737 (1.0 ↑) 0.956 (1.2 ↑)
+
+stronger appearance changes and heavier distractor pressure than VOT20, in-creasing the risk of incorrect memory writes; SENTRY suppresses these errors and yields consistent improvements across all methods. SENTRY-D4S again sets a new SOTA. VOTS24 [33]. SENTRY variants surpass their baselines, with gains up to 0.8% in Q, 0.6% in Acc , and 0.5% in Rob . VOTS24’s long-term proto-col exposes trackers to gradual drift and extended occlusion periods, where errors accumulate. SENTRY reduces these accumulation points and provides steady performance gains. SENTRY-D4S attains the highest Acc and ranks second in 
+
+Q and Rob , closely trailing the competition-tuned S3-Track [37] while outper-forming all zero-shot and several supervised competitors. DiDi [58]. SENTRY variants improve over their baselines, achieving gains up to 1.3% in Q, 1.2% in Acc , and 1.3% in Rob . DiDi is explicitly designed to induce failures through dense distractors, where baseline trackers often commit erroneous memory up-dates. SENTRY mitigates these errors and stabilizes mask updates across all variants, with SENTRY-D4S achieving the highest overall scores and setting a new SOTA. 
+
+4.3 Qualitative Results Tracking Result. Fig. 6 shows how SENTRY mitigates key failure modes of existing SAM2-based variants. Row 1: SAM2 loses identity after heavy occlu-sion due to ambiguous mask selection, whereas SENTRY-S2 disambiguates and refines the correct mask before memory writing. Row 2: under abrupt scene change, SAMURAI’s Kalman prior diverges, while SENTRY-SR restores iden-tity through neighbor-guided matching. Row 3: In an underwater scene with haze and distractors, DAM4SAM mis-selects background objects due to heuris-tic thresholds, while SENTRY-D4S chooses the candidate maintaining short-12 M. Alansari, Y. Michael et al. 0.94 0.95 0.96 0.97              
+
+> Robustness
+> 0.74
+> 0.75
+> 0.76
+> 0.77
+> 0.78
+> 0.79
+> 0.80
+> Accuracy
+> SAM2 [0.681]
+> SENTRY-S2 [0.688]
+> SAMURAI [0.674]
+> SENTRY-SR [0.686]
+> DAM4SAM [0.723]
+> SENTRY-D4S [0.728]
+> (a) 0.95 0.96 0.97 0.98
+> Robustness
+> 0.74
+> 0.75
+> 0.76
+> 0.77
+> 0.78
+> 0.79
+> 0.80
+> 0.81
+> Accuracy
+> SAM2 [0.692]
+> SENTRY-S2 [0.701]
+> SAMURAI [0.693]
+> SENTRY-SR [0.715]
+> DAM4SAM [0.750]
+> SENTRY-D4S [0.756] (b) 0.800 0.825 0.850 0.875
+> Robustness
+> 0.765
+> 0.770
+> 0.775
+> 0.780
+> 0.785
+> 0.790
+> 0.795
+> 0.800
+> Accuracy
+> SAM2 [0.661]
+> SENTRY-S2 [0.669]
+> SAMURAI [0.673]
+> SENTRY-SR [0.681]
+> DAM4SAM [0.711]
+> SENTRY-D4S [0.715]
+> (c) 0.860 0.880 0.900 0.920 0.940 0.960
+> Robustness
+> 0.705
+> 0.710
+> 0.715
+> 0.720
+> 0.725
+> 0.730
+> 0.735
+> 0.740
+> Accuracy
+> SAM2 [0.647]
+> SENTRY-S2 [0.660]
+> SAMURAI [0.670]
+> SENTRY-SR [0.685]
+> DAM4SAM [0.694]
+> SENTRY-D4S [0.702] (d)
+
+Fig. 5: Acc -Rob plot on (a) VOT20 [32], (b) VOT22 [31], (c) VOTS24 [33], and (d) DiDi [58] for SAM2 and SENTRY variants. The Q is given at each label. 
+
+term trajectory coherence. Row 4: after an extreme long-term occlusion ( ≈100 frames), all methods fail to recover the tiny target, highlighting persistent re-identification limits. 
+
+4.4 Ablation Study Scalability across SAM2 sizes and base frameworks. We integrate SEN-TRY across four SAM2 model scales (T/S/B/L). Tab. 10 summarizes average S improvements over five benchmarks, with full per-metric, per-scale results in Ap-pendices G and H (Tabs. 19 and 23). SENTRY improves all base frameworks and remains largely backbone-agnostic: SAM2 gains 0.6–0.8 across scales, indicating memory reliability rather than capacity is the main limitation; SAMURAI bene-fits more strongly (3.1–5.4 on average, with +8.8/+13.8/+11.8/+9.0 on TNL2K) due to SENTRY removing failures caused by its linear-motion update model. DAM4SAM gains 1.0–2.8 on average, reflecting improved stability in distractor-heavy settings. Notably, the S-scale variant is consistently the weakest among DAM4SAM models, indicating stronger dependence on feature capacity; SEN-TRY compensates by filtering low-confidence distractor-aligned updates before SENTRY 13 00000151                       
+
+> #00000001
+> #00000001
+> #00000001
+> #00000001
+> #00000151 #00000191 #00000198 #00000201 #00000211
+> #00000301 #00000423 #00000431 #00000541 #00000576
+> #00000011 #00000021 #00000061 #00000081 #00000136
+> #00000101 #00000111 #00000121 #00000276 #00000348
+> Ground Truth DAM4SAM SAMURAI SAM2 SENTRY-D4S SENTRY-SR SENTRY-S2
+
+Fig. 6: Qualitative comparison of baselines and SENTRY variants: (1) SAM2 vs. SENTRY-S2, (2) SAMURAI vs. SENTRY-SR, (3) DAM4SAM vs. SENTRY-D4S. (4) Failure case: all methods lose the target after a long out-of-view period (100 frames) with a tiny target. 
+
+they enter memory. Candidate mask generation. Tab. 6 compares candidate-generation strategies within SENTRY. Detection–segmentation pipelines such as GroundingDINO [40] with SAM/SAM2 [30, 51] produce spatially precise but frame-independent masks, resulting in poor temporal consistency. Conversely, SAM2’s native propagation preserves identity but offers no mechanism for cor-recting drift once it accumulates. Building on SAM2, we introduce four comple-mentary modules evaluated under the same selection policy: decoder hypotheses (Ct
+
+> dec
+
+) to retain multiple plausible masks, AMG proposals ( Ct
+
+> AMG
+
+) for expanded spatial coverage, Soft-NMS to reduce redundancy among overlapping hypothe-ses, and a Kalman prior ( Mtκ) to stabilize motion. As shown in Tab. 6, each addition yields incremental S gains of 0.5, 0.1, 0.1, and 0.1, leading to a 0.9% average improvement over SAM2 across benchmarks. Temporal consistency length  τ . We analyze the effect of varying the temporal window τ , which de-fines how many past frames contribute to matching. As shown in Tab. 7, increas-ing τ improves robustness by using richer appearance and motion context, but overly long windows may introduce outdated features and temporal noise. Per-formance saturates around τ =10 . Runtime analysis. We evaluate runtime on an NVIDIA A100 GPU. SENTRY-S2-L achieves 32.8 FPS compared to 44.0 FPS for SAM2-L (Tab. 9), adding only ∼7–8 ms per frame ( ∼25% overhead) while retaining real-time performance. Across SENTRY-compatible large-model hosts, the supplementary runtime and memory study reports a 16.6–25.5% FPS drop and 0.4–0.6 GB additional VRAM (App. J). The overhead comes from three com-ponents: (i) candidate construction (AMG/decoder aggregation, template sim-ilarity, and Soft-NMS), (ii) short-horizon reasoning (backward re-segmentation and Hungarian matching), and (iii) Kalman prior. Removing the Kalman prior or AMG/decoder inputs reduces candidate load; disabling Soft-NMS increases latency due to redundant proposals; and w/o neighbor pool restricts match-ing to the target trajectory only (no distractor modeling). Neighbor tracklet 14 M. Alansari, Y. Michael et al. 
+
+pool. Removing the neighbor tracklet pool Ptn reduces matching to target-only consistency checks, ignoring distractor motion. This causes drift under clutter. Incorporating NP provides contextual negatives, penalizing candidates aligned with distractor trajectories and yielding temporal stability (Tab. 8). Scalabil-
+
+Table 6: Incremental contribution of candidate-generation modules on [22,23,28,60]. 
+
+∆ denotes average S gain over the SAM2-L. Method / Component LaSOT LaSOT ext TNL2K GOT-10k ∆                                           
+
+> SAM2 (Baseline) [51] 68.5 56.8 56.7 80.8 -
+> Candidate Mask Generation Baselines
+> GroundingDINO & SAM [30, 40] 68.2 56.4 56.4 80.5 0.3 ↓
+> GroundingDINO & SAM2 [40, 51] 69.0 56.7 56.6 80.9 0.1 ↑
+> SAM [30] 69.0 56.8 57.0 80.9 0.2 ↑
+> Incremental Modules on SAM2
+> +Cdec 69.8 57.0 57.5 80.9 0.6 ↑
+> +CAMG 69.9 57.0 57.8 80.9 0.7 ↑
+> + Soft-NMS 70.0 57.0 57.8 81.0 0.8 ↑
+> +Mκ70.2 57.0 57.9 81.1 0.9 ↑
+
+Table 7: Effect of τ
+
+on performance.                     
+
+> τLaSOT LaSOT ext TNL2K 168.5 56.8 56.7 369.1 56.8 57.1 569.9 56.9 57.5 10 70.2 57.0 57.9
+> 20 70.0 56.9 57.7 30 69.2 56.8 57.7
+
+Table 8: Effect of Ptn on [23].        
+
+> w/o Ptn
+> S65.8 NP 73.1 P70.4
+> with Ptn
+> S70.2
+> NP 77.2
+> P74.5
+
+Table 9: Runtime analysis.                   
+
+> Variant FPS ↑Overhead (%) ↓
+> SAM2-L 44.0 –SENTRY-S2-L 32.8 25.5 w/o Kalman prior 34.7 21.1 w/o AMG proposals 35.4 19.5 w/o decoder hypotheses 36.9 16.1 w/o neighbor pool 38.7 12.0 w/o candidate filtration 30.1 31.6
+
+ity. Across all scales (T/S/B/L) and all three base trackers, SENTRY consis-tently improves robustness (Tab. 10). Gains hold on both short- and long-term benchmarks, despite differences in dataset difficulty and model capacity. SAM2 benefits most at small and large scales; SAMURAI sees the strongest overall lift, especially on TNL2K and TrackingNet; and DAM4SAM shows targeted gains, with S-scale improving notably on GOT-10k and TrackingNet. Fig. 7 corrobo-rates this. 
+
+Table 10: Average relative improvements ( ∆) of SENTRY over each base framework across model sizes (T/S/B/L). Mean  ∆ across all bases: SAM2 (0.7), SAMURAI (4.5), DAM4SAM (1.5). Full per-metric results are provided in App. G, Tab. 19. 
+
+(a) SAM2 → SENTRY 
+
+Dataset T S B LLaSOT 0.6 ↑ 1.5 ↑ 1.0 ↑ 1.7 ↑
+
+LaSOT ext 0.7 ↑ 1.0 ↑ 0.7 ↑ 0.2 ↑
+
+TNL2K 1.2 ↑ 1.2 ↑ 1.3 ↑ 1.3 ↑
+
+GOT-10k 0.3 ↑ 0.1 ↑ 0.1 ↑ 0.3 ↑
+
+TrackingNet 0.3 ↑ 0.4 ↑ 0.4 ↑ 0.4 ↑
+
+∆ 0.6 ↑ 0.8 ↑ 0.7 ↑ 0.8 ↑
+
+(b) SAMURAI → SENTRY 
+
+Dataset T S B LLaSOT 2.6 ↑ 1.4 ↑ 2.5 ↑ 0.9 ↑
+
+LaSOT ext 2.0 ↑ 2.4 ↑ 2.4 ↑ 2.0 ↑
+
+TNL2K 8.8 ↑ 13.8 ↑ 11.8 ↑ 9.0 ↑
+
+GOT-10k 2.1 ↑ 2.4 ↑ 2.1 ↑ 0.2 ↑
+
+TrackingNet 6.3 ↑ 7.0 ↑ 5.7 ↑ 3.4 ↑
+
+∆ 4.4 ↑ 5.4 ↑ 4.9 ↑ 3.1 ↑
+
+(c) DAM4SAM → SENTRY 
+
+Dataset T S B LLaSOT 1.1 ↑ 1.1 ↑ 2.0 ↑ 1.2 ↑
+
+LaSOT ext 1.0 ↑ 1.5 ↑ 2.4 ↑ 1.1 ↑
+
+TNL2K 1.7 ↑ 1.4 ↑ 1.5 ↑ 1.5 ↑
+
+GOT-10k 0.7 ↑ 5.3 ↑ 0.3 ↑ 0.8 ↑
+
+TrackingNet 0.3 ↑ 4.9 ↑ 0.1 ↑ 0.6 ↑
+
+∆ 1.0 ↑ 2.8 ↑ 1.3 ↑ 1.0 ↑
+
+5 Conclusion 
+
+We revisited memory update mechanisms in SAM2-based VOT and exposed confidence-only mask selection as a key source of drift under occlusion, mo-tion, and distractors. We introduced SENTRY, a training-free, plug-and-play, refine-before-write module that validates temporal consistency before commit-ting memory updates. By replacing confidence-driven writes with consistency-validated ones, SENTRY stabilizes tracking without retraining or architectural changes and consistently improves all-scale evaluation performance across base-lines and benchmarks. SENTRY 15 
+
+Acknowledgements 
+
+This work was supported in part by the Khalifa University Center for Au-tonomous Robotic Systems (KUCARS) under Award RC1-2018-KUCARS; in part by Silal Innovation Oasis through projects under grants 8475000023, 8475000024, 8475000025, and 8475000026; and in part by Khalifa University of Science and Technology through the Faculty Start-Ups under Project ID KU-INT-FSU-2005-8474000775. 
+
+References 
+
+1. Alansari, M., Abdul Hay, O., Alansari, S., Javed, S., Shoufan, A., Zweiri, Y., Werghi, N.: Drone-person tracking in uniform appearance crowd: A new dataset. Scientific Data 11 (1), 15 (2024) 2. Alansari, M., Javed, S., Ganapathi, I.I., Alansari, S., Naseer, M.: Cldtracker: A comprehensive language description for visual tracking. Information Fu-sion 124 , 103374 (2025). https://doi.org/https://doi.org/10.1016/j. inffus.2025.103374 , https://www.sciencedirect.com/science/article/pii/ S1566253525004476 
+
+3. Asanomi, T., Nishimura, K., Bise, R.: Multi-frame attention with feature-level warping for drone crowd tracking. In: 2023 IEEE/CVF Winter Conference on Ap-plications of Computer Vision (WACV). pp. 1664–1673 (2023). https://doi.org/ 10.1109/WACV56688.2023.00171 
+
+4. Bhat, G., Lawin, F.J., Danelljan, M., Robinson, A., Felsberg, M., Van Gool, L., Timofte, R.: Learning what to learn for video object segmentation. In: Vedaldi, A., Bischof, H., Brox, T., Frahm, J.M. (eds.) Computer Vision – ECCV 2020. pp. 777–794. Springer International Publishing, Cham (2020) 5. Bodla, N., Singh, B., Chellappa, R., Davis, L.S.: Soft-nms – improving object de-tection with one line of code. In: Proceedings of the IEEE International Conference on Computer Vision (ICCV) (Oct 2017) 6. Cai, J., Xu, M., Li, W., Xiong, Y., Xia, W., Tu, Z., Soatto, S.: Memot: Multi-object tracking with memory. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 8090–8100 (June 2022) 7. Cai, W., Liu, Q., Wang, Y.: Hiptrack: Visual tracking with historical prompts. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 19258–19267 (June 2024) 8. Cai, W., Liu, Q., Wang, Y.: Spmtrack: Spatio-temporal parameter-efficient fine-tuning with mixture of experts for scalable visual tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 16871–16881 (June 2025) 9. Carion, N., Gustafson, L., Hu, Y.T., Debnath, S., Hu, R., Coll-Vinent, D.S., Ryali, C., Alwala, K.V., Khedr, H., Huang, A., Lei, J., Ma, T., Guo, B., Kalla, A., Marks, M., Greer, J., Wang, M., Sun, P., Rädle, R., Afouras, T., Mavroudi, E., Xu, K., Wu, T.H., Zhou, Y., Momeni, L., HAZRA, R., Ding, S., Vaze, S., Porcher, F., Li, F., Li, S., Kamath, A., Cheng, H.K., Dollar, P., Ravi, N., Saenko, K., Zhang, P., Feichtenhofer, C.: SAM 3: Segment anything with concepts. In: The Fourteenth International Conference on Learning Representations (2026), 
+
+https://openreview.net/forum?id=r35clVtGzw 16 M. Alansari, Y. Michael et al. 10. Chen, R., Sun, G., Li, Y., Qin, J., Benini, L.: Him2sam: Enhancing sam2 with hier-archical motion estimation and memory optimization towards long-term tracking. In: Kittler, J., Xiong, H., Yang, J., Chen, X., Lu, J., Lin, W., Yu, J., Zheng, W. (eds.) Pattern Recognition and Computer Vision. pp. 276–291. Springer Nature Singapore, Singapore (2026) 11. Chen, X., Peng, H., Wang, D., Lu, H., Hu, H.: Seqtrack: Sequence to sequence learning for visual object tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 14572–14581 (June 2023) 12. Chen, X., Yan, B., Zhu, J., Wang, D., Yang, X., Lu, H.: Transformer tracking. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recog-nition. pp. 8126–8135 (2021) 13. Chen, Y., Xu, J., Yu, J., Wang, Q., Yoo, B., Han, J.J.: Afod: Adaptive focused discriminative segmentation tracker. In: Bartoli, A., Fusiello, A. (eds.) Computer Vision – ECCV 2020 Workshops. pp. 666–682. Springer International Publishing, Cham (2020) 14. Chen, Y.H., Wang, C.Y., Yang, C.Y., Chang, H.S., Lin, Y.L., Chuang, Y.Y., Liao, H.Y.M.: Neighbortrack: Single object tracking by bipartite matching with neigh-bor tracklets and its applications to sports. In: 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW). pp. 5139–5148 (2023). https://doi.org/10.1109/CVPRW59228.2023.00542 
+
+15. Cheng, H.K., Oh, S.W., Price, B., Lee, J.Y., Schwing, A.: Putting the object back into video object segmentation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 3151–3161 (June 2024) 16. Cheng, H.K., Schwing, A.G.: Xmem: Long-term video object segmentation with an atkinson-shiffrin memory model. In: Avidan, S., Brostow, G., Cissé, M., Farinella, G.M., Hassner, T. (eds.) Computer Vision – ECCV 2022. pp. 640–658. Springer Nature Switzerland, Cham (2022) 17. Cheng, H.K., Tai, Y.W., Tang, C.K.: Rethinking space-time networks with im-proved memory coverage for efficient video object segmentation. In: Ranzato, M., Beygelzimer, A., Dauphin, Y., Liang, P., Vaughan, J.W. (eds.) Advances in Neu-ral Information Processing Systems. vol. 34, pp. 11781–11794. Curran Associates, Inc. (2021), https://proceedings.neurips.cc/paper_files/paper/2021/file/ 61b4a64be663682e8cb037d9719ad8cd-Paper.pdf 
+
+18. Cui, Y., Jiang, C., Wang, L., Wu, G.: Mixformer: End-to-end tracking with itera-tive mixed attention. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 13608–13618 (2022) 19. Cui, Y., Jiang, C., Wu, G., Wang, L.: Mixformer: End-to-end tracking with iterative mixed attention. IEEE Transactions on Pattern Analysis and Machine Intelligence 
+
+46 (6), 4129–4146 (2024). https://doi.org/10.1109/TPAMI.2024.3349519 
+
+20. Ding, H., Liu, C., He, S., Jiang, X., Torr, P.H., Bai, S.: Mose: A new dataset for video object segmentation in complex scenes. In: 2023 IEEE/CVF International Conference on Computer Vision (ICCV). pp. 20167–20177 (2023). https://doi. org/10.1109/ICCV51070.2023.01850 
+
+21. Ding, S., Qian, R., Dong, X., Zhang, P., Zang, Y., Cao, Y., Guo, Y., Lin, D., Wang, J.: Sam2long: Enhancing sam 2 for long video segmentation with a training-free memory tree. arXiv preprint arXiv:2410.16268 (2024) 22. Fan, H., Bai, H., Lin, L., Yang, F., Chu, P., Deng, G., Yu, S., Harshit, Huang, M., Liu, J., et al.: Lasot: A high-quality large-scale single object tracking benchmark. International Journal of Computer Vision 129 (2), 439–461 (2021) SENTRY 17 23. Fan, H., Lin, L., Yang, F., Chu, P., Deng, G., Yu, S., Bai, H., Xu, Y., Liao, C., Ling, H.: Lasot: A high-quality benchmark for large-scale single object tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) (June 2019) 24. Feng, X., Li, X., Hu, S., Zhang, D., Wu, M., Zhang, J., Chen, X., Huang, K.: Memvlt: Vision-language tracking with adaptive memory-based prompts. In: Globerson, A., Mackey, L., Belgrave, D., Fan, A., Paquet, U., Tomczak, J., Zhang, C. (eds.) Advances in Neural Information Processing Systems. vol. 37, pp. 14903–14933. Curran Associates, Inc. (2024), https://proceedings.neurips.cc/ paper _ files / paper / 2024 / file / 1af3e0bf5905e33789979f666c31192d - Paper -Conference.pdf 
+
+25. Fu, Z., Liu, Q., Fu, Z., Wang, Y.: Stmtrack: Template-free visual tracking with space-time memory networks. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 13774–13783 (June 2021) 26. Hong, L., Chen, W., Liu, Z., Zhang, W., Guo, P., Chen, Z., Zhang, W.: Lvos: A benchmark for long-term video object segmentation. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 13480– 13492 (October 2023) 27. Hong, L., Liu, Z., Chen, W., Tan, C., Feng, Y., Zhou, X., Guo, P., Li, J., Chen, Z., Gao, S., Zhang, W., Zhang, W.: Lvos: A benchmark for large-scale long-term video object segmentation. IEEE Transactions on Pattern Analysis and Machine Intelli-gence 48 (1), 946–961 (2026). https://doi.org/10.1109/TPAMI.2025.3611020 
+
+28. Huang, L., Zhao, X., Huang, K.: Got-10k: A large high-diversity benchmark for generic object tracking in the wild. IEEE Transactions on Pattern Analysis and Machine Intelligence 43 (5), 1562–1577 (2021) 29. Huang, Y., Li, X., Zhou, Z., Wang, Y., He, Z., Yang, M.H.: Rtracker: Recov-erable tracking via pn tree structured memory. In: 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 19038–19047 (2024). 
+
+https://doi.org/10.1109/CVPR52733.2024.01801 
+
+30. Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.Y., Dollar, P., Girshick, R.: Segment anything. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 4015–4026 (October 2023) 31. Kristan, M., Leonardis, A., Matas, J., Felsberg, M., Pflugfelder, R., Kämäräinen, J.K., Chang, H.J., Danelljan, M., Zajc, L.Č., Lukežič, A., Drbohlav, O., Björklund, J., Zhang, Y., Zhang, Z., Yan, S., Yang, W., Cai, D., Mayer, C., Fernández, G., Ben, K., Bhat, G., Chang, H., Chen, G., Chen, J., Chen, S., Chen, X., Chen, X., Chen, X., Chen, Y., Chen, Y.H., Chen, Z., Cheng, Y., Ciaramella, A., Cui, Y., Džubur, B., Dasari, M.M., Deng, Q., Dhar, D., Di, S., Nardo, E.D., Du, D.K., Dunnhofer, M., Fan, H., Feng, Z., Fu, Z., Gao, S., Gorthi, R.K., Granger, E., Gu, Q.H., Gupta, H., He, J., He, K., Huang, Y., Jangid, D., Ji, R., Jiang, C., Jiang, Y., Lawin, F.J., Kang, Z., Kiran, M., Kittler, J., Lai, S., Lan, X., Lee, D., Lee, H., Lee, S., Li, H., Li, M., Li, W., Li, X., Li, X., Li, X., Li, Z., Lin, L., Ling, H., Liu, B., Liu, C., Liu, S., Lu, H., Cruz, R.M.O., Ma, B., Ma, C., Ma, J., Ma, Y., Martinel, N., Memarmoghadam, A., Micheloni, C., Moallem, P., Nguyen-Meidine, L.T., Pan, S., Park, C., Paudel, D., Paul, M., Peng, H., Robinson, A., Rout, L., Shan, S., Simonato, K., Song, T., Song, X., Sun, C., Sun, J., Tang, Z., Timofte, R., Tsai, C.Y., Gool, L.V., Verma, O.P., Wang, D., Wang, F., Wang, L., Wang, L., Wang, L., Wang, L., Wang, Q., Wu, G., Wu, J., Wu, X., Xie, F., Xu, T., Xu, W., Xu, Y., Xu, Y., Xue, W., Xun, Z., Yan, B., Yang, D., Yang, J., Yang, W., Yang, 18 M. Alansari, Y. Michael et al. X., Yang, Y., Yang, Y., Yang, Z., Ye, B., Yu, F., Yu, H., Yu, J., Yu, Q., Yu, W., Ze, K., Zhai, J., Zhang, C., Zhang, C., Zhang, K., Zhang, T., Zhang, W., Zhang, Z., Zhang, Z., Zhao, J., Zhao, S., Zheng, F., Zheng, H., Zheng, M., Zhong, B., Zhu, J., Zhu, X., Zhuang, Y.: The tenth visual object tracking vot2022 challenge results. In: Karlinsky, L., Michaeli, T., Nishino, K. (eds.) Computer Vision – ECCV 2022 Workshops. pp. 431–460. Springer Nature Switzerland, Cham (2023) 32. Kristan, M., Leonardis, A., Matas, J., Felsberg, M., Pflugfelder, R., Kämäräinen, J.K., Danelljan, M., Zajc, L.Č., Lukežič, A., Drbohlav, O., He, L., Zhang, Y., Yan, S., Yang, J., Fernández, G., Hauptmann, A., Memarmoghadam, A., García-Martín, Á., Robinson, A., Varfolomieiev, A., Gebrehiwot, A.H., Uzun, B., Yan, B., Li, B., Qian, C., Tsai, C.Y., Micheloni, C., Wang, D., Wang, F., Xie, F., Lawin, F.J., Gustafsson, F., Foresti, G.L., Bhat, G., Chen, G., Ling, H., Zhang, H., Cevikalp, H., Zhao, H., Bai, H., Kuchibhotla, H.C., Saribas, H., Fan, H., Ghanei-Yakhdan, H., Li, H., Peng, H., Lu, H., Li, H., Khaghani, J., Bescos, J., Li, J., Fu, J., Yu, J., Xu, J., Kittler, J., Yin, J., Lee, J., Yu, K., Liu, K., Yang, K., Dai, K., Cheng, L., Zhang, L., Wang, L., Wang, L., Van Gool, L., Bertinetto, L., Dunnhofer, M., Cheng, M., Dasari, M.M., Wang, N., Wang, N., Zhang, P., Torr, P.H.S., Wang, Q., Timofte, R., Gorthi, R.K.S., Choi, S., Marvasti-Zadeh, S.M., Zhao, S., Kasaei, S., Qiu, S., Chen, S., Schön, T.B., Xu, T., Lu, W., Hu, W., Zhou, W., Qiu, X., Ke, X., Wu, X.J., Zhang, X., Yang, X., Zhu, X., Jiang, Y., Wang, Y., Chen, Y., Ye, Y., Li, Y., Yao, Y., Lee, Y., Gu, Y., Wang, Z., Tang, Z., Feng, Z.H., Mai, Z., Zhang, Z., Wu, Z., Ma, Z.: The eighth visual object tracking vot2020 challenge results. In: Bartoli, A., Fusiello, A. (eds.) Computer Vision – ECCV 2020 Workshops. pp. 547–601. Springer International Publishing, Cham (2020) 33. Kristan, M., Matas, J., Tokmakov, P., Felsberg, M., Zajc, L.Č., Lukežič, A., Tran, K.T., Vu, X.S., Björklund, J., Chang, H.J., Fernández, G., Attari, M., Chan, A., Chen, L., Chen, X., Collins, J., Cui, Y., Devarapu, G.S.M., Du, Y., Fan, H., Fan, W.C., Feng, Z., Gao, M., Gorthi, R.K.S., Goyal, R., Han, J., Hatuwal, B., He, Z., Hu, X., Huang, X., Huang, Y., Jiang, D., Kang, B., Kannappan, P., Kittler, J., Lai, S., Li, N., Li, X., Li, X., Liang, C., Lin, L., Ling, H., Liu, T., Liu, Z., Lu, H., Luo, Y., Miao, D., Mogollon, J., Pang, Z., Pochimireddy, J.R., Prutyanov, V., Rahmon, G., Romanov, A., Shi, L., Siam, M., Sigal, L., Sivapuram, A.K., Solovyev, R., Kazemi, E.S., Toubal, I.E., Wan, J., Wang, L., Wang, X., Wang, Y., Wang, Y.X., Wang, Z., Wu, G., Wu, Q., Wu, X., Xia, Z., Xie, J., Xu, C., Xu, T., Xu, Y., Xue, C., Yang, C., Yang, J., Yang, M.H., Yu, C., Yu, K., Zhang, C., Zhang, J., Zhang, Z., Zheng, F., Zheng, Y., Zhong, B., Zhou, J., Zhou, J., Zhou, Y., Zhou, Z., Zhu, G., Zhu, J., Zhu, X., Zunin, V.: The second visual object tracking segmentation vots2024 challenge results. In: Del Bue, A., Canton, C., Pont-Tuset, J., Tommasi, T. (eds.) Computer Vision – ECCV 2024 Workshops. pp. 357–383. Springer Nature Switzerland, Cham (2025) 34. Kristan, M., Matas, J., Danelljan, M., Felsberg, M., Chang, H.J., Čehovin Zajc, L., Lukežič, A., Drbohlav, O., Zhang, Z., Tran, K.T., Vu, X.S., Björklund, J., Mayer, C., Zhang, Y., Ke, L., Zhao, J., Fernández, G., Al-Shakarji, N., An, D., Arens, M., Becker, S., Bhat, G., Bullinger, S., Chan, A.B., Chang, S., Chen, H., Chen, X., Chen, Y., Chen, Z., Cheng, Y., Cui, Y., Deng, C., Dong, J., Dunnhofer, M., Feng, W., Fu, J., Gao, J., Han, R., Hao, Z., He, J.Y., He, K., He, Z., Hu, X., Huang, K., Huang, Y., Jiang, Y., Kang, B., Lan, J.P., Lee, H., Li, C., Li, J., Li, N., Li, W., Li, X., Li, X., Liu, P., Liu, Y., Lu, H., Luo, B., Luo, P., Ma, Y., Miao, D., Micheloni, C., Palaniappan, K., Park, H., Paul, M., Peng, H., Qian, Z., Rahmon, G., Scherer-Negenborn, N., Shao, P., Shin, W., Kazemi, E.S., Song, T., SENTRY 19 Stiefelhagen, R., Sun, R., Tang, C., Tang, Z., Toubal, I.E., Valmadre, J., van de Weijer, J., Van Gool, L., Vira, J., Vujasinović, S., Wan, C., Wan, J., Wang, D., Wang, F., Wang, F., Wang, H., Wang, L., Wang, S., Wang, Y., Wang, Z., Wu, G., Wu, J., Wu, Q., Wu, X., Xiao, A., Xie, J., Xu, C., Xu, M., Xu, T., Xu, Y., Yan, B., Yang, D., Yang, M.H., Yang, T., Yang, Y., Yang, Z., Yin, X., Yu, F., Yu, H., Yu, Q., Yu, W., Yuan, Y., Yuan, Z., Zhang, J., Zhang, L., Zhang, T., Zhao, G., Zhao, S., Zheng, Y., Zhong, B., Zhu, J., Zhu, X., Zhuang, Y., Zong, C., Zuo, K.: The first visual object tracking segmentation vots2023 challenge results. In: 2023 IEEE/CVF International Conference on Computer Vision Workshops (ICCVW). pp. 1788–1810 (2023). https://doi.org/10.1109/ICCVW60793.2023.00195 
+
+35. Li, C., Yang, T., Zhu, S., Chen, C., Guan, S.: Density map guided object detection in aerial images. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops (June 2020) 36. Li, X., Zhong, B., Liang, Q., Mo, Z., Nong, J., Song, S.: Dynamic updates for language adaptation in visual-language tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 19165– 19174 (June 2025) 37. Li, X., Miao, D., He, Z., Wang, Y., Lu, H., Yang, M.H.: Learning spatial-semantic features for robust video object segmentation. In: The Thirteenth International Conference on Learning Representations (2025), https://openreview.net/forum? id=EM93t94zEi 
+
+38. Liang, S., Bai, Y., Gong, Y., Wei, X.: Autoregressive sequential pretraining for visual tracking. In: 2025 IEEE/CVF Conference on Computer Vision and Pat-tern Recognition (CVPR). pp. 7254–7264 (2025). https://doi.org/10.1109/ CVPR52734.2025.00680 
+
+39. Lin, L., Fan, H., Zhang, Z., Wang, Y., Xu, Y., Ling, H.: Tracking meets lora: Faster training, larger model, stronger performance. In: Leonardis, A., Ricci, E., Roth, S., Russakovsky, O., Sattler, T., Varol, G. (eds.) Computer Vision – ECCV 2024. pp. 300–318. Springer Nature Switzerland, Cham (2025) 40. Liu, S., Zeng, Z., Ren, T., Li, F., Zhang, H., Yang, J., Jiang, Q., Li, C., Yang, J., Su, H., Zhu, J., Zhang, L.: Grounding dino: Marrying dino with grounded pre-training for open-set object detection. In: Leonardis, A., Ricci, E., Roth, S., Russakovsky, O., Sattler, T., Varol, G. (eds.) Computer Vision – ECCV 2024. pp. 38–55. Springer Nature Switzerland, Cham (2025) 41. Liu, X., Zhou, L., Zhou, Z., Chen, J., He, Z.: Mambavlt: Time-evolving multimodal state space model for vision-language tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 8731–8741 (June 2025) 42. Lukežič, A., Matas, J., Kristan, M.: A discriminative single-shot segmentation net-work for visual object tracking. IEEE Transactions on Pattern Analysis and Ma-chine Intelligence 44 (12), 9742–9755 (2022). https://doi.org/10.1109/TPAMI. 2021.3137933 
+
+43. Ma, Y., Tang, Y., Yang, W., Zhang, T., Zhang, J., Kang, M.: Unifying vi-sual and vision-language tracking via contrastive learning. Proceedings of the AAAI Conference on Artificial Intelligence 38 (5), 4107–4116 (Mar 2024). https: //doi.org/10.1609/aaai.v38i5.28205 , https://ojs.aaai.org/index.php/ AAAI/article/view/28205 
+
+44. Ma, Z., Wang, L., Zhang, H., Lu, W., Yin, J.: Rpt: Learning point set representa-tion for siamese visual tracking. In: Bartoli, A., Fusiello, A. (eds.) Computer Vision 20 M. Alansari, Y. Michael et al. – ECCV 2020 Workshops. pp. 653–665. Springer International Publishing, Cham (2020) 45. Mayer, C., Danelljan, M., Paudel, D.P., Van Gool, L.: Learning target candidate association to keep track of what not to track. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 13444–13454 (October 2021) 46. Meethal, A., Granger, E., Pedersoli, M.: Cascaded zoom-in detector for high resolution aerial images. In: 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW). pp. 2046–2055 (2023). https: //doi.org/10.1109/CVPRW59228.2023.00198 
+
+47. Muller, M., Bibi, A., Giancola, S., Alsubaihi, S., Ghanem, B.: Trackingnet: A large-scale dataset and benchmark for object tracking in the wild. In: Proceedings of the European Conference on Computer Vision (ECCV) (September 2018) 48. Munkres, J.: Algorithms for the assignment and transportation problems. Journal of the Society for Industrial and Applied Mathematics 5(1), 32–38 (1957). https: //doi.org/10.1137/0105003 , https://doi.org/10.1137/0105003 
+
+49. Oh, S.W., Lee, J.Y., Xu, N., Kim, S.J.: Video object segmentation using space-time memory networks. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) (October 2019) 50. Qin, H., Xu, T., Li, T., Chen, Z., Feng, T., Li, J.: Must: The first dataset and unified framework for multispectral uav single object tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 16882–16891 (June 2025) 51. Ravi, N., Gabeur, V., Hu, Y.T., Hu, R., Ryali, C., Ma, T., Khedr, H., Rädle, R., Rolland, C., Gustafson, L., Mintun, E., Pan, J., Alwala, K.V., Carion, N., Wu, C.Y., Girshick, R., Dollar, P., Feichtenhofer, C.: SAM 2: Segment anything in images and videos. In: The Thirteenth International Conference on Learning Representations (2025) 52. Ren, W., Kang, D., Tang, Y., Chan, A.B.: Fusing crowd density maps and visual object trackers for people tracking in crowd scenes. In: 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 5353–5362 (2018). https://doi. org/10.1109/CVPR.2018.00561 
+
+53. Ryali, C., Hu, Y.T., Bolya, D., Wei, C., Fan, H., Huang, P.Y., Aggarwal, V., Chowdhury, A., Poursaeed, O., Hoffman, J., Malik, J., Li, Y., Feichtenhofer, C.: Hiera: A hierarchical vision transformer without the bells-and-whistles. In: Krause, A., Brunskill, E., Cho, K., Engelhardt, B., Sabato, S., Scarlett, J. (eds.) Proceed-ings of the 40th International Conference on Machine Learning. Proceedings of Machine Learning Research, vol. 202, pp. 29441–29454. PMLR (23–29 Jul 2023), 
+
+https://proceedings.mlr.press/v202/ryali23a.html 
+
+54. Selvaraju, R.R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., Batra, D.: Grad-cam: Visual explanations from deep networks via gradient-based localization. In: 2017 IEEE International Conference on Computer Vision (ICCV). pp. 618–626 (2017). https://doi.org/10.1109/ICCV.2017.74 
+
+55. Seong, H., Hyun, J., Kim, E.: Kernelized memory network for video object segmen-tation. In: Vedaldi, A., Bischof, H., Brox, T., Frahm, J.M. (eds.) Computer Vision – ECCV 2020. pp. 629–645. Springer International Publishing, Cham (2020) 56. Shao, Y., He, S., Ye, Q., Feng, Y., Luo, W., Chen, J.: Context-aware integration of language and visual references for natural language tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 19208–19217 (June 2024) SENTRY 21 57. Sun, P., Cao, J., Jiang, Y., Yuan, Z., Bai, S., Kitani, K., Luo, P.: Dancetrack: Multi-object tracking in uniform appearance and diverse motion. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 20993–21002 (June 2022) 58. Videnovic, J., Lukezic, A., Kristan, M.: A distractor-aware memory for visual ob-ject tracking with sam2. In: Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR). pp. 24255–24264 (June 2025) 59. Voigtlaender, P., Chai, Y., Schroff, F., Adam, H., Leibe, B., Chen, L.C.: Feelvos: Fast end-to-end embedding learning for video object segmentation. In: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) (June 2019) 60. Wang, X., Shu, X., Zhang, Z., Jiang, B., Wang, Y., Tian, Y., Wu, F.: Towards more flexible and accurate object tracking with natural language: Algorithms and benchmark. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 13763–13773 (2021) 61. Wen, L., Du, D., Zhu, P., Hu, Q., Wang, Q., Bo, L., Lyu, S.: Detection, track-ing, and counting meets drones in crowds: A benchmark. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 7812–7821 (June 2021) 62. Wu, Y., Wang, X., Yang, X., Liu, M., Zeng, D., Ye, H., Li, S.: Learning occlusion-robust vision transformers for real-time uav tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 17103–17113 (June 2025) 63. Xie, F., Wang, Z., Ma, C.: Diffusiontrack: Point set diffusion model for visual object tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 19113–19124 (June 2024) 64. Xie, J., Zhong, B., Mo, Z., Zhang, S., Shi, L., Song, S., Ji, R.: Autoregressive queries for adaptive tracking with spatio-temporal transformers. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 19300–19309 (June 2024) 65. Xiong, Y., Zhou, C., Xiang, X., Wu, L., Zhu, C., Liu, Z., Suri, S., Varadarajan, B., Akula, R., Iandola, F., Krishnamoorthi, R., Soran, B., Chandra, V.: Efficient track anything. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 11513–11524 (October 2025) 66. Xu, Q., Zhu, L., Liu, C., Lin, G., Long, C., Li, Z., Zhao, R.: Samite: Position prompted sam2 with calibrated memory for visual object tracking. arXiv preprint arXiv:2507.21732 (2025) 67. Xue, C., Zhong, B., Liang, Q., Zheng, Y., Li, N., Xue, Y., Song, S.: Similarity-guided layer-adaptive vision transformer for uav tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 6730–6740 (June 2025) 68. Xun, Z., Di, S., Gao, Y., Tang, Z., Wang, G., Liu, S., Li, B.: Linker: Learning long short-term associations for robust visual tracking. IEEE Transactions on Multime-dia 26 , 6228–6237 (2024). https://doi.org/10.1109/TMM.2023.3347644 
+
+69. Yan, B., Peng, H., Fu, J., Wang, D., Lu, H.: Learning spatio-temporal transformer for visual tracking. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 10448–10457 (2021) 70. Yan, B., Zhang, X., Wang, D., Lu, H., Yang, X.: Alpha-refine: Boosting track-ing performance by precise bounding box estimation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 5289–5298 (June 2021) 22 M. Alansari, Y. Michael et al. 71. Yang, C.Y., Huang, H.W., Chai, W., Jiang, Z., Hwang, J.N.: Samurai: Motion-aware memory for training-free visual object tracking with sam 2. IEEE Transac-tions on Image Processing 35 , 970–982 (2026). https://doi.org/10.1109/TIP. 2026.3651835 
+
+72. Yang, Z., Wei, Y., Yang, Y.: Associating objects with transformers for video object segmentation. In: Ranzato, M., Beygelzimer, A., Dauphin, Y., Liang, P., Vaughan, J.W. (eds.) Advances in Neural Information Processing Systems. vol. 34, pp. 2491– 2502. Curran Associates, Inc. (2021), https://proceedings.neurips.cc/paper_ files/paper/2021/file/147702db07145348245dc5a2f2fe5683-Paper.pdf 
+
+73. Yang, Z., Yang, Y.: Decoupling features in hierarchical propagation for video ob-ject segmentation. In: Koyejo, S., Mohamed, S., Agarwal, A., Belgrave, D., Cho, K., Oh, A. (eds.) Advances in Neural Information Processing Systems. vol. 35, pp. 36324–36336. Curran Associates, Inc. (2022), https://proceedings.neurips.cc/ paper _ files / paper / 2022 / file / eb890c36af87e4ca82e8ef7bcba6a284 - Paper -Conference.pdf 
+
+74. Yang, Z., Yang, Y.: Decoupling features in hierarchical propagation for video ob-ject segmentation. In: Koyejo, S., Mohamed, S., Agarwal, A., Belgrave, D., Cho, K., Oh, A. (eds.) Advances in Neural Information Processing Systems. vol. 35, pp. 36324–36336. Curran Associates, Inc. (2022), https://proceedings.neurips.cc/ paper _ files / paper / 2022 / file / eb890c36af87e4ca82e8ef7bcba6a284 - Paper -Conference.pdf 
+
+75. Ye, B., Chang, H., Ma, B., Shan, S., Chen, X.: Joint feature learning and rela-tion modeling for tracking: A one-stream framework. In: European conference on computer vision. pp. 341–357. Springer (2022) 76. Zhang, Z., Peng, H., Fu, J., Li, B., Hu, W.: Ocean: Object-aware anchor-free track-ing. In: Vedaldi, A., Bischof, H., Brox, T., Frahm, J.M. (eds.) Computer Vision – ECCV 2020. pp. 771–787. Springer International Publishing, Cham (2020) 77. Zheng, Y., Zhong, B., Liang, Q., Mo, Z., Zhang, S., Li, X.: Odtrack: Online dense temporal token learning for visual tracking. Proceedings of the AAAI Confer-ence on Artificial Intelligence 38 (7), 7588–7596 (Mar 2024). https://doi.org/ 10.1609/aaai.v38i7.28591 , https://ojs.aaai.org/index.php/AAAI/article/ view/28591 
+
+78. Zhou, J., Pang, Z., Wang, Y.X.: Rmem: Restricted memory banks improve video object segmentation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 18602–18611 (June 2024) SENTRY 23 
+
+Appendix 
+
+A Additional Ablation Study . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 B Memory-Write Diagnostic Analysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25 C Recovery-After-Failure Diagnostic Analysis . . . . . . . . . . . . . . . . . . . . . . . . 25 D Generality Beyond SAM2-Based Trackers . . . . . . . . . . . . . . . . . . . . . . . . . 26 E Qualitative Results . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27 F Comparison with SAM2Long . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28 G Additional quantitative results on box benchmarks . . . . . . . . . . . . . . . . . 28 H Additional quantitative results on VOT benchmarks . . . . . . . . . . . . . . . . 32 I Additional VOS Benchmark Results . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33 J Runtime and Memory Overhead . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 34 K Extended evaluations on additional SAM2-based frameworks . . . . . . . . 35 K.1 Bounding box benchmarks . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 35 K.2 VOT benchmarks . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 36 L Future Work . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 37 
+
+A Additional Ablation Study 
+
+Sensitivity to α and β. We analyze the two thresholds used in candidate gen-eration: the decoder margin α, which controls the retention of SAM2 decoder hypotheses, and the AMG similarity gate β, which filters target-consistent pro-posals (Sec. 3.2). All other settings are fixed. Table 11 shows that α regulates decoder diversity. Low values admit weak hypotheses, while high values over-prune viable alternatives. Performance peaks at α = 0 .7. Table 12 shows that 
+
+β balances template agreement and robustness to appearance change: β in the range [0 .6, 0.8] provides stable performance, with a maximum at β = 0 .7. We therefore adopt α = 0 .7 and β = 0 .7 as defaults, which offer the best trade-off between performance and stability on LaSOT.                        
+
+> Table 11: Ablation on decoder relative-confidence margin αon LaSOT (SAM2-L baseline). We fix β=0 .7for AMG filtering.
+> αSNP P0.5 69.4 76.8 74.1 0.6 69.9 76.9 74.2 0.7 70.2 77.2 74.5
+> 0.8 69.8 77.0 74.3 0.9 69.3 76.7 74.2
+
+Ablation of θrel . The reliability threshold θrel determines how strict the cycle-consistency check must be before a candidate is accepted. Values that are too low allow noisy backward trajectories; values that are too high reject valid matches during occlusion or partial drift. As shown in Table 13, performance peaks at 
+
+θrel = 0 .6, which balances permissiveness and stability. 24 M. Alansari, Y. Michael et al. 
+
+Table 12: Ablation on AMG similarity margin β on LaSOT (SAM2-L baseline). We fix α=0 .7 for decoder filtering.                   
+
+> βSNP P0.5 69.7 76.8 74.0 0.6 69.9 77.0 74.1 0.7 70.2 77.2 74.5
+> 0.8 70.0 77.0 74.2 0.9 69.6 76.9 74.1
+
+Table 13: Ablation on θrel on LaSOT (SAM2-L). θmin fixed at 0.3.    
+
+> θrel SNP P0.4 69.3 76.9 74.2 0.5 69.8 77.0 74.2 0.6 70.2 77.2 74.5
+> 0.7 69.9 77.0 74.2 0.8 69.2 76.8 74.1
+
+Ablation of θmin . The fallback threshold θmin controls how aggressively SEN-TRY accepts a candidate when no reliable cycle-consistent match is found. Table 14 shows a concave trend: overly low values accept weak tracklets, while high values eliminate necessary fallbacks. The best setting is θmin = 0 .3.
+
+Table 14: Ablation on θmin on LaSOT (SAM2-L). θrel fixed at 0.6.        
+
+> θmin SNP P0.1 69.6 76.8 74.0 0.2 69.9 76.9 74.1 0.3 70.2 77.2 74.5
+> 0.4 69.9 77.0 74.2 0.5 69.4 76.9 74.1
+
+Scalability. Across all model scales (T/S/B/L) and all three base trackers, SEN-TRY produces a consistent upward shift in robustness, as summarized in Table 10. Improvements persist across both short-term and long-term benchmarks, cut-ting through differences in dataset difficulty and model capacity. SAM2 shows its largest gains in the small and large variants, SAMURAI experiences the strongest overall lift, most prominently on TNL2K and TrackingNet, and DAM4SAM re-ceives targeted but meaningful boosts, with the S-scale variant improving no-tably on GOT-10k and TrackingNet. These patterns reflect generalization rather than architecture-specific tuning. Fig. 7 reinforces this trend: across all scales, SENTRY-enhanced models lie consistently above their baselines, with the widest margin appearing on SAMURAI and clear, steady gains even for SAM2 and DAM4SAM. Regardless of the starting tracker, SENTRY reliably nudges per-formance upward. SENTRY 25 T S B L
+
+66 
+
+68 
+
+70 
+
+72 
+
+74 
+
+76 
+
++0.56 
+
++2.57 
+
++1.14 +1.06 
+
++1.35 
+
++1.47 
+
++2.50 
+
++1.00 
+
++1.96 +0.87 
+
++1.17 
+
+Model Scale     
+
+> LaSOT AUC (%)
+> SAM2 SAMURAI DAM4SAM
+> SENTRY-S2 SENTRY-SR SENTRY-D4S
+
++1.65  
+
+> Fig. 7: Our proposed SENTRY performs favorably against SAM2-based variants across different model scales on LaSOT [23] benchmark.
+
+B Memory-Write Diagnostic Analysis 
+
+To directly test whether SENTRY reduces false-positive memory contamina-tion, we analyze annotation-available testing and validation splits at the fixed memory-update times used by each host tracker. For each written mask Wt,we compute st = J (Wt, G t) when mask annotations are available, and st =IoU( B(Wt), B t) for box-only annotations, where B(Wt) is the tight box around the written mask. We define false writes as st < 0.5 and severe writes as st < 0.2.The written FP/proxy area measures the admitted pixels outside the target mask or, for box-only datasets, outside the target box. Table 15 reports macro-averages over the host baselines used in the paper. SENTRY consistently reduces incorrect memory writes and written false-positive contamination. To connect memory quality to final tracking quality, we also decompose final predictions into overlap J/ IoU , false-positive and false-negative errors EFP and EFN , normalized center/scale errors, and boundary F-score FB. Because 1 − J = EFP + EFN , this decomposition separates gains from suppressing extra predicted regions from gains due to recovering missed target regions. The final-output decomposition indicates that the overlap gain is mainly associated with lower EFP , support-ing the interpretation that SENTRY improves tracking by admitting cleaner memory states rather than only improving per-frame localization. 
+
+C Recovery-After-Failure Diagnostic Analysis 
+
+SENTRY reduces drift through conservative memory admission, but it is not a global re-detector. After extremely long target absence and tiny reappearance, 26 M. Alansari, Y. Michael et al. 
+
+Table 15: Write diagnostics and final-output decomposition. False and severe memory writes are reported for tracking/VOS splits; written FP/proxy area measures admitted false-positive area under mask or box annotations.                                                    
+
+> Metric Host avg. +SENTRY avg. Change
+> False memory writes, Track/VOS ↓16.8 / 16.2 10.5 / 10.1 −37 .5/−37 .7rel. Severe memory writes, Track/VOS ↓5.1 / 4.8 2.5 / 2.3 −51 .0/−52 .1rel. Written FP/proxy area, Track/VOS ↓21.0 / 20.4 14.5 / 14.1 −31 .0/−30 .9rel. Final J/ IoU ↑72.0 73.6 +1.6 Final EFP /E FN ↓16.7 / 11.3 15.1 / 11.3 −9.6/0.0rel. Final Ectr /E scale ↓0.092 / 0.147 0.085 / 0.137 −7.6/−6.8rel. Final FB↑77.2 78.3 +1.1
+
+Table 16: Recovery-after-failure diagnostic. Recovery changes are in percentage points relative to each host baseline; delay change is in frames, where negative values indicate faster recovery. 
+
+Host ∆ Rec.@10 ↑ ∆ Rec.@20 ↑ ∆ Delay ↓
+
+SAM2-L +2.8 +2.7 −0.7
+
+SAMURAI-L +8.3 +7.6 −2.7
+
+DAM4SAM-L +2.7 +2.6 −0.8
+
+Average +4.6 +4.3 −1.4
+
+all methods may fail because no reliable candidate remains in the decoder, AMG, or motion-prior pool. However, SENTRY preserves the host update schedule and changes only the admitted mask; therefore, recovery remains possible whenever at least one plausible candidate is generated by the host decoder, the AMG pro-posal set, or the motion prior. To quantify this bounded recovery behavior, we evaluate recovery after a failure state. Given overlap Ot < 0.2, where Ot denotes mask overlap or box IoU depending on the available annotation, Rec @ K mea-sures whether the tracker returns to Ot′ ≥ 0.5 within K frames. Delay measures the number of frames until recovery among recovered cases; negative ∆Delay indicates faster recovery. Table 16 reports changes relative to the corresponding host baseline. SENTRY improves Recovery@10 and Recovery@20 and reduces recovery delay on all three hosts, supporting the bounded claim that conservative admission does not freeze memory, but helps recovery when plausible candidates exist. 
+
+D Generality Beyond SAM2-Based Trackers 
+
+Although the main evaluation focuses on SAM2-based trackers, SENTRY only requires a mask or probability output and access to the mask passed into the memory write. This allows the same refine-before-write admission principle to be applied to other memory-based trackers without changing their training proce-dure. Table 17 reports representative results on non-SAM memory trackers and additional SAM-family trackers. SENTRY consistently improves all five trackers across all five datasets, suggesting that the gains come from temporally verified memory writes rather than SAM2-specific internals. SENTRY 27 
+
+Table 17: Generality of SENTRY-style memory admission beyond the main SAM2-based evaluation. The same refine-before-write principle improves both non-SAM mem-ory trackers and additional SAM-family trackers across five datasets.                                                        
+
+> Method LaSOT LaSOT ext TNL2K TrackingNet GOT-10k Memory  STCN [17] 58.0 45.0 46.0 75.5 70.0 +SENTRY 58.7 (0.7 ↑)45.6 (0.6 ↑)46.8 (0.8 ↑)76.0 (0.5 ↑)70.5 (0.5 ↑)
+> XMem [16] 60.5 48.0 49.0 78.0 72.0 +SENTRY 61.4 (0.9 ↑)48.7 (0.7 ↑)49.9 (0.9 ↑)78.6 (0.6 ↑)72.8 (0.8 ↑)
+> Cutie [15] 63.3 51.5 52.0 80.5 74.0 +SENTRY 64.2 (0.9 ↑)52.2 (0.7 ↑)53.5 (1.5 ↑)80.9 (0.4 ↑)74.6 (0.6 ↑)
+> SAM  EfficientTAM-Ti/2 [65] 66.5 48.9 56.0 84.3 78.2 +SENTRY 68.7 (2.2 ↑)51.8 (2.9 ↑)57.0 (1.0 ↑)84.9 (0.6 ↑)78.5 (0.3 ↑)
+> SAM3 [9] 74.7 63.8 64.2 86.6 84.5 +SENTRY 75.8 (1.1 ↑)64.9 (1.1 ↑)65.4 (1.2 ↑)87.1 (0.5 ↑)85.2 (0.7 ↑)
+
+E Qualitative Results 
+
+Overall Performance. We compare SENTRY against three SAM2-based vari-ants, SAM2 [51], SAMURAI [71], and DAM4SAM [58], using the average AUC across four standard tracking benchmarks: LaSOT [23], LaSOT ext [22], TNL2K [60], and TrackingNet [47]. As shown in Fig. 1(b), SENTRY consistently outper-forms all baselines. In particular, SENTRY achieves AUC improvements of 0.9%, 2.7%, and 1.0% over SAM2, SAMURAI, and DAM4SAM, respectively. Notably, the separation between the bars is more pronounced in this figure, making the performance gap clearer. SENTRY on top of SAM2 performs almost similarly to SAMURAI, while SENTRY on top of SAMURAI shows better performance compared to DAM4SAM, further emphasizing the consistency of improvements across variants. 
+
+Tracking Result. Fig. 6 illustrates how SENTRY mitigates key failure modes of existing SAM2-based variants. Row 1: SAM2 loses identity after heavy oc-clusion due to ambiguous mask selection, whereas SENTRY-S2 disambiguates and refines the correct mask before memory writing. Row 2: under abrupt scene change, SAMURAI’s Kalman prior diverges, while SENTRY-SR restores iden-tity through neighbor-guided matching. Row 3: In an underwater scene with haze and distractors, DAM4SAM mis-selects background objects due to heuristic thresholds, while SENTRY-D4S chooses the candidate maintaining short-term trajectory coherence. Row 4: during an extremely long-term occlusion ( ≈100 frames), all methods, including SENTRY, fail to recover the target, highlighting that SENTRY is not a global re-detector for prolonged disappearance followed by tiny-object re-identification. However, because SENTRY preserves the host update schedule and changes only the admitted mask, it can still recover when a plausible decoder, AMG, or motion-prior candidate exists, as quantified in Table 16. 
+
+Attention Visualization. We further analyze model behavior through spatial attention maps. GradCAM [54] is applied to the decoder cross-attention layers of each SAM2-based baseline to derive pixel-level activations aligned with pre-dicted masks. Fig. 2 shows three challenging cases: occlusion, abrupt motion, and 28 M. Alansari, Y. Michael et al. 
+
+Table 18: Per-dataset comparison with SAM2Long on tracking benchmarks. All Avg. averages the nine tracking datasets. 
+
+Method LaSOT LaSOT ext TNL2K GOT-10k TrackingNet VOT20 VOT22 VOTS24 DiDi All Avg. FPS 
+
+SAM2Long-L 73.9 60.9 58.4 81.1 84.7 57.8 61.5 68.5 64.6 67.9 26.1 SENTRY-S2-L 70.2 57.0 57.9 81.1 85.7 69.0 70.1 66.9 66.0 69.3 32.8 
+
+SENTRY-SR-L 75.1 61.5 59.6 81.8 85.8 68.6 71.5 68.1 69.3 71.3 30.9 SENTRY-D4S-L 76.3 61.8 61.3 82.1 85.9 73.2 75.9 71.5 70.5 73.2 30.2 
+
+Table 19: Performance comparison on LaSOT [23], LaSOT ext [22], TNL2K [60], GOT-10k [28], and TrackingNet [47] datasets between SAM2 baselines and SENTRY. 
+
+Method LaSOT LaSOT ext TNL2K GOT-10k TrackingNet 
+
+S NP P S NP P S NP P AO SR 0.50 SR 0.75 S NP PSAM2-T 67.0 74.0 71.5 50.8 62.4 58.9 55.8 74.2 60.7 78.5 88.9 72.4 83.9 89.8 85.9 + SENTRY 67.6 ( 0.6 ↑) 74.7 ( 0.7 ↑) 71.7 ( 0.2 ↑) 51.3 ( 0.5 ↑) 63.3 ( 0.9 ↑) 59.1 ( 0.2 ↑) 57.0 ( 1.2 ↑) 75.6 ( 1.4 ↑) 62.4 ( 1.7 ↑) 78.8 ( 0.3 ↑) 89.3 ( 0.4 ↑) 73.2 ( 0.8 ↑) 84.2 ( 0.3 ↑) 90.0 ( 0.2 ↑) 86.0 ( 0.1 ↑)SAM2-S 66.3 73.4 71.0 54.9 68.2 64.6 56.4 75.6 61.9 78.3 87.9 73.0 84.4 90.4 86.9 + SENTRY 67.8 ( 1.5 ↑) 74.5 ( 1.1 ↑) 72.0 ( 1.0 ↑) 55.9 ( 1.0 ↑) 69.0 ( 0.8 ↑) 65.0 ( 0.4 ↑) 57.6 ( 1.2 ↑) 76.8 ( 1.2 ↑) 63.5 ( 1.6 ↑) 78.4 ( 0.1 ↑) 88.0 ( 0.1 ↑) 73.5 ( 0.5 ↑) 84.9 ( 0.5 ↑) 90.9 ( 0.5 ↑) 87.6 ( 0.7 ↑)SAM2-B 66.2 73.8 71.2 54.3 67.7 63.6 55.4 74.1 60.7 78.0 88.8 71.6 84.6 90.5 87.2 + SENTRY 67.2 ( 1.0 ↑) 74.2 ( 0.4 ↑) 71.5 ( 0.3 ↑) 55.0 ( 0.7 ↑) 68.2 ( 0.5 ↑) 64.5 ( 0.9 ↑) 56.7 ( 1.3 ↑) 75.5 ( 1.4 ↑) 62.4 ( 1.7 ↑) 78.1 ( 0.1 ↑) 88.9 ( 0.1 ↑) 71.9 ( 0.3 ↑) 85.0 ( 0.4 ↑) 91.0 ( 0.5 ↑) 87.9 ( 0.7 ↑)SAM2-L 68.5 76.1 73.6 56.8 71.1 67.0 56.7 75.4 62.5 80.8 91.3 75.5 85.3 91.3 88.2 + SENTRY 70.2 ( 1.7 ↑) 77.2 ( 1.1 ↑) 74.5 ( 0.9 ↑) 57.0 ( 0.2 ↑) 71.7 ( 0.6 ↑) 67.1 ( 0.1 ↑) 57.9 ( 1.2 ↑) 76.9 ( 1.5 ↑) 64.1 ( 1.6 ↑) 81.1 ( 0.3 ↑) 91.4 ( 0.1 ↑) 76.5 ( 1.0 ↑) 85.7 ( 0.4 ↑) 91.9 ( 0.6 ↑) 88.9 ( 0.7 ↑)SAMURAI-T 69.3 76.4 73.8 53.6 65.9 62.2 50.6 68.2 53.3 77.5 87.8 71.0 77.7 83.5 79.0 + SENTRY 71.9 ( 2.6 ↑) 78.5 ( 2.1 ↑) 75.7 ( 1.9 ↑) 55.6 ( 2.0 ↑) 66.5 ( 0.6 ↑) 64.3 ( 2.1 ↑) 59.3 ( 8.7 ↑) 78.2 ( 10.0 ↑) 65.0 ( 11.7 ↑) 79.6 ( 2.1 ↑) 90.4 ( 2.6 ↑) 73.4 ( 2.4 ↑) 84.1 ( 6.4 ↑) 89.4 ( 5.9 ↑) 85.3 ( 6.3 ↑)SAMURAI-S 70.0 77.6 75.2 56.5 69.8 66.3 45.7 61.5 46.7 76.7 86.4 71.0 77.9 83.4 79.2 + SENTRY 71.4 ( 1.4 ↑) 78.4 ( 0.8 ↑) 75.7 ( 0.5 ↑) 58.9 ( 2.4 ↑) 70.0 ( 0.2 ↑) 68.2 ( 1.9 ↑) 59.5 ( 13.8 ↑) 78.8 ( 17.3 ↑) 65.9 ( 19.2 ↑) 79.1 ( 2.4 ↑) 89.4 ( 3.0 ↑) 73.8 ( 2.8 ↑) 84.9 ( 7.0 ↑) 90.2 ( 6.8 ↑) 86.6 ( 7.4 ↑)SAMURAI-B 70.7 78.7 76.2 55.9 69.5 65.6 47.8 64.3 50.1 77.8 88.6 71.1 79.3 84.9 81.2 + SENTRY 73.2 ( 2.5 ↑) 80.5 ( 1.8 ↑) 77.9 ( 1.7 ↑) 58.3 ( 2.4 ↑) 70.7 ( 1.2 ↑) 68.7 ( 3.1 ↑) 59.6 ( 11.8 ↑) 79.0 ( 14.7 ↑) 66.0 ( 15.9 ↑) 79.9 ( 2.1 ↑) 90.9 ( 2.3 ↑) 73.5 ( 2.4 ↑) 85.1 ( 5.8 ↑) 90.4 ( 5.5 ↑) 86.9 ( 5.7 ↑)SAMURAI-L 74.2 82.7 80.2 59.5 74.1 70.8 50.6 67.5 54.2 81.6 91.8 76.8 82.4 88.2 85.0 + SENTRY 75.1 ( 0.9 ↑) 82.7 80.4 ( 0.2 ↑) 61.5 ( 2.0 ↑) 75.0 ( 0.9 ↑) 72.9 ( 2.1 ↑) 59.6 ( 9.0 ↑) 78.8 ( 11.3 ↑) 66.4 ( 12.2 ↑) 81.8 ( 0.2 ↑) 92.3 ( 0.5 ↑) 77.1 ( 0.3 ↑) 85.8 ( 3.4 ↑) 91.1 ( 2.9 ↑) 88.1 ( 3.1 ↑)DAM4SAM-T 72.4 80.2 77.7 57.4 70.6 67.6 59.4 79.0 65.5 78.3 89.3 72.3 83.9 89.7 85.3 + SENTRY 73.5 ( 1.1 ↑) 81.7 ( 1.5 ↑) 79.3 ( 1.6 ↑) 58.4 ( 1.0 ↑) 71.6 ( 1.0 ↑) 68.9 ( 1.3 ↑) 61.1 ( 1.7 ↑) 80.9 ( 1.9 ↑) 67.6 ( 2.1 ↑) 79.0 ( 0.7 ↑) 89.5 ( 0.2 ↑) 73.2 ( 0.9 ↑) 84.3 ( 0.4 ↑) 89.9 ( 0.2 ↑) 85.7 ( 0.4 ↑)DAM4SAM-S 72.6 80.5 78.1 59.2 73.2 70.2 59.4 79.3 65.8 74.0 82.0 66.4 77.2 79.5 74.8 + SENTRY 73.6 ( 1.0 ↑) 81.7 ( 1.2 ↑) 79.5 ( 1.4 ↑) 60.6 ( 1.4 ↑) 74.7 ( 1.5 ↑) 72.0 ( 1.8 ↑) 60.7 ( 1.3 ↑) 80.9 ( 1.6 ↑) 67.3 ( 1.5 ↑) 79.3 ( 5.3 ↑) 89.4 ( 7.4 ↑) 73.9 ( 7.5 ↑) 82.1 ( 4.9 ↑) 84.9 ( 5.4 ↑) 80.9 ( 6.1 ↑)DAM4SAM-B 73.2 81.3 79.0 57.1 70.6 66.5 58.4 78.1 64.6 78.9 89.3 72.3 84.7 90.5 86.7 + SENTRY 75.1 ( 1.9 ↑) 83.2 ( 1.9 ↑) 81.0 ( 2.0 ↑) 59.4 ( 2.3 ↑) 73.3 ( 2.7 ↑) 69.7 ( 3.2 ↑) 59.9 ( 1.5 ↑) 79.8 ( 1.7 ↑) 66.4 ( 1.8 ↑) 79.2 ( 0.3 ↑) 90.3 ( 1.0 ↑) 73.1 ( 0.8 ↑) 84.7 90.7 ( 0.2 ↑) 86.9 ( 0.2 ↑)DAM4SAM-L 75.1 83.3 81.1 60.7 75.3 72.2 59.8 79.8 66.8 81.3 91.4 77.2 85.3 90.9 87.4 + SENTRY 76.3 ( 1.2 ↑) 84.7 ( 1.4 ↑) 82.4 ( 1.3 ↑) 61.8 ( 1.1 ↑) 76.6 ( 1.3 ↑) 73.8 ( 1.6 ↑) 61.3 ( 1.5 ↑) 81.3 ( 1.5 ↑) 68.3 ( 1.5 ↑) 82.1 ( 0.8 ↑) 92.6 ( 1.2 ↑) 78.2 ( 1.0 ↑) 85.9 ( 0.6 ↑) 91.5 ( 0.6 ↑) 87.9 ( 0.5 ↑)
+
+distractor interference. SAM2 (Fig. 2(a)) loses identity once background regions dominate attention during occlusion. SAMURAI (Fig. 2(b)) improves short-term motion handling but drifts when its linear motion prior fails. DAM4SAM (Fig. 2(c)) suppresses isolated distractors yet becomes unstable in cluttered scenes. The final row depicts the same scenarios with SENTRY. Although SENTRY does not modify the decoder or memory architecture, its refine-before-write mechanism filters out temporally inconsistent masks through cycle-consistent reasoning. This results in cleaner, more target-focused memory updates, which in turn lead to sharper and more stable attention patterns during decoding. 
+
+F Comparison with SAM2Long 
+
+Table 18 compares SAM2Long-L with the large-model SENTRY variants across the bounding-box and VOT-style tracking benchmarks. We report SAM2Long-L as a standalone baseline because its constrained memory-tree inference over multiple branches is not a single-stream memory interface compatible with SEN-TRY’s pre-write admission rule. Across all datasets on average, all SENTRY variants outperform SAM2Long-L in both tracking score and FPS; SENTRY-D4S-L achieves the best overall tracking average, while SENTRY-S2-L achieves the highest FPS among the compared SENTRY variants. 
+
+G Additional quantitative results on box benchmarks 
+
+We report detailed quantitative comparisons between SAM2-based baselines and their SENTRY counterparts across five large-scale bounding box bench-SENTRY 29 
+
+marks, LaSOT [23], LaSOT ext [22], TNL2K [60], GOT-10k [28], and Track-ingNet [47], summarized in Table 19. A compact cross-benchmark comparison with SAM2Long-L is provided in Table 18. The following sections discuss results per dataset, highlighting where SENTRY contributes most and analyzing the causes behind these gains. 
+
+LaSOT [23]. is a large-scale benchmark for VOT, consisting of 1,400 video se-quences covering 70 object categories, each with 20 sequences (16 for training and 4 for testing). It provides diverse scenarios with substantial variations in appearance, scale, and motion, supporting both short-term and long-term eval-uation. Across all model scales, SENTRY consistently enhances SAM2-based trackers on LaSOT. The steady gains reflect improved temporal reliability dur-ing long, cluttered sequences where SAM2 often drifts after occlusion. SENTRY’s cycle-consistent refinement suppresses such error accumulation, yielding average improvements of around 1–2% in S for SAM2 and DAM4SAM, and up to 2.5% for SAMURAI. The largest benefit appears in small and base models, which lack strong motion priors. SENTRY-D4S-L achieves the highest overall Acc (S/NP/P = 76.3/84.7/82.4), surpassing its base by roughly 1% across all metrics. 
+
+LaSOT ext [22]. is an extension of the LaSOT [23] dataset, adding 150 addi-tional test sequences distributed across 15 novel object categories that are not included in the original training set. This extension increases the evaluation di-versity and challenges trackers to generalize to unseen categories. On LaSOT ext ,which emphasizes unseen object categories, SENTRY delivers consistent gains across all frameworks. Because this benchmark challenges cross-category gener-alization, temporal consistency becomes critical. SENTRY enhances SAM2 and DAM4SAM by roughly 0.5–1.5% in S, while SAMURAI benefits more strongly (around 2.0–2.5%) as the temporal validation compensates for its linear motion assumption. SENTRY-D4S-L achieves 61.8/76.6/73.8 on S/NP/P, the best over-all results among zero-shot methods, highlighting robust generalization to novel appearances. 
+
+TNL2K [60]. is a large-scale natural language guided tracking dataset compris-ing 2,000 video sequences with corresponding linguistic descriptions. The dataset is divided into 1,300 sequences for training and 700 for testing. Each sequence is paired with natural language annotations that specify the target object and its attributes, enabling joint evaluation of visual and language-based tracking. SENTRY produces its largest relative improvements on TNL2K, a dataset dom-inated by rapid motion and frequent occlusions. These conditions expose the weakness of confidence-based updates, making SENTRY’s temporal verification particularly effective. SAMURAI gains are dramatic, exceeding 10% on average in S and up to 19% in P, while SAM2 and DAM4SAM record consistent 1–2% lifts. SENTRY-SR variants exhibit the strongest jumps, confirming that validat-ing predictions over short trajectories substantially mitigates motion-induced drift. 
+
+GOT-10k [28]. is a large-scale generic object tracking dataset built upon the WordNet hierarchy, containing over 10,000 video sequences spanning more than 560 object classes and 87 motion patterns. The dataset includes 180 videos for 30 M. Alansari, Y. Michael et al. 
+
+testing, while the remaining sequences are used for training. GOT-10k enforces zero overlap between training and testing categories to ensure unbiased evalu-ation and robust generalization analysis of tracking algorithms. On GOT-10k, which evaluates generalization under unseen classes and fast-moving objects, SENTRY improves AO and SR across all scales. The improvement magnitude scales with model capacity; small models benefit most from the additional mo-tion regularization, while large models show incremental but stable gains (up to 1% AO). DAM4SAM-S shows the largest increase (5% AO, 7% SR 0.5 ), indicating that SENTRY’s refinement complements heuristic distractor filtering with tem-poral stability. Overall, these gains demonstrate more reliable mask propagation and localization under varying dynamics. 
+
+TrackingNet [47]. is a large-scale dataset designed for training and evaluating deep learning-based visual trackers. It consists of over 30,000 video sequences with dense annotations derived from real-world YouTube videos, providing di-verse object appearances, motions, and scene contexts. The dataset is divided into 511 sequences for testing, while the remaining videos are used for training. TrackingNet offers realistic and large-scale benchmarks for short-term tracking in unconstrained environments. TrackingNet features short, stable clips with dense annotations; thus, relative gains are smaller but consistent. SENTRY enhances SAM2 and DAM4SAM by roughly 0.5–0.7% across metrics, while SAMURAI benefits more notably (3–4%) due to refined motion consistency. The effect is most pronounced in NP/P, showing that SENTRY improves frame-level rank-ing and smoothness even when spatial noise is low. These results confirm that SENTRY’s temporal refinement improves stability and ranking precision, main-taining benefits even in high-quality short-term tracking scenarios. 
+
+Table 20: Attribute-wise AUC (%) comparison on LaSOT [23] dataset between SAM2 variants and our SENTRY variants. Method ARC BC CM DEF FM FOC IV LR MB OV POC ROT SV VC SAM2-L 0.673 0.643 0.69 0.708 0.585 0.594 0.631 0.595 0.678 0.616 0.679 0.673 0.68 0.611 + SENTRY 0.691 0.668 0.714 0.722 0.602 0.617 0.657 0.611 0.707 0.63 0.698 0.689 0.697 0.623                                                                                                   
+
+> % Gain +1.8% +2.5% +2.4% +1.4% +1.7% +2.3% +2.6% +1.6% +2.9% +1.4% +2% +1.6% +1.7% +1.2% SAMURAI-L 0.732 0.698 0.774 0.755 0.64 0.669 0.733 0.677 0.744 0.701 0.729 0.727 0.739 0.717 + SENTRY 0.742 0.704 0.783 0.766 0.643 0.677 0.734 0.687 0.751 0.71 0.735 0.74 0.748 0.722
+> % Gain +1% +0.6% +0.9% +1.1% +0.3% +0.8% +0.1% +1% +0.7% +0.9% +0.6% +1.3% +0.9% +0.5% DAM4SAM-L 0.74 0.694 0.789 0.75 0.688 0.688 0.743 0.692 0.763 0.709 0.735 0.726 0.748 0.759 + SENTRY 0.753 0.718 0.803 0.767 0.695 0.703 0.752 0.712 0.773 0.723 0.749 0.741 0.76 0.76
+> % Gain +1.3% +2.4% +1.4% +1.7% +0.7% +1.5% +0.9% +2% +1% +1.4% +1.4% +1.5% +1.2% +0.1%
+
+Table 21: Attribute-wise AUC (%) comparison on LaSOT ext [22] dataset between SAM2 variants and our SENTRY variants. Method ARC BC CM DEF FM FOC IV LR MB OV POC ROT SV VC SAM2-L 0.549 0.502 0.611 0.73 0.453 0.463 0.675 0.475 0.466 0.498 0.575 0.627 0.558 0.611 + SENTRY 0.551 0.506 0.624 0.731 0.454 0.466 0.68 0.478 0.473 0.499 0.576 0.632 0.559 0.611                                                                                                   
+
+> % Gain +0.2% +0.4% +1.3% +0.1% +0.1% +0.3% +0.5% +0.3% +0.7% +0.1% +0.1% +0.5% +0.1% 0% SAMURAI-L 0.577 0.533 0.754 0.751 0.513 0.513 0.679 0.521 0.491 0.515 0.588 0.623 0.586 0.671 + SENTRY 0.581 0.544 0.765 0.752 0.517 0.514 0.679 0.524 0.493 0.521 0.589 0.643 0.59 0.671
+> % Gain +0.4% +1.1% +1.1% +0.1% +0.4% +0.1% 0% +0.3% +0.2% +0.6% +0.1% +2% +0.4% 0% DAM4SAM-L 0.592 0.554 0.747 0.759 0.498 0.504 0.703 0.521 0.474 0.503 0.604 0.657 0.599 0.676 + SENTRY 0.605 0.572 0.761 0.759 0.514 0.521 0.703 0.536 0.494 0.521 0.616 0.675 0.611 0.683
+> % Gain +1.3% +1.8% +1.4% 0% +1.6% +1.7% 0% +1.5% +2% +1.8% +1.2% +1.8% +1.2% +0.7%
+
+SENTRY 31 
+
+Table 22: Attribute-wise AUC (%) comparison on TNL2K [60] dataset between SAM2 variants and our SENTRY variants. Method ARC BC CM DEF FM FOC IV LR MB OV POC ROT SV VC AS MS TC SAM2-L 0.607 0.567 0.568 0.602 0.594 0.451 0.613 0.369 0.528 0.409 0.531 0.607 0.533 0.542 0.672 0.151 0.304 + SENTRY 0.610 0.574 0.59 0.606 0.6 0.457 0.616 0.439 0.537 0.411 0.547 0.617 0.537 0.55 0.677 0.32 0.388 
+
+% Gain +0.3% +0.7% +2.2% +0.4% +0.6% +0.6% +0.3% +7% +0.9% +0.2% +1.6% +1% +0.4% +0.8% +0.5% +16.9% +8.4% SAMURAI-L 0.563 0.51 0.53 0.536 0.551 0.386 0.588 0.296 0.52 0.371 0.47 0.574 0.476 0.512 0.69 0.124 0.252 + SENTRY 0.647 0.596 0.626 0.63 0.628 0.48 0.647 0.467 0.58 0.454 0.572 0.639 0.577 0.573 0.697 0.325 0.389 
+
+% Gain +8.4% +8.6% +9.6% +9.4% +7.7% +9.4% +5.9% +17.1% +6% +10.2% +10.2% +6.5% +10.1% +6.1% +0.7% +20.1% +13.7% DAM4SAM-L 0.637 0.598 0.62 0.634 0.616 0.502 0.637 0.485 0.577 0.447 0.586 0.645 0.572 0.576 0.706 0.381 0.413 + SENTRY 0.646 0.608 0.627 0.641 0.62 0.515 0.639 0.489 0.578 0.46 0.593 0.651 0.581 0.587 0.707 0.391 0.429 
+
+% Gain +0.9% +1% +0.7% +0.7% +0.4% +1.3% +0.2% +0.4% +0.1% +1.3% +0.7% +0.6% +0.9% +1.1% +0.1% +1% +1.6% 
+
+Table 23: Performance comparison on VOT20-24 [31–33], and DiDi [58] datasets between SAM2 baselines and SENTRY. Method VOT20 VOT22 VOTS24 DiDi 
+
+Q Acc Rob Q Acc Rob Q Acc Rob Q Acc Rob 
+
+SAM2-T 62.1 72.3 93.2 62.3 72.4 93.4 62.8 75.6 77.9 60.5 70.2 84.9 + SENTRY 63.0 ( 0.9 ↑) 73.6 ( 1.3 ↑) 94.0 ( 0.8 ↑) 63.7 ( 1.4 ↑) 73.6 ( 1.2 ↑) 94.1 ( 0.7 ↑) 63.6 ( 0.8 ↑) 76.4 ( 0.8 ↑) 78.7 ( 0.8 ↑) 61.6 ( 1.1 ↑) 71.2 ( 1.0 ↑) 85.8 ( 0.9 ↑)SAM2-S 64.3 73.3 93.5 64.4 73.3 93.6 60.5 75.1 76.7 62.4 70.9 86.7 + SENTRY 65.2 ( 0.9 ↑) 74.4 ( 1.1 ↑) 94.4 ( 0.9 ↑) 65.3 ( 0.9 ↑) 74.4 ( 1.1 ↑) 94.4 ( 0.8 ↑) 61.2 ( 0.7 ↑) 76.8 ( 1.7 ↑) 77.3 ( 0.6 ↑) 63.6 ( 1.2 ↑) 72.0 ( 1.1 ↑) 87.8 ( 1.1 ↑)SAM2-B 64.4 73.8 93.4 64.0 73.7 93.2 62.8 77.0 76.2 63.6 72.0 87.0 + SENTRY 65.2 ( 0.8 ↑) 74.5 ( 0.7 ↑) 94.3 ( 0.9 ↑) 64.7 ( 0.7 ↑) 74.4 ( 0.7 ↑) 93.9 ( 0.7 ↑) 63.4 ( 0.6 ↑) 77.6 ( 0.6 ↑) 76.8 ( 0.6 ↑) 64.7 ( 1.1 ↑) 73.0 ( 1.0 ↑) 88.3 ( 1.3 ↑)SAM2-L 68.1 77.8 94.1 69.2 77.9 94.6 66.1 79.1 79.0 64.7 72.3 87.7 + SENTRY 68.8 ( 0.7 ↑) 78.3 ( 0.5 ↑) 94.7 ( 0.6 ↑) 70.1 ( 0.9 ↑) 78.7 ( 0.8 ↑) 95.3 ( 0.7 ↑) 66.9 ( 0.8 ↑) 79.3 ( 0.2 ↑) 79.5 ( 0.5 ↑) 66.0 ( 1.3 ↑) 73.4 ( 1.1 ↑) 89.2 ( 1.5 ↑)SAMURAI-T 63.3 72.5 93.2 63.7 73.0 93.9 63.9 75.1 83.7 62.7 68.1 89.9 + SENTRY 64.5 ( 1.2 ↑) 73.6 ( 1.1 ↑) 94.8 ( 1.6 ↑) 65.0 ( 1.3 ↑) 73.5 ( 0.5 ↑) 95.1 ( 1.2 ↑) 65.0 ( 1.1 ↑) 75.7 ( 0.6 ↑) 84.2 ( 0.5 ↑) 63.5 ( 0.8 ↑) 69.0 ( 0.9 ↑) 90.8 ( 0.9 ↑)SAMURAI-S 65.1 71.2 94.2 65.3 72.4 94.9 64.5 75.2 83.3 64.6 70.1 90.6 + SENTRY 66.7 ( 1.6 ↑) 73.8 ( 2.6 ↑) 95.8 ( 1.6 ↑) 67.9 ( 2.6 ↑) 73.8 ( 1.4 ↑) 96.3 ( 1.4 ↑) 65.7 ( 1.2 ↑) 76.0 ( 0.8 ↑) 83.8 ( 0.5 ↑) 65.3 ( 0.7 ↑) 70.9 ( 0.8 ↑) 91.4 ( 0.8 ↑)SAMURAI-B 66.4 73.2 95.0 66.8 73.8 95.3 64.6 75.5 83.3 67.1 71.5 93.0 + SENTRY 68.5 ( 2.1 ↑) 74.5 ( 1.3 ↑) 96.3 ( 1.3 ↑) 69.4 ( 2.6 ↑) 74.5 ( 0.7 ↑) 96.6 ( 1.3 ↑) 65.7 ( 1.1 ↑) 76.7 ( 1.2 ↑) 83.7 ( 0.4 ↑) 67.8 ( 0.7 ↑) 72.0 ( 0.5 ↑) 94.1 ( 0.9 ↑)SAMURAI-L 67.4 74.1 94.2 69.3 74.4 95.1 67.3 77.6 85.1 67.0 71.4 92.3 + SENTRY 68.6 ( 1.2 ↑) 77.5 ( 3.4 ↑) 94.7 ( 0.5 ↑) 71.5 ( 2.1 ↑) 77.5 ( 3.4 ↑) 95.7 ( 0.6 ↑) 68.1 ( 0.8 ↑) 78.2 ( 0.6 ↑) 85.6 ( 0.5 ↑) 68.5 ( 1.5 ↑) 72.9 ( 1.5 ↑) 93.9 ( 1.6 ↑)DAM4SAM-T 67.0 73.7 96.1 68.1 73.9 96.4 65.3 75.3 84.2 63.2 69.3 89.8 + SENTRY 67.4 ( 0.4 ↑) 74.0 ( 0.3 ↑) 96.4 ( 0.3 ↑) 68.9 ( 0.8 ↑) 74.3 ( 0.4 ↑) 96.8 ( 0.4 ↑) 65.7 ( 0.4 ↑) 75.4 ( 0.1 ↑) 84.5 ( 0.3 ↑) 64.1 ( 0.9 ↑) 69.8 ( 0.5 ↑) 90.5 ( 0.7 ↑)DAM4SAM-S 54.9 73.3 87.3 55.6 73.2 88.4 59.3 65.6 84.9 66.3 71.0 92.3 + SENTRY 55.5 ( 0.6 ↑) 73.8 ( 0.5 ↑) 87.7 ( 0.4 ↑) 56.1 ( 0.5 ↑) 73.6 ( 0.4 ↑) 88.9 ( 0.5 ↑) 59.8 ( 0.5 ↑) 65.9 ( 0.3 ↑) 85.3 ( 0.4 ↑) 66.8 ( 0.5 ↑) 71.6 ( 0.6 ↑) 92.9 ( 0.6 ↑)DAM4SAM-B 70.1 74.5 96.5 70.4 74.4 96.4 68.3 77.0 86.5 66.4 70.8 93.1 + SENTRY 70.7 ( 0.6 ↑) 75.0 ( 0.5 ↑) 97.1 ( 0.6 ↑) 71.0 (0.6 ↑) 75.0 ( 0.6 ↑) 97.0 ( 0.6 ↑) 68.8 ( 0.5 ↑) 77.2 ( 0.2 ↑) 86.9 ( 0.4 ↑) 67.2 ( 0.8 ↑) 71.4 ( 0.6 ↑) 93.7 ( 0.6 ↑)DAM4SAM-L 72.3 79.6 96.1 75.0 79.7 97.1 71.1 79.3 86.4 69.4 72.7 94.4 + SENTRY 72.8 ( 0.5 ↑) 80.1 ( 0.5 ↑) 96.6 ( 0.5 ↑) 75.6 ( 0.6 ↑) 80.3 ( 0.6 ↑) 97.6 ( 0.5 ↑) 71.5 ( 0.4 ↑) 79.4 ( 0.1 ↑) 86.7 ( 0.3 ↑) 70.2 ( 0.8 ↑) 73.3 ( 0.6 ↑) 95.1 ( 0.7 ↑)
+
+Attribute-Wise Performance Analysis. We analyze how SENTRY affects specific failure modes on LaSOT, LaSOT ext , and TNL2K; full results appear in Tables 20-22. Across all bases, the refine-before-write step primarily helps when instantaneous confidence is unreliable, e.g., under MB, occlusion, LR, or dis-tractor pressure, by validating predictions over short trajectories before memory updates. 
+
+– LaSOT. On long, cluttered sequences, SENTRY yields consistent gains for all three bases (Table 20). The largest improvements for SAM2-L →SENTRY-S2-L occur on MB, IV, BC, and FOC, aligning with cases where greedy updates often corrupt memory after a few uncertain frames. DAM4SAM-L→SENTRY-D4S-L shows notable boosts on BC and LR, indicating that temporal verification complements distractor-aware heuristics by rejecting look-alike false positives that briefly spike in confidence. SAMURAI-L →SENTRY-SR-L sees modest but widespread lifts; when the Kalman prior is approxi-mately correct, SENTRY reduces overconfident writes on partial occlusions and rotations, smoothing recovery. 
+
+– LaSOT ext . With unseen categories (Table 21), appearance priors are less predictive, and temporal consistency becomes the dominant cue. SENTRY-S2-L improves coherence on category-shifted attributes such as CM and ROT, while SENTRY-SR-L benefits attributes that couple viewpoint and partial occlusion (e.g., ROT, OV), where linear motion extrapolation is brit-32 M. Alansari, Y. Michael et al. 
+
+tle. The largest, more uniform gains appear for SENTRY-D4S-L across BC, OV, FM, and ROT, showing that refine-before-write reliably filters ambigu-ous frames even when distractor-aware memory is already in place. 
+
+– TNL2K. TNL2K stresses rapid, non-linear motion and frequent occlusions (Table 22). Here, the impact is most pronounced: SAMURAI-L →SENTRY-SR-L records the biggest jumps on MS and TC, precisely where linear priors drift; SENTRY’s cycle-consistent, neighbor-aware validation restores trajectory continuity before writing to memory. SENTRY-S2-L notably im-proves LR and MB, frames where single-step confidence is misleading, while SENTRY-D4S-L posts steady, smaller gains across most attributes, indicat-ing reduced false updates in distractor-heavy scenes. Overall, the pattern matches the design: the harder the temporal instability and the weaker the per-frame certainty, the larger the benefit from refine-before-write. 
+
+H Additional quantitative results on VOT benchmarks 
+
+We further evaluate SENTRY on four tracking benchmarks, VOT20, VOT22, VOTS24, and DiDi, summarized in Table 23. Table 18 also reports the corre-sponding comparison with SAM2Long-L on these VOT-style benchmarks. These datasets emphasize rapid motion, occlusion recovery, and reinitialization accu-racy. Hence, they serve as strong tests for SENTRY’s temporal verification, where we expect improvements in overall quality ( Q), Accuracy ( Acc ), and Robustness (Rob ), particularly under fast or discontinuous trajectories. 
+
+VOT20. [32] is a short-term VOT benchmark comprising 60 sequences with diverse challenges, including appearance variation, occlusion, and rapid motion. Each frame is annotated with pixel-accurate segmentation masks used for ini-tialization and evaluation. SENTRY delivers consistent improvements across all trackers and scales on VOT20. This dataset features moderate motion and fre-quent partial occlusions, conditions under which SAM2’s confidence-based up-dates occasionally overwrite valid states. SENTRY’s refine-before-write strat-egy stabilizes memory updates, yielding average gains of around 1% in Q and 
+
+Acc , and up to 1.5% in Rob . The largest benefit is observed for SAMURAI and DAM4SAM, whose motion priors are enhanced by SENTRY’s validation mech-anism, resulting in smoother recovery after short-term occlusions. 
+
+VOT22. [31] is a short-term VOT benchmark comprising 60 re-annotated se-quences that encompass a broader range of targets and scene dynamics, including heavy occlusions, distractors, and abrupt appearance changes. Improvements are typically between 1 and 2% in Q and Acc , reflecting better spatial align-ment and consistency under motion noise. SAMURAI-L gains the most (2.1% 
+
+Q, 3.4% Acc ), showing that temporal verification complements learned motion priors by filtering unreliable intermediate updates. These results confirm SEN-TRY’s robustness when frame-to-frame appearance changes are significant but not extreme. 
+
+VOTS24. [33] is a multi-object tracking and segmentation benchmark compris-ing 144 sequences captured within a shared scene. It introduces a unified eval-uation protocol that jointly assesses short-term, long-term, single-target, and SENTRY 33 
+
+multi-target tracking within a single framework. Ground-truth annotations are sequestered on an evaluation server, ensuring unbiased, blind benchmarking. Owing to its scale, diversity, and unified evaluation design, VOTS24 is widely regarded as the most challenging and comprehensive tracking benchmark to date. VOTS24 presents the most challenging short-term sequences, including abrupt displacements and heavy occlusion. Here, SENTRY provides a clear ad-vantage, improving both Q and Acc for all frameworks, especially SAMURAI and DAM4SAM, where the baseline memory tends to overfit local motion cues. Gains reach up to 2% in Q and 1.5% in Acc for larger models, while Rob also improves by 0.5–1.0%. The results highlight SENTRY’s ability to maintain trajectory con-tinuity under high temporal instability, confirming the benefit of validation-based memory control. 
+
+DiDi. Distractor-Distilled (DiDi) dataset proposed by Videnović et al. [58], which focuses specifically on sequences containing visually similar distractors. A sequence is labeled as “non-negligible distractor” if a distractor occupies a substantial region with high visual similarity to the target. This benchmark isolates the distractor interference problem, making it a rigorous test for assess-ing memory reliability and temporal discrimination. On the DiDi benchmark, which targets complex driving scenarios with frequent occlusions and motion blur, SENTRY again demonstrates consistent improvements. All methods see 1–1.5% increases in Q and Acc , with marginal Rob gains. The enhancement is most pronounced for SAM2-L and DAM4SAM-L, indicating that larger models benefit from SENTRY’s selective updates by avoiding confidence-driven drift in visually ambiguous frames. 
+
+Table 24: Performance comparison on LaSOT [23], LaSOT ext [22], TNL2K [60], GOT-10k [28], and TrackingNet [47] datasets between SAM2 baselines and SENTRY. Method LaSOT LaSOT ext TNL2K GOT-10k TrackingNet                                                                                                                                               
+
+> SNP PSNP PSNP PAO SR 0.50 SR 0.75 SNP PSAMITE-T 72.8 80.6 78.3 56.0 68.2 64.8 60.4 79.6 66.3 79.4 89.8 73.4 84.4 89.9 85.6 + SENTRY 73.7 ( 0.9 ↑) 81.0 ( 0.4 ↑) 78.7 ( 0.4 ↑) 57.1 ( 1.1 ↑) 69.1 ( 0.9 ↑) 65.1 ( 0.3 ↑) 61.2 ( 0.8 ↑) 80.3 ( 0.7 ↑) 66.9 ( 0.6 ↑) 79.7 ( 0.3 ↑) 90.3 ( 0.5 ↑) 73.9 ( 0.5 ↑) 85.1 ( 0.7 ↑) 90.2 ( 0.3 ↑) 85.9 ( 0.3 ↑)SAMITE-S 73.0 81.3 79.2 58.3 71.9 68.6 61.0 80.7 67.3 79.4 89.2 73.6 85.1 90.4 86.7 + SENTRY 74.6 ( 1.6 ↑) 82.1 ( 0.8 ↑) 79.7 ( 0.5 ↑) 59.2 ( 0.9 ↑) 72.1 ( 0.2 ↑) 68.9 ( 0.3 ↑) 61.8 ( 0.8 ↑) 81.3 ( 0.6 ↑) 68.1 ( 0.8 ↑) 79.8 ( 0.4 ↑) 90.0 ( 0.8 ↑) 73.7 ( 0.1 ↑) 85.5 ( 0.4 ↑) 90.7 ( 0.3 ↑) 87.0 ( 0.3 ↑)SAMITE-B 74.9 83.4 81.4 60.7 73.1 71.2 60.7 80.2 67.2 78.9 89.9 72.5 85.2 90.5 86.9 + SENTRY 75.7 ( 0.8 ↑) 83.6 ( 0.2 ↑) 81.7 ( 0.3 ↑) 61.7 ( 1.0 ↑) 73.2 ( 0.1 ↑) 71.4 ( 0.2 ↑) 61.9 ( 1.2 ↑) 81.0 ( 0.8 ↑) 68.3 ( 1.1 ↑) 79.3 ( 0.4 ↑) 90.3 ( 0.4 ↑) 73.4 ( 0.9 ↑) 85.4 ( 0.2 ↑) 90.8 ( 0.3 ↑) 87.2 ( 0.3 ↑)SAMITE-L 74.7 83.3 81.1 60.5 75.4 72.0 61.7 81.3 68.2 80.3 90.1 75.4 85.7 91.1 87.9 + SENTRY 75.6 ( 0.9 ↑) 83.4 ( 0.1 ↑) 81.3 ( 0.2 ↑) 61.1 ( 0.6 ↑) 75.5 ( 0.1 ↑) 72.3 ( 0.3 ↑) 62.6 ( 0.9 ↑) 82.4 ( 1.1 ↑) 69.4 ( 1.2 ↑) 80.5 ( 0.2 ↑) 90.4 ( 0.3 ↑) 75.6 ( 0.2 ↑) 85.9 ( 0.2 ↑) 91.3 ( 0.2 ↑) 88.1 ( 0.2 ↑)HiM2SAM-T 72.4 80.3 78.0 57.0 69.5 66.5 59.9 78.6 65.3 76.7 87.3 70.6 84.7 89.8 86.0 + SENTRY 73.2 ( 0.8 ↑) 80.8 ( 0.5 ↑) 78.7 ( 0.7 ↑) 58.2 ( 1.2 ↑) 70.4 ( 0.9 ↑) 67.2 ( 0.7 ↑) 60.5 ( 0.6 ↑) 79.3 ( 0.7 ↑) 66.0 ( 0.7 ↑) 78.8 ( 2.1 ↑) 89.2 ( 1.9 ↑) 72.7 ( 2.1 ↑) 85.1 ( 0.4 ↑) 90.1 ( 0.3 ↑) 86.3 ( 0.3 ↑)HiM2SAM-S 73.1 81.0 78.8 58.7 72.1 68.9 59.7 78.9 65.6 74.3 83.5 69.1 85.0 90.2 86.6 + SENTRY 73.8 ( 0.7 ↑) 81.5 ( 0.5 ↑) 79.5 ( 0.7 ↑) 59.9 ( 1.2 ↑) 73.0 ( 0.9 ↑) 69.7 ( 0.8 ↑) 61.2 ( 1.5 ↑) 80.5 ( 1.6 ↑) 67.6 ( 2.1 ↑) 77.4 ( 3.1 ↑) 86.3 ( 2.8 ↑) 72.2 ( 3.1 ↑) 85.5 ( 0.5 ↑) 90.7 ( 0.5 ↑) 87.0 ( 0.4 ↑)HiM2SAM-B 73.4 81.7 79.5 57.7 71.4 67.9 60.6 79.9 67.0 74.8 85.2 68.6 85.4 90.8 87.3 + SENTRY 74.1 ( 0.7 ↑) 82.3 ( 0.6 ↑) 80.3 ( 0.8 ↑) 58.3 ( 0.6 ↑) 71.6 ( 0.2 ↑) 68.3 ( 0.4 ↑) 60.9 ( 0.3 ↑) 80.3 ( 0.4 ↑) 67.2 ( 0.2 ↑) 78.1 ( 3.3 ↑) 88.6 ( 3.4 ↑) 71.9 ( 3.3 ↑) 85.7 ( 0.3 ↑) 91.2 ( 0.4 ↑) 87.8 ( 0.5 ↑)HiM2SAM-L 75.1 83.2 81.0 61.3 75.7 72.8 60.4 79.5 66.7 74.2 83.5 69.3 85.8 91.0 87.9 + SENTRY 75.8 ( 0.7 ↑) 83.8 ( 0.6 ↑) 81.7 ( 0.7 ↑) 62.1 ( 0.8 ↑) 76.3 ( 0.6 ↑) 73.5 ( 0.7 ↑) 61.1 ( 0.7 ↑) 80.1 ( 0.6 ↑) 67.6 ( 0.9 ↑) 77.0 ( 2.8 ↑) 86.0 ( 2.5 ↑) 72.2 ( 2.9 ↑) 85.9 ( 0.1 ↑) 91.4 ( 0.4 ↑) 88.3 ( 0.4 ↑)
+
+I Additional VOS Benchmark Results 
+
+We additionally evaluate SENTRY on video object segmentation (VOS) bench-marks under the first-frame-mask protocol, where the target mask is provided in the first frame and propagated through the remaining frames without additional prompts. We report results on SA-V val [51], SA-V test [51], LVOS v1 [26], LVOS v2 [27], and MOSE [20]. Table 25 compares large-model host trackers and their 34 M. Alansari, Y. Michael et al. 
+
+Table 25: VOS per-dataset comparison under the first-frame-mask protocol. Avg. averages SA-V val, SA-V test, LVOS v1, LVOS v2, and MOSE. Gain is measured relative to each host baseline; SAM2Long-L is reported as a standalone baseline.                                                                                     
+
+> Method SA-V val SA-V test LVOS v1 LVOS v2 MOSE Avg. Gain
+> SAM2-L 78.6 79.6 80.2 84.1 74.5 79.4 –SAM2Long-L 81.1 81.2 83.4 85.9 75.2 81.4 –SAMURAI-L 79.5 80.2 82.1 84.8 76.0 80.5 –DAM4SAM-L 80.5 81.0 82.8 85.5 76.7 81.3 –SAMITE-L 80.8 81.3 83.2 85.8 76.8 81.6 –HiM2SAM-L 81.0 81.5 83.5 86.1 77.0 81.8 –SENTRY-S2-L 79.4 80.1 81.5 84.9 75.8 80.3 +0.9 SENTRY-SR-L 80.6 81.0 83.1 85.5 77.2 81.5 +1.0 SENTRY-D4S-L 81.8 82.2 84.1 86.4 78.4 82.6 +1.3 SENTRY-SA-L 82.1 82.5 84.5 86.7 78.6 82.9 +1.3 SENTRY-HiM-L 82.4 82.8 84.9 87.0 79.0 83.2 +1.4
+
+SENTRY variants; SAM2Long-L is included as a standalone reference, consistent with Appendix F. SENTRY improves every host baseline, with SENTRY-HiM-L achieving the largest average score among the compared variants. These results show that refine-before-write memory admission also benefits mask-propagation evaluation, complementing the bounding-box and VOT tracking results. 
+
+J Runtime and Memory Overhead 
+
+We report the cross-host runtime and memory trade-off on an NVIDIA A100 GPU in Table 26. SENTRY adds a small memory footprint because it only maintains temporary candidate masks and short-horizon consistency checks be-fore the memory write. Across compatible large-model hosts, SENTRY intro-duces a 16.6–25.5% FPS drop and 0.4–0.6 GB additional VRAM, while the main SAM2/SAMURAI/DAM4SAM variants remain real-time at 30.2–32.8 FPS. SAM2Long-L is included as a standalone reference because SENTRY is not applied to its constrained memory-tree inference. 
+
+Table 26: Cross-host FPS and peak VRAM trade-off on NVIDIA A100. SAM2Long-L is reported as a standalone reference because no SENTRY plug-in variant is used for its memory-tree inference. Avg. Gain denotes the average tracking-score improvement of the corresponding SENTRY variant over its host.                                           
+
+> Method Base FPS +SENTRY FPS FPS Drop Base VRAM (GB) +SENTRY VRAM (GB) Avg. Gain
+> SAM2-L 44.0 32.8 25.5% 5.1 5.7 +0.83 SAM2Long-L 26.1 n/a n/a 5.3 n/a n/a SAMURAI-L 40.6 30.9 24.0% 5.2 5.7 +1.82 DAM4SAM-L 39.4 30.2 23.4% 5.2 5.7 +0.94 SAMITE-L 25.3 21.1 16.6% 5.7 6.2 +0.53 HiM2SAM-L 29.2 23.8 18.5% 5.6 6.0 +0.71
+
+SENTRY 35 
+
+K Extended evaluations on additional SAM2-based frameworks 
+
+K.1 Bounding box benchmarks 
+
+All results for the two additional SAM2-based variants, SAMITE [66] and HiM2SAM [10], on the bounding box benchmarks are provided in Table 24. 
+
+LaSOT [23]. SENTRY produces consistent improvements on LaSOT, indicat-ing that refine-before-write temporal selection effectively mitigates short-horizon drift in long-term scenarios. For the SAMITE models, SENTRY yields gains of 0.9-1.6 in S and smaller but steady increases in NP and P, with the largest im-provement observed on SAMITE-S. HiM2SAM variants follow the same trend, achieving 0.7–0.8 higher S and up to 0.8 higher P, with HiM2SAM-L obtaining the strongest overall performance. Because these gains appear uniformly across model sizes and architectures, including those that already incorporate enhanced temporal cues, the results suggest that SENTRY complements rather than over-laps with existing mechanisms, providing a lightweight and architecture-agnostic means to suppress identity drift on long, challenging sequences. 
+
+LaSOT ext [22]. SENTRY again provides consistent gains over all SAM2-based baselines despite the dataset’s increased object diversity and more challeng-ing appearance variation. For the SAMITE models, SENTRY improves S by 0.6–1.1 points and yields steady increases in NP and P, with SAMITE-T show-ing the largest relative boost. HiM2SAM variants exhibit the same trend, with S improvements of 0.6–1.2 and corresponding gains in both P metrics. No-tably, HiM2SAM-L reaches the strongest overall performance after integration with SENTRY. The uniformity of these improvements across model scales and architectures indicates that SENTRY’s refine-before-write mechanism consis-tently reduces identity errors under the higher visual ambiguity characteristic of LaSOT ext , and does so without relying on model capacity or architectural modifications. 
+
+Table 27: Performance comparison on VOT20-24 [31–33], and DiDi [58] datasets between SAM2 baselines and SENTRY. Method VOT20 VOT22 VOTS24 DiDi                                                                                                                    
+
+> QAcc Rob QAcc Rob QAcc Rob QAcc Rob
+> SAMITE-T 66.4 73.5 96.3 67.5 73.2 96.4 64.1 74.3 83.4 65.7 70.4 91.9 + SENTRY 67.0 ( 0.6 ↑) 73.6 ( 0.1 ↑) 96.5 ( 0.2 ↑) 68.9 ( 1.4 ↑) 73.4 ( 0.2 ↑) 97.0 ( 0.6 ↑) 64.6 ( 0.5 ↑) 74.6 ( 0.3 ↑) 83.8 ( 0.4 ↑) 66.0 ( 0.3 ↑) 70.6 ( 0.2 ↑) 92.2 ( 0.3 ↑)SAMITE-S 66.4 74.6 95.9 67.4 74.5 96.0 66.2 76.1 85.3 66.4 71.1 91.8 + SENTRY 67.1 ( 0.7 ↑) 74.9 ( 0.3 ↑) 96.4 ( 0.5 ↑) 67.7 ( 0.3 ↑) 74.6 ( 0.1 ↑) 96.1 ( 0.1 ↑) 66.5 ( 0.3 ↑) 76.3 ( 0.2 ↑) 85.5 ( 0.2 ↑) 66.8 ( 0.4 ↑) 71.4 ( 0.3 ↑) 92.1 ( 0.3 ↑)SAMITE-B 69.4 75.9 96.2 69.4 75.9 96.1 67.7 76.8 86.0 69.4 72.8 94.8 + SENTRY 70.1 ( 0.7 ↑) 76.5 ( 0.6 ↑) 96.4 ( 0.2 ↑) 70.2 ( 0.8 ↑) 76.6 ( 0.7 ↑) 96.7 ( 0.6 ↑) 68.1 ( 0.4 ↑) 77.1 ( 0.3 ↑) 86.4 ( 0.4 ↑) 69.9 ( 0.5 ↑) 73.2 ( 0.4 ↑) 95.3 ( 0.5 ↑)SAMITE-L 70.4 78.6 95.1 72.5 78.5 95.8 68.6 77.5 86.9 68.4 72.3 93.6 + SENTRY 70.9 ( 0.5 ↑) 78.8 ( 0.2 ↑) 95.4 ( 0.3 ↑) 73.1 ( 0.6 ↑) 78.6 ( 0.1 ↑) 96.2 ( 0.4 ↑) 69.2 ( 0.6 ↑) 77.0 ( 0.5 ↑) 87.5 ( 0.6 ↑) 68.7 ( 0.3 ↑) 72.5 ( 0.2 ↑) 93.8 ( 0.2 ↑)HiM2SAM-T 60.7 73.5 93.3 62.4 73.7 94.3 66.0 75.1 85.0 63.3 68.7 89.9 + SENTRY 61.2 ( 0.5 ↑) 73.7 ( 0.2 ↑) 93.8 ( 0.5 ↑) 62.6 ( 0.2 ↑) 73.9 ( 0.2 ↑) 94.6 ( 0.3 ↑) 66.4 ( 0.4 ↑) 75.4 ( 0.3 ↑) 85.3 ( 0.3 ↑) 63.7 ( 0.4 ↑) 69.1 ( 0.4 ↑) 90.2 ( 0.3 ↑)HiM2SAM-S 61.4 74.9 92.8 63.1 75.1 93.8 65.2 74.8 83.1 63.3 69.1 89.9 + SENTRY 61.9 ( 0.5 ↑) 75.1 ( 0.2 ↑) 92.9 ( 0.1 ↑) 63.5 ( 0.4 ↑) 75.2 ( 0.1 ↑) 93.9 ( 0.1 ↑) 65.5 ( 0.3 ↑) 75.1 ( 0.3 ↑) 83.5 ( 0.4 ↑) 63.7 ( 0.4 ↑) 69.3 ( 0.2 ↑) 90.2 ( 0.3 ↑)HiM2SAM-B 61.0 75.0 91.7 63.5 75.1 93.8 67.4 76.7 86.6 68.1 71.1 94.6 + SENTRY 61.4 ( 0.4 ↑) 75.4 ( 0.4 ↑) 91.8 ( 0.1 ↑) 63.7 ( 0.2 ↑) 75.2 ( 0.1 ↑) 93.9 ( 0.1 ↑) 67.8 ( 0.4 ↑) 77.0 ( 0.3 ↑) 87.0 ( 0.4 ↑) 68.5 ( 0.4 ↑) 71.7 ( 0.6 ↑) 95.0 ( 0.4 ↑)HiM2SAM-L 61.6 79.1 90.1 61.3 78.5 90.0 66.2 76.1 84.2 67.0 71.2 91.9 + SENTRY 61.9 ( 0.3 ↑) 79.5 ( 0.4 ↑) 90.4 ( 0.3 ↑) 61.5 ( 0.2 ↑) 78.8 ( 0.3 ↑) 90.2 ( 0.2 ↑) 66.7 ( 0.5 ↑) 76.4 ( 0.3 ↑) 84.6 ( 0.4 ↑) 67.3 ( 0.3 ↑) 71.6 ( 0.4 ↑) 92.2 ( 0.3 ↑)
+
+TNL2K [60]. SENTRY provides consistent improvements across all SAM2-based trackers despite the dataset’s strong emphasis on natural-language-guided 36 M. Alansari, Y. Michael et al. 
+
+targets and frequent appearance–motion discrepancies. SAMITE models gain 0.8–1.2 S and 0.6–1.1 NP, while P increases by up to 1.2, with the largest gains appearing on SAMITE-B. HiM2SAM variants exhibit similar behavior, achieving improvements of 0.3–1.5 in S and up to 2.1 in P, with HiM2SAM-S showing the strongest relative boost. These results indicate that SENTRY’s short-horizon temporal reasoning is effective even when language-conditioned proposals in-troduce additional ambiguity, thereby reinforcing its role as a complementary identity-stabilization module that is independent of the underlying architecture. 
+
+GOT-10k [28]. SENTRY brings consistent gains to both SAMITE and HiM2SAM families across all model scales. For SAMITE, SENTRY yields small but steady improvements on top of already strong baselines: AO increases by 0.2–0.4 points (e.g., from 79.4 to 79.8 for SAMITE-S and from 80.3 to 80.5 for SAMITE-L), while SR 0.50 and SR 0.75 improve by up to 0.8 and 0.9 points, respectively (SAMITE-B rises from 72.5 to 73.4 SR 0.75 ). In contrast, HiM2SAM benefits more substantially from SENTRY’s refine-before-write mechanism: AO gains range from 2.1 to 3.3, and SR 0.75 improves by 2.1–3.3 across T/S/B/L variants (e.g., HiM2SAM-B improves from 74.8/85.2/68.6 to 78.1/88.6/71.9 in AO/SR 0.50 /SR 0.75 ). These results indicate that while SENTRY still provides measurable robustness even for the more stable SAMITE trackers, its temporal-consistency filtering is especially beneficial for mitigating hallucinations and drift in the more aggressive HiM2SAM designs on this large-scale, open-set benchmark. 
+
+TrackingNet [47]. SENTRY yields consistent gains for both SAMITE and HiM2SAM across all model scales. For SAMITE, inserting SENTRY into the T/S/B/L variants improves success from 84.4/85.1/85.2/85.7 to 85.1/85.5/85.4/85.9, corresponding to +0.2–0.7 absolute S, while normalized precision and precision increase by 0.2–0.3 points across the board (e.g., SAMITE-T from 89.9/85.6 to 90.2/85.9, SAMITE-L from 91.1/87.9 to 91.3/88.1). HiM2SAM shows a similarly stable trend: SENTRY improves S by 0.1–0.5 points and NP/P by 0.3–0.5 points on all T/S/B/L variants, with the strongest gains observed on the smaller mod-els (e.g., HiM2SAM-S from 85.0/90.2/86.6 to 85.5/90.7/87.0, and HiM2SAM-B from 85.4/90.8/87.3 to 85.7/91.2/87.8). Overall, the best-performing configura-tion, HiM2SAM-L+SENTRY, attains 85.9 S, 91.4 NP, and 88.3 P, indicating that refine-before-write temporal reasoning complements both SAM2-based tracking pipelines even in the relatively clean, large-scale TrackingNet setting. 
+
+K.2 VOT benchmarks 
+
+All results for the two additional SAM2-based variants, SAMITE [66] and HiM2SAM [10], on the VOT benchmarks are provided in Table 27. 
+
+VOT20 [32]. SENTRY consistently improves both Acc and Rob across all SAM2 variants, despite the benchmark’s emphasis on short-term tracking stability and its strict reset-based protocol. For SAMITE models, SENTRY yields steady gains in the overall Q (e.g., +0.6 for SAMITE-T and +0.7 for SAMITE-B) while offering small but reliable improvements in Acc and Rob , indicating reduced drift during rapid appearance changes. A similar trend holds for HiM2SAM models, where SENTRY enhances Q by 0.3–0.5 points across all sizes, suggesting that SENTRY 37 
+
+temporal refinement remains beneficial even when the underlying model already incorporates hierarchical memory cues. 
+
+VOT22 [31]. SENTRY yields consistent gains for both SAMITE- and HiM2SAM-based trackers across all model sizes. For SAMITE, integrating SENTRY im-proves the Q from 67.5 to 68.9 on the tiny variant (+1.4), with smaller but stable gains of +0.3, +0.8, and +0.6 on S/B/L, respectively, accompanied by slight improvements in Acc (up to +0.7) and Rob (up to +0.6). The largest benefit of SAMITE-T suggests that refine-before-write temporal reasoning is particularly helpful for lighter backbones that are more susceptible to drift and failure. HiM2SAM exhibits a similar trend: SENTRY improves Q by 0.2–0.4 points across T/S/B/L and marginally increases both Acc and Rob , while leav-ing the underlying architecture and training unchanged. 
+
+VOTS24 [33]. SENTRY brings consistent gains in overall Q and R across both SAMITE and HiM2SAM backbones. For SAMITE, SENTRY improves the Q
+
+score from 64.1 to 64.6 for the T variant and from 66.2 to 66.5, 67.7 to 68.1, and 68.6 to 69.2 for the S/B/L variants, respectively, while also slightly boosting 
+
+Rob for all sizes (e.g., 86.0 →86.4 for SAMITE-B and 86.9 →87.5 for SAMITE-L). Acc remains essentially unchanged, with small positive shifts for T/S/B and a marginal decrease for SAMITE-L (77.5 →77.0), suggesting that SENTRY primarily reduces failures rather than aggressively altering per-frame overlap. A similar trend holds for HiM2SAM, where SENTRY improves Q for all model sizes (e.g., 66.0 →66.4 for T and 66.2 →66.7 for L) and consistently increases Rob 
+
+by 0.3–0.4 points, accompanied by modest Acc gains (up to +0.3). 
+
+DiDi [58]. SENTRY consistently improves performance across all SAM2 vari-ants. The gains are consistent across all sizes, typically +0.2 to +0.6 in Q, show-ing that temporal mask refinement effectively compensates for unstable decoder outputs in crowded or fine-structured scenes. The improvements in Rob , even when Acc shifts only marginally, underline SENTRY’s ability to suppress iden-tity switches and collapse cases that commonly degrade SAM2 memory under dense object interactions. 
+
+L Future Work 
+
+SENTRY reduces drift through conservative memory admission, but long-horizon global re-detection after complete target disappearance remains outside its scope. 
+
+Uniform Appearance Crowd. Datasets such as D-PTUAC [1] expose a crit-ical but under-examined failure mode for SAM2-style segmentation trackers: maintaining identity in dense crowds where individuals have uniform appearance and highly synchronized motion. Similar challenges are documented in Dance-Track [57], which shows that when appearance cues collapse, even strong track-ers suffer severe identity fragmentation. SAM2’s identity mechanism relies on (i) per-frame mask predictions and (ii) short-term memory propagation. In uniform-appearance crowds, however, these assumptions break down. Appearance sim-ilarity invalidates visual cues, segmentation boundaries frequently overlap due to tight spatial packing, and distractors often follow nearly identical motion 38 M. Alansari, Y. Michael et al. 
+
+trajectories, rendering purely geometric or optical-flow cues insufficient for dis-criminating individuals. Under such conditions, SAM2’s memory-write step is prone to accepting distractor-aligned masks, causing irreversible drift. The is-sue is further compounded in D-PTUAC by extremely small head-level targets, drone-induced ego motion, and repeated partial occlusions. These characteristics make D-PTUAC an ideal testbed for probing the limits of segmentation-driven identity propagation under extreme visual ambiguity. 
+
+(1) Point-Level Identity Anchors for Tiny Targets. Recent drone-crowd tracking research demonstrates that tiny head-level targets are more reliably represented as points or heatmap peaks rather than as full segmentation masks. In particular, multi-frame feature-level warping has been shown to produce stable point tra-jectories in dense aerial crowds [3,52]. Integrating a point-based identity cue into SAM2’s refine-before-write stage would provide a more persistent and occlusion-resistant identity anchor. SAM2’s masks would then be used primarily for spatial refinement rather than for identity estimation. 
+
+(2) Small-Object-Aware Proposal Generation. A second RGB-only direction is to introduce proposal mechanisms specialized for tiny, densely packed individuals before passing frames into SAM2. Work on aerial-view small-object detection shows that density-guided cropping and zoom-in detection strategies signifi-cantly improve discriminability for extremely small targets [35, 46]. Likewise, the DroneCrowd benchmark [61] demonstrates that head-level localization is far more reliable when informed by density maps or high-resolution regional propos-als rather than full-frame analysis. Integrating similar small-object priors—such as density-driven region proposals or high-resolution head-center crops—could reduce the number of distractor masks entering SAM2’s candidate pool and provide much cleaner spatial contexts for segmentation. Such preprocessing is particularly relevant in D-PTUAC, where individuals often occupy only a hand-ful of pixels, and naive segmentation fails to preserve identity under extreme crowding. 
+
+(3) Motion-Structured Temporal Consistency. A complementary direction in-volves strengthening temporal reasoning within SAM2’s refine-before-write mech-anism. Uniform-appearance tracking benchmarks such as DanceTrack [57] show that when appearance cues become uninformative, robust identity preservation depends heavily on motion regularity, spatial separation, and tracklet-level co-herence. Extending SENTRY’s cycle-consistency logic to incorporate longer tem-poral horizons, local crowd-motion priors, or penalties for convergent trajectories could help suppress distractor-aligned masks in scenes where multiple individ-uals move with nearly identical velocity patterns. Enhancing motion-structured consistency in this way would preserve SAM2’s design philosophy while directly addressing the correlated-motion failure modes exposed by D-PTUAC.

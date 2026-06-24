@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-23T22:11:34.971883+00:00",
-  "updated_date": "20260623",
+  "generated_at": "2026-06-24T21:46:45.116921+00:00",
+  "updated_date": "20260624",
   "carryover_days": 9,
   "tag_states": {
     "mec-video": {
-      "updated_date": "20260623",
+      "updated_date": "20260624",
       "carryover_days": 9,
       "items": []
     }

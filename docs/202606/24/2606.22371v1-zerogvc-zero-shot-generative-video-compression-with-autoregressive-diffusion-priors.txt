@@ -1,0 +1,401 @@
+Title: ZeroGVC: Zero-Shot Generative Video Compression with Autoregressive Diffusion Priors
+
+URL Source: https://arxiv.org/pdf/2606.22371v1
+
+Published Time: Tue, 23 Jun 2026 02:25:55 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# ZeroGVC: Zero-Shot Generative Video Compression with Autoregressive Diffusion Priors 
+
+## Yixin Gao 1 Xiaohan Pan 1 Lin Liu 2* Xin Li 1* Zhibo Chen 1* Qi Tian 21University of Science and Technology of China 2Huawei Inc. 
+
+## Abstract 
+
+Recent generative video compression methods leverage powerful generative priors to achieve perceptually pleasing reconstructions. However, most existing approaches require additional training to adapt generative models to produce realistic reconstructions from compact representations. In this paper, we propose ZeroGVC, a zero-shot generative video compression framework that leverages pretrained au-toregressive diffusion priors for low-delay video reconstruc-tion. ZeroGVC encodes the first frame of each group of pictures (GOP) with an image codec and represents subse-quent P-frames through Codebook-Guided Autoregressive Latent Compression. This design is motivated by our obser-vation that the compression scheme of denoising diffusion codebook models is effective in few-step consistency sam-pling. By selecting compact combinations of reproducible codebook noise vectors, ZeroGVC steers the latent denois-ing trajectory toward the target P-frame while allowing the decoder to reproduce the same trajectory in only a few de-noising steps. In addition, we design an optional bidirec-tional reference mode that mitigates error propagation by leveraging the next I-frame context without introducing any additional bitrate overhead. Extensive experiments on stan-dard video compression benchmarks demonstrate that Ze-roGVC achieves superior perceptual reconstruction quality at ultra-low bitrates without any additional training. 
+
+## 1. Introduction 
+
+Generative video compression (GVC) has recently emerged as a promising direction for producing realistic reconstruc-tions at low bitrates, while previous neural video codecs often produce over-smoothed reconstructions [12, 14–16]. Instead of preserving all pixel-level details, GVC meth-ods often leverage powerful generative priors to synthe-size visually realistic content from compact representations. Some approaches introduce adversarial learning into neu-ral video codecs to improve perceptual quality [24, 42]. 
+
+> *Corresponding authors.
+
+More recently, some works explore more expressive rep-resentation spaces, such as discrete VQ-VAE tokens or con-tinuous video latents, for ultra-low bitrate coding [8, 28]. Some works exploit diffusion models to recover perceptu-ally pleasing details from highly compact signals [17, 19– 22, 41, 45]. However, most existing methods require ad-ditional training to integrate such priors into video com-pression systems as reconstruction modules or auxiliary network components, incurring substantial computational cost and limiting their flexibility in adapting to increasingly powerful pretrained generative models. Training-free generative compression offers an alterna-tive route by directly reusing pretrained generative mod-els without retraining. In the image compression field, several works formulate lossy compression by transmit-ting compact information associated with diffusion trajec-tories. DiffC [33] communicates noisy samples along the diffusion forward process through reverse-channel coding (RCC), and reconstructs images by denoising them with a pretrained diffusion model. Vonderfecht and Liu [35] fur-ther provide a more complete implementation of DiffC by resolving practical bottlenecks in reverse-channel coding. In parallel, DDCM [27] and Turbo-DDCM [34] replace continuous Gaussian noise in the reverse diffusion process with selections from reproducible codebooks, and transmit only the compact indices to specify the denoising trajectory. Recent video extensions further demonstrate the potential of training-free GVC. Free-GVC [18] extends diffusion-based trajectory compression to video latents with temporal coher-ence based on RCC, while GVCC [44] converts the deter-ministic rectified-flow ODE of video diffusion models into an equivalent SDE, enabling DDCM-style codebook selec-tion for zero-shot video compression. Despite this progress, a low-delay coding scheme for zero-shot generative video compression remains underexplored. Existing training-free methods operate at the group-of-pictures (GOP) level with multi-step denoising, which limits both decoding speed and first-frame latency, making them less compatible with low-delay video coding. Recently, autoregressive (AR) video diffusion models have attracted growing attention for their ability to gener-1
+
+> arXiv:2606.22371v1 [eess.IV] 21 Jun 2026
+
+ate videos in a streaming manner [3, 11, 13, 43, 48]. These models combine causal temporal modeling with iterative denoising, rolling out frames sequentially conditioned on previously generated history. This causal, frame-by-frame generation paradigm is naturally aligned with low-delay video coding, as it enables sequential reconstruction using only previously decoded frames. Moreover, recent distilla-tion and training strategies have enabled high-quality few-step AR generation [11, 43, 48]. These observations moti-vate the question: can such pretrained AR diffusion models be leveraged for low-delay zero-shot generative video com-pression? In this paper, we propose ZeroGVC, which encodes the first frame of each GOP using an image codec and recon-structs subsequent P-frames with a pretrained autoregres-sive diffusion model conditioned on previously decoded frames. The core of ZeroGVC is Codebook-Guided Autore-gressive Latent Compression. Beyond the DDPM reverse chain considered by DDCM [27] and Turbo-DDCM [34], we find that the compression scheme of denoising diffu-sion codebook models is effective in few-step consistency sampling [30]. Instead of transmitting dense residuals or latent features, ZeroGVC compresses the latent reconstruc-tion trajectory itself. At each denoising step, the pretrained model first predicts a clean latent estimate from the current noisy state. The encoder then measures the target resid-ual between this estimate and the target P-frame latent, and selects a sparse combination of atoms with quantized coef-ficients from a deterministic Gaussian codebook as the in-jected noise for the next step. Since the same codebook is regenerated at the decoder from a shared seed, only the se-lected atom-combination indices and quantized coefficients need to be transmitted. In addition, when the next I-frame is available, ZeroGVC can optionally use it as a bidirectional reference to improve reconstruction quality. Our contributions are summarized as follows: • We introduce ZeroGVC, a training-free generative video compression framework that leverages pretrained autore-gressive diffusion priors for low-delay video reconstruc-tion. Unlike existing training-free generative codecs that operate at the GOP level, ZeroGVC reconstructs each P-frame sequentially from previously decoded frames. • We find that the compression scheme of denoising diffu-sion codebook models is effective in few-step consistency sampling, and propose Codebook-Guided Autoregressive Latent Compression, which steers the autoregressive la-tent denoising trajectory toward the target P-frame by se-lecting and transmitting compact atom-combination in-dices and quantized coefficients. We further design an optional bidirectional reference mode to improve recon-struction quality when the next I-frame context is avail-able. • Extensive experiments validate the effectiveness of Ze-roGVC across several standard video compression bench-marks, demonstrating strong perceptual reconstruction quality at ultra-low bitrates. 
+
+## 2. Related Work 
+
+Generative Video Compression Recent neural video compression (NVC) methods achieve impressive rate-distortion efficiency, but they often produce over-smoothed textures at low bitrates [12, 14–16]. To improve the per-ceptual quality of reconstructed videos, generative video compression (GVC) leverages powerful generative priors to produce visually pleasing reconstructions. Existing GVC methods can be broadly divided into training-based and training-free paradigms. Among training-based methods, GAN-based video codecs adopt adversarial learning [7] to produce more realistic reconstructions. Mentzer et al . [24] first introduced GANs into neural video compression for detail synthesis and propagation, while Yang et al . [42] de-signed a recurrent conditional GAN with adversarial loss functions for perceptual learned video compression. More recently, some researchers have explored more suitable rep-resentation domains for ultra-low bitrate coding [8, 28]. For example, GLC-Video [28] compresses video latents into discrete VQ-VAE tokens, while Generative Latent Video Compression [8] performs compression in the latent space of a continuous video tokenizer. Some works incorporate diffusion priors into video coding [19, 22, 45], using dif-fusion models to reconstruct perceptually pleasing videos from highly compact representations. To mitigate the heavy decoding cost of iterative denoising, several methods fur-ther adopt one-step diffusion reconstruction for faster per-ceptual video decoding [17, 20, 41]. Training-free GVC has recently attracted attention be-cause it can reuse pretrained video generative models with-out retraining. Building on RCC-based diffusion compres-sion [33, 35], Free-GVC [18] reformulates extreme video compression as progressive coding of noisy latent represen-tations in the diffusion space, with adaptive quality con-trol and inter-GOP alignment to improve temporal coher-ence. GVCC [44] converts the ODE sampling process of rectified-flow video diffusion models into an equiva-lent SDE via the score-SDE framework [29], thereby en-abling DDCM-style codebook selection [27, 34] for zero-shot video compression. However, existing training-free methods still face two practical issues: multi-step decod-ing limits reconstruction speed, and GOP-level generation is not naturally suited to streaming due to its first-frame la-tency. In contrast, ZeroGVC leverages pretrained few-step autoregressive diffusion priors for streaming P-frame com-pression, enabling high compression efficiency and low-latency zero-shot GVC. 
+
+Autoregressive Video Diffusion Models To enable 2streaming and low-latency video generation, recent works have explored autoregressive (AR) formulations for video diffusion, which naturally support progressive rollout over long temporal horizons. A representative direction com-bines AR temporal modeling with denoising diffusion [3, 4, 11, 13, 32, 43, 48], where frames or chunks are gener-ated sequentially along the temporal axis and each frame is synthesized through an iterative denoising process. In these AR diffusion models, a key distinction lies in how the causal conditional distribution is trained: teacher forcing denoises each target frame conditioned on clean ground-truth history, while Diffusion Forcing (DF) [2] uses independently noised context and target tokens. To further improve generation efficiency, CausVid [43] adopts a DF-style training strat-egy and extends distribution matching distillation (DMD) to videos, distilling a pretrained bidirectional teacher into a few-step causal generator. However, both paradigms can still suffer from train-test mismatch, since training relies on ground-truth or noised context frames whereas infer-ence conditions on previously generated outputs, leading to exposure bias and error accumulation. Subsequently, Self Forcing [11] performs autoregressive self-rollout dur-ing training to better match the inference-time generation process. Causal Forcing [48] further identifies an archi-tectural gap in bidirectional-to-causal distillation and ad-dresses it with AR-teacher-based ODE initialization before DMD. 
+
+## 3. Preliminaries 
+
+3.1. Denoising Diffusion Codebook Models 
+
+Denoising Diffusion Codebook Models (DDCM) [27] dis-cretize the reverse process of Denoising Diffusion Proba-bilistic Models (DDPM) [10] by replacing its continuous Gaussian noise with entries from fixed, reproducible Gaus-sian codebooks. This turns a diffusion sampling trajectory into a sequence of discrete noise indices that can be stored or transmitted. In DDPM, the forward process gradually corrupts a clean sample x0 through 
+
+xt = √αtxt−1 + √1 − αtϵt, ϵt ∼ N (0, I), (1) and generation proceeds by reversing this discrete noising chain, which is commonly parameterized as 
+
+xt−1 = μt(xt) + σtηt, ηt ∼ N (0, I), (2) where xt is the noisy latent at timestep t, μt(·) is the learned reverse mean, and σt is the noise scale. DDCM defines, for each timestep, a codebook 
+
+Ct =
+
+h
+
+η(1)  
+
+> t
+
+, η(2)  
+
+> t
+
+, . . . , η(K)
+
+> t
+
+i
+
+, η(k) 
+
+> t
+
+∼ N (0, I), (3) which is sampled once and shared by the encoder and de-coder. The reverse step then becomes 
+
+xt−1 = μt(xt) + σtCt(kt), (4) thereby yielding a finite yet expressive sampling space whose realization is specified by the selected index se-quence {kt}. Because the codebooks are fixed and repro-ducible, the decoder can reconstruct the same trajectory by deterministically re-selecting the transmitted indices. For compression, the encoder selects codebook atoms that steer the generative trajectory toward a target signal x0.Let ˆx0|t denote the clean estimate predicted from xt, and define the residual 
+
+rt = x0 − ˆx0|t. (5) DDCM chooses the atom most aligned with this residual, 
+
+kt = arg max 
+
+> k∈{ 1,...,K }
+
+⟨C t(k), rt⟩ . (6) The resulting ordered index sequence constitutes the com-pressed representation of the target. DDCM further im-proves the representational capacity of each step through a matching-pursuit refinement, where multiple atoms are greedily selected and combined with quantized coefficients to form the injected noise at each timestep. While this refinement extends the method beyond the single-index regime, it also increases the encoding cost due to its iter-ative search. Turbo-DDCM [34] improves the efficiency of multi-atom noise combination by replacing matching pursuit with a thresholding-based selection rule. It approximates the residual with a sparse signed combination of codebook atoms, 
+
+s∗ 
+
+> t
+
+= arg min 
+
+> st
+
+∥C tst − rt∥22 , ∥st∥0 = M, (st)i ∈ V∪{ 0},
+
+(7) where M is the number of selected atoms and V is a finite coefficient set. Since random Gaussian atoms are nearly or-thogonal in high-dimensional spaces, Turbo-DDCM selects the M atoms whose correlations with rt have the largest magnitudes. The synthesized noise is then 
+
+η∗ 
+
+> t
+
+= Cts∗
+
+> t
+
+std( Cts∗ 
+
+> t
+
+) , xt−1 = μt(xt) + σtη∗ 
+
+> t
+
+. (8) Because the order of the selected atoms does not affect the synthesized noise, Turbo-DDCM encodes the selected atoms as an unordered set, together with their quantized co-efficients, thereby avoiding redundant ordered representa-tions in the bitstream. 3Algorithm 1 Few-Step Consistency Sampling 
+
+Input: consistency model fθ (·, ·), noise levels τ1 > τ 2 >
+
+· · · > τ N −1, initial noisy state ˆxT
+
+x ← fθ (ˆ xT , T ) ▷ clean prediction 
+
+for n = 1 to N − 1 do 
+
+sample η ∼ N (0, I)ˆxτn ← x + pτ 2 
+
+> n
+
+− ϵ2η ▷ noise reinjection 
+
+x ← fθ (ˆ xτn , τ n) ▷ clean prediction 
+
+end for Output: x
+
+3.2. Few-Step Sampling in Consistency Models 
+
+Consistency models [30] learn mappings that are self-consistent along the probability-flow ODE trajectories of diffusion models. Specifically, a consistency model param-eterizes a function fθ (xt, t ) that maps states on the same trajectory to a common endpoint. For two states xt and xt′
+
+on the same trajectory, this self-consistency is expressed as 
+
+fθ (xt, t ) ≈ fθ (xt′ , t ′) ≈ xϵ. (9) Here, xϵ denotes the endpoint at the smallest noise level ϵ,which is treated as the clean sample in practice; consistency models further impose the boundary condition fθ (xϵ, ϵ ) = 
+
+xϵ.A single-step sampler draws an initial noisy state ˆxT at the largest noise level T and predicts the clean sample as 
+
+fθ (ˆ xT , T ). For higher quality, consistency models also sup-port few-step sampling by alternating clean prediction and noise reinjection over a decreasing sequence of noise levels 
+
+τ1 > τ 2 > · · · > τ N −1, as summarized in Alg. 1. Here 
+
+x denotes the current clean estimate, and ˆxτn denotes the noisy state at noise level τn.
+
+## 4. Method 
+
+4.1. Pipeline 
+
+We propose ZeroGVC, a training-free generative video compression framework that exploits a pretrained autore-gressive diffusion prior for low-latency video reconstruc-tion. As illustrated in Fig. 1, given an input video, we divide it into GOPs and denote the g-th GOP as Xg =
+
+{xg, 0, xg, 1, . . . , xg,L −1}, where xg, 0 is the I-frame and 
+
+{xg,l }L−1 
+
+> l=1
+
+are P-frames. The I-frame is encoded by a pre-trained image codec and decoded as ˆxg, 0. The WanVAE en-coder then maps input video frames and the reconstructed I-frame into latent space, producing the reconstructed I-frame latent ˆzg, 0 and target P-frame latents {zg,l }L−1 
+
+> l=1
+
+. The re-constructed I-frame latent is fed to the autoregressive diffu-sion model to initialize the KV cache used for subsequent P-frame reconstruction. For each target P-frame latent zg,l , the encoder performs codebook-guided autoregressive latent compression condi-tioned on the current KV cache. At every diffusion step, the pretrained model first predicts a clean latent estimate from the current noisy latent state. Based on this estimate, a sparse combination of atoms with quantized coefficients is selected from a deterministic Gaussian codebook to steer the next state toward zg,l . The codebook is generated from a shared seed S, so only the selected atom-combination indices and quantized coefficients are written into the bit-stream. Finally, we obtain the reconstructed latent ˆz0 
+
+> g,l
+
+and feed it to the autoregressive model to update the KV cache for the next P-frame. On the decoder side, the I-frame bitstream is first de-coded into the reconstructed image ˆxg, 0, which is then mapped by the WanVAE encoder to ˆzg, 0 to initialize the autoregressive context, consistent with the encoder side. For each P-frame, the decoder regenerates the determinis-tic codebook from the shared seed S, reads the transmit-ted atom-combination indices and quantized coefficients, synthesizes the same selected noise, and follows the cor-responding diffusion denoising process to reconstruct ˆz0
+
+> g,l
+
+.The reconstructed latent is then fed to the autoregressive model to update the cache for the next P-frame. Finally, WanVAE decodes {ˆz0
+
+> g,l
+
+}L−1 
+
+> l=0
+
+into the reconstructed GOP 
+
+ˆXg = {ˆxg, 0, . . . , ˆxg,L −1}.
+
+4.2. Codebook-Guided Autoregressive Latent Com-pression 
+
+P-frame compression is achieved by compressing the la-tent reconstruction trajectory rather than the latent itself. To keep the reconstruction aligned with the target frame, we in-troduce codebook-guided latent compression into the infer-ence process of causal video diffusion models [11, 48]. Al-though the sampling process differs from the DDPM reverse chain considered by DDCM [27] and Turbo-DDCM [34], we find that selecting and transmitting the injected noise to minimize the target residual remains effective in few-step consistency sampling (Alg. 1), extending denoising diffu-sion codebook models to few-step generative reconstruc-tion. Instead of drawing a Gaussian noise vector at each rein-jection step, ZeroGVC selects the noise from a determinis-tic codebook so that the stochastic trajectory becomes com-pressible. For the l-th P-frame in GOP g, let zg,l be the target clean latent and let Hg,l denote the current KV cache induced by previously reconstructed latents. Starting from an initial noisy latent ˆzTg,l , the reconstruction trajectory fol-lows the noise levels τ1 > τ 2 > · · · > τ N −1. At step n, the current clean estimate is denoted by ˜z0|τn−1 
+
+> g,l
+
+, with the first step using the prediction from ˆzTg,l . The encoder measures the target residual as 
+
+rng,l = zg,l − ˜z0|τn−1 
+
+> g,l
+
+, (10) 4Encode 
+
+# …
+
+> Input Video GoP
+
+# … 
+
+> WanVAE
+> Encoder
+
+# …   
+
+> Target Latents
+> Diffusion U-Net
+> KV Cache
+> Selected indices
+> & coefficients
+> I-frame Recon
+> Motion-aware
+> Top-M Noise
+> Atom Selection
+> I-frame Codec
+> 𝑧̂ ௚,଴
+> 𝑥 ௚,଴𝑥 ௚,ଵ𝑥 ௚,௅ିଵ
+> 𝑧̂ ௚,଴
+> 𝑧̂ ௚,௟
+> ఛ೙
+> 𝑧̂ ௚,௟்𝑧̂ ௚,௟
+> ଴
+> Deterministic codebook
+> (seed = S)
+
+…
+
+# …
+
+> update context for next P-frame
+> Combine
+> P-frame Recon
+> WanVAE
+> Encoder
+> Deterministic codebook
+> (seed = S)
+
+…
+
+> encode
+> P-frame Recon
+> Reproducible codebook
+> via shared seed
+> WanVAE
+> Decoder
+
+# …  
+
+> Output Video GoP
+> 𝑧̂ ௚,଴
+> Decode
+> 𝑥 ො௚,଴𝑥 ො௚,ଵ𝑥 ො௚,௅ିଵ
+> I-frame Decoder
+> decode
+> 𝑧̂ ௚,௟ିଵ
+> ଴
+> 𝑧̂ ௚,௟
+> ఛ೙-భ
+
+Figure 1. Overview of the proposed ZeroGVC framework. At the encoder, the first frame of each GOP is compressed by an image codec and mapped into the latent space to initialize the autoregressive context, while each subsequent P-frame is represented by compact atom-combination indices and quantized coefficients selected via Top-M Noise Atom Selection. At the decoder, the same codebook is regenerated from the shared seed, enabling reproducible latent reconstruction from the received atom-combination indices and quantized coefficients before WanVAE decoding. The optional bidirectional reference mode, shown by the gray dashed lines, uses the next decoded I-frame as auxiliary context to mitigate autoregressive error propagation without additional bitrate overhead. 
+
+which instantiates the residual definition in Eq. 5 for the tar-get latent zg,l . Given the deterministic Gaussian codebook 
+
+Cτn generated from the shared seed S, the encoder selects a sparse coefficient vector sn, ∗ 
+
+> g,l
+
+following the thresholding rule of Turbo-DDCM [34]. The selected noise ηn, ∗ 
+
+> g,l
+
+is syn-thesized following Eq. 8. The next noisy state is obtained by reinjecting this selected noise into the clean prediction, 
+
+ˆzτn 
+
+> g,l
+
+= ˜ z0|τn−1 
+
+> g,l
+
++ pτ 2 
+
+> n
+
+− ϵ2ηn, ∗ 
+
+> g,l
+
+. (11) The resulting clean prediction fθ (ˆ zτn
+
+> g,l
+
+, τ n; Hg,l ) is used as the current estimate for the next step. Only the selected atom-combination index and its associated quantized coef-ficients are transmitted at each step. Since both the initial noisy latent and Cτn are generated from the shared seed, the decoder synthesizes the same ηn, ∗ 
+
+> g,l
+
+and performs P-frame latent reconstruction consistently with the encoder. 
+
+4.3. Bidirectional Reference Mode 
+
+The basic mode reconstructs each P-frame using only past decoded latents. We additionally provide a reference mode, indicated by the gray dashed lines in Fig. 1, that can use the next decoded I-frame as an auxiliary context when it is available. Specifically, for the g-th GOP, both encoder and decoder use the next I-frame latent ˆzg+1 ,0 as an additional attention context when reconstructing P-frames in Xg . This shared future reference serves as a stable long-range anchor that mitigates error propagation and improves reconstruc-tion quality in the autoregressive decoding process. The reference is implemented through additional KV cache entries. A direct append operation, however, would assign the next I-frame an incorrect temporal position: the reference keys and values would be treated as if they im-mediately followed the current P-frame, while their actual position is at the beginning of the next GOP. To preserve the relative temporal positions encoded by rotary position em-beddings (RoPE), we store the future reference keys before rotation and re-apply RoPE using their true future frame in-dices. This ensures that attention scores between current queries and future reference keys reflect their correct tempo-ral displacement. The optional bidirectional reference mode changes only the available attention context and introduces no additional bitrate overhead. 
+
+## 5. Experiments 
+
+5.1. Experimental Settings 
+
+Evaluation Datasets We evaluate our method on sev-eral widely used video compression benchmarks, includ-ing JVET Class B, C, D, and E [6], UVG [25], and MCL-JCV [36]. 
+
+Baseline Methods We compare our method with sev-eral state-of-the-art video compression approaches, span-ning traditional hybrid codecs HEVC [31] and VVC [1], neural codecs DCVC-FM [16] and DCVC-RT [12], and the recent generative compression model GLC-Video [28]. 
+
+Evaluation Settings Following previous works [15, 16], we evaluate the first 96 frames of each video sequence, with the intra period set to 32. We adopt the low-delay encod-ing configuration for all evaluated methods. To compre-hensively assess perceptual quality, we report LPIPS [46], 5DISTS [5], FID [9], and DOVER [39]. Following previ-ous works [23, 26], FID is computed on 256 × 256 image patches. Unlike the other reference-based metrics, DOVER is a no-reference subjective quality metric that evaluates videos from both technical and aesthetic perspectives. In addition, we report MS-SSIM [38] to evaluate reconstruc-tion fidelity in the supplementary material. Runtime is mea-sured on an NVIDIA A800 GPU. 
+
+Implementation Details We adopt Causal Forcing (CF) & Causal Forcing++ (CF++) [48] as the autoregressive diffusion priors. We apply OneDC [40], a state-of-the-art perceptual image codec, to transmit the first frame of each GOP. For our model, we set K = 16384 and 
+
+N ∈ {2, 4, 6}, and vary M within the range of 64 to 384. For high-resolution inputs, we employ a tiling strat-egy [37, 47], where each frame is encoded into the latent space and partitioned into overlapping 480p tiles. The de-noising model and Top-M noise atom selection are then ap-plied independently to each latent tile. The selected atom-combination indices and quantized coefficients from all tiles are written into the bitstream, while the reconstructed la-tent tiles are merged with a Gaussian weighting map to form the full-frame latent. During decoding, the stored atom-combination indices and quantized coefficients are read from the bitstream and applied to each latent tile un-der the same tile layout. The reconstructed tiles are then aggregated with a Gaussian weighting map and converted back to pixels using tiled VAE decoding. 
+
+5.2. Main Results 
+
+Quantitative Results Fig. 2 compares the perceptual per-formance on HEVC Class C, HEVC Class B, UVG, and MCL-JCV. On Class C, ZeroGVC achieves clear improve-ments over all competing methods across LPIPS, DISTS, FID, and DOVER. On the higher resolution datasets, in-cluding Class B, UVG, and MCL-JCV, ZeroGVC consis-tently achieves better LPIPS and DOVER scores than com-peting methods. It also maintains advantages in DISTS and FID on Class B and UVG. These results demonstrate the ef-fectiveness of autoregressive diffusion priors for perceptual video compression. We observe that the relative gain becomes narrower on high-resolution videos, especially at high bitrates. A possi-ble reason is that inference on these datasets relies on tiled processing. Although tiling enables scalable reconstruction, processing local tiles independently may weaken the rela-tive benefit of the generative prior. Nevertheless, ZeroGVC still performs favorably across most evaluation settings on Class B, UVG, and MCL-JCV, showing its effectiveness on both low-resolution and high-resolution videos. 
+
+Qualitative Results Fig. 3 presents qualitative compar-isons with baseline methods. At low bitrates, VTM and DCVC-RT produce over-smoothed reconstructions, where                             
+
+> Table 1. Runtime of ZeroGVC under different autoregressive dif-fusion priors and denoising steps N. As runtime is largely insensi-tive to the atom count Mfor a given prior and N, we report results averaged over the tested Mvalues. Prior NEnc. (ms) Enc. (FPS) Dec. (ms) Dec. (FPS) CF++ 296.27 10.39 123.71 8.08 CF++ 4144.46 6.92 163.32 6.12 CF 6195.04 5.13 201.74 4.96
+
+fine-grained structures and textures are noticeably de-graded. GLC-Video improves perceptual realism in some regions but still exhibits visible artifacts and fails to faith-fully reconstruct local details such as the basketball hoop structure and facial features. In contrast, even at compa-rable or lower bitrates, ZeroGVC preserves sharper struc-tural details ( e.g ., the hoop rim and the athlete’s posture in the top example, and the facial contours and indoor lamp in the bottom example) while better retaining background tex-tures such as court markings and wall decorations. These results demonstrate that the autoregressive diffusion prior provides effective generative guidance for perceptual video reconstruction, enabling ZeroGVC to produce more realis-tic results at lower bitrates. 
+
+Runtime Table 1 reports the encoding and decoding run-time on the HEVC Class C dataset. ZeroGVC achieves ap-proximately 195/202 ms per frame for encoding/decoding at N = 6 , and the latency decreases to 96/124 ms per frame at N = 2 . Thanks to the few-step denoising design, Ze-roGVC achieves efficient encoding and decoding, showing potential for practical usage while requiring no additional training. 
+
+5.3. Ablation Studies 
+
+We conduct ablation studies on the HEVC Class C dataset. 
+
+Sampling steps N and atom count M Fig. 4(a) stud-ies the joint effect of the number of denoising steps 
+
+N and the selected atom count M . We sweep N ∈{2, 4, 6, 8} and M ∈ { 64 , 128 , 192 , 256 , 384 } under both CF++ and CF priors. Increasing M enlarges the per-step correction capacity and improves perceptual qual-ity at the cost of higher bitrate, while increasing N of-fers more correction opportunities but introduces addi-tional computational overhead. We select the configura-tions with the best overall perceptual quality as the oper-ating points for final experiments. Specifically, for CF++, we use (N, M ) = (2 , 128) , (4 , 128) , while for CF we use 
+
+(N, M ) = (6 , 64) , (6 , 128) , (6 , 192) , (6 , 256) , (6 , 384) .
+
+I-frame Quality We further ablate the quality level λ of the image codec used for transmitting the first frame of each GOP. Since the decoded I-frame initializes the autoregres-sive context, its quality has a direct influence on all sub-sequent P-frame reconstructions. As shown in Fig. 4(b), 6Figure 2. Quantitative comparisons on HEVC Class C, HEVC Class B, UVG, and MCL-JCV. 
+
+> Figure 3. Qualitative comparisons with baseline methods.
+
+a low-quality I-frame weakens the temporal anchor and causes error propagation across the GOP, leading to infe-rior LPIPS and DISTS even when more bits are spent on P-frame correction. In contrast, using λ = 1 .0 provides a reli-able reference for the autoregressive prior and consistently yields the best performance. Therefore, we adopt λ = 1 .0
+
+for all experiments. 7Figure 4. Ablation studies on hyperparameters. We report LPIPS and DISTS rate-distortion curves under different (a) sampling steps N    
+
+> and atom counts M, (b) I-frame quality levels λ, and (c) codebook sizes K.
+> Figure 5. Ablation study of the bidirectional reference mode under different numbers of future-reference latent frames. The dashed curves showing per-configuration results and solid curves showing the mean trend.
+> Figure 6. Qualitative comparison of bidirectional reference mode. The future reference helps recover local structures and textures that are degraded by autoregressive error propagation.
+
+Codebook size K The codebook size K controls the ex-pressiveness of the per-step noise search space. A small codebook restricts the available correction directions and leads to suboptimal reconstruction quality, while increas-ing K improves the approximation of the target residual. However, the gain becomes marginal when the codebook is sufficiently large, and a larger K also increases the inner-product search cost during encoding. Fig. 4(c) shows that 
+
+K = 16384 achieves a favorable balance between per-ceptual quality and computational cost. We therefore fix 
+
+K = 16384 in the main experiments. 
+
+Bidirectional Reference Mode Fig. 5 studies the effect of the number of reference latent frames in bidirectional 8reference mode. Compared with the baseline, incorporat-ing the bidirectional reference brings clear overall gains, and recomputing RoPE for the reference tokens consistently outperforms direct KV-cache appending. As the number of reference frames increases, LPIPS improves continuously, while DISTS remains stable up to 4 frames but begins to de-grade beyond that point. MS-SSIM exhibits consistent im-provement across all reference counts. We therefore adopt 4 reference latent frames as the default setting, which pro-vides a favorable trade-off between perceptual quality and reconstruction fidelity. Fig. 6 further provides qualitative evidence. With bidi-rectional references, the reconstructions better preserve structures such as the horse and rider boundaries. The re-sults show that the future reference effectively alleviates au-toregressive error propagation and improves reconstruction quality. 
+
+## 6. Conclusion 
+
+This paper proposes ZeroGVC, a training-free generative video compression framework that leverages pretrained autoregressive diffusion priors for low-delay video re-construction. ZeroGVC encodes the first frame of each GOP with an image codec and reconstructs subsequent P-frames through Codebook-Guided Autoregressive Latent Compression, where compact atom-combination indices and quantized coefficients are transmitted to reproducibly steer the autoregressive latent denoising trajectory toward the target P-frame. We show that the compression scheme of denoising diffusion codebook models remains effective in few-step consistency sampling. In addition, we design an optional bidirectional reference mode that mitigates error propagation by leveraging the next I-frame context without introducing any additional bitrate overhead. Ex-tensive experiments on standard benchmarks demonstrate that ZeroGVC achieves strong perceptual reconstruction quality at ultra-low bitrates without any additional training. 
+
+## References 
+
+[1] Benjamin Bross, Ye-Kui Wang, Yan Ye, Shan Liu, Jianle Chen, Gary J Sullivan, and Jens-Rainer Ohm. Overview of the versatile video coding (vvc) standard and its applications. 
+
+TCSVT , 2021. 5 [2] Boyuan Chen, Diego Mart´ ı Mons´ o, Yilun Du, Max Sim-chowitz, Russ Tedrake, and Vincent Sitzmann. Diffusion forcing: Next-token prediction meets full-sequence diffu-sion. In The Thirty-eighth Annual Conference on Neural In-formation Processing Systems , 2024. 3 [3] Guibin Chen, Dixuan Lin, Jiangping Yang, Chunze Lin, Junchen Zhu, Mingyuan Fan, Hao Zhang, Sheng Chen, Zheng Chen, Chengcheng Ma, et al. Skyreels-v2: Infinite-length film generative model. arXiv preprint arXiv:2504.13074 , 2025. 2, 3 [4] Haoge Deng, Ting Pan, Haiwen Diao, Zhengxiong Luo, Yufeng Cui, Huchuan Lu, Shiguang Shan, Yonggang Qi, and Xinlong Wang. Autoregressive video generation without vector quantization. In International Conference on Learn-ing Representations , pages 44730–44745, 2025. 3 [5] Keyan Ding, Kede Ma, Shiqi Wang, and Eero P Simoncelli. Image quality assessment: Unifying structure and texture similarity. IEEE transactions on pattern analysis and ma-chine intelligence , 44(5):2567–2581, 2020. 6 [6] D Flynn, K Sharman, and C Rosewarne. Common test con-ditions and software reference configurations for hevc range extensions, document jctvc-n1006. Joint Collaborative Team Video Coding ITU-T SG, 16. 5 [7] Ian Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, and Yoshua Bengio. Generative adversarial nets. NeurIPS , 27, 2014. 2 [8] Zongyu Guo, Zhaoyang Jia, Jiahao Li, Xiaoyi Zhang, Bin Li, and Yan Lu. Generative latent video compression. arXiv preprint arXiv:2510.09987 , 2025. 1, 2 [9] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter. Gans trained by a two time-scale update rule converge to a local nash equilib-rium. Advances in neural information processing systems ,30, 2017. 6 [10] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising dif-fusion probabilistic models. Advances in neural information processing systems , 33:6840–6851, 2020. 3 [11] Xun Huang, Zhengqi Li, Guande He, Mingyuan Zhou, and Eli Shechtman. Self forcing: Bridging the train-test gap in autoregressive video diffusion. Advances in Neural Informa-tion Processing Systems , 38:167283–167308, 2026. 2, 3, 4 [12] Zhaoyang Jia, Bin Li, Jiahao Li, Wenxuan Xie, Linfeng Qi, Houqiang Li, and Yan Lu. Towards practical real-time neural video compression. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 12543–12552, 2025. 1, 2, 5 [13] Yang Jin, Zhicheng Sun, Ningyuan Li, Kun Xu, Hao Jiang, Nan Zhuang, Quzhe Huang, Yang Song, Yadong Mu, and Zhouchen Lin. Pyramidal flow matching for efficient video generative modeling. In International Conference on Learn-ing Representations , pages 23378–23402, 2025. 2, 3 [14] Jiahao Li, Bin Li, and Yan Lu. Deep contextual video com-pression. Advances in Neural Information Processing Sys-tems , 34:18114–18125, 2021. 1, 2 [15] Jiahao Li, Bin Li, and Yan Lu. Neural video compression with diverse contexts. In Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition , pages 22616–22626, 2023. 5 [16] Jiahao Li, Bin Li, and Yan Lu. Neural video compression with feature modulation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,pages 26099–26108, 2024. 1, 2, 5 [17] Xingchen Li, Junzhe Zhang, Junqi Shi, Ming Lu, and Zhan Ma. Yoda: Yet another one-step diffusion-based video com-pressor. arXiv preprint arXiv:2601.01141 , 2026. 1, 2 
+
+9[18] Xiaoyue Ling, Chuqin Zhou, Chunyi Li, Yunuo Chen, Yuan Tian, Guo Lu, and Wenjun Zhang. Free-gvc: To-wards training-free extreme generative video compression with temporal coherence. arXiv preprint arXiv:2602.09868 ,2026. 1, 2 [19] Wenzhuo Ma and Zhenzhong Chen. Diffusion-based percep-tual neural video compression with temporal diffusion infor-mation reuse. ACM Transactions on Multimedia Computing, Communications and Applications , 21(12):1–22, 2025. 1, 2 [20] Wenzhuo Ma and Zhenzhong Chen. Diffvc-osd: One-step diffusion-based perceptual neural video compression frame-work. arXiv preprint arXiv:2508.07682 , 2025. 2 [21] Wenzhuo Ma and Zhenzhong Chen. Diffvc-rt: Towards prac-tical real-time diffusion-based perceptual neural video com-pression. arXiv preprint arXiv:2601.20564 , 2026. [22] Qi Mao, Hao Cheng, Tinghan Yang, Libiao Jin, and Siwei Ma. Generative neural video compression via video diffusion prior. arXiv preprint arXiv:2512.05016 , 2025. 1, 2 [23] Fabian Mentzer, George Toderici, Michael Tschannen, and Eirikur Agustsson. High-fidelity generative image compres-sion. arXiv preprint arXiv:2006.09965 , 2020. 6 [24] Fabian Mentzer, Eirikur Agustsson, Johannes Ball´ e, David Minnen, Nick Johnston, and George Toderici. Neural video compression using gans for detail synthesis and propagation. In European Conference on Computer Vision , pages 562– 578. Springer, 2022. 1, 2 [25] Alexandre Mercat, Marko Viitanen, and Jarno Vanne. Uvg dataset: 50/120fps 4k sequences for video codec analysis and development. In Proceedings of the 11th ACM multimedia systems conference , pages 297–302, 2020. 5 [26] Matthew J Muckley, Alaaeldin El-Nouby, Karen Ullrich, Herv´ e J´ egou, and Jakob Verbeek. Improving statistical fi-delity for neural image compression with implicit local like-lihood models. In International Conference on Machine Learning , pages 25426–25443. PMLR, 2023. 6 [27] Guy Ohayon, Hila Manor, Tomer Michaeli, and Michael Elad. Compressed image generation with denoising diffusion codebook models. In Forty-second International Conference on Machine Learning , 2025. 1, 2, 3, 4 [28] Linfeng Qi, Zhaoyang Jia, Jiahao Li, Bin Li, Houqiang Li, and Yan Lu. Generative latent coding for ultra-low bitrate image and video compression. IEEE Transactions on Cir-cuits and Systems for Video Technology , 2025. 1, 2, 5 [29] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Ab-hishek Kumar, Stefano Ermon, and Ben Poole. Score-based generative modeling through stochastic differential equa-tions. arXiv preprint arXiv:2011.13456 , 2020. 2 [30] Yang Song, Prafulla Dhariwal, Mark Chen, and Ilya Sutskever. Consistency models. In Proceedings of the 40th International Conference on Machine Learning , pages 32211–32252. PMLR, 2023. 2, 4 [31] Gary J Sullivan, Jens-Rainer Ohm, Woo-Jin Han, and Thomas Wiegand. Overview of the high efficiency video coding (hevc) standard. TCSVT , 22(12):1649–1668, 2012. 5[32] Hansi Teng, Hongyu Jia, Lei Sun, Lingzhi Li, Maolin Li, Mingqiu Tang, Shuai Han, Tianning Zhang, WQ Zhang, Weifeng Luo, et al. Magi-1: Autoregressive video genera-tion at scale. arXiv preprint arXiv:2505.13211 , 2025. 3 [33] Lucas Theis, Tim Salimans, Matthew D Hoffman, and Fabian Mentzer. Lossy compression with gaussian diffusion. 
+
+arXiv preprint arXiv:2206.08889 , 2022. 1, 2 [34] Amit Vaisman, Guy Ohayon, Hila Manor, Michael Elad, and Tomer Michaeli. Turbo-DDCM: Fast and flexible zero-shot diffusion-based image compression. In The Fourteenth In-ternational Conference on Learning Representations , 2026. 1, 2, 3, 4, 5 [35] Jeremy Vonderfecht and Feng Liu. Lossy compression with pretrained diffusion models. In The Thirteenth International Conference on Learning Representations , 2025. 1, 2 [36] Haiqiang Wang, Weihao Gan, Sudeng Hu, Joe Yuchieh Lin, Lina Jin, Longguang Song, Ping Wang, Ioannis Katsavouni-dis, Anne Aaron, and C-C Jay Kuo. Mcl-jcv: a jnd-based h. 264/avc video quality assessment dataset. In 2016 IEEE international conference on image processing (ICIP) , pages 1509–1513. IEEE, 2016. 5 [37] Jianyi Wang, Zongsheng Yue, Shangchen Zhou, Kelvin C.K. Chan, and Chen Change Loy. Exploiting diffusion prior for real-world image super-resolution. International Journal of Computer Vision , 2024. 6 [38] Zhou Wang, Eero P Simoncelli, and Alan C Bovik. Multi-scale structural similarity for image quality assessment. In 
+
+The thrity-seventh asilomar conference on signals, systems & computers, 2003 , pages 1398–1402. Ieee, 2003. 6 [39] Haoning Wu, Erli Zhang, Liang Liao, Chaofeng Chen, Jing-wen Hou Hou, Annan Wang, Wenxiu Sun Sun, Qiong Yan, and Weisi Lin. Exploring video quality assessment on user generated contents from aesthetic and technical perspectives. In International Conference on Computer Vision (ICCV) ,2023. 6 [40] Naifu Xue, Zhaoyang Jia, Jiahao Li, Bin Li, Yuan Zhang, and Yan Lu. One-step diffusion-based image compression with semantic distillation. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. 6 [41] Naifu Xue, Zhaoyang Jia, Jiahao Li, Bin Li, Zihan Zheng, Yuan Zhang, and Yan Lu. Single-step diffusion-based video coding with semantic-temporal guidance. arXiv preprint arXiv:2512.07480 , 2025. 1, 2 [42] Ren Yang, Radu Timofte, and Luc Van Gool. Perceptual learned video compression with recurrent conditional gan. In IJCAI , pages 1537–1544, 2022. 1, 2 [43] Tianwei Yin, Qiang Zhang, Richard Zhang, William T Free-man, Fredo Durand, Eli Shechtman, and Xun Huang. From slow bidirectional to fast autoregressive video diffusion mod-els. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , pages 22963–22974, 2025. 2, 3 [44] Ziyue Zeng, Xun Su, Haoyuan Liu, Bingyu Lu, Yui Tatsumi, and Hiroshi Watanabe. Gvcc: Zero-shot video compression via codebook-driven stochastic rectified flow. arXiv preprint arXiv:2603.26571 , 2026. 1, 2 [45] Pingping Zhang, Jinlong Li, Kecheng Chen, Meng Wang, Long Xu, Haoliang Li, Nicu Sebe, Sam Kwong, and Shiqi Wang. When video compression meets multimodal large lan-
+
+10 guage models: A unified paradigm for cross-modality video compression. IEEE Signal Processing Letters , 2026. 1, 2 [46] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shechtman, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In CVPR , pages 586–595, 2018. 5 [47] Tianyu Zhang, Xin Luo, Li Li, and Dong Liu. Stablecodec: Taming one-step diffusion for extreme image compression. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pages 17379–17389, 2025. 6 [48] Hongzhou Zhu, Min Zhao, Guande He, Hang Su, Chongx-uan Li, and Jun Zhu. Causal forcing: Autoregressive diffu-sion distillation done right for high-quality real-time inter-active video generation. arXiv preprint arXiv:2602.02214 ,2026. 2, 3, 4, 6 
+
+11 ZeroGVC: Zero-Shot Generative Video Compression with Autoregressive Diffusion Priors 
+
+# Supplementary Material 
+
+## 7. Additional Experiments 
+
+7.1. More Quantitative Results 
+
+Fig. 7 further presents perceptual results on HEVC Class D and Class E. For the HEVC Class D dataset, whose resolution ( 416 × 240 ) is relatively low, we instead com-pute FID using 128 × 128 patches. On Class D, ZeroGVC consistently outperforms competing methods across LPIPS, DISTS, FID, and DOVER. Because the original resolution of Class D is too small and does not match the diffusion prior, we resize the videos to 480p for compression, while still computing the bitrate at the original resolution for fair comparison. On Class E, ZeroGVC also achieves clear im-provements in LPIPS, DISTS, and FID, while maintain-ing strong DOVER performance. These results show that ZeroGVC generalizes well to lower-resolution and talking-head video sequences. Fig. 8 reports MS-SSIM on all evaluated datasets. Ze-roGVC achieves reasonable MS-SSIM and generally re-mains comparable to or better than the generative baseline GLC-Video. Table 2 provides the corresponding BD-Rate and BD-Metric comparisons for perceptual quality. Across HEVC Classes B–E, UVG, and MCL-JCV, ZeroGVC consistently achieves stronger perceptual rate–distortion trade-offs than competing baselines. 
+
+7.2. More Visual Results 
+
+Fig. 9 provides more visual comparisons with baseline methods. Consistent with the observations in the main pa-per, traditional and neural compression baselines tend to over-smooth fine details or introduce visible artifacts at low bitrates. GLC-Video improves perceptual realism in some regions, but may still lose local structures. In contrast, Ze-roGVC better preserves object boundaries, background tex-tures, and fine structures, leading to more realistic recon-structions at comparable or lower bitrates. Fig. 10 shows additional examples for the bidirectional reference mode. The results follow the same trend as in the main paper: using future reference information helps recover local details that are degraded by autoregressive er-ror propagation. Moreover, recomputing RoPE phases for the reference tokens produces clearer structures than direct KV-cache appending. These visual results further support the effectiveness of the proposed bidirectional reference de-sign. 1Figure 7. Perceptual comparisons on HEVC Class D and Class E. 
+
+Figure 8. MS-SSIM comparisons on all evaluated datasets. 
+
+2Table 2. BD-Rate (%) and BD-Metric comparisons on perceptual metrics. Each entry reports BD-Rate / BD-Metric relative to DCVC-RT. Lower BD-Rate values indicate bitrate savings. For LPIPS, DISTS, and FID, lower BD-Metric values are better. 
+
+Dataset Metric HEVC VVC DCVC-FM DCVC-RT GLC-Video CF++ CF Class B LPIPS ↓ 19.58 / 0.0153 -10.91 / -0.0100 6.44 / 0.0049 0.00 / 0.0000 -70.44 / -0.0807 -84.35 / -0.1394 N/A / -0.1104 DISTS ↓ -25.34 / -0.0139 -27.18 / -0.0154 7.09 / 0.0032 0.00 / 0.0000 N/A / -0.0717 N/A / -0.1190 N/A / -0.0935 FID ↓ -40.93 / -24.9695 -44.03 / -24.0417 13.24 / 4.4978 0.00 / 0.0000 N/A / -83.0282 N/A / -116.4824 N/A / -94.4978 Class C LPIPS ↓ 57.18 / 0.0459 18.93 / 0.0178 -1.03 / -0.0012 0.00 / 0.0000 -54.88 / -0.0724 -82.63 / -0.1746 -79.23 / -0.1539 DISTS ↓ -11.42 / -0.0081 -12.54 / -0.0089 0.79 / 0.0004 0.00 / 0.0000 -78.53 / -0.0714 N/A / -0.1599 N/A / -0.1360 FID ↓ -35.51 / -23.0681 -29.35 / -17.8440 20.12 / 8.2886 0.00 / 0.0000 N/A / -95.2452 N/A / -156.4355 N/A / -142.8684 Class D LPIPS ↓ 69.22 / 0.0622 30.41 / 0.0329 -0.47 / -0.0007 0.00 / 0.0000 -35.72 / -0.0433 -65.82 / -0.1328 -69.03 / -0.1071 DISTS ↓ 22.03 / 0.0135 3.01 / 0.0019 -0.03 / -0.0001 0.00 / 0.0000 -65.71 / -0.0683 N/A / -0.1064 N/A / -0.0824 FID ↓ -8.56 / -5.9537 -18.60 / -11.7729 -2.41 / -1.9642 0.00 / 0.0000 -99.33 / -86.5672 N/A / -171.3125 N/A / -144.0222 Class E LPIPS ↓ 36.58 / 0.0309 -0.07 / -0.0012 1.20 / -0.0001 0.00 / 0.0000 -57.95 / -0.0412 N/A / -0.0769 N/A / -0.0766 DISTS ↓ -16.77 / -0.0134 -18.83 / -0.0141 7.59 / 0.0013 0.00 / 0.0000 N/A / -0.0444 N/A / -0.0763 N/A / -0.0542 FID ↓ 6.91 / 3.0270 -6.21 / -4.5391 8.58 / 3.4368 0.00 / 0.0000 N/A / -49.5519 N/A / -76.9684 N/A / -61.1942 UVG LPIPS ↓ -2.28 / 0.0005 -21.98 / -0.0164 4.72 / 0.0033 0.00 / 0.0000 -61.29 / -0.0556 -84.46 / -0.0967 -79.22 / -0.0861 DISTS ↓ -41.93 / -0.0241 -38.89 / -0.0217 3.74 / 0.0022 0.00 / 0.0000 N/A / -0.0857 N/A / -0.1112 N/A / -0.0881 FID ↓ -38.72 / -19.1270 -48.41 / -23.8496 21.24 / 6.2960 0.00 / 0.0000 N/A / -78.7224 N/A / -96.3871 N/A / -80.2812 MCL-JCV LPIPS ↓ 35.32 / 0.0213 -11.26 / -0.0085 13.15 / 0.0084 0.00 / 0.0000 N/A / -0.0875 -100.00 / -0.1012 N/A / -0.1009 DISTS ↓ -27.87 / -0.0170 -36.59 / -0.0232 10.01 / 0.0057 0.00 / 0.0000 N/A / -0.1003 N/A / -0.1209 N/A / -0.1045 FID ↓ -1.66 / -4.8025 -29.15 / -12.6398 25.82 / 6.8514 0.00 / 0.0000 N/A / -84.9948 N/A / -92.2164 N/A / -88.4687 
+
+3Figure 9. More qualitative comparisons with baseline methods. 
+
+4Figure 10. More qualitative comparisons of the bidirectional reference mode. 
+
+5
