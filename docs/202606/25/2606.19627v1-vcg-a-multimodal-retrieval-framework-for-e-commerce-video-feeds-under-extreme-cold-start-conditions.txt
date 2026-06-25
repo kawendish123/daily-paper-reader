@@ -1,0 +1,226 @@
+Title: VCG: A Multimodal Retrieval Framework for E-Commerce Video Feeds under Extreme Cold-Start Conditions
+
+URL Source: https://arxiv.org/pdf/2606.19627v1
+
+Published Time: Fri, 19 Jun 2026 00:16:16 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# VCG: A Multimodal Retrieval Framework for E-Commerce Video Feeds under Extreme Cold-Start Conditions 
+
+Katya Mirylenka ∗1, Egor Malykh 2, Mahdyar Ravanbakhsh 2, Michael Gygli 3, Marco-Andrea Buchmann 3, Andrew Dzhoha 2, Svitlana Borzenko 2, Francesca Catino 3, Mohamed Gaafar 2,Maarten Versteegh 2, Thomas Kober 2, Dario d’Andrea 3, and Ellie Langhans 21TU Wien, Vienna, Austria 
+
+katsiaryna.mirylenka@tuwien.ac.at 
+
+> 2
+
+Zalando SE, Berlin, Germany 
+
+first name.last name@zalando.de 
+
+> 3
+
+Zalando Switzerland AG, Zurich, Switzerland 
+
+first name.last name@zalando.ch 
+
+Abstract 
+
+The digital commerce landscape is shifting from static, search-driven catalogs to dynamic, immersive video feeds. This transition introduces an “extreme cold-start” problem: unlike traditional items, new short-form videos lack the dense interaction history required for collabo-rative filtering. Furthermore, immersive feeds introduce strong position and duration biases that distort standard engagement signals. In this paper, we demonstrate the Video Candidate Gener-ation (VCG) system, a scalable multimodal retrieval engine designed to solve these challenges in a large-scale e-commerce environment. By leveraging a domain-adapted vision-language model (based on CLIP), we map users and videos into a shared semantic space, enabling zero-shot retrieval based on visual content rather than behavioral history. We detail the system’s ar-chitecture and present a rigorous evaluation comparing generative (LLM) vs. discriminative (CLIP) embeddings. Our results show that while generative models excel at attribution, they suffer from embedding space collapse in retrieval tasks. Online A/B testing demonstrates that VCG effectively mitigates engagement biases, yielding a 50% uplift in deep video completion. To showcase the system’s capabilities, we present an interactive demonstration featuring three bi-directional retrieval scenarios: Product-to-Video, Video-to-Product, and Zero-Shot Semantic Search. 
+
+Keywords: Recommender Systems, Multimodal Embeddings, Vector Search, Video Retrieval, E-Commerce, Cold-Start 
+
+# 1 Introduction 
+
+Traditionally, e-commerce platforms have operated as digital catalogs where the user journey is goal-oriented: a user enters with specific intent, executes a search, and transacts. In a catalog envi-ronment, products are long-lived and accumulate ample interaction data, which naturally enables 
+
+> ∗
+
+Work done while at Zalando Switzerland AG. 
+
+1
+
+> arXiv:2606.19627v1 [cs.IR] 17 Jun 2026
+
+robust representation learning for downstream tasks like product recommendation and customer modeling [1]. However, the success of social media platforms has conditioned users to expect im-plicit discovery via infinite feeds. To align with these expectations, we have introduced a video feed on a large fashion e-commerce website. Transitioning to a feed-based architecture introduces an Extreme Cold-Start problem. In a catalog, products are long-lived and accumulate ample interaction data. In a video feed, content is ephemeral and voluminous; new videos have no interaction history, rendering standard Matrix Factorization or Autoencoder-based recommenders ineffective. Furthermore, optimizing for stan-dard “watch-time” introduces duration bias, favoring shorter videos regardless of relevance [2], as well as position bias (favoring earlier content). To address this, we propose a semantic-first recommendation approach. Instead of asking Who else watched this video? (collaborative signal), our Video Candidate Generation (VCG) system asks What does this video look like, and does it match the user’s visual style? (semantic signal). 
+
+Our Contributions are the following: 
+
+• Zero-Shot Two-Tower Architecture : We demonstrate a retrieval system that decouples rep-resentation from interaction. By using pre-trained multimodal encoders, we bypass the need for massive training datasets. 
+
+• Generative Adjudication Protocol : We introduce an “LVLM-as-a-judge” evaluation frame-work. We show that while traditional offline metrics fail to predict online success due to exposure bias, a Large Vision-Language Model (Qwen-VL) successfully acts as a proxy for human relevance. 
+
+• Embedding Space Analysis : We provide a comparative analysis of generative vs. discrimi-native embeddings for retrieval, demonstrating why contrastive models (CLIP) outperform generative models (LLMs) for vector search tasks in e-commerce. 
+
+# 2 Background and Related Work 
+
+Two-Tower Architectures: Our work builds upon the dual-encoder paradigm popularized by YouTube [3] and Pinterest [4]. While foundational work in this space focuses on correcting sampling bias in large corpora [5], these systems primarily train encoders on interaction data. VCG, in contrast, uses pre-trained multimodal encoders to function in zero-shot scenarios where interaction graphs are sparse. This approach structurally parallels work in data integration, where Siamese architectures and graph neural networks have been successfully deployed for entity matching across disparate sources without requiring explicit interaction bridges [6, 7]. 
+
+Multimodal Learning: The core engine of VCG is a domain-adapted version of CLIP [8]. Similar approaches have been applied to domain-specific tasks, such as FashionCLIP [9], which aligns fashion imagery with textual attributes. Adapting representations to highly specific, low-resource e-commerce domains is a well-documented challenge; for instance, acquiring label-efficient representations for domain-specific text categorization traditionally requires complex reinforced active learning pipelines [10, 11, 12]. By transitioning directly to a zero-shot multimodal space, VCG bypasses the need for such costly human-in-the-loop metadata annotation entirely. 
+
+Generative vs. Discriminative Models: Recent research has broadly explored leveraging Large Language Models (LLMs) to bridge semantic gaps in structured data retrieval, ranging from zero-shot rankers [13] to systems that adapt LLMs for seamless natural language API integration and robust Text-to-SQL conversion [14, 15, 16]. However, while these generative models excel at translating abstract user intent into structured logical constraints and metadata queries, applying them directly to generate embeddings for raw visual retrieval tasks often leads to anisotropy and 2representation collapse—a phenomenon where embeddings occupy a narrow cone in the vector space, severely limiting discriminative power [17]. 
+
+Evaluation with LLMs: Addressing the exposure bias in offline metrics requires novel eval-uation strategies. We adopt the “LLM-as-a-judge” paradigm [18, 19], utilizing large models to simulate human preference and provide a scalable alternative to manual annotation. While our current demonstration relies on constrained, direct prompt-based scoring, mitigating the inherent risks of hallucination and variance in generative evaluators remains critical for production systems. Future enhancements to our evaluation protocol could incorporate robust uncertainty quantification frameworks—such as testing the consistency hypothesis and applying similarity-based aggregation (SIMBA) [20, 21]. Recognizing and quantifying model uncertainty as a safeguard aligns with our broader ongoing initiatives toward reliable conversational data analytics [22]. 
+
+# 3 System Architecture and Methodology 
+
+To enhance the relevance and engagement of our video feed, we developed the Video Candidate Generation (VCG) system [23]. This system utilizes a scalable Two-Tower architecture (Figure 1) designed for high-throughput inference, effectively decoupling interaction history. 
+
+3.1 Evolution from VCG v1 (metadata-based) 
+
+Prior to the multimodal approach presented here, we developed and tested an initial version, VCG v1. This iteration utilized a conventional supervised Two-Tower architecture. It reused the existing, highly optimized User Tower from our main catalog recommendation system to generate non-trainable user embeddings [24]. A new video tower was trained from scratch using available video metadata (creator IDs, hashtags, associated product links). Despite being a theoretically “stronger” baseline than simple recency-based methods, VCG v1 failed to deliver uplift in online A/B tests. Our analysis identified three critical failure modes: 1. Semantic gap: User representations were trained on “Add-to-Cart” and purchase signals. This strong conversion intent did not align with the inspirational intent of the video feed. 2. Metadata sparsity: Reliance on creator-generated tags resulted in poor coverage. The model defaulted to popularity bias. 3. Lack of visual signal: The model ignored the actual pixel content of the videos, failing to capture aesthetic preferences (e.g., Boho style vs. Streetwear ). These insights drove the pivot to VCG v2 (multimodal), which creates a shared embedding space for users and videos based on visual content. 
+
+3.2 Multimodal Representation (VCG v2) 
+
+Video Representation: A video v ∈ V is treated as a “bag-of-frames”. We extract N = 10 frames uniformly sampled from the video. Each frame is encoded with our in-house CLIP-based model, fine-tuned using a large-scale fashion dataset comprising approximately 200 million image–text pairs. The final video embedding ev is the mean of these frame vectors: 
+
+ev = 1
+
+N
+
+> N
+
+X
+
+> j=1
+
+ECLIP (frame j ). (1) We explicitly exclude textual metadata to avoid the noise encountered in VCG v1. 3Evaluation Framework. The model uses offl ine evaluation for faster iteration before A/B
+
+## testing, measuring NDCG and AUC on E2 feed ground truth actions. Time-based splits
+
+## prevent data leakage. While online A/B tests gauge real-world engagement, their limited
+
+## traffi c restricts them to exploratory experiments.
+
+## Figure 1. VCG architecture
+
+## In addition to the standard evaluation metrics, we also used LVLM-as-a-judge (Large
+
+## Vision-Language Model) as an offl ine evaluation approach. This technique leverages Qwen
+
+## 2.5-VL to serve as an evaluative judge that rates the relevance of each top-k (k=5, 10)
+
+## recommended videos based on a user's history (represented by their 12 most recent items
+
+## of interest) using a 5-category scale ranging from 5 (extremely relevant) to 1 (no relevance).
+
+## The primary objective is to provide relevance assessments from an external model thatFigure 1: VCG v2 Architecture: Video embeddings are pre-computed via frame aggregation (right), while User embeddings are computed dynamically from interaction history (left). 
+
+User Representation via Domain Adaptation: Let U be the set of users. For each user u ∈ U ,we have a time-ordered history of catalog interactions Hu = [( s1, t 1), ..., (sn, t n)], where sk is a product and tk is the timestamp. Evaluating distance metrics across such time-ordered sequences is critical for establishing robust similarity measures, a foundational challenge that remains significant in uncertain data environments [25, 26, 27]. A user is represented by a dynamic composition of these interactions: 
+
+eu =
+
+P|Hu| 
+
+> k=1
+
+wk · ECLIP (sk)
+
+P|Hu| 
+
+> k=1
+
+wk
+
+, wk = exp( −λ(tnow − tk)) . (2) Crucially, the embedding function ECLIP is a domain-adapted version. This process aligns the vector space such that “visual” video content and “commercial” product content reside in the same manifold. 
+
+3.3 Problem Formulation and Inference 
+
+Let U be the set of users and V be the set of creator videos. For each user u ∈ U , we have a time-ordered history of interactions with items from our product catalog, Hu = [( p1, t 1), (p2, t 2), ..., (pn, t n)] ,
+
+where pi is a product item and ti is the interaction timestamp. Our goal is to learn a scoring func-tion f : U × V → R that predicts the relevance of a video v to a user u. The final output for each user is a ranked list of videos such that highly relevant videos appear first. 4The scoring function is modeled as the dot product similarity between user and video embed-dings in a shared d-dimensional space derived from our domain-adapted CLIP model: f (u, v ) = 
+
+euT ev. Because video embeddings are pre-computed offline, online inference is restricted to a rapid vector similarity search, achieving a median latency (P50) of 17.5ms and a tail latency (P99) of 30ms. 
+
+# 4 Experimental Setup and Results 
+
+4.1 Evaluation Framework: The Paradox 
+
+Standard offline metrics (NDCG, AUC) computed on historical logs showed no significant improve-ment over a recency baseline due to exposure bias : historical logs are generated by the old system, unable to validate the relevance of new videos. To resolve this, we adopted an LVLM-as-a-judge approach [18, 19]. We utilized Qwen 2.5-VL as an external evaluator. The prompt (Figure 2) acts as a “system instruction”, enabling the model to rate the visual coherence between a user’s history and a recommended video on a standard 5-point Likert scale.             
+
+> System Instruction: You are an AI fashion relevance analyst. Your primary function is to critically and objectively evaluate the relevance of video content against a specific user’s fashion history. It is crucial that you use the defined textual relevance categories appropriately and avoid defaulting to a generally positive assessment unless there is substantial, specific evidence.
+> ⟨... ⟩
+> Assign one of the following textual categories for relevance. Choose the category that most accurately describes the alignment. Be discerning.
+> •"excellent match" :⟨... ⟩
+> •"good match" :⟨... ⟩
+> •"partial match" :⟨... ⟩
+> •"poor match" :⟨... ⟩
+> •"no match" :⟨... ⟩
+
+Figure 2: The instruction prompt provided to the Qwen-VL judge for evaluating visual coherence. 
+
+4.2 Attribute Prediction and Model Selection 
+
+To rigorously justify our choice of CLIP over newer generative models for the retrieval core, we evaluated both model families on an auxiliary task: Zero-Shot Attribute Prediction .We trained lightweight classifiers (Multilayer Perceptrons) on top of the raw video embeddings extracted from CLIP and Qwen2.5-Omni/VL (using the final hidden layer representations) to pre-dict video metadata tags such as “content theme” (e.g., fashion, sports) and “editorial format” (e.g., unboxing, review). As shown in Table 1, Qwen embeddings achieved a consistent 6-10% uplift in F1-scores compared to CLIP. This indicates that generative models capture richer semantic nuances and are superior for offline content enrichment tasks. 5Table 1: Zero-Shot Attribute Prediction (F1-Score). Qwen outperforms CLIP on classification tasks.         
+
+> Task (Label) CLIP Qwen2.5-Omni
+> Content Theme 0.92 0.94
+> Editorial Format 0.75 0.78
+> Video Source Classification 0.86 0.93
+
+While Qwen embeddings achieved a 6-10% uplift in F1-scores, they exhibited high anisotropy during semantic retrieval (all vectors clustered in a narrow cone), leading to poor separability in k-NN search. CLIP’s contrastive loss function enforces a more uniform distribution on the hypersphere, making it the superior choice for the retrieval engine. 
+
+4.3 Offline Evaluation: Visual Coherence 
+
+We introduced a metric called visual coherence , measured by similarity in an alternative purely image-based embedding space [28], alongside semantic similarity gains in the CLIP embedding space. Table 2: Offline Evaluation: VCG vs. Recency Baseline. Note the high gains in semantic similarity metrics.                 
+
+> Method fDNA S. CLIP S. LLM Top-5 LLM Top-10
+> Recency 13.8 (6.48) 0.41 (0.06) 2.72 (0.30) 2.43 (0.24) VCG 18.9 (8.23) 0.50 (0.04) 3.12 (0.35) 3.09 (0.32)
+> Gain +37% +22% +14.7% +27%
+
+VCG improved all offline semantic-coherence metrics over the recency baseline (Table 2): a 37% gain in fDNA [28] similarity and a 22% gain in CLIP similarity. The LVLM judge corroborated this, significantly shifting the distribution towards “Relevant” (from 2.43 to 3.09 for Top-10). To visualize this qualitative shift, Figure 3 presents the full distribution of the LVLM judge scores. While the recency baseline exhibits a distribution centered in the lower-to-mid range, the VCG model heavily skews the density towards “good match” and “excellent match” classifications, confirming the system’s superior visual and semantic alignment. 
+
+4.4 Online: A/B Testing 
+
+A 4-week online A/B test (Table 3) confirmed that semantic relevance drives engagement. Table 3: Online A/B Test Results (Treatment vs. Control)                 
+
+> Metric Lift Confidence Interval (95%)
+> VideoProgress @ 25% +40.97% [21.25, 60.69]% VideoProgress @ 50% +50.10% [22.03, 78.17]% Video Start Rate +8.17% [-0.57, 16.91]% Start →25% Conv. +30.32% [16.69, 43.96]% Start →50% Conv. +38.76% [17.01, 60.52]%
+
+6recency_top10 vcg_top10 
+
+Video Ranking Method 
+
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> LVLM Rating
+
+Figure 3: Comparison of VCG with recency-based baseline using LVLM-as-a-judge scores. VCG consistently shifts the distribution towards higher relevance ratings. While the lift in video start rate (+8%) was modest, the gains in consumption depth were substantial (+50% for videos watched at least halfway). This indicates that while users started slightly more videos, the videos they did start were far more relevant, keeping them engaged for longer. This effectively counters the clickbait problem where high click-through rates mask poor content fit. To illustrate the stability of this engagement increase over the duration of the experiment, Figure 4 plots the daily percent lift for the VideoProgress@50% metric. The time series demonstrates that the VCG model’s outperformance is not an artifact of a short-term novelty effect, but a consistent, sustained improvement over the control baseline throughout the entire 4-week testing period. Importantly, core business metrics (revenue, user retention rate) remained stable, proving that the video feed adds value without cannibalizing transaction flow. Figure 2. Time series of Percent Lift for for KPI  VideoProgress@50pct | E2  (plot from Eppo) 
+
+Figure 4: Time series of Percent Lift for Video Progress @ 50%. The VCG model consistently outperforms the baseline throughout the testing period. 
+
+# 5 Demonstration Scenarios and Interface 
+
+Our interactive demonstration 1 showcases the versatility of the shared multimodal embedding space through a custom web UI (Figure 5).  
+
+> 1Demo video available at: https://youtu.be/ClF6iv_PH4A
+
+7Figure 5: The VCG Demonstration Interface. Left: Scenario 1 (Product → Video) retrieving content for a selected sneaker. Center: Scenario 2 (Video → Product) retrieving matching denim SKUs for a selected video. Right: Scenario 3 (Text → Video) showing zero-shot semantic retrieval for the query “Terracotta”. 1. Get the Look (Product → Video): The user selects a static product (e.g., a floral dress). The system uses the product embedding as a query vector to perform a k-NN search against the video index (Fig 5, Left), retrieving videos featuring similar items. This solves the content association problem, automatically linking inventory to content without manual tagging. 2. Shop the Look (Video → Product): The user selects a video. The system queries the product catalog using the video embedding (Fig 5, Center). A list of available products matching the visual style is displayed, enabling “shoppable” media from purely user-generated content. 3. Zero-Shot Semantic Search (Text → Video): The user types a text query (e.g., “Cyber-punk street style”). The text is encoded via the CLIP text encoder to query the video index (Fig 5, Right). The system retrieves relevant videos even if they lack text metadata/tags. This demonstrates the model’s understanding of abstract visual concepts, vastly expanding content discoverability. 
+
+# 6 Discussion and Conclusion 
+
+Standard e-commerce recommenders rely on collaborative filtering, requiring dense interaction his-tories. Off-the-shelf text search engines rely on metadata matching. As shown in Table 4, VCG uniquely addresses the needs of ephemeral video by operating in a zero-shot, cross-modal capacity without relying on popularity proxies. Table 4: Comparison of VCG against standard industry methodologies.                  
+
+> Capability VCG (Ours) Collaborative Filtering Metadata Search Handles Extreme Cold-Start Yes (Zero-Shot) No (Requires interactions) Partial (Requires tags)
+> Visual Semantic Understanding High (Pixel-level) None None
+> Cross-Modal (Product ↔Video) Yes (Shared space) No No
+> Susceptibility to Popularity Bias Low High High
+
+Responsible AI Aspects: Decoupling retrieval from historical click-graphs may reduce depen-dence on popularity signals; measuring creator-level exposure remains future work. Because VCG maps users to videos based on objective aesthetics rather than creator identity or demographic tags, the system provides fairer exposure to long-tail and underrepresented creators. 
+
+Conclusion: The VCG system serves as a bridge between the structured, search-based past of e-commerce and the fluid, discovery-based future of video feeds. By decoupling representation 8from interaction history, we effectively addressed the extreme cold-start problem. The documented divergence between offline proxies (NDCG) and online reality serves as a crucial warning to the research community: in the era of generative AI, relevance is best measured by semantic coherence, not just historical clicks. 
+
+# Acknowledgements 
+
+We are deeply thankful for the contributions of our colleagues, Dmitry Isaev, Siobhan Hughes, and Varya Obolonchykova, for their invaluable help throughout this work. We also thank Tofigh Naghibi, Jacek Wasilewski, Ton Torres and Josip Krapac for their constant support, both technical and methodological. 
+
+# References 
+
+[1] Katsiaryna Mirylenka, Paolo Scotton, Christoph Miksovic, and Jeff Dillon. Hidden layer mod-els for company representations and product recommendations. In Proceedings of the 22nd International Conference on Extending Database Technology (EDBT) , 2019. [2] Ruohan Zhan, Changhua Pei, Qiang Su, Jianfeng Wen, Xueliang Wang, Guanyu Mu, Dong Zheng, Peng Jiang, and Kun Gai. Deconfounding duration bias in watch-time prediction for video recommendation. In ACM SIGKDD , 2022. [3] Paul Covington, Jay Adams, and Emre Sargin. Deep neural networks for youtube recommen-dations. In RecSys , 2016. [4] Aditya Pal, Chantat Eksombatchai, Yitong Zhou, Bo Zhao, Charles Rosenberg, and Jure Leskovec. Pinnersage: Multi-modal user embedding framework for recommendations at pin-terest. In ACM SIGKDD , 2020. [5] Xinyang Yi, Ji Yang, Lichan Hong, Derek Zhiyuan Cheng, Lukasz Heldt, Aditee Kumthekar, Zhe Zhao, Li Wei, and Ed Chi. Sampling-bias-corrected neural modeling for large corpus item recommendations. In RecSys , 2019. [6] Evgeny Krivosheev, Mattia Atzeni, Katsiaryna Mirylenka, Paolo Scotton, Christoph Miksovic, and Anton Zorin. Business entity matching with siamese graph convolutional networks. In 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , volume 35, pages 16054–16056, 2021. [7] Evgeny Krivosheev, Katsiaryna Mirylenka, Mattia Atzeni, and Paolo Scotton. Graph neural networks for entity matching. In 2023 IEEE International Conference on Big Data (BigData) ,pages 6212–6214. IEEE, 2023. [8] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In ICML , 2021. [9] Patrick John Chia, Giuseppe Attanasio, Federico Bianchi, Silvia Terragni, Ana Rita Magal-haes, Diogo Goncalves, Ciro Greco, and Jacopo Tagliabue. Contrastive language and vision learning of general fashion concepts. Scientific Reports , 12(1):18958, 2022. 9[10] Lukas Wertz, Jasmina Bogojeska, Katsiaryna Mirylenka, and Jonas Kuhn. Evaluating pre-trained sentence-bert with class embeddings in active learning for multi-label text classifica-tion. In Proceedings of the 2nd Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics and the 12th International Joint Conference on Natural Language Processing , pages 366–372, 2022. [11] Lukas Wertz, Katsiaryna Mirylenka, Jonas Kuhn, and Jasmina Bogojeska. Investigating active learning sampling strategies for extreme multi label text classification. In Proceedings of the Thirteenth Language Resources and Evaluation Conference , pages 4597–4605, 2022. [12] Lukas Wertz, Jasmina Bogojeska, Katsiaryna Mirylenka, and Jonas Kuhn. Reinforced active learning for low-resource, domain-specific, multi-label text classification. In Findings of the Association for Computational Linguistics: ACL 2023 , pages 10959–10977, 2023. [13] Yupeng Hou, Junjie Zhang, Zihan Lin, Hongyu Lu, Ruobing Xie, Julian McAuley, and Wayne Xin Zhao. Large language models are zero-shot rankers for recommender systems. In ECIR , 2024. [14] Robin Chan, Katsiaryna Mirylenka, Thomas Gschwind, Christoph Miksovic, Paolo Scotton, Enrico Toniato, and Abdel Labbi. Adapting llms for structured natural language api inte-gration. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing: Industry Track , pages 845–855, 2024. [15] Catalina Dragusin, Katsiaryna Mirylenka, Christoph Miksovic Czasch, Michael Glass, Nahuel Defosse, Paolo Scotton, and Thomas Gschwind. Grounding llms for database exploration: Intent scoping and paraphrasing for robust nl2sql. In Proceedings of the VLDB Endowment (AIDB Workshop) , 2025. [16] Noah Hampp, Katya Mirylenka, and Michael Glass. Optimizing large language models for robust domain-specific text-to-sql: From prompting to preference alignment. In Proceedings of the 11th Edition of the Swiss Text Analytics Conference (SwissText) , pages 63–74, 2026. [17] Kawin Ethayarajh. How contextual are contextualized word representations? In EMNLP-IJCNLP 2019 , 2019. [18] Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric Xing, et al. Judging llm-as-a-judge with mt-bench and chatbot arena. In NeurIPS , 2024. [19] Kasra Hosseini, Thomas Kober, Josip Krapac, Roland Vollgraf, Weiwei Cheng, and Ana Peleteiro Ramallo. Retrieve, annotate, evaluate, repeat: Leveraging multimodal llms for large-scale product retrieval evaluation. In ECIR 2025 , 2025. [20] Quan Xiao, Debarun Bhattacharjya, Balaji Ganesan, Radu Marinescu, Katsiaryna Mirylenka, Nhan H. Pham, Michael R. Glass, and Junkyu Lee. The consistency hypothesis in uncertainty quantification for large language models. In Proceedings of the Conference on Uncertainty in Artificial Intelligence (UAI) , 2025. [21] Debarun Bhattacharjya, Balaji Ganesan, Radu Marinescu, Katsiaryna Mirylenka, Nhan H. Pham, Michael R. Glass, Junkyu Lee, et al. Simba uq: Similarity-based aggregation for uncertainty quantification in large language models. In Findings of the Association for Com-putational Linguistics: EMNLP 2025 , 2025. 10 [22] Sihem Amer-Yahia, Jasmina Bogojeska, Roberta Facchinetti, Valerio Franceschi, Aristides Gionis, Katja Hose, Georgia Koutrika, Roger Kouyos, Matteo Lissandrini, Silviu Maniu, Kat-siaryna Mirylenka, Davide Mottin, Themis Palpanas, Mattia Rigotti, and Yannis Velegrakis. Towards reliable conversational data analytics. In Proceedings of the 28th International Con-ference on Extending Database Technology (EDBT) , 2025. [23] Andrii Dzhoha, Katya Mirylenka, and et al Malykh. Powering video recommendations with multimodal embeddings guided by llms. EARL@RecSys , 2025. [24] Marjan Celikik, Jacek Wasilewski, Ana Peleteiro Ramallo, Alexey Kurennoy, Evgeny Labzin, Danilo Ascione, Tural Gurbanov, G´ eraud Le Falher, Andrii Dzhoha, and Ian Harris. Building a scalable, effective, and steerable search and ranking platform, 2024. [25] Katsiaryna Mirylenka, Michele Dallachiesa, and Themis Palpanas. Data series similarity using correlation-aware measures. In Proceedings of the 20th International Conference on Extending Database Technology (EDBT) , pages 366–377, 2017. [26] Michele Dallachiesa, Besmira Nushi, Katsiaryna Mirylenka, and Themis Palpanas. Similarity matching for uncertain time series: analytical and experimental comparison. In Proceedings of the 2nd ACM SIGSPATIAL International Workshop on Querying and Mining Uncertain Spatio-Temporal Data (QUeST@GIS) , pages 8–15, 2011. [27] Michele Dallachiesa, Besmira Nushi, Katsiaryna Mirylenka, and Themis Palpanas. Uncertain time-series similarity: Return to the basics. Proceedings of the VLDB Endowment , 5(11):1662– 1673, 2012. [28] Christian Bracher, Sebastian Heinz, and Roland Vollgraf. Fashion DNA: merging content and sales data for recommendation and article mapping. CoRR , abs/1609.02489, 2016. 11

@@ -6,41 +6,41 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-24
-- 运行时间：2026-06-24 21:50:20 UTC
+- 最新运行日期：2026-06-25
+- 运行时间：2026-06-25 21:02:35 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：0
-- 速读区：6
+- 本次总论文数：7
+- 精读区：4
+- 速读区：3
 
 ### 今日简报（AI）
-1) 今日速读6篇论文，重点关注视觉追踪、视频分割及工作流图编辑三大方向。  
-2) 最值得关注的是结合SAM2的邻域感知时序追踪方法SENTRY，以及利用几何知识蒸馏增强文本驱动视频分割的技术。  
-3) 建议深入对比SENTRY与现有追踪器的实际效果，同时尝试将几何蒸馏框架迁移至其他视频理解任务。
-- 详情：[/202606/24/README](/202606/24/README)
+今天共推荐7篇论文，精读4篇速读3篇，聚焦高效视频理解与边缘推理优化。最值得关注的是动态固定预算记忆库提升流式视频效率，以及混合专家模型在消费硬件上的实证分析。建议优先精读这两篇论文，并关注键值注意力缓存机制对Transformer的加速潜力。
+- 详情：[/202606/25/README](/202606/25/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Towards a Dynamic and Fixed-budget Memory Bank for Efficient Streaming Video Understanding](/202606/25/2606.25658v1-towards-a-dynamic-and-fixed-budget-memory-bank-for-efficient-streaming-video-understanding)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：流式视频理解与动态记忆库
+2. [Does Mixture-of-Experts Actually Help Inference on Consumer and Edge Hardware? An Empirical Study](/202606/25/2606.21428v2-does-mixture-of-experts-actually-help-inference-on-consumer-and-edge-hardware-an-empirical-study)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：在边缘硬件上评测MoE与密集模型，直接针对边缘计算的模型选择
+3. [Toward Low-Latency Vision-Language Models with Doubly-Correct Predictions in Egocentric Visual Understanding](/202606/25/2606.25160v1-toward-low-latency-vision-language-models-with-doubly-correct-predictions-in-egocentric-visual-understanding)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：面向实时自我中心视觉理解的低延迟VLM推理
+4. [Latency-Aware Service Placement using Neural Combinatorial Optimisers for Edge--Cloud Systems](/202606/25/2606.25553v1-latency-aware-service-placement-using-neural-combinatorial-optimisers-for-edge--cloud-systems)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：关注边缘-云系统中的延迟感知服务放置
 
 ### 速读区论文标签
-1. [SENTRY: SAM2-Enhanced Neighbor-Aware and Temporally Reasoned Memory for Visual Tracking](/202606/24/2606.24449v1-sentry-sam2-enhanced-neighbor-aware-and-temporally-reasoned-memory-for-visual-tracking)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：视觉跟踪用于视频分析
-2. [Boosting Text-Driven Video Segmentation via Geometry-Aware Distillation](/202606/24/2606.24464v1-boosting-text-driven-video-segmentation-via-geometry-aware-distillation)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：文本驱动的视频分割结合几何知识蒸馏
-3. [Bridging Design and Execution: A Visual Graph Editor for Edge and Cloud Workflows](/202606/24/2606.21416v1-bridging-design-and-execution-a-visual-graph-editor-for-edge-and-cloud-workflows)  
+1. [VCG: A Multimodal Retrieval Framework for E-Commerce Video Feeds under Extreme Cold-Start Conditions](/202606/25/2606.19627v1-vcg-a-multimodal-retrieval-framework-for-e-commerce-video-feeds-under-extreme-cold-start-conditions)  
    标签：评分：6.0/10、query:mec-video
-   evidence：边缘计算工作流编辑器
-4. [ZeroGVC: Zero-Shot Generative Video Compression with Autoregressive Diffusion Priors](/202606/24/2606.22371v1-zerogvc-zero-shot-generative-video-compression-with-autoregressive-diffusion-priors)  
+   evidence：面向电商视频流的多模态检索框架，应对极端冷启动问题
+2. [Keyless Attention: Value-Space Routing and Value-Only Caching for Efficient Transformers](/202606/25/2606.21848v1-keyless-attention-value-space-routing-and-value-only-caching-for-efficient-transformers)  
    标签：评分：6.0/10、query:mec-video
-   evidence：零样本生成式视频压缩实现低延迟
-5. [ZeroGVC: Zero-Shot Generative Video Compression with Autoregressive Diffusion Priors](/202606/24/2606.22371v2-zerogvc-zero-shot-generative-video-compression-with-autoregressive-diffusion-priors)  
+   evidence：提出高效注意力机制减少KV缓存50%，有利于边缘部署
+3. [Enabling Cloud-Level Accuracy in Edge AI through IoT Data Preprocessing](/202606/25/2606.22496v1-enabling-cloud-level-accuracy-in-edge-ai-through-iot-data-preprocessing)  
    标签：评分：6.0/10、query:mec-video
-   evidence：零样本生成式视频压缩实现低延迟
-6. [M^2C-EvDet: Multi-Domain Multi-Order Cross-Modal Knowledge Distillation for Event-based Object Detection](/202606/24/2606.24248v1-m2c-evdet-multi-domain-multi-order-cross-modal-knowledge-distillation-for-event-based-object-detection)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：事件目标检测用于视频分析
+   evidence：通过IoT数据预处理实现边缘AI的云级准确性
 
 
 <div class="dpr-home-promo-card">

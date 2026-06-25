@@ -1,0 +1,854 @@
+Title: Towards a Dynamic and Fixed-budget Memory Bank for Efficient Streaming Video Understanding
+
+URL Source: https://arxiv.org/pdf/2606.25658v1
+
+Published Time: Thu, 25 Jun 2026 01:03:06 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# Towards a Dynamic and Fixed-budget Memory Bank for Efficient Streaming Video Understanding 
+
+Baiyang Song 1 Yuli Lin 1 Qiong Wu 1 Tao Chen 1 Jun Peng 1 Xiao Chen 1
+
+Yiyi Zhou 1† Rongrong Ji 1
+
+> 1
+
+Key Laboratory of Multimedia Trusted Perception and Efficient Computing, Ministry of Education of China, Xiamen University, 361005, P.R. China 
+
+{songbaiyang, linyuli330, qiong, taochen}@stu.xmu.edu.cn pengjun@outlook.com 2912@mju.edu.cn {zhouyiyi, rrji}@xmu.edu.cn 
+
+## Abstract 
+
+Currently, streaming video understanding is still a daunting task for existing multi-modal large language models (MLLMs). Its difficulties not only lie in handling the ever-increasing video frames, but also in the unpredictability of future video content and input instructions. In this paper, we study this task from the perspective of constructing a dynamic but fixed-budget memory bank, and propose a novel and training-free approach termed CausalMem . CausalMem is dedicated to con-structing a dynamic visual memory update mechanism, thereby maximizing the amount of information in streaming video within a limited memory space, much like the human brain. In practice, CausalMem estimates the redundancy of visual tokens and updates the memory bank via an online semantic basis, which models the principal semantics of the observed video stream. To validate CausalMem, we apply it to two representative MLLMs, namely LLaVA-OneVision and Qwen2.5-VL respectively, and conduct extensive experiments on both streaming and offline video understanding benchmarks. The experimental results not only show the great advantages than existing methods under both streaming and offline settings, 
+
+e.g. , +3 .2% and +3 .0% average accuracy gains respectively, but also witness the superior semantic preservation for streaming videos, e.g. , using 12 k token budgets to memorize hour-long streaming videos, which achieves more than 20 × visual token compression ratio and only occupies about 82 MB storage. Our code is given in CausalMem. 
+
+## 1 Introduction 
+
+After achieving great successes in a variety of image-language tasks [ 1, 2, 3 , 4], recent multimodal large language models (MLLMs) [ 5, 6 , 7] also yield notable progress in the video domain [ 8, 9, 10 ]. To overcome the substantial computation caused by the excessive video tokens, numerous works [ 11 , 12 , 13 , 14 , 15 ] have been recently devoted to the research of efficient video understanding, employing techniques such as token pruning [16 , 11 , 12 ] and KV Cache compression [ 17 , 18 , 19 ]. In terms of video content compression, current research primarily focuses on offline video processing, which typically requires globally semantical compression strategies based on the entire video content. Moreover, for streaming video understanding, the fixed-budget compression still remains unexplored. To this end, efficient streaming video understanding is still an intractable problem for existing MLLMs [9, 8, 10 ], of which difficulties mainly lie in two aspects. Firstly, MLLMs need to process the video of potentially unbounded length in the streaming scenario. For instance, LLaVA-OneVision [ 9] needs to cope with more than 700 k visual tokens for a two-hour video (1 FPS). Moreover, even the advanced  
+
+> †Corresponding author. Preprint.
+> arXiv:2606.25658v1 [cs.CV] 24 Jun 2026 OOM
+> Offload
+> to CPU
+> Quantization
+> Fixed-size
+> Memory(Ours)
+> (a)
+> LLaVA-OneVision
+> StreamingTom
+> ReKV
+> CausalMem
+> Video-MME
+> LVBench
+> Streaming
+> Bench
+> OVOBench
+> MLVU
+> Ours
+> VisionZip
+> StreamingTom
+> Uni-Sample
+> 60.0
+> 42.2
+> 74.3
+> 65.7
+> 70.9
+> 57.0
+> LongVideo
+> Bench
+> (b)
+
+Figure 1: (a) CausalMem consistently outperforms existing visual compression methods across streaming and offline video understanding benchmarks. The base MLLM used is LLaVA-OneVision. (b) Compared with existing streaming video methods, CausalMem maintains a fixed-size memory bank, enabling streaming video understanding with bounded computation and storage overhead. video compression methods [ 20 , 12 ] will encounter a rapid accumulation of visual tokens over time, placing a heavy burden on both computation and storage. Secondly, when compressing streaming videos, it is almost impossible to predict future video content and potential user questions. This case renders many existing compression methods unapplicable, such as those based on global redundancy [12, 13] or text-guided estimation [21, 22]. Therefore, we raise a question that 
+
+"Is it possible to achieve the dynamic and budgeted visual memory bank for efficient streaming video understanding, much like the human brain?" 
+
+In this paper, we study this problem from the perspective of constructing a dynamic and fixed-budget visual memory bank, and propose a novel and training-free method for existing MLLMs, termed 
+
+CausalMem . To relax the burdens of both computation and storage, CausalMem will maintain a fixed-size memory bank for streaming video tokens, while using a memory update mechanism to meet the properties of streaming video understanding. In practice, CausalMem draws on the principle of Information Maximization [ 23 ] and builds a compact but evolving semantic basis for the memory bank, thereby well estimating the visual tokens for memory update. In this way, CausalMem can not only well reduce the visual redundancy but also maximize the information gain of the memory bank. To validate CausalMem, we apply it to two MLLMs, namely LLaVA-OneVision [ 9] and Qwen2.5-VL [ 10 ], and conduct extensive experiments on both streaming and offline video understanding benchmarks. The experimental results show that CausalMem not only achieves obvious performance gains than the compared streaming or offline methods, e.g. , +3 .2% and +3 .0% average performance gains on streaming and offline benchmarks respectively, but also preserve the principal semantics of streaming videos by only using 12 k token budgets, e.g. , achieving more than 20 × visual token compression ratio for an hour-long video while consuming the storage of only 82MB. Overall, our contributions are twofold: • We study the efficient streaming video understanding from the perspective of a dynamic yet fixed budget memory bank under strict causality, and propose a novel and training-free approach for existing MLLMs, termed CausalMem. • The proposed CausalMem obtains competitive or even better performance than existing efficient video compression methods on both streaming and offline benchmarks, and also exhibits its superiority in streaming video semantic compression with fixed token budgets. 
+
+## 2 Related Work 
+
+Offline video understanding. Recent Multimodal Large Language Models [ 6, 10 , 24 ] have shown strong capabilities in offline video understanding. However, as video length increases, the number of visual tokens increases linearly, leading to prohibitive computational cost and memory overhead. Ex-isting methods address this issue from two main perspectives. One is adopting Retrieval-Augmented Generation (RAG), in which a subset of task-relevant frames is selected based on vision–text similar-ity, thereby reducing the number of frames processed by the MLLM. While effective, they rely on the availability of user queries in advance, limiting their applicability to online settings. The other 2one focuses on visual token compression. They reduce the token sequence length via token pruning or merging [12, 13, 25, 26], either based on global video content or query-aware relevance. Despite their effectiveness, they require whole video access and are thus unsuitable for streaming scenarios. 
+
+Streaming Video Understanding. To address the above limitations, recent works focus on streaming video understanding, where visual tokens must be processed incrementally based on observed frames. Most existing methods aim to control the growth of visual tokens through memory or compression mechanisms. A representative direction is KV cache compression, where methods such as StreamMem [ 17 ], ReKV [ 18 ] and LiveVLM [ 27 ] compress the key–value cache generated by visual tokens to prevent unbounded memory growth. Another line of work introduces structured memory mechanisms. For example, FluxMem [ 28 ] organizes visual tokens into hierarchical memory with a First-In-First-Out (FIFO) strategy to manage short-, medium-, and long-term information. In addition, StreamingTOM [ 29 ] combines token compression before the LLM with KV cache quantization to further reduce memory overhead. Beyond compression, some methods also incorporate query-aware retrieval. For instance, LiveVLM [ 27 ] and StreamingTOM [ 29 ] retrieve the most relevant visual tokens conditioned on the user query. Despite these advances, existing methods primarily rely on local redundancy within the observed visual tokens or require query guidance, which limits their effectiveness in fully capturing the global semantic structure of the video stream. 
+
+## 3 Method 
+
+3.1 Overview 
+
+Given a video V and a question Q, an MLLM aims to generate the answer by maximizing the conditional generation objective: 
+
+p(Y | V, Q ) = 
+
+> L
+
+Y
+
+> i=1
+
+p(yi | G, V, Q, Y <i ), (1) where G denotes the generator of MLLM, p(·) denotes the probabilities of the predicted word, 
+
+Y = {y1, ..., y L} is the answer sequence and L is its length. V is a subsequence of visual tokens encoded from the video V and Y<i denotes the answer subsequence before the i-th step. Due to the limited context length and memory budget of MLLMs, some methods [ 12 , 13 ] apply token compression to reduce the length of V, e.g. , by pruning or merging the redundant tokens[ 12 , 13 , 14 ]. Meanwhile, some endeavors [ 19 , 30 ] compress the KV caches of MLLMs generated by visual tokens. However, these compression methods usually need to operate on the complete video or ignore the upper limit of both computation and storage, which are inferior in streaming scenarios. To this end, we aim to maintain a visual memory bank M ∈ Rb×d with a fixed budget (length) b, d is the visual token feature dimension, and generate the answer based on this memory bank: 
+
+p(Y | V, Q ) = 
+
+> L
+
+Y
+
+> i=1
+
+p(yi | G, M, Q, Y <i ) (2) The memory bank keeps a compact set of visual tokens while being dynamically updated as each new frame I arrives. Therefore, the problem we study becomes how to maintain M online so that it preserves the most informative tokens of the observed video stream under strict causality. To this end, we first construct and update an online semantic basis B ∈ Rq×d , where q is the maximum number of semantic basis vectors in B and q ≪ t × N , where t and N denote the number of streaming frames and visual tokens per frame, respectively. In practice, B is used to dynamically model the principal semantics of the observed video stream, based on which we can estimate the redundancy of streaming visual tokens and update the memory bank. Then we compress the visual tokens into M according to their redundancy once M achieves the upper limit. Note that, the updating process of B and M are both causal, i.e. unpredictable to future frames and the question. Therefore, M can keep a fixed budget under strict causality. 
+
+3.2 Online Semantic Basis 
+
+To model the principle semantics of the video stream at the t-th time step, we maintain an Online Semantic Basis Bt ∈ Rqt×d, where qt ≤ q and q is the max number of basis vectors. Let the visual 3Project    
+
+> Small residual Large residual
+> Retain
+> Redundancy score Temporal score
+> tokens tokens
+
+. . .  
+
+> Remove
+> Low score
+> High score
+
+. . .   
+
+> token
+> projection
+> span(B)
+> residual
+> removed
+> token retained
+> token
+> Frame 1
+> Initialization
+> Frame t
+> Projection
+> Small residual Large residual
+> Residual
+> Update
+> Online Semantic Basis
+> Eq. 14
+> Projection
+
++
+
+> Vision Encoder &
+> Projector
+> Update Online
+> Semantic Basis
+> Update Visual
+> Memory Bank
+> Streaming Video
+> Visual Memory Bank
+> Visual Memory Bank
+
+Figure 2: Overview of CausalMem. Given a streaming video, CausalMem encodes incoming frames and maintains a fixed-size visual memory bank under strict causality. An online semantic basis is dynamically updated to capture the principal semantics of the observed stream, and token residuals with respect to this basis are used to estimate redundancy. The memory bank is then updated by retaining tokens with low redundancy and temporal recency, thereby maximizing its information. tokens of the t-th frame be denoted as Xt ∈ RN ×d. At the 1 st step, we initialize the semantic basis from X1 via compact Singular Value Decomposition (SVD) [31]: 
+
+X1 ≈ U1Σ1W⊤ 
+
+> 1
+
+. (3) Here, U1 ∈ RN ×q1 denotes the left singular vectors, capturing the token wise variation. Σ1 ∈ Rq1×q1
+
+is the diagonal matrix of singular values quantifying the importance of each principal component, and W⊤ 
+
+> 1
+
+∈ Rq1×d denotes right singular vectors, whose columns represent the dominant semantic vectors in the feature space. We retain the top q1 ∈ (0 , q ] singular vectors and initialize the basis as 
+
+B1 = W1 = [ w1, w 2, ..., w q1 ] ∈ Rq1×d, (4) where wi ∈ Rd denotes the i-th right singular vector. Meanwhile, we introduce a basis activity score 
+
+st ∈ Rqt to track the usage frequency of each basis vector, which is initialized by 1 and used to guide the update of the semantic basis R.For the evolving video stream, the basis matrix is updated at each time step. Given a new frame, we project its visual tokens Xt onto the current basis Bt−1 and reconstruct them by 
+
+ˆXt = XtB⊤
+
+> t−1
+
+Bt−1, (5) where ˆXt ∈ RN ×d represents the reconstructed token features from their projection onto the subspace spanned of the semantic basis Bt−1. Then, the residual matrix Rt = Xt− ˆXt captures the information that cannot be represented by Bt−1. In this case, we can measure the redundancy of each token Xt,i 
+
+via its residual norm, defined by 
+
+et,i = ∥Rt,i ∥2, (6) where ∥ · ∥ 2 denotes the L2 norm. A larger et,i indicates that the tokens contain more novel and informative semantics, also indicating less redundancy. To update the basis Bt−1, we select the top-k least redundant tokens to form candidate tokens 
+
+Xcand  
+
+> t
+
+∈ Rk×d, whose residual Rcand  
+
+> t
+
+∈ Rk×d can be calculated akin to Eq. (5) and Eq. (6) . Then, we remove the semantics already captured by Bt−1 in Rcand  
+
+> t
+
+, resulting in ˆRt:
+
+ˆRt = Rcand 
+
+> t
+
+ Id − B⊤
+
+> t−1
+
+Bt−1
+
+ , (7) where Id ∈ Rd×d denotes the identity matrix. We then perform QR decomposition [31] on ˆRt:
+
+ˆRt = ¯Qt ¯Rt, (8) where ¯Qt ∈ Rk×d provides the orthonormal new basis. The basis and activity scores are updated as: 
+
+B′ 
+
+> t
+
+= [ Bt−1, ¯Qt], s′ 
+
+> t
+
+= [ st−1, ¯st], (9) 4where ¯st ∈ Rk denotes the activity scores of ¯Qt. And B′ 
+
+> t
+
+remains row-orthonormal throughout the whole processing, the proof is provided in Appendix 1. Meanwhile, to adapt to the evolving video stream, we dynamically update the activity score st.Specifically, we denote the i-th token of t-th frame as Xt,i . For the j-th basis vector of Bt at the t-th time step, we define it as Bt,j and its instantaneous activity as at,j :
+
+at,j = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+|Bt,j X⊤
+
+> t,i
+
+|. (10) Then we update the activity score of the j-th vector st,j using an exponential moving average: 
+
+st,j = γs t−1,j + (1 − γ)at,j , (11) where at,j measures the instantaneous activation of the j-th basis vector in the current frame, and 
+
+st,j denotes the temporally smoothed activity score that smoothes historical activity with recent observations. Here, γ ∈ [0 , 1] is the smoothing factor. Once the number of vectors in B′ 
+
+> t
+
+exceeds the predefined limit q, we retain the q most active basis vectors according to s′
+
+> t
+
+. We denote Jt as the retained index set. Bt and st are updated by: 
+
+Bt ← B′
+
+> t
+
+(Jt), st ← s′
+
+> t
+
+(Jt), where Jt = arg max 
+
+> |J | =q
+
+X
+
+> j∈J
+
+st,j . (12) A larger st,j indicates that the corresponding basis vector has been used more consistently in recent frames. Therefore, we retain q most active basis vectors as the updated basis. In this way, the basis remains a compact yet informative semantic representation with bounded size while evolving online. 
+
+3.3 Dynamic Visual Memory Bank 
+
+As the video stream evolves, the number of visual tokens grows linearly over time. To satisfy a fixed token budget, we maintain a dynamic visual memory bank Mt ∈ Rbt×d at the t-th time step. which maximizes the information preserved in the video stream. Here, bt ≤ b, bt is the number of tokens stored in Mt and b is the fixed budget of the memory bank. The memory bank Mt stores a compact set of visual tokens that are either informative or temporally recent from the observed video stream and is updated online whenever a new frame arrives. At the t-th time step, we first insert all tokens in Xt into the previous memory bank Mt−1, yielding a temporary memory bank M′ 
+
+> t
+
+= [ Mt−1, Xt]. If |M′
+
+> t
+
+| > b , we compress M′ 
+
+> t
+
+guided by the online semantic basis Bt.Specifically, for each token X′ 
+
+> i
+
+∈ M′
+
+> t
+
+, we first compute its redundancy score ˜ei according to the residual between X′ 
+
+> i
+
+and its projection onto Bt, similar to Eq.(7): 
+
+˜ei = ei − emin 
+
+emax − emin + ϵ , where ei = xi − xiB⊤ 
+
+> t
+
+Bt 2 , (13) where emin and emax are the minimum and maximum redundancy scores among all tokens in M′
+
+> t
+
+,respectively, and ϵ is a small constant to avoid division by zero. In addition to redundancy, we also incorporate a temporal recency prior to encourage the memory bank to adapt smoothly to the evolving video stream. Therefore, for each token X′ 
+
+> i
+
+∈ M′
+
+> t
+
+, we compute the final retention score as fi :
+
+fi = (1 − α)˜ ei + α˜τi, where ˜τi = ti + 1 
+
+t + 1 , (14) where ti denotes the timestamp of the source frame index of token X′ 
+
+> i
+
+and α balances the redundancy score and the temporal recency score. We then retain b tokens with the highest scores from M′ 
+
+> t
+
+to form the updated memory bank Mt:
+
+Mt ← M′
+
+> t
+
+(Ot), where Ot = arg max 
+
+> |O| =b
+
+X
+
+> i∈O
+
+fi. (15) 5Table 1: Comparison with existing methods on two streaming benchmarks. The base MLLM used is LLaVA-OneVision. The best and second-best results are in bold and underline respectively. †
+
+denotes the off-line method, which compress the tokens given the whole video frames.                                                                                                                                                           
+
+> Method Frames OVO-Bench real-time StreamingBench real-time OCR ACR ATR STU FPD OJR Avg. OP CR CS ATP EU TR PR SU ACP CT Avg.
+> LLaVA-OneVision [9] 32 67.1 61.5 74.1 45.5 69.3 65.2 62.6 80.4 74.2 76.0 80.7 72.7 71.7 67.6 65.5 65.7 45.1 71.1 VisionZip †[16] 0.5fps 68.5 55.0 77.6 48.3 74.3 65.2 63.7 79.3 83.6 79.7 80.3 68.4 72.1 72.2 62.4 67.7 41 71.6 ReKV [18] 0.5fps ––––––57.3 74.4 78.9 78.6 77.1 68.3 67.9 67.6 62.6 64.3 44.6 69.1 StreamKV [38] 1fps –––––––74.7 78.1 87.7 79.4 70.8 67.6 70.4 64.6 64.0 45.1 71.0 LiveVLM [27] 0.5fps 67.1 60.5 70.7 46.1 71.3 61.9 61.6 81.5 78.1 83.3 79.1 69.6 74.1 75.0 69.1 67.7 40.4 72.9 StreamingTom [29] 0.5fps 67.8 61.5 75.9 47.8 68.3 66.3 63.6 79.2 80.1 78.2 79.4 67.7 68.9 69.4 60.0 64.6 46.3 70.1
+> CausalMem (Ours) 0.5fps 71.8 61.5 76.7 48.9 76.2 66.8 65.7 82.6 79.7 83.2 83.2 69.6 78.4 75.0 67.3 70.9 39.4 74.3
+
+Tokens that are not selected into Mt are directly removed. In this way, Mt always keeps the fixed budget while preserving tokens that maximize the information of the video stream. When a question Q arrives at the t-th time step, the response Y is generated conditioned on the question and the visual memory bank Mt:
+
+p(Y | Mt, Q ) = 
+
+> L
+
+Y
+
+> i=1
+
+p(yi | G, Mt, Q, Y <i ) (16) The illustration of CausalMem is given in Fig. 2, and the algorithm is provided in Appendix 1. 
+
+## 4 Experiment 
+
+4.1 Benchmarks and Metrics 
+
+We conduct extensive experiments on both streaming and offline video understanding benchmarks to validate the effectiveness of CausalMem. For streaming evaluation, we adopt OVO-Bench [ 32 ] and StreamingBench [ 33 ], both of which evaluate real-time video understanding under streaming settings. Specifically, OVO-Bench focuses on timestamp-aware streaming reasoning, while StreamingBench emphasizes continuous long-form video comprehension. Following prior works, we report results on their real-time subsets. For offline evaluation, we use Video-MME [ 34 ], LongVideoBench [ 35 ], MLVU [ 36 ], and LVBench [ 37 ]. These benchmarks cover a wide range of video durations and reasoning complexities. Video-MME and LongVideoBench contain videos ranging from several seconds to nearly one hour, while MLVU extends the maximum duration to approximately two hours. LVBench further evaluates extreme long-video understanding with videos ranging from 1 to 2 hours. 
+
+4.2 Implementation 
+
+We mainly compare CausalMem with representative streaming video understanding methods, in-cluding ReKV [ 18 ], LiveVLM [ 27 ], StreamMem [ 17 ], and StreamingTOM [ 29 ]. Following their settings, we apply CausalMem to LLaVA-OneVision [ 9] and Qwen2.5-VL [ 10 ]. For streaming benchmarks, all videos are sampled at 0.5 fps. For offline benchmarks, LLaVA-OneVision uses 0.5 fps for videos shorter than 30 minutes and 0.2 fps for longer videos, while Qwen2.5-VL uniformly adopts 1 fps for all videos. We set the total visual token budget b to 12 k for LLaVA-OneVision and 6 k
+
+for Qwen2.5-VL. The maximum number of basis vectors is set to q = 64 , and the maximum number of candidate tokens used for basis update in each frame is set to m = 8 . The activity smoothing factor 
+
+γ is set to 0.9. In addition, the balancing factor α, which controls the trade-off between redundancy and temporal relevance, is set to 0.8 for streaming benchmarks, while the temporal score is disabled for offline evaluation. All experiments are conducted on NVIDIA A800 GPUs. 
+
+4.3 Quantitative Analysis Streaming Benchmarks. We first compare our CausalMem with existing video compression methods on two streaming benchmarks, as reported in Tab. 1. As can be seen, CausalMem consistently improves the baseline models and achieves competitive or superior performance compared with existing methods. Specifically, CausalMem improves the baseline from 62 .6% to 65 .7% on OVO-Bench and from 71 .1% to 74 .3% on StreamingBench. These gains demonstrate that maintaining a compact yet informative visual memory effectively mitigates the unlimited growth of visual tokens in 6Table 2: Comparison with existing streaming methods on offline benchmarks. The base MLLM used is LLaVA-OneVision. Streaming methods are evaluated in the streaming setting under strict causality.                                                                       
+
+> Method Frames Tokens VideoMME MLVU LongVideo Bench LVBench Avg Single detail Multi detail Holistic Avg
+> LLaVA-OneVision [9] 32 6k 58.5 68.6 39.1 79.3 64.7 56.5 38.4 54.5 ReKV [18] 0.5fps 12k 58.3 ---68.5 55.8 47.8 -LiveVLM [27] 0.5/0.2fps 12k 59.6 ---68.1 56.1 --StreamMem [17] 0.5/0.2fps 6k 59.4 ---66.9 54.4 --StreamingTOM [29] 0.5/0.2fps 12k 59.9 ---67.9 56.4 40.5 56.2
+> CausalMem(Ours) 0.5/0.2fps 12k 60.0 74.0 49.5 83.6 70.9 57.0 42.1 57.5
+
+Table 3: Comparison with advanced MLLMs on two streaming benchmarks.                                                                                                                                                                                                    
+
+> Method Frames OVO-Bench StreamingBench OP CR CS ATP EU TR PR SU ACP CT Avg
+> Gemini 1.5 Pro [24] –69.3 79.0 80.5 83.5 79.7 80.0 84.7 77.8 64.2 72.0 48.7 75.7 GPT-4o [39] –64.5 77.1 80.5 83.9 76.5 70.2 83.8 66.7 62.2 69.1 49.2 73.3 LongVA [40] 128 –70.0 63.3 61.2 70.9 62.7 59.5 61.1 53.7 54.7 34.7 60.0 LongVU [41] 1fps 57.4 –––––––––––LLaVA-Video [8] 64 63.5 –––––––––––VideoLLM-Online [42] 2fps 20.8 39.1 40.1 34.5 31.1 46.0 32.4 31.5 34.2 42.5 27.9 36.0 Dispider [43] 1fps 54.6 74.9 75.5 74.1 73.1 74.4 59.9 76.1 62.9 62.2 45.8 67.6 Flash-VStream [44] 1fps 28.4 25.9 43.6 24.9 23.9 27.3 13.1 18.5 25.2 23.9 48.7 23.2 ViSpeak [45] 1fps 66.3 79.8 88.3 83.3 81.1 76.4 75.1 70.4 65.9 77.3 34.2 74.4 TimeChat-Online [46] 1fps 61.4 80.8 79.7 80.8 83.3 74.8 78.8 78.7 64.2 68.8 58.0 75.3 LLaVA-OneVision [9] 32 62.6 79.3 76.6 76.2 81.3 75.9 71.5 71.3 66.9 63.4 43.1 71.3
+> +CausalMem(Ours) 0.5/0.2fps 65.7 82.6 79.7 83.2 83.2 69.6 78.4 75.0 67.3 70.9 39.4 74.3 Qwen2.5-VL [10] 1fps –78.3 80.5 79.8 82.4 75.5 80.4 74.1 62.6 67.6 51.1 73.9
+> +CausalMem(Ours) 1fps 67.8 80.7 78.9 87.3 85.5 79.1 84.0 81.5 70.2 69.4 43.0 76.9
+
+streaming scenarios. Moreover, CausalMem achieves competitive or even better performance than SOTA streaming methods like StreamMem and StreamingTOM. For example, on StreamingBench, CausalMem surpasses StreamingTOM and LiveVLM by absolute margins of 4.2% and 1.4% in average accuracy, respectively. This proves the effectiveness of CausalMem that preserves the informative and temporal recent visual tokens in the memory bank. Furthermore, CausalMem achieves strong performance across multiple subcategories on both streaming benchmarks. For example, CausalMem obtains the best performance among training-free methods on five out of six OVO-Bench subtasks, e.g. , CausalMem outperforms StreamingTOM on the Spatial Understanding and Future Prediction subtasks of OVO-Bench by absolute margins of 1.1% and 7.9% , respectively, which shows the robustness of CausalMem on diverse streaming tasks. In summary, CausalMem is an effective training-free streaming video understanding method that maintains a compact yet informative memory under a fixed budget, thereby helping MLLMs to process the streaming videos. 
+
+Offline Benchmarks. Apart from streaming evaluation, we also evaluate CausalMem using LLaVA-OneVision on offline benchmarks compared with both streaming and offline methods in Tab. 2. For offline evaluation, CausalMem still follows the streaming processing setting under strict causality, where frames are unknown to future information. The results show that CausalMem also achieves the competitive or even better performance on four offline benchmarks. For instance, CausalMem surpasses StreamingTOM by 3.0% and 1.6% absolutely on MLVU and LVBench, respectively. It demonstrates the robustness of CausalMem across benchmarks targeting different scenarios, e.g. ,comprehensive understanding of MLVU and detailed understanding of LVBench. It further proves that CausalMem maximizes the diversified information of the video stream in the visual memory bank, which makes it perform well in different scenarios. Overall, these results show that CausalMem is fully capable of both streaming and offline settings. 
+
+Comparison with SOTA Video-MLLMs. We further apply CausalMem to LLaVA-OneVision and Qwen2.5-VL, and compare with existing advanced Video-MLLMs on two streaming benchmarks in Tab. 3. We can observe that CausalMem achieves highly competitive performance compared with existing advanced Video-MLLMs, even though it is a plug-and-play method. For instance, CausalMem help Qwen2.5-VL to achieve 67 .8% on OVO-Bench, outperforming TimeChat-Online by 6.4% absolutely. It shows that CausalMem effectively strengthens the streaming video under-standing ability of MLLMs via maintaining a compact and dynamically updated visual memory bank. 7LLaVA-OneVision        
+
+> LiveVLM
+> StreamingTom
+> CausalMem
+> Time (s)
+> Frames
+> 0100 300 500 1000
+> 35
+> 28
+> 21
+> 14
+> 7
+> 0
+> LLaVA-OneVision
+> LiveVLM
+> StreamingTom
+> CausalMem
+> Inference Time GPU Memory
+> Time (s)
+> 100
+> 80
+> GPU Memory(GB)
+> 40
+> 20
+> 0
+> 60
+> 100
+> 80
+> 60
+> 40
+> 20
+> 0
+> 76
+> 46
+> 62
+> 35
+> 74
+> 56
+> 25 21
+> (a) (b)
+
+Figure 3: (a) Comparison with existing methods in inference time and GPU memory overhead. (b) The inference time varies with the number of input frames. Table 4: Ablation studies of key components in CausalMem. ∗ is the final setting of CausalMem.                                                       
+
+> (a) Basis Size qqStreaming Bench OVO-Bench MLVU
+> 074.0 65.3 68.9 16 74.0 65.5 70.7 64 ∗74.3 65.7 70.9
+> 512 73.7 65.2 70.1
+> (b) Basis Update Tokens mmStreaming Bench OVO-Bench MLVU
+> 474.1 65.5 70.7 8∗74.3 65.7 70.9
+> 16 74.3 65.6 70.8 32 74.0 65.1 70.4
+> (c) Basis Activity Score st,j
+> Setting Streaming Bench OVO-Bench MLVU
+> only Historical Score 74.1 65.3 70.4 only Instantaneous Score 74.0 65.2 70.6 Both ∗74.3 65.7 70.9 (d) Token Retention Score fi
+> Setting Streaming Bench OVO-Bench MLVU
+> only Redundancy score 74.0 65.3 60.2 only Temporal score 71.8 65.1 70.9 Both ∗74.3 65.7 71.1
+
+Furthermore, CausalMem improves Qwen2.5-VL to the level of Gemini 1.5 Pro and GPT-4o, e.g. ,surpassing GPT-4o by 3.3% and 3.6% on OVO-Bench and StreamingBench, respectively. 
+
+Analysis of Efficiency. We compare inference time, GPU memory usage, and scalability with existing streaming methods in Fig.3. Following the online setting, a 30-minute video is sampled at 1 FPS and processed frame by frame. GPU memory denotes the peak memory during inference, and the inference time is computed from the first frame entering the ViT to the generation of the first token by LLM. As shown in Fig.3-(a), CausalMem consumes both the lowest GPU and inference time overhead. This advantage mainly stems from the fixed-budget memory design. Unlike LLaVA-OneVision, whose visual tokens grow linearly with incoming frames, CausalMem keeps the visual memory bank fixed and feeds a compact token sequence to MLLM. Moreover, CausalMem avoids the extra overhead introduced by KV-cache retrieval or quantization in existing streaming methods. Fig.3-(b) further shows that CausalMem scales better as the number of frames increases, exhibiting the slowest growth in inference time compared with other methods. These results demonstrate that the fixed-budget memory bank effectively reduces both memory usage and inference time for long streaming videos. 
+
+Ablation Study. We conduct ablation studies of the key designs of CausalMem in Tab. 4. The four subtables respectively correspond to (a) the basis size q of the online semantic basis, (b) the number of tokens m used to update the basis, (c) the basis activity score st,j in Eq. (11) , and (d) the token retention score (14) . We first ablate the number of basis vectors q in Tab. 4 (a). Note that q = 0 
+
+denotes that we compute the redundancy of visual tokens upon the whole memory bank, instead of the online semantic basis. As shown, online benchmarks decreased slightly without the online semantic basis, due to preserving the temporally recent tokens. However, on the offline benchmark MLVU, the performance drops sharply by 2.0% . It demonstrates the suboptimality of using the whole memory bank to estimate the token redundancy and the effectiveness of the online semantic basis. Then we can observe that the performance improves as q increases from 16 to 64, then gradually decreases with larger q. It shows that a small basis may underrepresent the principal semantics of the video stream, leading to inaccurate redundancy estimation, while an overly large basis may absorb noisy or overly detailed information, and thus weaken the discriminativeness of the token redundancy. Therefore, adopt a moderate value of q = 64 to balance semantic coverage and the discriminative 8Input 
+
+> Image
+> Written
+> Memory
+> Input
+> Image
+> Written
+> Memory
+
+Figure 4: Visualizations of CausalMem. Input image refers to the streaming video frames, and 
+
+Written Memory denotes the visual tokens written into the memory bank. These results show that CausalMem can maintain an informative and compact memory bank under a fixed token budget for streaming videos. capability of redundancy estimation. Second, we ablate the number of tokens m used to update the online semantic basis per frame in Tab.4-(b). As shown, the performance first slightly improves when increasing m from 4 to 8, and then gradually decreases with larger m. This suggests that a moderate number of tokens provides sufficient new semantics for basis update, while too few tokens may make it difficult to cover the new semantics in a new frame, and too many tokens may introduce noisy or overly fine-grained information. Furthermore, we analyze the effect of the activity score of the semantic basis in Eq. (11) From Tab. 4-(c). We can observe that removing either score leads to suboptimal performance. This suggests that relying only on historical activity makes the semantic basis difficult to adapt to the evolving video stream, while using only the instantaneous activity of the current frame may cause the basis to rapidly forget historical semantics. In contrast, combining historical activity with current-frame instantaneous activity enables the basis to adapt to new semantics while preserving previously observed semantics, leading to the best performance. Besides, we analyze the effect of Token Retention Score in Eq. (14) , as reported in Tab. 4-(d). Without the redundancy score, CausalMem still gains competitive performance on streaming benchmarks, since the temporal score helps preserve recently observed tokens. However, its performance drops significantly on the offline benchmark MLVU, showing that the redundancy score is crucial for maintaining globally informative and semantically diverse tokens. In contrast, removing the temporal score weakens the performance on streaming benchmarks, suggesting that temporal recency is important for the streaming scenario. By combining both scores, CausalMem achieves the best overall performance, demonstrating its complementary effects in maintaining an informative and temporal recency memory bank. 
+
+4.4 Qualitative Analysis 
+
+Fig. 4 visualizes how CausalMem maintains the visual memory bank during streaming video pro-cessing. The “Input Image” rows present the incoming video frames, while the “Written Memory” rows show the visual tokens selected and written into the memory bank at each time step. As the video stream evolves, CausalMem adaptively preserves informative visual content instead of uniformly retaining tokens from all frames. Specifically, redundant background regions and repetitive visual patterns are largely discarded under a fixed memory budget, whereas tokens corresponding to salient objects, distinctive scene regions, and newly emerging semantic content are consistently preserved. These results demonstrate that CausalMem can effectively reduce redundancy tokens while preserving informative tokens, enabling the model to maintain a compact yet informative visual memory throughout streaming video processing. 
+
+## 5 Conclusion 
+
+In this paper, we study the efficient streaming video understanding from the perspective of a dynamic and fixed-budget visual memory bank, and propose a novel and training-free approach for MLLMs, termed CausalMem. To build such a visual memory bank, CausalMem introduces an online and evolving semantic basis to estimate the principal semantics of streaming tokens, based on which the memory tokens in the bank are written and updated. Extensive experiments on two representative 9MLLMs and a set of streaming and offline benchmarks show its advantages to existing methods, and also confirm its superiority in semantic preservation for streaming videos. 
+
+## References 
+
+[1] Stanislaw Antol, Aishwarya Agrawal, Jiasen Lu, Margaret Mitchell, Dhruv Batra, C Lawrence Zitnick, and Devi Parikh. Vqa: Visual question answering. In Proceedings of the IEEE international conference on computer vision , pages 2425–2433, 2015. [2] Xinlei Chen, Hao Fang, Tsung-Yi Lin, Ramakrishna Vedantam, Saurabh Gupta, Piotr Dollár, and C Lawrence Zitnick. Microsoft coco captions: Data collection and evaluation server. arXiv preprint arXiv:1504.00325 , 2015. [3] Amanpreet Singh, Vivek Natarajan, Meet Shah, Yu Jiang, Xinlei Chen, Dhruv Batra, Devi Parikh, and Marcus Rohrbach. Towards vqa models that can read. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 8317–8326, 2019. [4] Anand Mishra, Shashank Shekhar, Ajeet Kumar Singh, and Anirban Chakraborty. Ocr-vqa: Visual question answering by reading text in images. In 2019 international conference on document analysis and recognition (ICDAR) , pages 947–952. IEEE, 2019. [5] Bo Tong, Bokai Lai, Yiyi Zhou, Gen Luo, Yunhang Shen, Ke Li, Xiaoshuai Sun, and Rongrong Ji. Flashsloth: Lightning multimodal large language models via embedded visual compression. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 14570– 14581, 2025. [6] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. Advances in neural information processing systems , 36:34892–34916, 2023. [7] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. In International conference on machine learning , pages 19730–19742. PMLR, 2023. [8] Yuanhan Zhang, Jinming Wu, Wei Li, Bo Li, Zejun Ma, Ziwei Liu, and Chunyuan Li. Llava-video: Video instruction tuning with synthetic data. arXiv preprint arXiv:2410.02713 , 2024. [9] Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Peiyuan Zhang, Yanwei Li, Ziwei Liu, et al. Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326 , 2024. [10] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, Jiabo Ye, Xi Zhang, Tianbao Xie, Zesen Cheng, Hang Zhang, Zhibo Yang, Haiyang Xu, and Junyang Lin. Qwen2.5-vl technical report, 2025. URL https://arxiv.org/abs/2502.13923 .[11] Weihao Ye, Qiong Wu, Wenhao Lin, and Yiyi Zhou. Fit and prune: Fast and training-free visual token pruning for multi-modal large language models. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 39, pages 22128–22136, 2025. [12] Shaobo Ju, Baiyang Song, Tao Chen, Jiapeng Zhang, Qiong Wu, Chao Chang, HuaiXi Wang, Yiyi Zhou, and Rongrong Ji. Forestprune: High-ratio visual token compression for video multimodal large language models via spatial-temporal forest modeling. arXiv preprint arXiv:2603.22911 , 2026. [13] Kele Shao, Keda Tao, Can Qin, Haoxuan You, Yang Sui, and Huan Wang. Holitom: Holistic token merging for fast video large language models. arXiv preprint arXiv:2505.21334 , 2025. [14] Ziyang Fan, Keyu Chen, Ruilong Xing, Yulin Li, Li Jiang, and Zhuotao Tian. Flashvid: Efficient video large language models via training-free tree-based spatiotemporal token merging. arXiv preprint arXiv:2602.08024 , 2026. 10 [15] Yutao Jiang, Qiong Wu, Wenhao Lin, Wei Yu, and Yiyi Zhou. What kind of visual tokens do we need? training-free visual token pruning for multi-modal large language models from the perspective of graph. In Proceedings of the AAAI Conference on Artificial Intelligence ,volume 39, pages 4075–4083, 2025. [16] Senqiao Yang, Yukang Chen, Zhuotao Tian, Chengyao Wang, Jingyao Li, Bei Yu, and Jiaya Jia. Visionzip: Longer is better but not necessary in vision language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 19792–19802, 2025. [17] Yanlai Yang, Zhuokai Zhao, Satya Narayan Shukla, Aashu Singh, Shlok Kumar Mishra, Lizhu Zhang, and Mengye Ren. Streammem: Query-agnostic kv cache memory for streaming video understanding. arXiv preprint arXiv:2508.15717 , 2025. [18] Shangzhe Di, Zhelun Yu, Guanghao Zhang, Haoyuan Li, Tao Zhong, Hao Cheng, Bolin Li, Wanggui He, Fangxun Shu, and Hao Jiang. Streaming video question-answering with in-context video kv-cache retrieval. arXiv preprint arXiv:2503.00540 , 2025. [19] Tao Chen, Kun Zhang, Qiong Wu, Xiao Chen, Chao Chang, Xiaoshuai Sun, Yiyi Zhou, and Rongrong Ji. Scaling the long video understanding of multimodal large language models via visual memory mechanism. arXiv preprint arXiv:2603.29252 , 2026. [20] Tao Chen, Shaobo Ju, Qiong Wu, Chenxin Fang, Kun Zhang, Jun Peng, Hui Li, Yiyi Zhou, and Rongrong Ji. Towards effective and efficient long video understanding of multimodal large language models via one-shot clip retrieval. arXiv preprint arXiv:2512.08410 , 2025. [21] Zheyu Zhang, Ziqi Pang, Shixing Chen, Xiang Hao, Vimal Bhat, and Yu-Xiong Wang. One token per highly selective frame: Towards extreme compression for long video understanding. 
+
+arXiv preprint arXiv:2604.14149 , 2026. [22] Yulin Li, Haokun Gui, Ziyang Fan, Junjie Wang, Bin Kang, Bin Chen, and Zhuotao Tian. Less is more, but where? dynamic token compression via llm-guided keyframe prior. arXiv preprint arXiv:2512.06866 , 2025. [23] Scott Deerwester, Susan T Dumais, George W Furnas, Thomas K Landauer, and Richard Harshman. Indexing by latent semantic analysis. Journal of the American society for information science , 41(6):391–407, 1990. [24] Gemini Team, Petko Georgiev, Ving Ian Lei, Ryan Burnell, Libin Bai, Anmol Gulati, Garrett Tanzer, Damien Vincent, Zhufeng Pan, Shibo Wang, et al. Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context. arXiv preprint arXiv:2403.05530 , 2024. [25] Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao Zhang, Christoph Feichtenhofer, and Judy Hoffman. Token merging: Your vit but faster. arXiv preprint arXiv:2210.09461 , 2022. [26] Yuzhang Shang, Mu Cai, Bingxin Xu, Yong Jae Lee, and Yan Yan. Llava-prumerge: Adaptive token reduction for efficient large multimodal models. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 22857–22867, 2025. [27] Zhenyu Ning, Guangda Liu, Qihao Jin, Wenchao Ding, Minyi Guo, and Jieru Zhao. Livevlm: Efficient online video understanding via streaming-oriented kv cache and retrieval. arXiv preprint arXiv:2505.15269 , 2025. [28] Yiweng Xie, Bo He, Junke Wang, Xiangyu Zheng, Ziyi Ye, and Zuxuan Wu. Fluxmem: Adaptive hierarchical memory for streaming video understanding. arXiv preprint arXiv:2603.02096 ,2026. [29] Xueyi Chen, Keda Tao, Kele Shao, and Huan Wang. Streamingtom: Streaming token compres-sion for efficient video understanding. arXiv preprint arXiv:2510.18269 , 2025. [30] Yan Shu, Zheng Liu, Peitian Zhang, Minghao Qin, Junjie Zhou, Zhengyang Liang, Tiejun Huang, and Bo Zhao. Video-xl: Extra-long vision language model for hour-scale video understanding. In Proceedings of the Computer Vision and Pattern Recognition Conference ,pages 26160–26169, 2025. 11 [31] Gene H Golub and Charles F Van Loan. Matrix computations . JHU press, 2013. [32] Junbo Niu, Yifei Li, Ziyang Miao, Chunjiang Ge, Yuanhang Zhou, Qihao He, Xiaoyi Dong, Haodong Duan, Shuangrui Ding, Rui Qian, et al. Ovo-bench: How far is your video-llms from real-world online video understanding? In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 18902–18913, 2025. [33] Junming Lin, Zheng Fang, Chi Chen, Haoxuan Cheng, Zihao Wan, Fuwen Luo, Ziyue Wang, Peng Li, Yang Liu, and Maosong Sun. Streamingbench: Assessing the gap for mllms to achieve streaming video understanding. In ICASSP 2026-2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 12147–12151. IEEE, 2026. [34] Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, et al. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 24108–24118, 2025. [35] Haoning Wu, Dongxu Li, Bei Chen, and Junnan Li. Longvideobench: A benchmark for long-context interleaved video-language understanding. Advances in Neural Information Processing Systems , 37:28828–28857, 2024. [36] Junjie Zhou, Yan Shu, Bo Zhao, Boya Wu, Zhengyang Liang, Shitao Xiao, Minghao Qin, Xi Yang, Yongping Xiong, Bo Zhang, et al. Mlvu: Benchmarking multi-task long video understanding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 13691–13701, 2025. [37] Weihan Wang, Zehai He, Wenyi Hong, Yean Cheng, Xiaohan Zhang, Ji Qi, Ming Ding, Xiaotao Gu, Shiyu Huang, Bin Xu, et al. Lvbench: An extreme long video understanding benchmark. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 22958– 22967, 2025. [38] Yilong Chen, Xiang Bai, Zhibin Wang, Chengyu Bai, Yuhan Dai, and Ming Lu. Streamkv: Streaming video question-answering with segment-based kv cache retrieval and compression. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 40, pages 3120–3128, 2026. [39] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276 , 2024. [40] Peiyuan Zhang, Kaichen Zhang, Bo Li, Guangtao Zeng, Jingkang Yang, Yuanhan Zhang, Ziyue Wang, Haoran Tan, Chunyuan Li, and Ziwei Liu. Long context transfer from language to vision. 
+
+arXiv preprint arXiv:2406.16852 , 2024. [41] Xiaoqian Shen, Yunyang Xiong, Changsheng Zhao, Lemeng Wu, Jun Chen, Chenchen Zhu, Zechun Liu, Fanyi Xiao, Balakrishnan Varadarajan, Florian Bordes, et al. Longvu: Spa-tiotemporal adaptive compression for long video-language understanding. arXiv preprint arXiv:2410.17434 , 2024. [42] Joya Chen, Zhaoyang Lv, Shiwei Wu, Kevin Qinghong Lin, Chenan Song, Difei Gao, Jia-Wei Liu, Ziteng Gao, Dongxing Mao, and Mike Zheng Shou. Videollm-online: Online video large language model for streaming video. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 18407–18418, 2024. [43] Rui Qian, Shuangrui Ding, Xiaoyi Dong, Pan Zhang, Yuhang Zang, Yuhang Cao, Dahua Lin, and Jiaqi Wang. Dispider: Enabling video llms with active real-time interaction via disentangled perception, decision, and reaction. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 24045–24055, 2025. [44] Haoji Zhang, Yiqin Wang, Yansong Tang, Yong Liu, Jiashi Feng, Jifeng Dai, and Xiaojie Jin. Flash-vstream: Memory-based real-time understanding for long video streams. arXiv preprint arXiv:2406.08085 , 2024. 12 [45] Shenghao Fu, Qize Yang, Yuan-Ming Li, Yi-Xing Peng, Kun-Yu Lin, Xihan Wei, Jian-Fang Hu, Xiaohua Xie, and Wei-Shi Zheng. Vispeak: Visual instruction feedback in streaming videos. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 21778–21788, 2025. [46] Linli Yao, Yicheng Li, Yuancheng Wei, Lei Li, Shuhuai Ren, Yuanxin Liu, Kun Ouyang, Lean Wang, Shicheng Li, Sida Li, et al. Timechat-online: 80% visual tokens are naturally redundant in streaming videos. In Proceedings of the 33rd ACM International Conference on Multimedia ,pages 10807–10816, 2025. 
+
+## A Limitations 
+
+CausalMem is a training-free method that applies on existing MLLMs by maintaining a dynamical fixed-budget visual memory, without additional training or fine-tuning. Therefore, its performance is naturally influenced by the capability of the backbone MLLM, including its visual perception, tempo-ral reasoning, and instruction-following abilities. When applied to stronger MLLMs, CausalMem may further benefit from their improved video understanding capability. Exploring its adaptation to more advanced MLLMs is our future work. 
+
+## B Orthonormality of the Online Semantic Basis. 
+
+We represent the online semantic basis as Bt ∈ Rqt×d, where each row is a semantic basis vector. We show that the update preserves the row-orthonormality of Bt, i.e., 
+
+BtB⊤ 
+
+> t
+
+= Iqt .
+
+At initialization, B1 is constructed from the retained right singular vectors of X1. Since right singular vectors are orthonormal, we have 
+
+B1B⊤ 
+
+> 1
+
+= Iq1 .
+
+Assume that at time step t − 1, the basis is row-orthonormal: 
+
+Bt−1B⊤ 
+
+> t−1
+
+= Iqt−1 .
+
+Then 
+
+Pt−1 = B⊤
+
+> t−1
+
+Bt−1
+
+is the orthogonal projector onto the subspace spanned by the rows of Bt−1. Therefore, 
+
+P⊥ 
+
+> t−1
+
+= Id − B⊤
+
+> t−1
+
+Bt−1
+
+is the projector onto its orthogonal complement. For the candidate residual matrix Rcand t , we remove the components already represented by the current basis: ˆRt = Rcand t
+
+ Id − B⊤
+
+> t−1
+
+Bt−1
+
+ .
+
+Thus, ˆRtB⊤ 
+
+> t−1
+
+= Rcand t
+
+ Id − B⊤
+
+> t−1
+
+Bt−1
+
+ B⊤
+
+> t−1
+
+= Rcand t B⊤ 
+
+> t−1
+
+− Rcand t B⊤
+
+> t−1
+
+Bt−1B⊤
+
+> t−1
+
+= Rcand t B⊤ 
+
+> t−1
+
+− Rcand t B⊤
+
+> t−1
+
+ Bt−1B⊤
+
+> t−1
+
+
+
+= Rcand t B⊤ 
+
+> t−1
+
+− Rcand t B⊤ 
+
+> t−1
+
+= 0.
+
+Hence, every row of ˆRt lies in the orthogonal complement of the current basis. We then apply QR orthonormalization to obtain new row-orthonormal basis vectors ¯Qt ∈ Rrt×d,where rt ≤ k, such that ¯Qt ¯Q⊤ 
+
+> t
+
+= Irt .
+
+Since the rows of ¯Qt are linear combinations of the rows of ˆRt, they remain orthogonal to the previous basis: ¯QtB⊤ 
+
+> t−1
+
+= 0.
+
+13 The updated basis before pruning is obtained by concatenating along the basis-vector dimension: 
+
+B′ 
+
+> t
+
+=
+
+Bt−1
+
+¯Qt
+
+
+
+.
+
+Therefore, 
+
+B′
+
+> t
+
+B′ 
+
+> t
+> ⊤
+
+=
+
+Bt−1
+
+¯Qt
+
+ B⊤ 
+
+> t−1
+
+¯Q⊤
+
+> t
+
+
+
+=
+
+Bt−1B⊤ 
+
+> t−1
+
+Bt−1 ¯Q⊤
+
+> t
+
+¯QtB⊤ 
+
+> t−1
+
+¯Qt ¯Q⊤
+
+> t
+
+
+
+=
+
+Iqt−1 00 Irt
+
+
+
+.
+
+Thus, B′ 
+
+> t
+
+is row-orthonormal. If the number of basis vectors exceeds the budget q, we retain a subset of rows according to the activity scores. Since any subset of a row-orthonormal matrix remains row-orthonormal, the pruned basis Bt also satisfies 
+
+BtB⊤ 
+
+> t
+
+= Iqt .
+
+By induction, the online semantic basis remains row-orthonormal at every time step. 
+
+## C Additional Visualization Results 
+
+We provide qualitative visualizations to illustrate how the proposed method processes long video streams and maintains informative visual content. The results show that our method effectively preserves informative and semantically salient content while maintaining a compact representation of the video stream. 14 Video frames Memory bank (a) Video 1 Video frames Memory bank 
+
+> (b) Video 2
+
+Figure 5: Qualitative visualization of raw video frames and the corresponding memory bank repre-sentations. 
+
+## D Algorithm 
+
+15 Algorithm 1 CausalMem (·)
+
+Require: Streaming video V = {It}Tt=1 , question Q, MLLM generator G, memory budget b, basis budget q, basis update size m, balance factor α, decay factor γ
+
+Ensure: Answer Y , memory bank MT 
+
+> 1:
+
+M0 ← ∅ , B0 ← ∅ , s0 ← ∅  
+
+> 2:
+
+for t = 1 to T do  
+
+> 3:
+
+Xt ← Φ( It) 
+
+> 4:
+
+if Bt−1 = ∅ then  
+
+> 5:
+
+Bt ← TOP SVD (Xt, q 1), st ← 1q1 
+
+> 6:
+
+else  
+
+> 7:
+
+(Rt, et) ← RESIDUAL SCORE (Xt, Bt−1) 
+
+> 8:
+
+Xcand  
+
+> t
+
+← TOP K(Xt, et, m ) 
+
+> 9:
+
+¯Qt ← ORTHOGONALIZE (Xcand  
+
+> t
+
+, Bt−1) 
+
+> 10:
+
+B′ 
+
+> t
+
+← [Bt−1; ¯Qt], s′ 
+
+> t
+
+← [st−1; 1] 
+
+> 11:
+
+s′ 
+
+> t
+
+← UPDATE ACTIVITY (s′
+
+> t
+
+, B′
+
+> t
+
+, Xt, γ ) 
+
+> 12:
+
+(Bt, st) ← KEEP TOP BASIS (B′
+
+> t
+
+, s′
+
+> t
+
+, q ) 
+
+> 13:
+
+end if  
+
+> 14:
+
+M′ 
+
+> t
+
+← [Mt−1; Xt] 
+
+> 15:
+
+if |M′
+
+> t
+
+| > b then  
+
+> 16:
+
+ft ← RETENTION SCORE (M′
+
+> t
+
+, Bt, α, t ) 
+
+> 17:
+
+Mt ← TOP K(M′
+
+> t
+
+, ft, b ) 
+
+> 18:
+
+else  
+
+> 19:
+
+Mt ← M′ 
+
+> t
+> 20:
+
+end if  
+
+> 21:
+
+end for  
+
+> 22:
+
+Y ∼ G(MT , Q ) 
+
+> 23:
+
+return Y, MT
+
+16

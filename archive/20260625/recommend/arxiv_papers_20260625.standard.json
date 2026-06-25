@@ -1,0 +1,303 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-25T20:58:18.887120+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2606.25658v1",
+      "source": "arxiv",
+      "title": "Towards a Dynamic and Fixed-budget Memory Bank for Efficient Streaming Video Understanding",
+      "abstract": "Currently, streaming video understanding is still a daunting task for existing \\emph{multimodal large language models} (MLLMs). Its difficulties not only lie in handling the ever-increasing video frames, but also in the unpredictability of future video content and input instructions. In this paper, we study this task from the perspective of constructing a dynamic but fixed-budget memory bank, and propose a novel and training-free approach termed \\emph{\\textbf{CausalMem}}. CausalMem is dedicated to constructing a dynamic visual memory update mechanism, thereby maximizing the amount of information in streaming video within a limited memory space, much like the human brain. In practice, CausalMem estimates the redundancy of visual tokens and updates the memory bank via an online semantic basis, which models the principal semantics of the observed video stream. To validate CausalMem, we apply it to two representative MLLMs, namely LLaVA-OneVision and Qwen2.5-VL respectively, and conduct extensive experiments on both streaming and offline video understanding benchmarks. The experimental results not only show the great advantages than existing methods under both streaming and offline settings, \\emph{e.g.}, $+3.2\\%$ and $+3.0\\%$ average accuracy gains respectively, but also witness the superior semantic preservation for streaming videos, \\emph{e.g.}, using 12$k$ token budgets to memorize hour-long streaming videos, which achieves more than \\textbf{20$\\times$} visual token compression ratio and only occupies about \\textbf{82 MB} storage. \\textbf{Our code} is given in \\href{https://github.com/hktk07/CausalMem}{CausalMem}.",
+      "authors": [
+        "Baiyang Song",
+        "Yuli Lin",
+        "Qiong Wu",
+        "Tao Chen",
+        "Jun Peng",
+        "Xiao Chen",
+        "Yiyi Zhou",
+        "Rongrong Ji"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-24T10:11:08+00:00",
+      "link": "https://arxiv.org/pdf/2606.25658v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "streaming video understanding with dynamic memory bank",
+      "llm_evidence_cn": "流式视频理解与动态记忆库",
+      "llm_evidence": "流式视频理解与动态记忆库",
+      "canonical_evidence": "流式视频理解与动态记忆库",
+      "llm_tldr_en": "CausalMem proposes a training-free dynamic memory bank for efficient streaming video understanding, enabling fixed-budget processing of infinite video frames.",
+      "llm_tldr_cn": "针对多模态大模型在流式视频理解中面临的无尽帧处理难题，本文提出CausalMem，一种无需训练的动态视觉记忆更新机制。CausalMem在固定预算内最大化信息保留，模拟人脑记忆管理。实验表明该方法能高效处理流式视频，显著降低计算开销的同时保持理解准确性。该工作为流式视频分析提供了实用的存储优化方案。",
+      "llm_tldr": "针对多模态大模型在流式视频理解中面临的无尽帧处理难题，本文提出CausalMem，一种无需训练的动态视觉记忆更新机制。CausalMem在固定预算内最大化信息保留，模拟人脑记忆管理。实验表明该方法能高效处理流式视频，显著降低计算开销的同时保持理解准确性。该工作为流式视频分析提供了实用的存储优化方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.21428v2",
+      "source": "arxiv",
+      "title": "Does Mixture-of-Experts Actually Help Inference on Consumer and Edge Hardware? An Empirical Study",
+      "abstract": "Mixture-of-Experts (MoE) language models are often described as ideal for resource-constrained inference. Each token activates only a small subset of experts, so the per-token compute cost, in floating-point operations (FLOPs), resembles that of a much smaller dense model. Whether that FLOP advantage survives in practice is far less clear. We ask whether MoE models actually run faster and cheaper than comparable dense models on consumer-grade and edge hardware. We benchmark OLMoE-1B-7B (1.3 B active of 6.9 B total) against three dense baselines on an Apple M2 Pro and an NVIDIA Jetson Orin Nano 8 GB through \\texttt{llama.cpp}, measuring throughput, memory, and on-device energy. The answer is device-dependent: OLMoE's active-parameter advantage is only partly realised on the laptop (~10% behind the same-active Llama-3.2-1B) and erodes on the edge device (~31% behind, at 2.1$\\times$ the energy per token, with peak memory at the 8 GB ceiling). Patching \\texttt{llama.cpp} to time the decode graph node-by-node shows routing accounts for under 9% of MoE-block compute on the cleaner edge backend, so the gap reflects total-parameter memory footprint, expert dispatch, and KV-cache pressure rather than routing. The implication is that on bandwidth-bound edge hardware, inference cost tracks total parameters, not active ones, and sparse activation does not buy back what the device is constrained on. These findings are bounded to one MoE model at this parameter scale and two devices, and we release the full measurement harness and per-run data.",
+      "authors": [
+        "Alfarizy Alfarizy",
+        "Hung Truong Thanh Nguyen",
+        "René Richard",
+        "Roozbeh Razavi-Far",
+        "Hung Cao"
+      ],
+      "primary_category": "cs.PF",
+      "categories": [
+        "cs.PF",
+        "cs.AI"
+      ],
+      "published": "2026-06-19T13:45:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.21428v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "examines MoE vs dense models on edge hardware, directly addresses model selection for edge computing",
+      "llm_evidence_cn": "在边缘硬件上评测MoE与密集模型，直接针对边缘计算的模型选择",
+      "llm_evidence": "在边缘硬件上评测MoE与密集模型，直接针对边缘计算的模型选择",
+      "canonical_evidence": "在边缘硬件上评测MoE与密集模型，直接针对边缘计算的模型选择",
+      "llm_tldr_en": "Benchmarks MoE and dense language models on consumer and edge hardware, finding device-dependent performance; provides insights for model selection on resource-constrained devices.",
+      "llm_tldr_cn": "该论文针对混合专家模型（MoE）在消费级和边缘硬件上的实际推理性能进行了实证研究，发现MoE模型虽然理论上计算量小，但实际表现取决于硬件。作者在Apple M2 Pro和NVIDIA Jetson Orin Nano上对OLMoE-1B-7B与三个密集基线模型进行了对比，测量了吞吐量、内存和能耗。结果表明，MoE的优势具有设备依赖性，为边缘计算场景下的模型选择提供了重要参考。",
+      "llm_tldr": "该论文针对混合专家模型（MoE）在消费级和边缘硬件上的实际推理性能进行了实证研究，发现MoE模型虽然理论上计算量小，但实际表现取决于硬件。作者在Apple M2 Pro和NVIDIA Jetson Orin Nano上对OLMoE-1B-7B与三个密集基线模型进行了对比，测量了吞吐量、内存和能耗。结果表明，MoE的优势具有设备依赖性，为边缘计算场景下的模型选择提供了重要参考。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25160v1",
+      "source": "arxiv",
+      "title": "Toward Low-Latency Vision-Language Models with Doubly-Correct Predictions in Egocentric Visual Understanding",
+      "abstract": "The rapid rise of Vision-Language Models (VLMs) in egocentric visual understanding has made low-latency inference in human-robot collaborative (HRC) tasks increasingly critical. Weight pruning techniques developed for VLMs to shrink model size and computation can be readily applied to satisfy the efficiency demands of on-board processing and real-time interactive robotics. Moreover, safe human-robot interaction demands pruning strategies that preserve doubly-correct predictions; outputs must be both accurate and evidentially grounded to mitigate risks and ensure user trust. In this paper, we present a new study of VLM pruning through the lens of doubly-correct prediction. Our experiments surprisingly show that existing pruning methods often preserve the right evidence localization but undermine correct prediction. To address this, we propose a rationale-informed pruning strategy that better aligns evidence with decisions. Benchmark results on egocentric video datasets demonstrate that our method not only achieves the highest prediction accuracy but also outperforms existing approaches in attaining doubly-correct predictions. We aim to stimulate research on efficient and reliable VLMs, ensuring accuracy-driven advances align with the transparency, auditability, and safety required for responsible human-robot interaction and embodied intelligence.",
+      "authors": [
+        "Qitong Wang",
+        "Fan Du",
+        "Pranav Maneriker",
+        "Jihui Jin",
+        "Christopher Rasmussen"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-06-23T20:46:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.25160v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Low-latency VLM inference for real-time egocentric visual understanding",
+      "llm_evidence_cn": "面向实时自我中心视觉理解的低延迟VLM推理",
+      "llm_evidence": "面向实时自我中心视觉理解的低延迟VLM推理",
+      "canonical_evidence": "面向实时自我中心视觉理解的低延迟VLM推理",
+      "llm_tldr_en": "Explores weight pruning for VLMs to achieve low-latency inference in egocentric visual understanding, focusing on doubly-correct predictions for safe human-robot interaction.",
+      "llm_tldr_cn": "针对自我中心视觉理解中的低延迟需求，研究VLM剪枝策略。提出双重正确预测概念，确保剪枝后模型既准确又具有证据可追溯性，实验显示现有剪枝方法在保持双重正确性方面存在不足。",
+      "llm_tldr": "针对自我中心视觉理解中的低延迟需求，研究VLM剪枝策略。提出双重正确预测概念，确保剪枝后模型既准确又具有证据可追溯性，实验显示现有剪枝方法在保持双重正确性方面存在不足。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25553v1",
+      "source": "arxiv",
+      "title": "Latency-Aware Service Placement using Neural Combinatorial Optimisers for Edge--Cloud Systems",
+      "abstract": "The growth of Internet of Things (IoT) applications and latency-sensitive services has increased the demand for efficient service placement across compute continuum platforms, such as edge--cloud systems. Modern applications are decomposed into interdependent microservices deployed over heterogeneous infrastructures, making placement under resource and network constraints an intractable NP-hard combinatorial optimisation problem. This study proposes a latency-aware Edge Placement Neural Combinatorial Optimiser (EP-NCO), a learning-based framework for service placement in compute continuum platforms. EP-NCO employs a dual-graph model to capture resource relationships and service dependencies within both computing infrastructure and application structure. Graph neural networks (GNNs) learn structural embeddings of infrastructure nodes and service components, whereas reinforcement learning policies construct feasible placements that account for execution latency, communication link delays, and bandwidth-sharing effects. Extensive simulations across multiple system scales demonstrate that EP-NCO consistently achieves high-quality placement decisions, reducing the total service response time by 46%--50% compared with metaheuristics (genetic algorithm and particle swarm optimisation) and by 25%--35% compared with controlled RL ablation baselines. Once trained, EP-NCO enables fast online inference, making it a practical solution for dynamic large-scale edge--cloud environments with hundreds of computing nodes, hosting thousands of applications, which is significantly beyond the capability of current scheduling systems.",
+      "authors": [
+        "Kimia Abedpour",
+        "Mohammadsadeq Garshasbi Herabad",
+        "Zheng Li",
+        "Javid Taheri"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-06-24T08:29:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.25553v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Focuses on latency-aware service placement in edge-cloud systems",
+      "llm_evidence_cn": "关注边缘-云系统中的延迟感知服务放置",
+      "llm_evidence": "关注边缘-云系统中的延迟感知服务放置",
+      "canonical_evidence": "关注边缘-云系统中的延迟感知服务放置",
+      "llm_tldr_en": "Proposes EP-NCO, a learning-based framework for service placement in edge-cloud systems using neural combinatorial optimization, achieving latency-aware deployment.",
+      "llm_tldr_cn": "该论文针对边缘-云系统中的服务放置问题，提出了一种基于学习的延迟感知边缘放置神经组合优化器（EP-NCO）。该方法采用双图模型捕捉基础设施和服务依赖关系，将放置问题转化为组合优化问题。实验结果表明，EP-NCO在减少延迟和提升资源利用率方面优于传统启发式方法，为边缘计算中的服务部署提供了有效方案。",
+      "llm_tldr": "该论文针对边缘-云系统中的服务放置问题，提出了一种基于学习的延迟感知边缘放置神经组合优化器（EP-NCO）。该方法采用双图模型捕捉基础设施和服务依赖关系，将放置问题转化为组合优化问题。实验结果表明，EP-NCO在减少延迟和提升资源利用率方面优于传统启发式方法，为边缘计算中的服务部署提供了有效方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.19627v1",
+      "source": "arxiv",
+      "title": "VCG: A Multimodal Retrieval Framework for E-Commerce Video Feeds under Extreme Cold-Start Conditions",
+      "abstract": "The digital commerce landscape is shifting from static, search-driven catalogs to dynamic, immersive video feeds. This transition introduces an ``extreme cold-start'' problem: unlike traditional items, new short-form videos lack the dense interaction history required for collaborative filtering. Furthermore, immersive feeds introduce strong position and duration biases that distort standard engagement signals. In this paper, we demonstrate the Video Candidate Generation (VCG) system, a scalable multimodal retrieval engine designed to solve these challenges in a large-scale e-commerce environment. By leveraging a domain-adapted vision-language model (based on CLIP), we map users and videos into a shared semantic space, enabling zero-shot retrieval based on visual content rather than behavioral history. We detail the system's architecture and present a rigorous evaluation comparing generative (LLM) vs. discriminative (CLIP) embeddings. Our results show that while generative models excel at attribute prediction, they suffer from embedding space collapse in retrieval tasks. Online A/B testing demonstrates that VCG effectively mitigates engagement biases, yielding a 50\\% uplift in deep video completion. To showcase the system's capabilities, we present an interactive demonstration featuring three bi-directional retrieval scenarios: Product-to-Video, Video-to-Product, and Zero-Shot Semantic Search.",
+      "authors": [
+        "Katya Mirylenka",
+        "Egor Malykh",
+        "Mahdyar Ravanbakhsh",
+        "Michael Gygli",
+        "Marco-Andrea Buchmann",
+        "Andrew Dzhoha",
+        "Svitlana Borzenko",
+        "Francesca Catino",
+        "Mohamed Gaafar",
+        "Maarten Versteegh",
+        "Thomas Kober",
+        "Dario d'Andrea",
+        "Ellie Langhans"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-17T22:08:31+00:00",
+      "link": "https://arxiv.org/pdf/2606.19627v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Multimodal retrieval framework for e-commerce video feeds under extreme cold-start conditions",
+      "llm_evidence_cn": "面向电商视频流的多模态检索框架，应对极端冷启动问题",
+      "llm_evidence": "面向电商视频流的多模态检索框架，应对极端冷启动问题",
+      "canonical_evidence": "面向电商视频流的多模态检索框架，应对极端冷启动问题",
+      "llm_tldr_en": "VCG system addresses extreme cold-start in e-commerce video feeds by using a domain-adapted vision-language model to map users and videos into a shared space for candidate generation.",
+      "llm_tldr_cn": "电商视频流面临极端冷启动问题：新视频缺乏交互历史。VCG系统利用领域适配的视觉语言模型（基于CLIP）将用户和视频映射到共享语义空间，实现可扩展的多模态检索。在大规模电商环境中验证了有效性。该方法为冷启动视频推荐提供了通用解决方案。",
+      "llm_tldr": "电商视频流面临极端冷启动问题：新视频缺乏交互历史。VCG系统利用领域适配的视觉语言模型（基于CLIP）将用户和视频映射到共享语义空间，实现可扩展的多模态检索。在大规模电商环境中验证了有效性。该方法为冷启动视频推荐提供了通用解决方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.21848v1",
+      "source": "arxiv",
+      "title": "Keyless Attention: Value-Space Routing and Value-Only Caching for Efficient Transformers",
+      "abstract": "We propose Keyless Attention, an attention mechanism that eliminates the key projection entirely, operating over queries and values only. This yields a Value-Only Cache that reduces KV cache memory and access overhead by exactly 50% over standard attention, while matching or exceeding standard attention's decode throughput. Beyond efficiency, we introduce Depth-$m$ Attention Factorization: standard attention computes a depth-2 factorization of the attention bilinear form, while Keyless Attention realizes a depth-$m$ instance of this family. At m=3, Keyless Attention matches the projection matrix count of standard attention via a value-space routing matrix that replaces the key projection and introduces a coupling between routing and retrieval. Experiments across five models and four architectures (GPT-2 280M, GPT-2 557M, Pythia 410M, Qwen2 1.5B, and Llama 3.2 1B) show that Keyless Attention matches or outperforms standard QKV attention on perplexity in 4 out of 5 models. On downstream zero-shot evaluation (GPT-2 557M), Keyless Attention outperforms on 4 out of 5 commonsense reasoning benchmarks, while achieving 50% KV cache reduction throughout.",
+      "authors": [
+        "Xin Gao"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-06-20T03:12:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.21848v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "proposes efficient attention mechanism reducing KV cache by 50%, beneficial for edge deployment",
+      "llm_evidence_cn": "提出高效注意力机制减少KV缓存50%，有利于边缘部署",
+      "llm_evidence": "提出高效注意力机制减少KV缓存50%，有利于边缘部署",
+      "canonical_evidence": "提出高效注意力机制减少KV缓存50%，有利于边缘部署",
+      "llm_tldr_en": "Proposes Keyless Attention that eliminates key projections and halves KV cache, matching standard throughput; a general efficiency technique applicable to edge computing.",
+      "llm_tldr_cn": "该论文提出无键注意力机制，通过消除键投影和仅值缓存，将KV缓存内存和访问开销减少50%，同时保持与标准注意力相当的解码吞吐量。该方法属于通用的Transformer效率改进技术，可显著降低模型在边缘设备上的内存需求，从而支持更复杂的推理任务。实验表明，在m=3时，无键注意力在保持相同投影矩阵数量的前提下实现了高效路由。",
+      "llm_tldr": "该论文提出无键注意力机制，通过消除键投影和仅值缓存，将KV缓存内存和访问开销减少50%，同时保持与标准注意力相当的解码吞吐量。该方法属于通用的Transformer效率改进技术，可显著降低模型在边缘设备上的内存需求，从而支持更复杂的推理任务。实验表明，在m=3时，无键注意力在保持相同投影矩阵数量的前提下实现了高效路由。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.22496v1",
+      "source": "arxiv",
+      "title": "Enabling Cloud-Level Accuracy in Edge AI through IoT Data Preprocessing",
+      "abstract": "Large language models (LLMs) offer a natural-language interface for interpreting Internet of Things (IoT) sensor data in smart environments; however, cloud deployment introduces latency, privacy, and connectivity concerns. Local LLMs can reduce these limitations, but compact edge-deployable models often show weaker numerical reasoning when raw sensor readings are provided directly. This paper investigates whether prompt-side preprocessing can improve the accuracy-latency trade-off of local LLMs for environmental monitoring. We propose a structured prompt construction framework that transforms raw air-quality and thermal-comfort measurements into progressively enriched textual representations: raw sensor values, threshold-aware descriptions, and compact environmental summary flags. The approach is evaluated using indoor Raspberry Pi/BME680 datasets from Tampere University and outdoor air-quality datasets from Helsinki, Katowice, and Warsaw. We construct a binary LLM query dataset covering air quality, thermal comfort, and joint environmental conditions, and evaluate five local and five cloud LLMs across three prompt variants and two inference modes, with and without chain-of-thought prompting. Results show that prompt enrichment substantially improves local-model accuracy. In No-CoT mode, local accuracy increases from 50.9% to 81.7% indoors and from 63.7% to 89.3% outdoors from the raw to the most enriched prompt. Local No-CoT inference is the fastest configuration, with mean latency close to 0.22 s, while CoT substantially increases inference time. These findings suggest that lightweight prompt-side preprocessing can narrow the local--cloud performance gap and support low-latency IoT analytics in smart environments.",
+      "authors": [
+        "Aygün Varol",
+        "Katarzyna Kołodziej",
+        "Łukasz Sobczak",
+        "Michał Romaszewski",
+        "Przemysław Głomb",
+        "Naser Hossein Motlagh",
+        "Mirka Leino",
+        "Johanna Virkki"
+      ],
+      "primary_category": "cs.PF",
+      "categories": [
+        "cs.PF",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-21T13:35:57+00:00",
+      "link": "https://arxiv.org/pdf/2606.22496v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Enabling cloud-level accuracy in edge AI via IoT data preprocessing",
+      "llm_evidence_cn": "通过IoT数据预处理实现边缘AI的云级准确性",
+      "llm_evidence": "通过IoT数据预处理实现边缘AI的云级准确性",
+      "canonical_evidence": "通过IoT数据预处理实现边缘AI的云级准确性",
+      "llm_tldr_en": "Proposes structured prompt construction framework to improve accuracy-latency trade-off of local LLMs on edge devices for environmental monitoring.",
+      "llm_tldr_cn": "针对边缘部署的LLM在数值推理上的不足，提出结构化提示构建框架，将原始物联网数据逐步转化为丰富文本表示，提升边缘AI的准确性而不显著增加延迟。",
+      "llm_tldr": "针对边缘部署的LLM在数值推理上的不足，提出结构化提示构建框架，将原始物联网数据逐步转化为丰富文本表示，提升边缘AI的准确性而不显著增加延迟。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
