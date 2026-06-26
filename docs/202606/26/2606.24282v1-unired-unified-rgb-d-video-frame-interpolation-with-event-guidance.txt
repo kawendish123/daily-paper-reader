@@ -1,0 +1,515 @@
+Title: UniRED: Unified RGB-D Video Frame Interpolation with Event Guidance
+
+URL Source: https://arxiv.org/pdf/2606.24282v1
+
+Published Time: Wed, 24 Jun 2026 00:40:44 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 1
+
+# UniRED: Unified RGB-D Video Frame Interpolation with Event Guidance 
+
+Yinuo Zhang, Guangshun Wei, Yuanfeng Zhou, Yiran Shen, Senior Member, IEEE 
+
+Abstract —High frame-rate RGB-D videos are crucial for a variety of downstream tasks, including motion analysis, dynamic scene understanding, and 3D reconstruction. However, due to hardware and sensing constraints, practical RGB-D cameras are typically limited to low frame rates, making it difficult to capture rapid scene dynamics. Existing video interpolation methods have achieved strong performance on RGB data, but they are not read-ily applicable to RGB-D scenarios, where they often yield blurry boundaries, visible artifacts, and degraded geometric consistency. Furthermore, motion estimation from only two boundary frames is inherently under-constrained in complex dynamic scenes. Event cameras, by contrast, provide asynchronous measurements with ultra-high temporal resolution, offering dense motion cues. In this paper, we propose a unified multimodal framework for RGB-D video interpolation that jointly exploits RGB appearance, depth geometry, and event-based temporal cues. Specifically, it first extracts and fuses RGB, depth and event cues, then estimates bidirectional flow with motion basis refinement for RGB and Z-axial refinement for depth, and finally synthesizes the target RGB-D frame via bidirectional warping and soft blending. In addition, we construct a new RGB-D-Event dataset to alleviate the scarcity of tri-modal training data. Extensive experiments on a public benchmark and the proposed dataset demonstrate that our method achieves superior photometric fidelity for RGB interpolation and stronger geometric accuracy for depth interpolation than existing approaches. 
+
+Index Terms —RGB-D video frame interpolation, event cam-eras, multimodal fusion, motion estimation. 
+
+I. I NTRODUCTION 
+
+# RGB-D sensing augments conventional color imagery with per-pixel depth, providing temporally synchronized appearance and metric geometry [1]. This complementary representation has been widely adopted for accurate motion estimation, geometry-aware dynamic scene understanding, and photorealistic 3D scene reconstruction [2]–[4]. However, prac-tical RGB sensors are constrained by low frame rate (typically 30-50 fps) that restricts their ability to capture fine-grained motion dynamics, particularly in highly dynamic scenes with rapid object or camera motion, while depth sensors, such as mechanical LiDARs, operate at even lower frequencies (often around 10 Hz) [5], [6], causing severe temporal discontinuities. Consequently, recovering high-quality intermediate RGB-D frames holds significant potential for improving perception continuity and geometric fidelity in dynamic environments. Recently, video frame interpolation for RGB has been extensively studied in the computer vision community [7]. Most existing approaches reconstruct intermediate frames from 
+
+> Yinuo Zhang, Guangshun Wei, Yuanfeng Zhou, Yiran Shen are with the School of Software, Shandong University, Jinan 250100, China (e-mail: vermonth1216@gmail.com; guangshunwei@gmail.com; yfzhou@sdu.edu.cn; yiran.shen@sdu.edu.cn) Corresponding author: Guangshun Wei and Yiran Shen
+
+two temporal boundaries through kernel-based resampling or optical flow–guided warping [8]–[13]. In contrast, depth frame interpolation remains relatively underexplored. Early methods largely rely on handcrafted priors and analytical optimization [14]–[16], which often fail under rapid motion or complex scene geometry. More recent geometry-centric interpolation approaches primarily focus on sparse LiDAR point cloud sequences, limiting their applicability to dense per-pixel depth maps [17]–[20]. Furthermore, to the best of our knowledge, there is still no unified framework that jointly performs RGB and depth interpolation, leaving the joint interpolation of appearance and geometry largely unexplored. However, RGB provides rich appearance cues, while depth encodes geometric structure, and the two modalities are inherently complementary for scene understanding. In addition, recent advances in event cameras (or dynamic vision sensors) [21] have emerged as a promising sensing modality for capturing high-temporal-resolution visual dynam-ics between frames. Unlike conventional frame-based cameras that sample intensity images at fixed rates, event cameras asynchronously record per-pixel brightness changes when-ever the logarithmic intensity variation exceeds a predefined threshold. This asynchronous sensing mechanism produces a sparse yet temporally dense stream of events, providing low-latency and fine-grained motion evidence that is unavailable in standard imaging sensors. Such micro-temporal cues are par-ticularly valuable for frame interpolation, where the recovery of intermediate dynamics is fundamentally under-constrained from sparse boundary observations alone. Recent advances in event-guided RGB video interpolation have demonstrated that incorporating event information can substantially improve the robustness of motion estimation and enhance reconstruction quality, especially under fast, abrupt, or irregular motion [22]– [26]. However, the potential of event-based cues for depth interpolation remains unexplored, and consequently has not been investigated in the context of RGB-D interpolation. To address these limitations, we propose UniRED , a unified RGB-D video frame interpolation framework that jointly lever-ages RGB, depth and events. To the best of our knowledge, 
+
+UniRED is the first unified framework that jointly models RGB and depth interpolation while incorporating RGB, depth and event modalities within a single architecture, enabling the tasks to benefit from their complementary properties and improving computational efficiency through shared rep-resentations. Our framework effectively exploits the distinct roles of the three modalities: RGB provides rich appearance information, depth supplies reliable geometric structure for geometry-consistent interpolation, and events contribute tem-porally dense intermediate motion cues between boundary  
+
+> arXiv:2606.24282v1 [cs.CV] 23 Jun 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 2
+
+frames. Specifically, our method takes RGB frames, depth maps and event streams as inputs, and processes them through a multimodal feature extraction and fusion module. Based on the fused representations, we estimate optical flow and synthesize temporally denser RGB-D frames. Additionally, to address the scarcity of RGB-D-Event data, we construct a new dataset comprising synchronized RGB, dense depth maps, and event streams, which provides a valu-able benchmark for training and evaluating tri-modal video in-terpolation methods. We further conduct extensive experiments to validate the effectiveness of UniRED and demonstrate its advantages over existing methods. In summary, our work makes the following contributions:  
+
+> •
+
+We propose UniRED , a unified framework that jointly models RGB and depth interpolation within a single architecture, enabling the two tasks to benefit from com-plementary appearance and geometric cues.  
+
+> •
+
+We introduce a tri-modal framework that jointly leverages RGB, depth, and events, effectively integrating appear-ance, geometry, and dense temporal motion for more accurate and geometry-consistent interpolation.  
+
+> •
+
+We construct a new dataset containing synchronized RGB frames, dense depth maps and event streams to facilitate training and evaluation for RGB-D video interpolation and to provide a new benchmark for future research. II. R ELATED WORKS 
+
+A. RGB Video Frame Interpolation 
+
+RGB-only video frame interpolation has established strong flow-and-synthesis baselines. Super SloMo [11] jointly learns bidirectional flow and per-pixel visibility for moderate mo-tion and occlusion. PerVFI [27] improves perceptual quality through asymmetric blending and a flow-based generator. RIFE [12] improves efficiency by directly predicting interme-diate flow with privileged distillation. However, these methods remain limited by the lack of observations between boundary frames. In highly dynamic or non-stationary scenes, their assumptions on simple motion and appearance constancy often break down, causing motion drift, blur, and ghosting artifacts. To mitigate this limitation, event-guided approaches intro-duce micro-temporal cues to compensate for the temporal blind spot of frame-based sensing. TimeLens [23] combines events and frames to unify flow warping and pixel synthesis for fast and nonlinear motion. TimeLens++ [22] further models nonlinear dynamics with a one-shot continuous flow repre-sentation and multi-scale feature fusion. TimeLens-XL [24] handles large displacements through recursive small-motion updates for lightweight inference. Similarly, CBMNet [26] learns event-image fusion and bidirectional flows end-to-end via interactive attention, and TimeTracker [25] reformulates interpolation as an event-guided local trajectory tracking task to better deal with nonlinear motion. However, these methods still focus mainly on RGB interpo-lation and lack explicit geometric constraints. Without reliable depth, they remain prone to visibility ordering errors and ambiguous correspondences, especially under large motion or complex occlusion. Although introducing geometry into a single RGB frame can provide partial structural cues [28], it lacks metric depth and remains unreliable in temporally discontinuous scenes. 
+
+B. Depth Map and Point Cloud Interpolation 
+
+With the growing interest in 3D vision, dense depth map interpolation has also been studied in several prior works, but remains far less explored than RGB video interpolation. Early works addressed temporal upsampling through range-color fusion [14], texture-guided interpolation [15], and hybrid-camera reconstruction with scene flow and intermediate depth estimation [16]. However, these methods are mostly analytical pipelines based on hand-crafted priors, often requiring special hardware or 2D motion cues, and tend to break down under rapid motion, complex geometry, and depth discontinuities. Meanwhile, a substantial body of work focuses on sparse LiDAR point clouds instead. PointINet [17] estimates bidi-rectional 3D scene flow and fuses warped point sets with attention. IDEA-Net [18] begins with linear interpolation and further compensates for higher-order motion using graph-based features. NeuralPCI [19] models multi-frame dynamics with a 4D spatio-temporal field for motion-aware synthesis. FastPCI [20] balances accuracy and speed using pyramidal features and Transformer-style global reasoning. However, these methods are designed for sparse, unordered point clouds with sensor-specific sampling patterns and heavy spatial down-sampling, making them unsuitable for dense per-pixel depth interpolation, where sharp boundaries and fine occlusion struc-tures must be preserved. In practice, RGB-only interpolation suffers from ambiguous motion and visibility reasoning due to the lack of explicit geometry, while depth interpolation remains difficult near depth discontinuities, disocclusions, and complex geometric variation. More fundamentally, both settings lack temporally dense observations between boundary frames. These limita-tions motivate a unified framework that jointly exploits RGB appearance, depth geometry, and event-based temporal cues for consistent RGB-D interpolation. III. M ETHOD 
+
+A. Overview 
+
+As illustrated in Fig. 1, UniRED addresses RGB-D video interpolation by taking consecutive RGB frames, the corre-sponding depth maps, and the event streams between them as input, and synthesizing the intermediate RGB frame and depth map at the target time. UniRED consists of three major modules: multimodal feature extraction and fusion, motion-aware flow estimation, and rendering. The first module extracts and exchanges complementary features across modalities using modality-specific encoders and a tri-modal fusion network. Based on the fused representations, the second module then estimates bidirectional optical flows for the RGB and depth branches, where depth-guided motion bases are introduced in the RGB branch to provide geometry-aware motion priors, and Z-axial refinement is applied in the depth branch to better capture depth-specific structural variations. Finally, the render-ing module synthesizes interpolated RGB-D frames through JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 30 0                 
+
+> ff
+> →tt
+> ff
+> →0t=1tt=+00
+> ff
+> →tt
+> ff
+> →0t=1tt=+It
+
+EDtE  
+
+> Fig. 1. The pipeline of UniRED : it consists of three major modules as shaded in different colors along with the input modalities. From left to right, the model takes consecutive RGB frames, depth maps, and the event stream as input. Modality-specific encoders and a tri-modal fusion module first extract and exchange complementary features across RGB, depth, and events. The motion-aware flow estimation module then predicts bidirectional flows in two branches, where motion basis refinement is used for RGB and Z-axial refinement is used for depth. Finally, forward/backward warping and soft blending synthesize the target RGB-D frame.
+
+forward and backward warping, followed by a soft-blending mechanism that adaptively blends the rewarped results to achieve smooth and low-artifact transitions. 
+
+B. Multimodal Feature Extraction and Fusion 
+
+RGB, depth, and event data provide complementary obser-vations of the same scene: RGB frames provide rich appear-ance and texture cues, depth maps contribute explicit geomet-ric structure, and event streams capture per-pixel brightness changes asynchronously at microsecond temporal resolution. To make effective use of these heterogeneous but complemen-tary signals, we design a multimodal feature extraction and fusion module that extracts modality-specific representations while establishing effective interactions across modalities. 
+
+1) Feature Extraction: We first prepare the multimodal inputs for UniRED . Let F mt denote the observation of modal-ity m ∈ {I, D } at time t ∈ {0, 1}, where t = 0 and 
+
+t = 1 correspond to the two boundary frames. Specifically, 
+
+F It ∈ RH×W ×3 represents RGB frame, and F Dt ∈ RH×W
+
+denotes the corresponding depth map. The raw event stream observed between F m 
+
+> 0
+
+and F m 
+
+> 1
+
+is accumulated and converted into a voxelized representation E ∈ RC×H×W with C tem-poral bins, following [29]. This representation yields a dense spatio-temporal tensor for feature extraction while preserving temporal variation. To extract complementary appearance, geometry, and mo-tion representations, UniRED employs four dedicated en-coders: an RGB encoder, a depth encoder, and two event encoders conditioned on RGB and depth, respectively. The RGB encoder takes the boundary frames [F I 
+
+> 0
+
+, F I 
+
+> 1
+
+] as input and extracts multi-scale appearance features using an FPN-style architecture [30]. Before hierarchical encoding, we in-troduce channel-wise reweighting and an edge-response map to enhance informative appearance cues. The depth encoder takes the boundary depth maps [F D 
+
+> 0
+
+, F D 
+
+> 1
+
+] as input and ex-tracts multi-scale geometric features using the same FPN-style architecture. To strengthen structural representation, we incorporate geometry-aware weighting combined with gradient and continuity responses prior to multi-scale encoding. The RGB-conditioned event encoder takes [F I 
+
+> 0
+
+, E, F I 
+
+> 1
+
+] as input and produces multi-scale, time-indexed embeddings 
+
+EIt,s , where t indexes temporal bins and s denotes the fea-ture scale. Specifically, the boundary frames [F I 
+
+> 0
+
+, F I 
+
+> 1
+
+] and voxelized events E are first jointly encoded, then reorganized into slice-wise representations with a fixed channel width, and further compressed through two spatial downsampling stages to obtain compact features EIt,s . Similarly, the depth-conditioned event encoder follows the same pipeline, taking 
+
+[F D 
+
+> 0
+
+, E, F D 
+
+> 1
+
+] as input and producing EDt,s . This dual-encoder design not only enables effective extraction of event features but also prepares them to serve as a bridge for subsequent cross-modal fusion between appearance and geometry. 
+
+2) Feature Fusion: The extracted appearance features en-code rich visual details but do not explicitly capture struc-tural discontinuities, while geometric features provide explicit structural cues but suffer from limited resolution, missing regions, and local aliasing artifacts. Therefore, we seek to fuse the two representations to leverage their complementary strengths. However, our experiments (Sec. V-C) reveal that naive fusion can be detrimental: RGB details may leak across depth discontinuities, while depth defects (e.g., low resolution, holes, and aliasing) can in turn corrupt appearance features. To address these limitations of direct fusion, we exploit the event domain as a more suitable space for cross-modal interac-tion. Event streams capture motion-induced intensity changes with high temporal precision, and their responses often align JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 4
+
+with both RGB boundaries and depth discontinuities of mov-ing objects. This makes the event domain a more suitable space for exchanging complementary information between the RGB and depth branches than direct feature fusion. Motivated by this, we propose a novel fusion strategy that leverages event features as an intermediate bridge, enabling effective cross-modal interaction between appearance and geometry. At each feature scale s, the RGB- and depth-conditioned event features, EIt,s and EDt,s , are first projected into a shared embedding space via learned pointwise alignment layers. We then fuse the aligned features using a coordinate-attention interaction module, which captures not only cross-channel dependencies but also direction-aware and position-sensitive information [31]. This preserves positional information while enabling spatially selective feature modulation, making it suitable for event-guided fusion, where informative responses are typically localized around moving boundaries and depth discontinuities. In practice, the fusion follows the axis-wise reweighting strategy of [32], i.e., aligning channels via learned pointwise linear maps to form: 
+
+XI 
+
+> t,s
+
+= Align I(EI
+
+> t,s
+
+), XD 
+
+> t,s
+
+= Align D(ED
+
+> t,s
+
+),Zt,s = [ XI
+
+> t,s
+
+, X D 
+
+> t,s
+
+]. (1) From the fused feature Zt,s , height-wise and width-wise descriptors are used to generate the axis-aware gates Ah
+
+and Aw. A spatial saliency gate St,s is further computed from the channel-wise maximum response, so that the fused representation can focus on spatially informative regions while suppressing inconsistent activations. The gating and fusion process is expressed as 
+
+St,s = σ
+
+
+
+Conv k×k
+
+  max c
+
+ Zt,s ⊙ Ah ⊙ Aw
+
+ 
+
+,
+
+ˆZt,s = Conv 1×1
+
+ (Zt,s ⊙ Ah ⊙ Aw) ⊙ St,s 
+
+.
+
+(2) The fused cross-modal message is then injected back into the two event streams symmetrically [33] at every temporal bin t:
+
+ˆEI 
+
+> t,s
+
+= EI 
+
+> t,s
+
++ Align I( ˆZt,s ), ˆED 
+
+> t,s
+
+= ED 
+
+> t,s
+
++ Align D( ˆZt,s ).
+
+(3) In this way, complementary information is exchanged through temporally aligned event responses, which reduces direct con-tamination between RGB and depth features while preserving the modality-specific characteristics of each branch. 
+
+C. Motion-aware Flow Estimation 
+
+After multimodal feature extraction and fusion, UniRED 
+
+employs a motion-aware flow estimation module to model scene dynamics for frame interpolation. As shown in the third column of Fig. 1, this module adopts a two-branch architecture for RGB and depth, where each branch employs a phase-wise iterative loop to estimate bidirectional optical flow [34], [35]. To encourage each branch to focus on its respective role, a motion basis refinement is introduced in the RGB branch to enable appearance-driven motion estimation, while a Z-axial refinement is adopted in the depth branch to enforce geometry-consistent motion within the same iterative framework. Concretely, let t ∈ {0, . . . , T − 1} index the discrete temporal steps, where T denotes the total number of interpolation phases, and τt = ( t + 1) /T ∈ (0 , 1] denotes the corresponding normalized interpolation phase between the two boundary frames. At each phase τt, cumulative flows from both temporal directions are updated in parallel. The forward flow is initialized as f → 
+
+> 0
+
+= 0 from the starting boundary frame 
+
+F I,D  
+
+> 0
+
+, while the backward flow is initialized as f ← 
+
+> 0
+
+= 0 from the ending boundary frame F I,D  
+
+> 1
+
+. For a pixel location x, the forward flow is updated as 
+
+f →
+
+> t+1
+
+(x) = f → 
+
+> t
+
+(x) + ∆ f →
+
+> t
+
+ x + f → 
+
+> t
+
+(x), (4) driven by the event slice EI,D t , while the backward flow follows 
+
+f ←
+
+> t+1
+
+(x) = f ← 
+
+> t
+
+(x) + ∆ f ←
+
+> t
+
+ x + f ← 
+
+> t
+
+(x), (5) driven by the time-reversed event slice EI,D T −1−t. The resulting flows f → 
+
+> t
+
+and f ← 
+
+> t
+
+represent cumulative displacements from the two boundary frames to the intermediate phase τt, respectively. Given these flows, the two boundary frames are warped toward the current phase to produce forward and backward candidates, which serve as both reconstruction hypotheses and inputs for subsequent updates. The estimation proceeds sequentially from τt to τt+1 until all intermediate frames are generated. During training, supervision is applied at each phase, providing dense optimization signals that stabilize tem-poral prediction. At each iteration of the phase-wise bidirectional estimation loop, the RGB and depth branches adopt distinct refinement strategies tailored to their respective roles: motion basis re-finement for the RGB branch and Z-axial refinement for the depth branch. We next detail these two refinement strategies. 
+
+1) Motion Basis refinement: Under the pinhole camera model and assuming small inter-frame motion, the instanta-neous image velocity at normalized image coordinates can be decomposed into a translational component v ∈ R3 and a rotational component ω ∈ R3. A key property is that the translational term depends on inverse depth ζ = 1 /Z ,whereas the rotational term is independent of depth [36]– [38]. This yields a compact and physically grounded motion parameterization. Under this formulation, optical flow can be represented as a linear combination of fixed basis vector fields, {∆Tx, ∆Ty , ∆Tz , ∆Rx, ∆Ry , ∆Rz } defined in pixel coordinates and parameterized by the camera intrinsics [39]. Following Poggi and Tosi [40], we assume fx = fy , and split 
+
+∆Rx and ∆Ry into two sub-bases each, resulting in an eight-basis representation. We denote this predefined motion basis set as M = {bk}Kk=1 with K = 8 , whose elements are fixed and encode the geometric structure of rigid motion. Given the endpoint depth maps F D 
+
+> 0
+
+and F D 
+
+> 1
+
+, we use the generator introduced by Poggi and Tosi [40] to estimate endpoint-specific motion priors. Specifically, the generator predicts soft, spatially varying coefficients to combine the fixed basis set M, yielding two basis-induced motion fields 
+
+fM(0) , fM(1) ∈ RH×W ×2. Here, fM denotes the resulting motion prior obtained by weighting M according to depth. To handle general motion, we assume that motion is locally rigid in space and evolves smoothly over time. For an inter-JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 5
+
+mediate time τt ∈ [0 , 1] , we obtain the corresponding motion prior by linearly interpolating the endpoint priors: 
+
+fM(τt) = (1 − τt) fM(0) + τt fM(1) . (6) This yields a continuous trajectory in the motion basis sub-space and provides an explicit temporal constraint for inter-mediate flow estimation. Conditioned on fM(τt), we employ a motion-basis-guided predictor Hmb , implemented as a lightweight convolutional module, to predict a residual flow ∆fmb ,t together with a confidence map mmb ,t ∈ [0 , 1] :
+
+(∆ fmb ,t , mmb ,t ) = Hmb 
+
+  fM(τt). (7) Here, the residual term provides a motion basis correction to the current flow estimate, while the confidence map indicates the pixel-wise reliability of the motion prior. We then apply the correction in a gated manner: 
+
+f + 
+
+> t
+
+= ft + σ mmb ,t 
+
+ ⊙ ∆fmb ,t . (8) In this way, the model applies stronger updates where the motion prior is reliable and suppresses them where the prior is less trustworthy. Note that the motion basis refinement is used only in the RGB branch. This is because RGB interpolation benefits more from explicit geometric guidance for dense appearance motion estimation. By contrast, depth is more affected by residual errors along the viewing direction, so it is refined with a dedicated Z-axial module instead. 
+
+2) Z-axial refinement: 2D optical flow captures only image-plane motion and is therefore insensitive to axial motion along the viewing direction. This limitation is particularly evident under large parallax and occlusion, where depth errors are often caused by residual optical-axis displacement [41], [42]. To address this issue, we introduce a Z-axial refinement module in the depth branch to adjust only the z-axial com-ponent while preserving the in-plane estimate. Specifically, at phase t, the Z-axial refinement module takes three inputs: the current 2D flow features ft, depth features ˆF Dt , and temporally aggregated event features A(Et). These inputs are chosen to provide complementary constraints for axial correction. The flow features encode the current in-plane motion estimate and thus serve as the reference state to be corrected. The depth features provide scene geometry that determines how displacement along the viewing direction affects reprojection. The aggregated event features supply fine-grained temporal evidence of residual motion, which is particularly useful when axial errors are not fully captured by the current 2D flow estimate. Based on these cues, the module predicts an axial residual ∆f (z) 
+
+> t
+
+together with a confidence map μ(z) 
+
+> t
+
+:
+
+ ∆f (z) 
+
+> t
+
+, μ (z)
+
+> t
+
+ = Z
+
+
+
+ft, ˆF Dt , A(Et)
+
+
+
+. (9) Let wbase  
+
+> t
+
+denote the initial warp obtained from the current flow estimate before applying the z-axial refinement, the predicted axial correction is injected into this warp as: 
+
+w+ 
+
+> t
+
+= wbase  
+
+> t
+
++ μ(z) 
+
+> t
+
+⊙ ∆f (z) 
+
+> t
+
+. (10) In this way, the module selectively strengthens axial correc-tion where the estimated residual is reliable, while suppressing unstable updates in ambiguous regions. 
+
+D. Rendering and Loss Functions 1) Rendering: After all prior refinements, the Motion-aware Flow Estimation module outputs the forward/backward flows, their coarse rewarps, and the associated decoder flow features. For synthesis, we adopt an asymmetric soft-blending strategy inspired by Wu et al. [27]. Rather than simply averaging the two coarse rewarps, the module predicts aspatially varying soft visibility map to adaptively fuse the bidirectional warped candidates. Specifically, the binary mask is first encoded by a convolutional layer stack to produce mask features. In parallel, the two warped candidates are concatenated and processed by a lightweight attention module to generate feature-dependent modulation weights. The modu-lation weights then refine the mask features to produce the final soft blending mask, which enables pixel-wise fusion according to local reliability. This design allows the fusion process to adapt to regions where the two directional warps differ, such as occlusion areas and motion boundaries. The resulting fused image is taken as the final interpolated result at the target time step. 
+
+2) Loss functions: We adopt branch-specific supervision for appearance and geometry. First, since both RGB and depth interpolation require stable per-pixel regression under large local variations, we employ the Charbonnier loss as the primary reconstruction objective for both branches [43], [44]: 
+
+LChar ( ˆFt, F t) = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+q  ˆFt,i − Ft,i 
+
+2 + ε, (11) where ˆFt denotes the predicted frame, Ft represents the ground truth, i denotes the index of a valid pixel, N denotes the total number of valid pixels and ε > 0 is a small constant introduced for numerical stability. For the RGB branch, we additionally employ an LPIPS term [45] to preserve perceptual image quality, resulting in the final loss for RGB interpolation: 
+
+LRGB = 
+
+> T−1
+
+X
+
+> t=0
+
+h
+
+LChar ( ˆF It , F It ) + λp LPIPS( ˆF It , F It )
+
+i
+
+. (12) For the depth branch, we augment the Charbonnier term with a first-order gradient consistency loss [46]–[48] to pre-serve depth boundaries and coherent local gradient structures, which penalizes discrepancies in the horizontal and vertical depth derivatives: 
+
+L∇( ˆF Dt , F Dt ) = ∇x ˆF Dt − ∇ xF Dt 1 + ∇y ˆF Dt − ∇ y F Dt 1.
+
+(13) Based on this formulation, the final loss for depth interpolation is defined as 
+
+LDepth = 
+
+> T−1
+
+X
+
+> t=0
+
+h
+
+LChar ( ˆF Dt , F Dt ) + λ∇ L∇( ˆF Dt , F Dt )
+
+i
+
+. (14) Finally, the two branch losses are combined as 
+
+Ltotal = α LRGB + β LDepth , (15) where α and β are fixed weighting coefficients that balance the contributions of the RGB and depth losses, respectively. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 6 
+
+> Fig. 2. Qualitative comparison of alignment before and after LoFTR-based residual refinement.
+
+IV. D ATASETS 
+
+UniRED simultaneously relies on RGB, depth, and event modalities, yet existing datasets lack a dedicated tri-modal benchmark. To enable systematic evaluation, we construct two datasets: one derived from processed VECtor data [49], and our newly collected SyncRDE-60 dataset. 
+
+A. VECtor 
+
+We use a small-scale subset of VECtor [49], which provides dense depth annotations, to construct a geometrically consis-tent RGB–D–event benchmark. The raw sequences are processed in two stages. In the first stage, RGB frames are undistorted, and depth maps are warped to a common RGB reference frame using the provided calibration parameters. Each event is first undistorted in the event camera domain, then associated with its temporally nearest depth frame to obtain a depth value via bilinear interpolation, and finally reprojected to the target RGB image plane using the calibrated extrinsics. In the second stage, we further correct residual RGB–event misalignment, as calibration-based preprocessing alone may be insufficient in close-range scenes, as also observed in TimeLens [23]. To address this, we refine the alignment via LoFTR matching followed by RANSAC-based residual correction. Specifically, for each sequence, we sample a set of reference frames and accumulate nearby events around each timestamp to construct event images. We then establish cross-modal correspondences between the event images and the edge maps of the corresponding RGB frames using LoFTR [50]. After confidence filtering, residual geometric corrections are estimated via RANSAC [51], averaged at the sequence level, and applied to the entire event stream. We visualize the alignment quality before and after refinement in Fig. 2. The visual comparison shows that, after refinement, the alignment exhibits substantially improved consistency between event structures and RGB boundaries. 
+
+B. SyncRDE-60 
+
+We also construct a new dataset, SyncRDE-60, by collecting and curating 60 sequences of synchronized RGB-D videos and event streams. For data acquisition, we build a capture platform as shown in Fig. 3. RGB-D data are captured using an Intel RealSense D435i at a resolution of 640 × 360 and 30 fps, while event data are recorded using a DVSense sensor at a resolution of 1280 ×720 [52], [53]. Both devices are connected to the same host computer, ensuring that all measurements  
+
+> Fig. 3. Left: our multimodal data capture platform, consisting of a DVSense event camera with an IR-cut filter mounted on an Intel RealSense D435i. Right: representative samples from the captured dataset, including RGB im-ages, depth maps, and event visualizations. Red and blue denote positive and negative event polarities, respectively. All modalities are spatially calibrated and registered to a common reference frame.
+
+share a common system clock and can be temporally aligned within a unified acquisition framework. For spatial alignment, we adopt a calibration-based geo-metric pipeline. RGB and depth are first registered using the factory calibration and built-in alignment of the Intel RealSense D435i. Each sensor is independently calibrated to obtain its intrinsics and distortion coefficients. Following [54], we estimate the extrinsic transformation from the RGB-D reference frame to the event camera using a jointly observed checkerboard. Checkerboard corners are detected in the RGB frames and event streams, and the aligned depth maps are used to lift the RGB corners to 3D in the RGB-D reference frame. The extrinsic transformation is then solved by PnP [55] from the recovered 3D points, the event-image corners, and the calibrated event intrinsics. With the estimated RGB-D-to-event extrinsics, we further align the three modalities using the same preprocessing pipeline as that described in Sec. IV-A. The collected sequences primarily capture object motions driven by human manipulation, along with a subset induced by indirect off-camera actuation to enrich motion diversity. The dataset spans a wide range of object categories, including human hands and forearms, utensils and containers, balls and toys, food items, consumer electronics, stationery, and various household or office objects. It also contains challeng-ing motion patterns such as non-rigid deformation, frequent hand–object interactions and occlusions, and dynamics ranging from subtle displacements to rapid movements. More detailed dataset statistics and split information are provided in the supplementary material. V. E XPERIMENTS AND ANALYSIS 
+
+A. Settings and Metrics. 
+
+All experiments are conducted using the PyTorch framework on a single NVIDIA RTX 4090 GPU with a batch size of 2. We set the loss weights as λp = 0 .1 for the RGB perceptual term, λ∇ = 0 .2 for the depth gradient term, and α = 1 .0,
+
+β = 0 .8 for the RGB and depth branches, respectively. The model is optimized using the Adam optimizer [56] with an initial learning rate of 1 × 10 −5, followed by a cosine decay schedule to 1 × 10 −7.For evaluation, we assess the RGB branch using PSNR, SSIM and LPIPS [45], which measure pixel-level fidelity, structural consistency around edges and occlusions, and per-ceptual quality, respectively. For the depth branch, we report JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 7 
+
+> Fig. 4. Qualitative comparison on VECtor and SyncRDE-60 at ×4. Examples of interpolated RGB frames (upper half) and corresponding depth frames (lower half) from different methods are compared with ground truth in different columns. The partial regions are zoomed in to show detailed interpolation quality.
+
+RMSE, AbsRel, and δ1.25 . RMSE quantifies absolute geomet-ric error, AbsRel measures relative accuracy across varying depth ranges, and δ1.25 evaluates the proportion of pixels whose predicted depth falls within a tight tolerance of the ground truth. Together, these metrics provide a comprehensive evaluation of both photometric and geometric performance in RGB–D video interpolation. 
+
+B. Comparison with Different Methods 
+
+In the absence of established event-guided RGB-D inter-polation baselines, we design the evaluation protocol along two complementary tracks to ensure that the comparisons remain fair and informative. The first track measures the appearance by comparing UniRED with RGB frame-based methods (SuperSloMo [11], RIFE [12]) and event-guided methods (CBMNet [26], TimeLens [23], TimeLens-XL [24]). The second track measures the geometry by comparing against depth interpolation (RIFE with depth input), point-cloud tem-poral upsampling (PointINet [17], FastPCI [20]), and event-guided depth interpolation (TimeLens and TimeLens-XL with depth input). All methods are retrained and validated independently for each dataset and temporal upsampling protocol. For point-cloud interpolation baselines (PointINet and FastPCI), we uniformly downsample each point cloud to 8,192 points during both training and inference. This step is necessary due to the inherent computational and memory complexity of point-based processing, and is commonly adopted in prior works. Evalu-ation metrics for these methods are computed only on pixels with valid point projections to ensure fair and meaningful comparisons. Following this protocol, we train separate models for VECtor ×4, VECtor ×8, SyncRDE-60 ×4, and SyncRDE-60 ×8, where ×k denotes k-times temporal upsampling. 
+
+1) Evaluation results of RGB interpolation: We present qualitative comparisons in the upper half of Fig. 4. UniRED 
+
+produces consistently sharper results with cleaner edges and fewer ghosting artifacts than both frame-only and event-guided baselines. For instance, our method faithfully preserves the mug’s shape and surface texture, without noticeable defor-mation or overlapping artifacts in the SyncRDE-60 example. Frame-only methods suffer from temporal instability, while existing event-guided approaches, although improving tempo-ral stability, still lack geometric constraints and tend to exhibit boundary drift and double edges near motion boundaries. We also report quantitative comparisons with competing methods in Table I. Across both VECtor and SyncRDE-60 datasets, UniRED consistently achieves the best PSNR, SSIM, and LPIPS under both ×4 and ×8 settings, with noticeably larger gains at ×8 where the larger temporal gap makes inter-polation substantially more challenging for all methods. These results suggest that our method more effectively suppresses residual misalignment and preserves boundary fidelity, rather than merely producing smoother outputs. 
+
+2) Evaluation results of depth interpolation: The qualitative results for depth interpolation are shown in the lower half of Fig. 4. A consistent trend is observed: UniRED produces cleaner and more continuous depth with crisper object bound-aries than frame-only and event-guided baselines. Specifically, JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 8      
+
+> TABLE I QUANTITATIVE EVALUATION RESULTS FOR RGB FRAME INTERPOLATION ON VEC TOR AND SYNC RDE-60. I NPUTS : R=RGB, D=D EPTH , E=E VENTS .THE BEST RESULT FOR EACH METRIC IS MARKED AS BOLD AND THE SECOND BEST IS UNDERLINED .
+
+VECtor (RGB) SyncRDE-60 (RGB) 
+
+×4 ×8 ×4 ×8
+
+Method Inputs PSNR ↑ SSIM ↑ LPIPS ↓ PSNR ↑ SSIM ↑ LPIPS ↓ PSNR ↑ SSIM ↑ LPIPS ↓ PSNR ↑ SSIM ↑ LPIPS ↓
+
+SuperSloMo [11] R 25.3235 0.8389 0.0103 20.9860 0.7697 0.0195 30.5073 0.9403 0.0079 27.1991 0.9489 0.0124 RIFE [12] R 25.8885 0.8547 0.0089 21.7836 0.7878 0.0181 31.6077 0.9447 0.0064 27.6409 0.9508 0.0099 Timelens [23] R+E 31.2513 0.9144 0.0047 26.5351 0.8501 0.0110 32.4868 0.9598 0.0072 28.1587 0.9517 0.0106 CBMNet [26] R+E 32.0829 0.9200 0.0065 27.2596 0.9047 0.0130 33.0671 0.9364 0.0076 29.4400 0.9536 0.0103 Timelens-XL [24] R+E 28.0381 0.8780 0.0058 23.3609 0.8136 0.0133 33.7292 0.9616 0.0058 30.3999 0.9582 0.0087 
+
+UniRED R+D+E 33.6368 0.9427 0.0027 28.2768 0.9170 0.0074 35.7833 0.9712 0.0054 31.7508 0.9577 0.0065      
+
+> TABLE II QUANTITATIVE EVALUATION RESULTS FOR DEPTH FRAME INTERPOLATION ON VEC TOR AND SYNC RDE-60. I NPUTS : R=RGB, D=D EPTH , E=E VENTS ,PC=P OINT CLOUDS . T HE BEST RESULT FOR EACH METRIC IS MARKED AS BOLD AND THE SECOND BEST IS UNDERLINED .
+
+VECtor (Depth) SyncRDE-60 (Depth) 
+
+×4 ×8 ×4 ×8
+
+Method Inputs RMSE ↓ AbsRel ↓ δ1.25 ↑ RMSE ↓ AbsRel ↓ δ1.25 ↑ RMSE ↓ AbsRel ↓ δ1.25 ↑ RMSE ↓ AbsRel ↓ δ1.25 ↑
+
+RIFE [12] D 0.0021 0.0209 0.9919 0.0015 0.0223 0.9692 0.0619 0.1542 0.9130 0.0658 0.1842 0.8955 PointINet [17] D(PC) 0.0044 0.0352 0.7014 0.0049 0.0511 0.6233 0.1978 0.6027 0.6713 0.3074 0.8049 0.6027 FastPCI [20] D(PC) 0.0041 0.0343 0.7268 0.0046 0.0487 0.6679 0.1962 0.6954 0.6974 0.2216 0.7429 0.6506 TimeLens [23] D+E 0.0018 0.0149 0.9857 0.0024 0.0285 0.9721 0.0611 0.1623 0.9006 0.0746 0.1729 0.8900 TimeLens-XL [24] D+E 0.0018 0.0157 0.9847 0.0022 0.0278 0.9771 0.0641 0.1988 0.8531 0.0660 0.2348 0.8570 
+
+UniRED R+D+E 0.0013 0.0103 0.9972 0.0015 0.0196 0.9846 0.0570 0.1031 0.9346 0.0626 0.1292 0.9125 
+
+for the example from VECtor, our result preserves a more complete and coherent depth structure in the head and upper-body regions, while avoiding the scattered holes, fragmented contours, and patchy depth artifacts visible in competing meth-ods. Frame-only depth interpolation drifts when the temporal gap is large and often shows banding. Point-cloud interpolation suffers from sparse sampling and reprojection errors, often leading to holes, broken contours, and temporal jitter around motion boundaries. Event-based models time transitions well but lack metric geometry, so z-order and boundary continuity fail. The quantitative results in Table II further validate our qual-itative observations. Across both the VECtor and SyncRDE-60 datasets, UniRED consistently outperforms all baselines under both ×4 and ×8 settings, achieving the best performance in RMSE, AbsRel, and δ1.25 . These metrics are particularly sen-sitive to errors near depth boundaries. Frame-only approaches accumulate drift as temporal gaps increase, point-cloud re-projection introduces sparse inconsistencies, and event-based timing without metric depth fails to preserve correct occlusion ordering. As a result, these methods exhibit higher RMSE and lower δ1.25 around motion boundaries. 
+
+C. Ablation Study 
+
+To verify the effectiveness of each design in UniRED , we conduct ablation studies on the SyncRDE-60 dataset. 
+
+1) Ablation studies on modalities: We perform ablations by removing each input modality (RGB, depth, and event stream) to evaluate their impact on performance. The results suggest that jointly performing RGB and depth interpolation is beneficial to both tasks, as the two modalities can mutually reinforce each other through their complementary appearance and geometric cues. In addition, the event streams play a central role in connecting the RGB and depth branches: once removed, performance drops markedly in both modalities. This observation indicates that event cues are not merely auxiliary inputs, but provide essential temporal guidance for maintaining cross-modal consistency under dynamic motion. 
+
+2) Ablation studies on naive tri-modal baseline: To exam-ine whether the observed gains can be obtained by simply augmenting an existing RGB+Event framework with depth, we implement a naive RGB-D+Events baseline, denoted as TL (RGB-D+E), by concatenating RGB and depth into a 4-channel input and extending TimeLens to process RGB-D frames. The results in Table III and Table IV show that this simple extension remains inferior to UniRED . Although the naive tri-modal baseline improves depth estimation over the depth+events variant of TimeLens (Table II), it performs worse in RGB interpolation than the original TimeLens with RGB+events input (Table I). This observation indicates that simple channel-wise concatenation is insufficient to exploit the complementary properties of the three modalities effectively. 
+
+3) Ablation studies on fusion strategies: We compare the proposed fusion strategy in UniRED (denoted as F4 ) with three alternative variants to evaluate its effectiveness and necessity. F1 removes the fusion module, directly feeding the event-encoder outputs EIt and EDt into the two down-stream branches. F2 performs naive fusion by concatenating RGB, depth, and event features to produce shared feature maps for subsequent processing. F3 adopts the same fusion-module architecture as F4, but restricts its inputs to RGB and depth features only. The event stream is still processed JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 9
+
+TABLE III ABLATION RESULTS ON SYNC RDE-60 ×4 (RGB) WITH DIFFERENT SELECTIONS OF INPUT MODALITIES AND MODULES .ID R D E MB Fus PSNR ↑ SSIM ↑ LPIPS ↓
+
+V0 ✓ ✗ ✓ ✗ F1 33.9002 0.9538 0.0059 V1 ✓ ✓ ✗ ✓ F4 33.0157 0.9622 0.0065 V3 ✓ ✓ ✓ ✗ F4 34.1672 0.9601 0.0069 TL (RGB-D+E) ✓ ✓ ✓ - - 31.4074 0.9558 0.0079 V5 ✓ ✓ ✓ ✓ F1 28.9904 0.9482 0.0106 V6 ✓ ✓ ✓ ✓ F2 30.7365 0.9431 0.0071 V7 ✓ ✓ ✓ ✓ F3 32.0072 0.9589 0.0067 UniRED ✓ ✓ ✓ ✓ F4 35.7833 0.9712 0.0054 TABLE IV ABLATION RESULTS ON SYNC RDE-60 ×4 (DEPTH ) WITH DIFFERENT SELECTIONS OF INPUT MODALITIES AND MODULES .ID R D E ZR Fus RMSE ↓ AbsRel ↓ δ1.25 ↑
+
+V1 ✓ ✓ ✗ ✓ F4 0.0895 0.2481 0.8318 V2 ✗ ✓ ✓ ✓ F1 0.0980 0.2870 0.8553 V4 ✓ ✓ ✓ ✗ F4 0.0959 0.2516 0.8473 TL (RGB-D+E) ✓ ✓ ✓ - - 0.0601 0.1599 0.9014 V5 ✓ ✓ ✓ ✓ F1 0.0986 0.2152 0.8687 V6 ✓ ✓ ✓ ✓ F2 0.0897 0.1701 0.7712 V7 ✓ ✓ ✓ ✓ F3 0.0826 0.1293 0.8681 UniRED ✓ ✓ ✓ ✓ F4 0.0570 0.1031 0.9346 
+
+through its dedicated pathway, but is excluded from the ex-plicit RGB–depth fusion stage, thereby removing event-guided interaction while retaining appearance–geometry fusion. The quantitative results in the lower parts of the Tables III and IV reveal a clear and consistent trend. F1 yields inferior performance because the two branches receive no explicit RGB-depth interaction, limiting cross-modal infor-mation exchange. F2 also performs poorly, suggesting that direct concatenation is insufficient for tri-modal fusion. Since RGB, depth, and event features exhibit different signal char-acteristics and encode distinct aspects of the scene, naive aggregation tends to entangle heterogeneous cues in a shared space, introducing cross-modal interference and weakening the discriminative structures needed for accurate interpolation. F3 improves over F1 and F2 to some extent, but remains inferior to F4 because event features are not involved in the explicit RGB-depth fusion stage. Consequently, event cues can no longer directly guide cross-modal interaction at this stage, reducing the model’s ability to resolve fine-grained temporal misalignment near motion boundaries. By contrast, the pro-posed fusion strategy F4 achieves the best performance for both RGB and depth interpolation, demonstrating that effective tri-modal fusion requires not only feature aggregation, but also event-guided interaction to establish accurate temporal and geometric correspondence between RGB and depth features. 
+
+4) Ablation studies on refinement: We respectively remove the Motion Basis Refinement (MB) and Z-axial Refinement (ZR) to measure their impact on the evaluation metrics. As shown in Table III, both depth-derived features and Motion Basis refinement notably improve the performance of RGB in-terpolation. The former provides additional geometric context that complements appearance cues, while the latter introduces a structured motion prior that improves flow estimation in challenging regions, such as weak-texture areas and motion boundaries. Table IV further indicates that Z-axial Refinement brings a clear gain in depth estimation by explicitly correcting residual errors along the viewing direction, which are not well captured by in-plane flow alone. VI. C ONCLUSION 
+
+In this paper, we introduce the new task of event-guided RGB-D video interpolation and present UniRED , the first uni-fied framework for jointly interpolating RGB appearance and depth geometry from RGB, depth, and event inputs. By inte-grating appearance, geometry, and temporally dense event cues within a tri-modal architecture, UniRED promotes effective cross-modal interaction and motion reasoning, yielding more faithful RGB reconstruction and more geometry-consistent depth recovery in highly dynamic scenes. To facilitate this task, we established a standardized evaluation platform on two real-world benchmarks: a geometrically aligned RGB-D-Event version of VECtor and our newly collected synchronized RGB-D-Event dataset, SyncRDE-60. Extensive experiments demonstrate that UniRED consistently outperforms existing frame-based, event-guided, and point-cloud-based baselines in both photometric quality and geometric accuracy, highlighting the effectiveness of jointly modeling appearance, geometry, and event dynamics for RGB-D video interpolation. REFERENCES [1] A. Handa, R. A. Newcombe, A. Angeli, and A. J. Davison, “Real-time camera tracking: When is high frame-rate best?” in European Conference on Computer Vision . Springer, 2012, pp. 222–235. [2] R. A. Newcombe, D. Fox, and S. M. Seitz, “Dynamicfusion: Recon-struction and tracking of non-rigid scenes in real-time,” in Proceedings of the IEEE conference on computer vision and pattern recognition ,2015, pp. 343–352. [3] Y. Fu, Q. Yan, L. Yang, J. Liao, and C. Xiao, “Texture mapping for 3d reconstruction with rgb-d sensor,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2018, pp. 4645–4653. [4] C. Yang, Y. Zhou, G. Wei, L. Ma, J. Hou, Y. Liu, and W. Wang, “Monge-ampere regularization for learning arbitrary shapes from point clouds,” IEEE Transactions on Pattern Analysis and Machine Intelli-gence , vol. 47, no. 8, pp. 6809–6822, 2025. [5] A. Geiger, P. Lenz, C. Stiller, and R. Urtasun, “Vision meets robotics: The kitti dataset,” The international journal of robotics research , vol. 32, no. 11, pp. 1231–1237, 2013. [6] H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan, and O. Beijbom, “nuscenes: Amultimodal dataset for autonomous driving,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 11 621–11 631. [7] D. Kye, C. Roh, S. Ko, C. Eom, and J. Oh, “Acevfi: A comprehen-sive survey of advances in video frame interpolation,” arXiv preprint arXiv:2506.01061 , 2025. [8] S. Niklaus, L. Mai, and F. Liu, “Video frame interpolation via adaptive convolution,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2017, pp. 670–679. [9] ——, “Video frame interpolation via adaptive separable convolution,” in 
+
+Proceedings of the IEEE international conference on computer vision ,2017, pp. 261–270. [10] H. Lee, T. Kim, T.-y. Chung, D. Pak, Y. Ban, and S. Lee, “Adacof: Adaptive collaboration of flows for video frame interpolation,” in Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 5316–5325. [11] H. Jiang, D. Sun, V. Jampani, M.-H. Yang, E. Learned-Miller, and J. Kautz, “Super slomo: High quality estimation of multiple intermediate frames for video interpolation,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2018, pp. 9000–9008. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 10 
+
+[12] Z. Huang, T. Zhang, W. Heng, B. Shi, and S. Zhou, “Real-time intermediate flow estimation for video frame interpolation,” in European Conference on Computer Vision . Springer, 2022, pp. 624–642. [13] S. Niklaus and F. Liu, “Softmax splatting for video frame interpolation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 5437–5446. [14] J. Dolson, J. Baek, C. Plagemann, and S. Thrun, “Upsampling range data in dynamic environments,” in 2010 IEEE Computer Society Conference on Computer Vision and Pattern Recognition . IEEE, 2010, pp. 1141– 1148. [15] Y. Zhang, J. Zhang, and Q. Dai, “Texture aided depth frame interpo-lation,” Signal Processing: Image Communication , vol. 29, no. 8, pp. 864–874, 2014. [16] M.-Z. Yuan, L. Gao, H. Fu, and S. Xia, “Temporal upsampling of depth maps using a hybrid camera,” IEEE transactions on visualization and computer graphics , vol. 25, no. 3, pp. 1591–1602, 2018. [17] F. Lu, G. Chen, S. Qu, Z. Li, Y. Liu, and A. Knoll, “Pointinet: Point cloud frame interpolation network,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 35, no. 3, 2021, pp. 2251– 2259. [18] Y. Zeng, Y. Qian, Q. Zhang, J. Hou, Y. Yuan, and Y. He, “Idea-net: Dynamic 3d point cloud interpolation via deep embedding alignment,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2022, pp. 6338–6347. [19] Z. Zheng, D. Wu, R. Lu, F. Lu, G. Chen, and C. Jiang, “Neuralpci: Spatio-temporal neural field for 3d point cloud multi-frame non-linear interpolation,” in Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , 2023, pp. 909–918. [20] T. Zhang, G. Qian, J. Xie, and J. Yang, “Fastpci: Motion-structure guided fast point cloud frame interpolation,” in European Conference on Computer Vision . Springer, 2024, pp. 251–267. [21] G. Gallego et al. , “Event-based vision: A survey,” IEEE transactions on pattern analysis and machine intelligence , vol. 44, no. 1, pp. 154–180, 2020. [22] S. Tulyakov, A. Bochicchio, D. Gehrig, S. Georgoulis, Y. Li, and D. Scaramuzza, “Time lens++: Event-based frame interpolation with parametric non-linear flow and multi-scale fusion,” IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2022. [23] S. Tulyakov, D. Gehrig, S. Georgoulis, J. Erbach, M. Gehrig, Y. Li, and D. Scaramuzza, “Time lens: Event-based video frame interpolation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2021, pp. 16 155–16 164. [24] Y. Ma, S. Guo, Y. Chen, T. Xue, and J. Gu, “Timelens-xl: Real-time event-based video frame interpolation with large motion,” in European Conference on Computer Vision . Springer, 2024, pp. 178–194. [25] H. Liu, J. Xu, Y. Chang, H. Zhou, H. Zhao, L. Wang, and L. Yan, “Timetracker: Event-based continuous point tracking for video frame interpolation with non-linear motion,” in Proceedings of the Computer Vision and Pattern Recognition Conference , 2025, pp. 17 649–17 659. [26] T. Kim, Y. Chae, H.-K. Jang, and K.-J. Yoon, “Event-based video frame interpolation with cross-modal asymmetric bidirectional motion fields,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2023, pp. 18 032–18 042. [27] G. Wu, X. Tao, C. Li, W. Wang, X. Liu, and Q. Zheng, “Perception-oriented video frame interpolation via asymmetric blending,” in Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 2753–2762. [28] W. Bao, W.-S. Lai, C. Ma, X. Zhang, Z. Gao, and M.-H. Yang, “Depth-aware video frame interpolation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2019, pp. 3703– 3712. [29] D. Gehrig, A. Loquercio, K. G. Derpanis, and D. Scaramuzza, “End-to-end learning of representations for asynchronous event-based data,” in Proceedings of the IEEE/CVF international conference on computer vision , 2019, pp. 5633–5643. [30] T.-Y. Lin, P. Doll´ ar, R. Girshick, K. He, B. Hariharan, and S. Belongie, “Feature pyramid networks for object detection,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2017, pp. 2117–2125. [31] Q. Hou, D. Zhou, and J. Feng, “Coordinate attention for efficient mobile network design,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2021, pp. 13 713–13 722. [32] X. Hu, F. Sun, J. Sun, F. Wang, and H. Li, “Cross-modal fusion and progressive decoding network for rgb-d salient object detection,” 
+
+International Journal of Computer Vision , vol. 132, no. 8, pp. 3067– 3085, 2024. [33] J. Zhang, H. Liu, K. Yang, X. Hu, R. Liu, and R. Stiefelhagen, “Cmx: Cross-modal fusion for rgb-x semantic segmentation with transformers,” 
+
+IEEE Transactions on intelligent transportation systems , vol. 24, no. 12, pp. 14 679–14 694, 2023. [34] Z. Teed and J. Deng, “Raft: Recurrent all-pairs field transforms for optical flow,” in European conference on computer vision . Springer, 2020, pp. 402–419. [35] M. Gehrig, M. Millh¨ ausler, D. Gehrig, and D. Scaramuzza, “E-raft: Dense optical flow from event cameras,” in 2021 International Con-ference on 3D Vision (3DV) . IEEE, 2021, pp. 197–206. [36] R. Hartley and A. Zisserman, Multiple view geometry in computer vision .Cambridge university press, 2003. [37] H. C. Longuet-Higgins and K. Prazdny, “The interpretation of a moving retinal image,” Proceedings of the Royal Society of London. Series B. Biological Sciences , vol. 208, no. 1173, pp. 385–397, 1980. [38] A. R. Bruss and B. K. Horn, “Passive navigation,” Computer Vision, Graphics, and Image Processing , vol. 21, no. 1, pp. 3–20, 1983. [39] D. J. Heeger and A. D. Jepson, “Subspace methods for recovering rigid motion i: Algorithm and implementation,” International Journal of Computer Vision , vol. 7, no. 2, pp. 95–117, 1992. [40] M. Poggi and F. Tosi, “Flowseek: Optical flow made easier with depth foundation models and motion bases,” arXiv preprint arXiv:2509.05297 ,2025. [41] S. Vedula, S. Baker, P. Rander, R. Collins, and T. Kanade, “Three-dimensional scene flow,” in Proceedings of the Seventh IEEE Interna-tional Conference on Computer Vision , vol. 2. IEEE, 1999, pp. 722– 729. [42] Y. Ma, S. Soatto, J. Koˇ seck´ a, and S. Sastry, An invitation to 3-d vision: from images to geometric models . Springer, 2004, vol. 26. [43] D. Sun, S. Roth, and M. J. Black, “A quantitative analysis of current practices in optical flow estimation and the principles behind them,” 
+
+International Journal of Computer Vision , vol. 106, no. 2, pp. 115–137, 2014. [44] J. T. Barron, “A general and adaptive robust loss function,” in Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2019, pp. 4331–4339. [45] R. Zhang, P. Isola, A. A. Efros, E. Shechtman, and O. Wang, “The unreasonable effectiveness of deep features as a perceptual metric,” in 
+
+Proceedings of the IEEE conference on computer vision and pattern recognition , 2018, pp. 586–595. [46] S. F. Bhat, I. Alhashim, and P. Wonka, “Adabins: Depth estimation using adaptive bins,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2021, pp. 4009–4018. [47] C. Godard, O. Mac Aodha, and G. J. Brostow, “Unsupervised monocular depth estimation with left-right consistency,” in Proceedings of the IEEE conference on computer vision and pattern recognition , 2017, pp. 270– 279. [48] C. Godard, O. Mac Aodha, M. Firman, and G. J. Brostow, “Digging into self-supervised monocular depth estimation,” in Proceedings of the IEEE/CVF international conference on computer vision , 2019, pp. 3828– 3838. [49] L. Gao, Y. Liang, J. Yang, S. Wu, C. Wang, J. Chen, and L. Kneip, “Vector: A versatile event-centric benchmark for multi-sensor slam,” 
+
+IEEE Robotics and Automation Letters , vol. 7, no. 3, pp. 8217–8224, 2022. [50] J. Sun, Z. Shen, Y. Wang, H. Bao, and X. Zhou, “Loftr: Detector-free local feature matching with transformers,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2021, pp. 8922–8931. [51] M. A. Fischler and R. C. Bolles, “Random sample consensus: a paradigm for model fitting with applications to image analysis and automated cartography,” Communications of the ACM , vol. 24, no. 6, pp. 381–395, 1981. [52] “Intel® realsense™ sdk,” https://github.com/IntelRealSense/librealsense, accessed 10-11-2025. [53] “Dvsensedriver,” https://sdk.dvsense.com/zh/html/index.html, accessed 10-11-2025. [54] E. Dubeau, M. Garon, B. Debaque, R. de Charette, and J.-F. Lalonde, “Rgb-de: Event camera calibration for fast 6-dof object tracking,” in 
+
+2020 IEEE International Symposium on Mixed and Augmented Reality (ISMAR) . IEEE, 2020, pp. 127–135. [55] V. Lepetit, F. Moreno-Noguer, and P. Fua, “Ep n p: An accurate o (n) solution to the p n p problem,” International journal of computer vision ,vol. 81, no. 2, pp. 155–166, 2009. [56] D. P. Kingma, “Adam: A method for stochastic optimization,” arXiv preprint arXiv:1412.6980 , 2014.

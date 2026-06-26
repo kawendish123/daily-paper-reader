@@ -1,0 +1,636 @@
+Title: LiveEdit: Towards Real-Time Diffusion-Based Streaming Video Editing
+
+URL Source: https://arxiv.org/pdf/2606.26740v1
+
+Published Time: Fri, 26 Jun 2026 00:49:14 GMT
+
+Number of Pages: 21
+
+Markdown Content:
+# LiveEdit: Towards Real-Time Diffusion-Based Streaming Video Editing 
+
+## Xinyu Wang 1, Chongbo Zhao 1, Fangneng Zhan 2, Yue Ma 2B
+
+1 THU 2 HKUST 
+
+## Project: https://live-edit.github.io 12.66               
+
+> 10.27
+> 6.89
+> 7.34
+> 1.05
+> 0.13
+> 0246810 12 14
+> Ours
+> Ours (W/o Cache)
+> StreamDiffusionV2
+> StreamDiffusion
+> Lucy Edit
+> InsV2V
+> FPS
+> 6.41
+> 7.89
+> 11.76
+> 13.76
+> 77.23
+> 603.51
+> 0100 200 300 400 500 600 700
+> Ours
+> Ours (W/o Cache)
+> StreamDiffusionV2
+> StreamDiffusion
+> Lucy Edit
+> InsV2V
+> Latency
+
+Streaming  
+
+> Change the horse's dark brown coat to a silver white with a frosted sheen
+> Change the glasses to gold -rimmed frames with tint, reflecting the sunlight Change the cat’s fur from dark and light patches to solid snowy white with blue eyes
+> Replace the dappled sunlight with beams of lavender light piercing through the canopy
+
+Streaming                             
+
+> Change the sky to agradient of soft lavender and peach, mimicking asurreal sunset Replace the maroon shirt with asilver sequined jacket that sparkles under the light
+> 12.05 ×
+> 97.38 ×
+
+Figure 1. Gallery of various editing results and efficiency comparisons. We propose the LiveEdit , a novel streaming video editing framework capable of performing causal, chunk-by-chunk manipulation with ultra-low latency and strict background preservation. By synergizing a progressive three-stage architectural distillation pipeline with an AR-oriented Mask Cache, LiveEdit effectively resolves the architectural incompatibilities and computational bottlenecks inherent in streaming editing paradigms. 
+
+## Abstract 
+
+Streaming video editing has made rapid progress, yet prac-tical deployment is still limited by two core issues: main-taining stable backgrounds and non-edited regions over time, and achieving the low latency required for real-time interactive scenarios. Meanwhile, recent streaming video 
+
+B Corresponding author. 
+
+generation methods are mostly developed for synthesis and cannot be directly applied to editing due to the strict preser-vation requirement and region-specific control. In this work, we present a novel streaming video editing frame-work that performs causal, frame-by-frame editing with strong content preservation and real-time responsiveness. Our key design is a three-stage distillation pipeline that progressively transfers editing capability from a power-ful bidirectional foundation model to an efficient unidirec-
+
+> arXiv:2606.26740v1 [cs.CV] 25 Jun 2026
+
+tional streaming editor, enabling stable long-horizon edits without sacrificing visual fidelity. To further support real-time deployment, we introduce an AR-oriented mask cache that reuses region-related computation across frames, sub-stantially reducing redundant processing and accelerating inference. Finally, we establish a dedicated benchmark for streaming video editing. Extensive evaluations demon-strate that our method achieves state-of-the-art visual qual-ity among streaming baselines while drastically boosting inference speed to 12.66 FPS, making it suitable for inter-active and augmented reality applications. 
+
+## 1. Introduction 
+
+Video editing [7, 14, 20, 23, 38, 46, 55, 58, 59, 62, 67, 72] has witnessed significant advancements, driven by the in-creasing demand for high-quality content creation and inter-active digital experiences. As augmented reality and live-streaming applications become more prevalent, the indus-try’s focus is shifting from traditional offline batch process-ing toward real-time, responsive editing. However, achiev-ing practical, low-latency deployment remains a formidable challenge, particularly when moving toward a streaming paradigm where video must be processed chunk-by-chunk without access to future information. As illustrated in Fig. 2, the transition to practical stream-ing video editing is currently obstructed by two fundamen-tal bottlenecks. i) Attention distribution shift : State-of-the-art video diffusion models typically rely on bidi-rectional or global attention to maintain temporal consis-tency. Directly adapting these non-causal models to a causal streaming setting—where future frames are unavail-able—often leads to a ”forgetting” effect or severe flicker-ing, as the model lacks the global structural context required for stable editing. ii) Spatial-temporal token redundancy :Standard diffusion pipelines treat every frame as an inde-pendent, heavy generation task. However, in autoregres-sive (AR) oriented streaming generation, the majority of the background remains static or undergoes predictable linear motion. Repeatedly applying dense Feed-Forward Network (FFN) and Attention modules to these redundant, unedited regions leads to prohibitive per-frame latency, making real-time interactive experiences unattainable on edge devices. To bridge this gap, we introduce a novel framework de-signed for causal, chunk-by-chunk video editing with strong content preservation and ultra-low latency. Our approach addresses the latency-stability trade-off through a structured three-stage distillation pipeline that progressively transfers the editing capabilities of a powerful bidirectional founda-tion model to an efficient, unidirectional streaming editor. Specifically, Stage 1 (Foundation Tuning) focuses on equipping a Bidirectional Diffusion Transformer with ro-bust editing abilities. By leveraging full attention mecha-Bidirectional Editing Model                  
+
+> Previous Video2Video Streaming Model
+> Accurate Editing
+> Efficiency Inference
+> …
+> …
+> 𝐹 !𝐹 !"#𝐹 !$#
+> Our Method ：Streaming Editing Model
+> Accurate Editing
+> Efficiency Inference
+> Accurate Editing
+> Efficiency Inference
+> ……
+> Causal DiT
+> 𝐹 !"#
+> cache
+> Causal DiT
+> …
+> cache
+> 𝐹 !
+> 𝐹 !"#𝐹 !
+> …
+> Bid. DiT
+
+Figure 2. Comparison of video editing paradigms. Unlike bidi-rectional models that suffer from inefficient inference, and past streaming models that fail to preserve accurate unedited content, our proposed streaming editing model leverages a Causal DiT with a mask-guided cache mechanism to achieve high-fidelity and effi-cient editing. 
+
+nisms and text embeddings, the model learns complex edit-ing mappings supervised by an LM SE loss. To bridge the gap between offline and streaming processing, Stage 2 (Teacher Forcing for Chunk-wise Causal Initial) transi-tions the architecture from a bidirectional to a Causal DiT. We employ a teacher-forcing strategy equipped with chunk-wise causal attention, ensuring the model successfully adapts to sequential, unidirectional inputs while strictly maintaining the visual quality and editing priors established in the first stage. Finally, Stage 3 (DMD for Streaming Video Editing) performs advanced distillation to achieve real-time inference. By integrating Distribution Matching Distillation (DMD) with a frozen Real Score and a trainable Fake Score model, we compress the generation process into merely 4 steps. This stage is optimized via both LM SE and 
+
+∇θ LDM D gradients, utilizing pruned noise inputs to further accelerate streaming video editing. Beyond architectural distillation, redundant background processing remains a critical bottleneck for AR applica-tions. To address this, we introduce an AR-oriented Mask Cache during inference. Instead of running the full DiT forward pass for every frame, our method calculates the L2
+
+distance between the edited output and the source to extract an accurate editing mask. We observe a functional diver-gence in how different modules handle redundant informa-tion: while the Feed-Forward Network and Cross-Attention are essential for maintaining per-pixel spatial detail and text-conditioned alignment, the Self-Attention layers ex-hibit significant spatio-temporal redundancy in unedited re-gions. This selective spatial-temporal reuse significantly re-duces per-frame latency while guaranteeing that the editing quality remains indistinguishable from the full-calculation baseline. Our contributions are summarized as follows: • We analyze the property of streaming video editing and present the novel streaming video editing framework ca-pable of performing causal, chunk-by-chunk editing with high fidelity and ultra-low inference latency(12.66 FPS). • Technically, we first design a comprehensive three-stage distillation pipeline that effectively migrates complex editing knowledge from a Bidirectional DiT teacher to an ultra-efficient, 4-step Causal DiT student. Moreover, the AR-oriented Mask Cache mechanism is proposed by leveraging L2 distance to dynamically decouple compu-tation. • We establish a dedicated benchmark for streaming video editing and demonstrate that our method achieves state-of-the-art performance in terms of both visual quality, temporal consistency, and throughput. 
+
+## 2. Related Work 
+
+Video Generation and Controllable Editing. Dif-fusion models have significantly advanced video genera-tion [3, 36, 40, 41, 43, 44, 50, 68] and editing. To achieve versatile control [39], unified frameworks like VACE [20] propose all-in-one architectures, while EditVerse [21] and UNIC [69] employ in-context learning to handle diverse tasks. These approaches typically integrate source videos and dense multi-modal conditions into massive joint rep-resentations or extended context sequences. Meanwhile, models like InsV2V [9] and Lucy Edit [55] leverage syn-thetic datasets or channel-wise concatenation for high-fidelity modifications [45]. Additionally, reinforcement learning has been explored to further align generated con-tent with human intents [2]. Despite their impressive visual quality, these methods in-herently rely on offline, non-causal processing. Processing entire video frames and complex conditions jointly quadrat-ically increases the computational overhead. Consequently, these models must observe the entire temporal context be-fore outputting the initial frame. This unacceptable la-tency intrinsically hinders their deployment in real-time augmented reality scenarios. To break this paradigm, we propose a novel streaming video editing framework explic-itly designed for extreme real-time responsiveness. 
+
+Streaming Autoregressive Video Models. Stream-ing autoregressive generation effectively overcomes the la-tency bottlenecks of offline models. Foundational works like Diffusion Forcing [5] and StreamDiffusion [22] rede-fine denoising as block-wise sequential processing. This paradigm enables massive-scale world models (MAGI-1 [56]) and infinite-length cinematic generation (SkyReels-V2 [6], StreamingT2V [17]). To enhance stability and effi-ciency, Rolling Forcing [33] suppresses error accumulation, Stable Video Infinity [25] mitigates autoregressive drift for infinite-length generation via error-recycling fine-tuning, Self Forcing [18] bridges exposure bias via self-generated conditioning, and StreamDiffusionV2 [15] introduces sink-token-guided rolling KV caches for ultra-low-latency live generation. Furthermore, EgoEdit [23] pioneered stream-ing models for egocentric video editing by maintaining tem-poral consistency in continuous first-person visual transla-tions. However, directly migrating these generation-tailored mechanisms to general video editing introduces a funda-mental misalignment. Video generation synthesizes motion from scratch, heavily relying on past generated predictions (e.g., Self Forcing’s serial feedback). Conversely, stream-ing editing is strongly conditioned on continuous source video streams, prioritizing precise spatial restoration over free-form motion synthesis. Serially depending on histori-cal outputs or employing generation-oriented caches (e.g., DeepCache [35], VMem [24], or StreamDiffusionV2 [15]) degrades high-frequency structural details when rigorously aligning with semantic editing trajectories. Discarding re-dundant serial feedback, we introduce an AR-based Cache that achieves extreme computational compression while en-suring strict temporal consistency and spatial alignment. 
+
+Efficiency and Distillation in Diffusion. Accelerat-ing reverse diffusion [32, 48, 51, 61, 73, 74] is crucial for real-time performance. Early one-step distillation ef-forts focused on the image domain, utilizing techniques like Rectified Flow (InstaFlow [34]), target score distilla-tion (TSD-SR [13]), and Distribution Matching Distilla-tion [70, 71], alongside progressive adversarial distillation (SDXL-Lightning [30]). These advancements have natu-rally extended to the video domain, enabling efficient one-step generation (AAPT [31]), restoration (SeedVR2 [60]), and super-resolution (DOVE [8]). Sparse VideoGen2 [66] further reduces redundancy via attention permutation. Or-thogonal to distillation, structural optimizations like Token Merging [4] and FlashAttention [10] are widely adopted to alleviate system memory overheads. Most closely related to our work is FlashVSR [76], which achieves real-time streaming video super-resolution via a three-stage distillation pipeline designed to pro-gressively accelerate latent rendering. Similarly, Person-aLive [26] leverages appearance distillation for live por-trait animation. However, these tasks fundamentally involve low-level pixel mapping or structurally constrained regions. Directly transferring these distillation schemes to general video editing—which involves complex semantic recon-struction, cross-scale feature evolution, and training-free reward-guided control—frequently degrades high-fidelity details. In contrast, we propose a tailored three-stage distil-lation strategy integrated with our AR-based Cache, achiev-ing unprecedented inference acceleration without sacrific-ing complex editing fidelity. 3. Method 
+
+3.1. Motivation Attention      
+
+> Shifting
+> Directly Truncate
+> Query
+> Key
+> Query
+> Attention
+> Gathering
+> Original
+> Figure 3. Visualization of the attention distribution shift. Left: The bidirectional prior exhibits localized attention gather-ing. Right: Direct causal truncation forces attention to spread uniformly across all historical frames.
+
+We summarize the two primary observations regarding the inefficiencies of adapting state-of-the-art video diffusion models to the streaming video editing task and propose the modules to address them. 
+
+Attention distribution shift. In the offline video editing phase, state-of-the-art bidirectional diffusion models uti-lize dense temporal attention to propagate structural infor-mation, natively assigning significant weights to both past and immediate future tokens. However, we observe that abruptly truncating these future keys and values for causal execution causes a severe shift in the attention distribu-tion. Specifically, as illustrated in Fig. 3, the loss of fu-ture context forces the attention weights to flatten and dis-tribute uniformly across all available historical frames. This homogenized attention behavior intrinsically conflicts with the streaming paradigm, which relies heavily on the near-est neighboring frames to maintain temporal coherence and structural integrity. Consequently, this over-smoothed de-pendency disrupts the pre-trained structural priors, making it theoretically suboptimal to directly deploy naively trun-cated bidirectional models in a streaming pipeline. To ad-dress this, we introduce a progressive three-stage distilla-tion pipeline. Our teacher-forcing mechanism explicitly aligns the causal attention distribution with the localized bidirectional prior, ensuring robust, localized representation mapping without the need for future context. 
+
+Spatial-temporal token redundancy. Existing streaming generation approaches (e.g., StreamV2V [27], StreamDif-fusion [22] and StreamDiffusionV2 [15]) primarily focus on global Video-to-Video translation tasks. Specifically, for every incoming frame, these pipelines perform dense computations across all spatial tokens globally to synthe-size the entire scene. However, we note that streaming video editing fundamentally differs from global transla-tion, as the intermediate feature representations of tokens in unedited regions must strictly maintain absolute tempo-ral consistency. Therefore, applying such a global genera-tion paradigm to editing tasks inherently disrupts the visual integrity of unedited areas, causing destructive structural degradation and severe flickering in the background, along-side massive computational redundancy. To address this, we introduce the AR-oriented Mask Cache mechanism. Only the actively edited spatial tokens undergo full calculation, while the intermediate features of highly correlated static tokens are directly retrieved from the cache, ensuring strict background preservation and efficient generation. 
+
+3.2. Three-Stage Distillation Pipeline 
+
+To bridge the architectural gap between offline bidirectional priors and online causal execution, we propose a progres-sive three-stage distillation pipeline. Let z0 ∈ RF ×C×H×W
+
+denote the input video latent sequence and c represent the text embedding extracted from the editing prompt. This de-sign effectively transfers the high-fidelity editing capabili-ties of a foundation model into an ultra-fast, unidirectional streaming editor. An overview of the framework is illus-trated in Fig. 4. 
+
+Stage 1: Foundation Tuning for Editing Ability Acqui-sition. In the initial stage, we establish a robust multi-modal video-to-video editing baseline utilizing a Bidirec-tional Diffusion Transformer (DiT). Specifically, the net-work processes the channel-wise concatenation of the orig-inal video latent and the noisy latent zt at timestep t. To mitigate the quadratic computational overhead inherently associated with long token sequences in video generation, we emphasize this channel-wise integration strategy over spatial or temporal sequence concatenation. The bidirec-tional architecture, denoted as ϵbid θ , leverages full temporal and spatial attention to learn complex mapping functions for content manipulation. The entire foundation model is supervised via the standard noise-matching objective: 
+
+Lbid M SE = Ez0,ϵ ∼N (0 ,I ),t,c 
+
+h
+
+ϵ − ϵbid θ (zt, t, c ) 22
+
+i
+
+This optimization yields a powerful offline editing prior ca-pable of maintaining high-fidelity generation. 
+
+Stage 2: Teacher Forcing for Chunk-wise Causal Initial. 
+
+To enable basic streaming input-output functionality, the architecture must transition from a bidirectional to an au-toregressive (AR) generation paradigm. However, directly applying causal masks to a pre-trained bidirectional model severely degrades performance. Therefore, we introduce a Teacher Forcing mechanism equipped with chunk-wise Stage 1: Foundation Tuning for Editing Ability Acquisition 
+
+⊕
+
+Noise Input 
+
+Stage 3: DMD for Streaming Video Editing 
+
+# 🔥 
+
+“Change the child’s green sweater 
+
+to a bright yellow one”  
+
+> Text Embedding
+
+… 
+
+> Full
+> Attention
+> Bidirect .DiT
+
+𝐿 !"# 
+
+> FFN Module
+> Self Attention
+> Cross Attention
+
+Stage 2: Teacher Forcing for Chunk -wise Causal Initial 
+
+⊕
+
+Noise Input 
+
+# 🔥  
+
+> Causal
+> Attention
+> Causal DiT
+
+𝐿 !"#  
+
+> ⊕
+> Real Score
+
+# ❄ 
+
+> Fake Score
+
+# 🔥 
+
+𝐿 !"# 
+
+> Generator
+
+# 🔥 
+
+AR -oriented Mask Cache 
+
+> 4
+> step
+> Renoise
+
+∇!𝐿 "#"         
+
+> Chunk 0Chunk 1···
+> Full Calculation
+> Partial Calculation
+> Extract Editing
+> Token with Mask
+> Token Reuse
+> Token Cache
+
+Prune Noise    
+
+> each
+> chunk
+> Causal
+> Model
+> Bid.
+> Model
+> Generator Calculate
+> difference Generator
+> Mask Extract
+
+Figure 4. Overview of the proposed streaming video editing framework. Our approach features a three-stage distillation pipeline that transfers editing capabilities from a bidirectional DiT to a 4-step causal model. Furthermore, an AR-oriented Mask Cache accelerates real-time inference by dynamically decoupling computation and reusing tokens in unedited background regions. 
+
+causal attention. Let Mcausal denote the causal attention mask that restricts temporal tokens from attending to future chunks. The causal DiT, ϵcausal θ , is optimized to predict the noise while strictly adhering to the causal constraint: 
+
+Lcausal M SE = Ez0,ϵ,t,c 
+
+h
+
+ϵ − ϵcausal θ (zt, t, c | Mcausal ) 22
+
+i
+
+Inspired by recent autoregressive frameworks such as Causal Forcing, we establish that deriving an AR model via explicit Teacher Forcing is structurally essential for stream-ing video generation. By aligning the output distribution of the causal DiT with the bidirectional representations learned in Stage 1, the model prevents the structural col-lapse typically caused by the absence of future tokens. 
+
+Stage 3: DMD for Streaming Video Editing. To achieve ultra-low latency while eliminating accumulated shift er-rors during continuous streaming, we perform advanced step-distillation using Distribution Matching Distillation (DMD). Recent autoregressive generation paradigms, no-tably Self-Forcing, heavily rely on an Ordinary Differential Equation (ODE) initialization phase to bridge the training-inference distribution gap. However, this ODE initializa-tion incurs prohibitive computational resource overhead and severely limits practical scalability. To circumvent this fundamental bottleneck, we directly utilize the AR-based model parameters from Stage 2 ( ϵcausal θ ) to initialize the 4-step DMD generator Gθ . This architectural decision not only avoids the excessive initialization overhead but also provides a highly stable starting point for distillation, echo-ing the empirical insights observed in recent works like EgoEdit. During training, the generator Gθ maps pruned noise inputs directly to the edited frames. The distillation pro-cess is jointly optimized by LM SE and the DMD gradi-ent ∇θ LDM D . The DMD gradient is computed between a frozen Real Score model ϵreal ϕ and a trainable Fake Score model ϵf ake ψ :
+
+∇θ LDM D = EzT ,c 
+
+h
+
+w(t)
+
+
+
+ϵreal ϕ (zt, t, c )−
+
+ϵf ake ψ (zt, t, c )
+
+
+
+∇θ Gθ (zT , c )
+
+i
+
+where zt is the intermediate latent simulated from the generated output Gθ (zT , c ), and w(t) is a timestep-dependent weighting function. This mechanism effectively compresses the generation process into merely 4 inference steps, ensuring real-time responsiveness. 3.3. AR-oriented Mask Cache 
+
+While the three-stage distillation pipeline resolves the ar-chitectural incompatibility, the fundamental issue of spatial-temporal redundancy remains a critical bottleneck for real-time inference. To address this, we introduce the AR-oriented Mask Cache mechanism, dynamically decoupling the computational graph based on regional editing activity. During the streaming inference phase, the pipeline pro-cesses the video in sequential chunks. To dynamically route the computation for an incoming chunk k, we derive its spa-tial editing mask from the generation trajectory of the pre-ceding chunk. Let zk−1 
+
+> src
+
+denote the original source latent representation of the previously generated chunk k − 1, and 
+
+zk−1 
+
+> edit
+
+denote its corresponding edited output latent. We ex-tract a binary spatial editing mask M k ∈ { 0, 1}H×W for the current chunk k by computing the L2 distance between these two latents: 
+
+M ku,v = I
+
+
+
+zk−1 
+
+> edit,u,v
+
+− zk−1 
+
+> src,u,v 2
+
+> τ 
+
+
+
+where I(·) is the indicator function and τ is dynami-cally determined by calculating a redundancy level among the tokens. This mask geometrically separates the spatial layout of the incoming chunk k into active editing regions (M ku,v = 1 ) and static background regions ( M ku,v = 0 ). As visualized in Fig. 5, our mask generation process demon-strate extremely high structural stability, with the statistical distribution across the entire sequence. Instead of executing the complete network forward pass globally for chunk k, our mechanism implements a spatial routing strategy guided by M k. For the spatial tokens lo-cated within the active mask, the model allocates its full computational capacity, executing the complete sequence of Self-Attention, Cross-Attention, and Feed-Forward Net-work modules ( Full Calculation ). Conversely, for the to-kens corresponding to the unedited regions, the mechanism entirely bypasses the computationally expensive layers. Let 
+
+F denote the full block transformation and zku,v denote the input token for the current chunk; the output token feature 
+
+f ku,v is determined by: 
+
+f ku,v =
+
+(
+
+F(zku,v ) if M ku,v = 1 
+
+f k−1 
+
+> u,v
+
+if M ku,v = 0 
+
+The intermediate feature representations for the static re-gions are directly retrieved from a maintained Token Cache populated by the preceding chunk ( Token Reuse ). This dy-namic, inter-chunk spatial decoupling dramatically reduces the per-frame computational complexity, achieving substan-tial acceleration while strictly guaranteeing absolute visual consistency in the unedited background areas. 
+
+## 4. Experiment 
+
+4.1. Implementation Details 
+
+Model Configuration. We build our foundation model upon Wan2.1-T2V-1.3B [57]. During Stage 1, we explicitly employ channel-wise concatenation to integrate the noisy latent zt and the condition latent, rather than appending them token-wise along the sequence dimension. By strictly maintaining the original sequence length, this structural de-sign fundamentally bypasses the quadratic computational explosion in attention mechanisms typically associated with spatial-temporal video generation. For training, our dataset comprises 20K high-quality video-video pairs, which are carefully filtered from the large-scale Ditto-1M [1] dataset. 
+
+Training Setup. The three-stage distillation pipeline is trained progressively on 8 NVIDIA A100 GPUs. We em-ploy the AdamW optimizer across all stages. • Stage 1 (Foundation Tuning): The bidirectional founda-tion model ϵbid θ is trained for 9K steps with a learning rate of 10 −5 and a global batch size of 8. We utilize a standard noise scheduler with continuous timesteps t ∈ [0 , 1000] .• Stage 2 (Teacher Forcing): We transition the bid. Dit to the causal DiT ϵcausal θ by introducing the chunk-wise causal attention mask Mcausal . The model is fine-tuned for an additional 20K steps. The temporal chunk size is set to 3 latent frames, ensuring that tokens can only attend to the current and strictly preceding chunks. • Stage 3 (DMD): The 4-step generator Gθ is initialized directly from the Stage 2 weights. deliberately bypassing the computationally expensive ODE initialization. This bypass is explicitly enabled by the autoregressive train-ing conducted in Stage 2, which provides a well-aligned causal distribution starting point. For the 4-step gen-eration, the sampling timesteps are specifically set to 
+
+[0 , 250 , 500 , 750] . Both the Real Score model and the Fake Score model are initialized from the foundation model weights obtained in Stage 1. We apply a reduced learning rate of 10 −5 for 10K steps, utilizing the timestep-dependent weighting function w(t) as proposed in stan-dard DMD formulations. 
+
+Inference and Mask Cache. During the streaming infer-ence phase, the model operates in a purely autoregressive manner, decoding 3 frames per step. For the AR-oriented Mask Cache, rather than using a fixed empirical value, the 
+
+L2 distance threshold τ for the binary spatial editing mask 
+
+M k is dynamically calculated to explicitly prune 70% of the redundant spatial tokens. Specifically, this caching mecha-nism is applied within the Self-Attention layers, as we em-pirically find that applying the cache to the Self-Attention computation introduces no degradation in generation qual-ity. Tokens in these pruned regions bypass the standard at-tention computation, and their intermediate features are di-rectly retrieved from the Token Cache. This dynamic rout-Difference Matrix  Source  Video Synthetic Video Final Mask 
+
+Frame 16 Frame 48 Frame 80 Figure 5. Visualization of the temporal consistency analysis and mask generation process. The left panels show (from top to bottom) the source video frames, the synthesized video frames, the computed difference matrices, and the resulting binary masks. The right panels display the statistical distributions of Temporal IoU and Pixel Difference across the sequence, with mean values of 0.016% and 0.126%, respectively, indicating high structural stability. 
+
+ing allows the 4-step streaming editing to achieve an ultra-low latency of 79 ms per-frame, ensuring real-time respon-siveness without background flickering. 
+
+4.2. Qualitative comparison. 
+
+We present the visual comparison between our proposed framework and two distinct categories of state-of-the-art video editing baselines: bidirectional offline editing models (LucyEdit [55], InsV2V [9], VideoCoF [67]) and streaming generation models (StreamV2V [27], StreamDiffusion [22], StreamDiffusionV2 [15]). As illustrated in Fig. 6, existing methods exhibit significant limitations in balancing precise prompt alignment with structural preservation. StreamV2V fundamentally struggles to execute local-ized, precise attribute modifications, failing to apply the re-quested edits and leaving the source attributes largely unal-tered. Conversely, approaches such as InsV2V and Video-CoF suffer from severe color bleeding because they indis-criminately apply target attributes across the entire frame, thereby corrupting the subject’s skin tone and the surround-ing environment. Furthermore, methods relying on global translation paradigms inherently compromise the visual in-tegrity of unedited areas; StreamDiffusion and StreamDif-fusionV2 exhibit severe structural collapse and unintended style shifts, whereas LucyEdit lacks the strict spatial control necessary to preserve delicate structural details. Overcom-
+
+Table 1. Quantitative comparison of video editing methods. 
+
+We evaluate across six metrics: Text Alignment (TA), Background Consistency (BC), Motion Smoothness (MS), Dynamic Degree (DD), Aesthetic Quality (AQ), and Imaging Quality (IQ). Red and 
+
+Blue denote the best and second-best results, respectively.                                                       
+
+> Method TA ↑BC ↑MS ↑DD ↑AQ ↑IQ ↑
+> LucyEdit 0.253 0.943 0.990 0.266 0.529 0.707 VideoCoF 0.245 0.953 0.991 0.094 0.542 0.709 InsV2V 0.259 0.943 0.986 0.196 0.577 0.708 StreamDiffusion 0.239 0.886 0.975 0.239 0.590 0.717
+> StreamDiffusionV2 0.252 0.951 0.992 0.264 0.539 0.653 StreamV2V 0.244 0.934 0.989 0.153 0.548 0.712
+> Ours (W/o Cache) 0.265 0.956 0.991 0.282 0.584 0.720 Ours (W/ Cache) 0.270 0.956 0.992 0.256 0.581 0.708
+
+ing these limitations, our method accurately interprets com-plex textual conditions to apply distinct textures and colors exclusively to target regions. Benefiting from the proposed AR-oriented Mask Cache mechanism, our approach explic-itly decouples the generation process, guaranteeing zero vi-sual degradation in unedited background regions. Conse-quently, complex lighting conditions, shadows, and subject identities are strictly preserved alongside high-fidelity edits. Change the white blouse of the central woman to a deep violet one with a high collar. Replace the floral pattern on the outfit with a geometric design in deep crimson and gold 
+
+> Ours
+> Ours
+> Stream.  StreamV2V
+> Stream.V2  VideoCoF  InsV2V
+> LucyEdit
+
+Figure 6. Qualitative comparison of streaming video editing performance. The source videos and instructions are displayed at the top. While existing methods exhibit significant limitations, leading to structural collapse or an inability to accurately follow the text, our approach precisely modifies the target regions and preserves the visual quality and temporal coherence of the original scenes. 
+
+4.3. Quantitative comparison. 
+
+We compare our method against the state-of-the-art base-lines on a collected benchmark consisting of 120 pairs. To comprehensively assess both the generation quality and editing accuracy, we employ six standard automated met-rics, with the results summarized in Tab. 1. For Text Alignment, following EgoEdit [23], we com-pute the CLIP [47] feature similarity of the edited results with the text prompt to evaluate editing consistency and in-struction adherence. To assess the aesthetic appeal, we uti-lize the LAION-Aesthetic Score Predictor [49] for the Aes-thetic Quality metric. Furthermore, we employ the VBench evaluation framework [19] to measure Background Consis-tency, Motion Smoothness, Dynamic Degree, and Imaging Quality, which collectively provide a comprehensive assess-ment of the overall visual fidelity. As demonstrated in Tab. 1, our proposed framework achieves best performance across almost all dimensions. Notably, while bidirectional offline architectures naturally benefit from future temporal context, our unidirectional streaming approach not only bridges the performance gap but strictly outperforms them in Text Alignment (achiev-ing 0.270 compared to InsV2V’s 0.259). Furthermore, our method achieves the highest Dynamic Degree and Imag-ing Quality among all evaluated methods, while maintain-
+
+Table 2. Ablation of our three-stage distillation pipeline. 
+
+Comparison of generation configurations and inference efficiency across the different training stages.                           
+
+> Stage 1 (Foundation) Stage 2 (Teacher Forcing) Stage 3 (DMD)
+> Is streaming? ×✓✓
+> NFEs 100 100 4With CFG? ✓✓×
+> Latency 197.48 200.36 7.89 First chunk size Full sequence 3 frames 3 frames Next chunk size N/A 3 frames 3 frames Text Alignment 0.268 0.264 0.265 Image Quality 0.716 0.702 0.720
+
+ing highly competitive Aesthetic Quality against strong streaming baselines like StreamDiffusion. Crucially, the re-sults demonstrate that the proposed AR-oriented cache im-proves Text Alignment and Motion Smoothness while per-fectly preserving Background Consistency, proving that our mechanism effectively maintains high visual integrity dur-ing continuous sequential processing. Furthermore, we in-vited 20 volunteers to rank methods across background con-sistency, editing fidelity, and overall quality. The results are provided in the supplementary materials. 
+
+4.4. Ablation Study 
+
+We conduct an ablation study to validate the necessity of each phase within our three-stage distillation pipeline, with the configuration progression summarized in Tab. 2. Time 
+
+# Input W/o Cache Cache on SA Cache on FFN Figure 7. Visual comparison of different cache locations. With the instruction ”Change the red currants to deep purple grapes with a thin layer of frost on their skins” .Table 3. Quantitative results of the cache-mechanism ablation.                           
+
+> Comparing the performance of applying the caching mechanism to either Self-Attention or FFN layers. Red denote the best results.
+> Method TA ↑BC ↑MS ↑DD ↑AQ ↑IQ ↑
+> W/o Cache 0.265 0.956 0.991 0.282 0.584 0.720 Cache on SA 0.270 0.956 0.992 0.256 0.581 0.708
+> Cache on FFN 0.236 0.841 0.982 0.017 0.440 0.513
+
+Effectiveness of Stage 1 (Foundation Tuning). The ini-tial phase establishes a robust bidirectional prior essential for high-fidelity structural preservation and text alignment. Operating globally across the full sequence, this stage suc-cessfully acquires complex editing capabilities. However, it requires 100 Network Function Evaluations (NFEs) and re-lies on Classifier-Free Guidance (CFG), which strictly pre-vents online, continuous streaming inference. 
+
+Effectiveness of Stage 2 (Teacher Forcing). To transition the offline foundation model to a streaming paradigm, Stage 2 introduces chunk-wise causal attention. This structural modification successfully enables autoregressive execution, processing the video continuously in sequential chunks of 3 frames. While this stage achieves the fundamental stream-ing input-output format, it still requires 100 NFEs and main-tains the CFG dependency, resulting in substantial compu-tational latency that prohibits real-time deployment. 
+
+Effectiveness of Stage 3 (DMD). The final distillation phase dramatically accelerates the inference speed. By compressing the generation process down to 4 NFEs and ex-plicitly eliminating the need for CFG (which otherwise dou-bles the required forward passes), the computational over-head is drastically reduced. Furthermore, initializing the student generator directly from the autoregressive weights optimized in Stage 2 bypasses the expensive standard ODE initialization. Ultimately, the integration of all three stages yields a framework that simultaneously achieves an ultra-low latency of 7.89s for 81 frames, pure streaming func-tionality, and high-quality editing performance. 
+
+Effectiveness of AR-oriented Mask Cache. To identify the optimal integration point for the AR-oriented Mask Cache, we investigate the impact of applying the caching mechanism to different architectural components, specifi-cally comparing its placement in the Self-Attention (SA) layers versus the FFN modules. As summarized in Tab. 3, applying the cache to the SA layers (Ours) achieves superior performance across all eval-uated dimensions. In contrast, caching FFN features causes significant degradation, suggesting that FFN layers contain high-frequency spatial information too sensitive for direct temporal reuse. This architectural divergence is explicitly validated by the feature similarity distributions in Fig. 8, 0.0 0.2 0.4 0.6 0.8 1.0 
+
+> Cosine Similarity
+> 0.0
+> 2.5
+> 5.0
+> 7.5
+> 10.0
+> 12.5
+> 15.0
+> Frequency
+> Self-Attn (Mean: 0.893)
+> FFN (Mean: 0.153)
+
+Figure 8. Distribution of token cosine similarity between consec-utive denoising step. 
+
+where SA tokens maintain exceptionally high temporal re-dundancy across consecutive steps, whereas FFN represen-tations exhibit notably low similarity. The visual evidence in Fig. 7 further corroborates these findings. Both the baseline configuration (W/o Cache) and the SA-cache version successfully modify the target object with high fidelity, correctly rendering fine-grained textures and maintaining natural color saturation. Con-versely, caching on FFN results in severe blurring and struc-tural instability. These results confirm that caching SA features is the optimal strategy, as it effectively leverages spatial-temporal redundancy to achieve significant acceler-ation without sacrificing the generative capacity and high-quality spatial details of the full-calculation baseline. 
+
+## 5. Conclusion 
+
+In this paper, we presented LiveEdit, a novel streaming video editing framework that successfully adapts powerful bidirectional diffusion priors to an efficient, unidirectional autoregressive paradigm. To overcome the attention dis-tribution shift inherent in causal execution, we introduced a progressive three-stage distillation pipeline comprising Foundation Tuning, Teacher Forcing, and DMD. This ar-chitecture effectively bridges the gap between offline global processing and online continuous video editing, compress-ing the inference process to merely 4 steps. Furthermore, to alleviate spatial-temporal token redundancy, we proposed an AR-oriented Mask Cache mechanism. It reduces com-putational overhead while strictly guaranteeing zero visual degradation in unedited regions. Extensive quantitative and qualitative evaluations demonstrate that our framework achieves SOTA performance. It uniquely balances high-fidelity text alignment, robust structural preservation, and ultra-low latency, paving the way for highly practical, real-time streaming video editing applications. LiveEdit: Towards Real-Time Diffusion-Based Streaming Video Editing 
+
+# Supplementary Material 
+
+## Contents 
+
+1. Introduction 22. Related Work 33. Method 4
+
+3.1. Motivation . . . . . . . . . . . . . . . . . . 43.2. Three-Stage Distillation Pipeline . . . . . . . 43.3. AR-oriented Mask Cache . . . . . . . . . . 6
+
+4. Experiment 6
+
+4.1. Implementation Details . . . . . . . . . . . . 64.2. Qualitative comparison. . . . . . . . . . . . 74.3. Quantitative comparison. . . . . . . . . . . . 84.4. Ablation Study . . . . . . . . . . . . . . . . 8
+
+5. Conclusion 10 A. Discussion with Previous Methods S1 B. User Study S1 C. More cases S2 D. More Comparisons S3 
+
+## A. Discussion with Previous Methods 
+
+Among existing works about video diffusion model [11, 12, 16, 28, 29, 37, 42, 52–54, 63–65], the two methods most similar to our proposed framework are Self-Forcing [18] and EgoEdit [23]. Here, We discuss the differences between these methods and our approach. Self-Forcing is fundamentally designed for Text-to-Video generation scenarios, bridging exposure bias through self-generated conditioning. However, its reliance on an ODE initialization [71, 75] phase to establish an initial causal checkpoint introduces a severe computational bottle-neck. While this ODE trajectory is manageable to sample from text in T2V tasks, constructing it for streaming video editing demands processing the original high-resolution and long sequence video data, incurring prohibitive computa-tional overhead. Furthermore, T2V generation focuses on synthesizing from scratch, requiring only consistency with the previous generated content, while video editing neces-sitates strict spatial alignment with the input raw video. Di-rectly applying the mechanism to editing tasks inevitably leads to structural deviation. In contrast, our proposed LiveEdit framework explicitly bypasses the costly ODE ini-tialization by directly utilizing the autoregressive weights from Stage 2 as a highly stable distillation starting point. To strictly preserve source fidelity, we introduce an AR-oriented Mask Cache, prioritizing precise spatial restoration over free-form video synthesis. EgoEdit pioneers streaming models for egocentric video editing, primarily validating the effectiveness of task-specific data within an established Self-Forcing pipeline. While it successfully demonstrates a continuous first-person visual dataset and benchmark, it structurally relies on this existing route without further inference acceleration for streaming video editing. Consequently, its research scope remains highly specialized and tailored to egocentric tasks, making it difficult to generalize to out-of-distribution tasks. Conversely, our LiveEdit is architected for general, high-fidelity streaming video editing across diverse scenarios. Instead of merely adapting data to existing pipelines, we introduce a comprehensive three-stage distillation pipeline that compresses inference to merely 4 steps. By dynami-cally decoupling computation, our framework achieves real-time responsiveness and strict background preservation in universal editing applications, breaking the limitations of single-domain adaptations. 
+
+## B. User Study 
+
+To complement our quantitative metrics, we conducted a comprehensive user study to evaluate the perceptual quality of the generated videos. We invited 20 volunteers to re-view and rank the editing results from our method against six state-of-the-art baselines: InsV2V, LucyEdit, VideoCoF, StreamDiffusion, StreamDiffusionV2, and StreamV2V. Participants were asked to rigorously evaluate the videos based on three core dimensions: Instruction Consistency, Background Preservation, and Overall Quality. For each video group, volunteers ranked the methods, and we aggre-gated the results into ”Best”, ”Second”, ”Third”, and ”Oth-ers” categories. As illustrated in Fig. 1, our streaming editing framework demonstrates overwhelming superiority across all evalu-ation metrics. For Instruction Consistency, our method achieved a 100.0% top-3 preference rate and monopolized the vast majority of the absolute ”Best” rankings. In severe contrast, existing streaming generation baselines fall pre-dominantly into the ”Others” category, showing that they fundamentally struggled to execute the editing instructions accurately, . Regarding Background Preservation, our approach re-ceived 75.0% of the explicit ”Best” votes and an 87.5% top-3 preference rate. While offline bidirectional models like InsV2V   
+
+> LucyEdit
+> VideoCoF
+> StreamDiffusion
+> StreamDiffusionV2
+> StreamV2V
+> Ours
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 45.8%
+> 0.0%
+> 79.2%
+> 0.0%
+> 66.7%
+> 0.0%
+> 4.2% 4.2% 0.0%
+> 100.0%
+
+Instruction Consistency   
+
+> InsV2V
+> LucyEdit
+> VideoCoF
+> StreamDiffusion
+> StreamDiffusionV2
+> StreamV2V
+> Ours
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 20.8%
+> 0.0%
+> 87.5%
+> 12.5%
+> 75.0%
+> 8.3% 12.5%
+> 0.0% 0.0%
+> 16.7%
+> 4.2%
+> 87.5%
+> 75.0%
+
+Background Preservation  
+
+> InsV2V
+> LucyEdit
+> VideoCoF
+> StreamDiffusion
+> StreamDiffusionV2
+> StreamV2V
+> Ours
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 33.3%
+> 0.0%
+> 87.5%
+> 4.2%
+> 62.5%
+> 0.0%
+> 12.5%
+> 4.2% 0.0%
+> 8.3%
+> 0.0%
+> 95.8%
+
+Overall Quality    
+
+> Best Second Third Others
+
+Figure 1. User study results. Volunteers ranked the generated videos from our method and six baselines across three metrics: Instruction Consistency, Background Preservation, and Overall Quality. The line plots indicate the proportion of top-3 selections. Our proposed approach overwhelmingly dominates the evaluations, securing the vast majority of absolute ”Best” rankings across all dimensions.. 
+
+LucyEdit also exhibited competitive top-3 rates (87.5%), they were rarely selected as the definitive top choice (only securing 12.5% of ”Best” votes) due to slight structural shifts or minor temporal inconsistencies. This stark contrast solidifies the effectiveness of our AR-oriented Mask Cache in strictly maintaining the visual integrity of unedited re-gions. Ultimately, in terms of Overall Quality, our framework was consistently favored by the human evaluators, achiev-ing a 95.8% top-3 preference rate and definitively outper-forming both offline and streaming baselines. The user study firmly aligns with our quantitative findings, confirm-ing that our method uniquely balances high-fidelity seman-tic editing with strict spatial-temporal consistency. 
+
+## C. More cases 
+
+We provide more cases to show the effectiveness of our method. (shown in Fig. 2, 3, 4) D. More Comparisons 
+
+We provide more comparisons to show the baseline and our method. (shown in Fig. 5, 6) 
+
+## References 
+
+[1] Qingyan Bai, Qiuyu Wang, Hao Ouyang, Yue Yu, Hanlin Wang, Wen Wang, Ka Leong Cheng, Shuailei Ma, Yanhong Zeng, Zichen Liu, Yinghao Xu, Yujun Shen, and Qifeng Chen. Scaling instruction-based video editing with a high-quality synthetic dataset. arXiv preprint arXiv:2510.15742 ,2025. 6 [2] Kevin Black, Michael Janner, Yilun Du, Ilya Kostrikov, and Sergey Levine. Training diffusion models with reinforce-ment learning. arXiv preprint arXiv:2305.13301 , 2023. 3 [3] Andreas Blattmann, Tim Dockhorn, Sumith Kulal, Daniel Mendelevitch, Maciej Kilian, Dominik Lorenz, Yam Levi, Zion English, Vikram Voleti, Adam Letts, et al. Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:2311.15127 , 2023. 3 [4] Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao Zhang, Christoph Feichtenhofer, and Judy Hoffman. To-ken merging: Your vit but faster. arXiv preprint arXiv:2210.09461 , 2022. 3 [5] Boyuan Chen, Diego Mart´ ı Mons´ o, Yilun Du, Max Sim-chowitz, Russ Tedrake, and Vincent Sitzmann. Diffusion forcing: Next-token prediction meets full-sequence diffu-sion. Advances in Neural Information Processing Systems ,37:24081–24125, 2024. 3 [6] Guibin Chen, Dixuan Lin, Jiangping Yang, Chunze Lin, Junchen Zhu, Mingyuan Fan, Hao Zhang, Sheng Chen, Zheng Chen, Chengcheng Ma, et al. Skyreels-v2: Infinite-length film generative model. arXiv preprint arXiv:2504.13074 , 2025. 3 [7] Yiyang Chen, Xuanhua He, Xiujun Ma, and Yue Ma. Con-textflow: Training-free video object editing via adaptive con-text enrichment. arXiv preprint arXiv:2509.17818 , 2025. 2 [8] Zheng Chen, Zichen Zou, Kewei Zhang, Xiongfei Su, Xin Yuan, Yong Guo, and Yulun Zhang. Dove: Efficient one-step diffusion model for real-world video super-resolution, 2025. 3 [9] Jiaxin Cheng, Tianjun Xiao, and Tong He. Consistent video-to-video transfer using synthetic dataset. arXiv preprint arXiv:2311.00213 , 2023. 3, 7 [10] Tri Dao, Dan Fu, Stefano Ermon, Atri Rudra, and Christo-pher R´ e. Flashattention: Fast and memory-efficient exact attention with io-awareness. Advances in neural information processing systems , 35:16344–16359, 2022. 3 [11] Tianchen Deng, Yaohui Chen, Leyan Zhang, Jianfei Yang, Shenghai Yuan, Jiuming Liu, Danwei Wang, Hesheng Wang, and Weidong Chen. Compact 3d gaussian splatting for dense visual slam. arXiv preprint arXiv:2403.11247 , 2024. S1 [12] Tianchen Deng, Xuefeng Chen, Yi Chen, Qu Chen, Yuyao Xu, Lijin Yang, Le Xu, Yu Zhang, Bo Zhang, Wuxiong Huang, and Hesheng Wang. Gaussiandwm: 3d gaussian driving world model for unified scene understanding and multi-modal generation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 10656–10667, 2026. S1 [13] Linwei Dong, Qingnan Fan, Yihong Guo, Zhonghao Wang, Qi Zhang, Jinwei Chen, Yawei Luo, and Changqing Zou. Tsd-sr: One-step diffusion with target score distillation for real-world image super-resolution. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 23174–23184, 2025. 3 [14] Kunyu Feng, Yue Ma, Bingyuan Wang, Chenyang Qi, Haozhe Chen, Qifeng Chen, and Zeyu Wang. Dit4edit: Dif-fusion transformer for image editing. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 2969– 2977, 2025. 2 [15] Tianrui Feng, Zhi Li, Shuo Yang, Haocheng Xi, Muyang Li, Xiuyu Li, Lvmin Zhang, Keting Yang, Kelly Peng, Song Han, et al. Streamdiffusionv2: A streaming system for dynamic and interactive video generation. arXiv preprint arXiv:2511.07399 , 2025. 3, 4, 7 [16] Heyuan Gao, Bangxun Tang, Yiren Song, Guian Fang, Zijian He, Jie Yang, and Mike Zheng Shou. Pai-studio: Cinematic video background replacement with camera-aware motion. 
+
+arXiv preprint arXiv:2606.01399 , 2026. S1 [17] Roberto Henschel, Levon Khachatryan, Hayk Poghosyan, Daniil Hayrapetyan, Vahram Tadevosyan, Zhangyang Wang, Shant Navasardyan, and Humphrey Shi. Streamingt2v: Con-sistent, dynamic, and extendable long video generation from text. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 2568–2577, 2025. 3 [18] Xun Huang, Zhengqi Li, Guande He, Mingyuan Zhou, and Eli Shechtman. Self forcing: Bridging the train-test gap in autoregressive video diffusion. arXiv preprint arXiv:2506.08009 , 2025. 3, S1 [19] Ziqi Huang, Yinan He, Jiashuo Yu, Fan Zhang, Chenyang Si, Yuming Jiang, Yuanhan Zhang, Tianxing Wu, Qingyang Jin, Nattapol Chanpaisit, et al. Vbench: Comprehensive bench-mark suite for video generative models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 21807–21818, 2024. 8 [20] Zeyinzi Jiang, Zhen Han, Chaojie Mao, Jingfeng Zhang, Yulin Pan, and Yu Liu. Vace: All-in-one video creation and editing. In Proceedings of the IEEE/CVF International Con-ference on Computer Vision , pages 17191–17202, 2025. 2, 3[21] Xuan Ju, Tianyu Wang, Yuqian Zhou, He Zhang, Qing Liu, Nanxuan Zhao, Zhifei Zhang, Yijun Li, Yuanhao Cai, Shaoteng Liu, et al. Editverse: Unifying image and video editing and generation with in-context learning. arXiv preprint arXiv:2509.20360 , 2025. 3 [22] Akio Kodaira, Chenfeng Xu, Toshiki Hazama, Takanori Yoshimoto, Kohei Ohno, Shogo Mitsuhori, Soichi Sugano, Hanying Cho, Zhijian Liu, Masayoshi Tomizuka, et al. Streamdiffusion: A pipeline-level solution for real-time in-teractive generation. In Proceedings of the IEEE/CVF In-ternational Conference on Computer Vision , pages 12371– 12380, 2025. 3, 4, 7 [23] Runjia Li, Moayed Haji-Ali, Ashkan Mirzaei, Chaoyang Wang, Arpit Sahni, Ivan Skorokhodov, Aliaksandr Siarohin, Tomas Jakab, Junlin Han, Sergey Tulyakov, et al. Egoedit: Dataset, real-time streaming model, and benchmark for ego-centric video editing. arXiv preprint arXiv:2512.06065 ,2025. 2, 3, 8, S1 [24] Runjia Li, Philip Torr, Andrea Vedaldi, and Tomas Jakab. Vmem: Consistent interactive video scene generation with surfel-indexed view memory. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 25690–25699, 2025. 3 [25] Wuyang Li, Wentao Pan, Po-Chien Luan, Yang Gao, and Alexandre Alahi. Stable video infinity: Infinite-length video generation with error recycling. arXiv preprint arXiv:2510.09212 , 2025. 3 [26] Zhiyuan Li, Chi-Man Pun, Chen Fang, Jue Wang, and Xi-aodong Cun. Personalive! expressive portrait image anima-tion for live streaming. arXiv preprint arXiv:2512.11253 ,2025. 3 [27] Feng Liang, Akio Kodaira, Chenfeng Xu, Masayoshi Tomizuka, Kurt Keutzer, and Diana Marculescu. Looking backward: Streaming video-to-video translation with feature banks. arXiv preprint arXiv:2405.15757 , 2024. 4, 7 [28] Sen Liang, Fengbin Guan, Youliang Zhang, Xin Li, and Zhibo Chen. Cot-edit: Let cot guide instruction video edit-ing. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , pages 37960–37970, 2026. S1 [29] Sen Liang, Cong Wang, Fengbin Guan, Zhentao Yu, Yiting Lu, Yuanzhi Wang, Yuan Zhou, Xin Li, and Zhibo Chen. Spongebob: Sync-aware harmonious audio-visual generative editing. arXiv preprint arXiv:2605.25193 , 2026. S1 [30] Shanchuan Lin, Anran Wang, and Xiao Yang. Sdxl-lightning: Progressive adversarial diffusion distillation. 
+
+arXiv preprint arXiv:2402.13929 , 2024. 3 [31] Shanchuan Lin, Xin Xia, Yuxi Ren, Ceyuan Yang, Xuefeng Xiao, and Lu Jiang. Diffusion adversarial post-training for one-step video generation. arXiv preprint arXiv:2501.08316 ,2025. 3 [32] Jiacheng Liu, Xinyu Wang, Yuqi Lin, Zhikai Wang, Peiru Wang, Peiliang Cai, Qinming Zhou, Zhengan Yan, Zexuan Yan, Zhengyi Shi, et al. A survey on cache methods in diffu-sion models: Toward efficient multi-modal generation. arXiv preprint arXiv:2510.19755 , 2025. 3 [33] Kunhao Liu, Wenbo Hu, Jiale Xu, Ying Shan, and Shijian Lu. Rolling forcing: Autoregressive long video diffusion in real time. arXiv preprint arXiv:2509.25161 , 2025. 3 [34] Xingchao Liu, Xiwen Zhang, Jianzhu Ma, Jian Peng, et al. Instaflow: One step is enough for high-quality diffusion-based text-to-image generation. In The Twelfth International Conference on Learning Representations , 2023. 3 [35] Xinyin Ma, Gongfan Fang, and Xinchao Wang. Deepcache: Accelerating diffusion models for free. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 15762–15772, 2024. 3 [36] Yue Ma, Yingqing He, Xiaodong Cun, Xintao Wang, Siran Chen, Xiu Li, and Qifeng Chen. Follow your pose: Pose-guided text-to-video generation using pose-free videos. In 
+
+Proceedings of the AAAI Conference on Artificial Intelli-gence , pages 4117–4125, 2024. 3 [37] Yue Ma, Hongyu Liu, Hongfa Wang, Heng Pan, Yingqing He, Junkun Yuan, Ailing Zeng, Chengfei Cai, Heung-Yeung Shum, Wei Liu, et al. Follow-your-emoji: Fine-controllable and expressive freestyle portrait animation. In SIGGRAPH Asia 2024 Conference Papers , pages 1–12, 2024. S1 [38] Yue Ma, Xiaodong Cun, Sen Liang, Jinbo Xing, Yingqing He, Chenyang Qi, Siran Chen, and Qifeng Chen. Magic-stick: Controllable video editing via control handle transfor-mations. In 2025 IEEE/CVF Winter Conference on Applica-tions of Computer Vision (WACV) , pages 9385–9395. IEEE, 2025. 2 [39] Yue Ma, Kunyu Feng, Zhongyuan Hu, Xinyu Wang, Yucheng Wang, Mingzhe Zheng, Xuanhua He, Chenyang Zhu, Hongyu Liu, Yingqing He, et al. Controllable video generation: A survey. arXiv preprint arXiv:2507.16869 ,2025. 3 [40] Yue Ma, Kunyu Feng, Xinhua Zhang, Hongyu Liu, David Junhao Zhang, Jinbo Xing, Yinhan Zhang, Ayden Yang, Zeyu Wang, and Qifeng Chen. Follow-your-creation: Empowering 4d creation through video inpainting. arXiv preprint arXiv:2506.04590 , 2025. 3 [41] Yue Ma, Yulong Liu, Qiyuan Zhu, Ayden Yang, Kunyu Feng, Xinhua Zhang, Zhifeng Li, Sirui Han, Chenyang Qi, and Qifeng Chen. Follow-your-motion: Video motion transfer via efficient spatial-temporal decoupled finetuning. arXiv preprint arXiv:2506.05207 , 2025. 3 [42] Yue Ma, Zexuan Yan, Hongyu Liu, Hongfa Wang, Heng Pan, Yingqing He, Junkun Yuan, Ailing Zeng, Chengfei Cai, Heung-Yeung Shum, et al. Follow-your-emoji-faster: To-wards efficient, fine-controllable, and expressive freestyle portrait animation. arXiv preprint arXiv:2509.16630 , 2025. S1 [43] Yue Ma, Xinyu Wang, Qianli Ma, Qinghe Wang, Mingzhe Zheng, Xiangpeng Yang, Hao Li, Chongbo Zhao, Jixuan Ying, Harry Yang, et al. Group editing: Edit multiple im-ages in one go. arXiv preprint arXiv:2603.22883 , 2026. 3 [44] Yue Ma, Zhikai Wang, Tianhao Ren, Mingzhe Zheng, Hongyu Liu, Jiayi Guo, Mark Fong, Yuxuan Xue, Zixi-ang Zhao, Konrad Schindler, et al. Fastvmt: Eliminat-ing redundancy in video motion transfer. arXiv preprint arXiv:2602.05551 , 2026. 3 [45] Ron Mokady, Amir Hertz, Kfir Aberman, Yael Pritch, and Daniel Cohen-Or. Null-text inversion for editing real im-ages using guided diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 6038–6047, 2023. 3 [46] Chenyang Qi, Xiaodong Cun, Yong Zhang, Chenyang Lei, Xintao Wang, Ying Shan, and Qifeng Chen. Fatezero: Fus-ing attentions for zero-shot text-based video editing. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 15932–15942, 2023. 2 [47] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervi-sion. In International conference on machine learning , pages 8748–8763. PmLR, 2021. 8 [48] Tim Salimans and Jonathan Ho. Progressive distillation for fast sampling of diffusion models. arXiv preprint arXiv:2202.00512 , 2022. 3 [49] Christoph Schuhmann. Laion-aesthetics, 2022. 8 [50] Uriel Singer, Adam Polyak, Thomas Hayes, Xi Yin, Jie An, Songyang Zhang, Qiyuan Hu, Harry Yang, Oron Ashual, Oran Gafni, et al. Make-a-video: Text-to-video generation without text-video data. arXiv preprint arXiv:2209.14792 ,2022. 3 [51] Yang Song, Prafulla Dhariwal, Mark Chen, and Ilya Sutskever. Consistency models, 2023. 3 [52] Yiren Song, Shijie Huang, Chen Yao, Hai Ci, Xiaojun Ye, Jiaming Liu, Yuxuan Zhang, and Mike Zheng Shou. Pro-cesspainter: Learning to draw from sequence data. In SIG-GRAPH Asia 2024 Conference Papers , pages 1–10, 2024. S1 [53] Yiren Song, Cheng Liu, Yuxin Jiang, and Mike Zheng Shou. Streamingeffect: Real-time human-centric video effect gen-eration. arXiv preprint arXiv:2605.17019 , 2026. [54] Yiren Song, Wangzi Yao, Haofan Wang, and Mike Zheng Shou. Vista: Triplet-supervised video style transfer with dif-fusion transformers. arXiv preprint arXiv:2605.17312 , 2026. S1 [55] DecartAI Team. Lucy edit: Open-weight text-guided video editing, 2025. 2, 3, 7 [56] Hansi Teng, Hongyu Jia, Lei Sun, Lingzhi Li, Maolin Li, Mingqiu Tang, Shuai Han, Tianning Zhang, WQ Zhang, Weifeng Luo, et al. Magi-1: Autoregressive video genera-tion at scale. arXiv preprint arXiv:2505.13211 , 2025. 3 [57] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianx-iao Yang, Jianyuan Zeng, Jiayu Wang, Jingfeng Zhang, Jin-gren Zhou, Jinkai Wang, Jixuan Chen, Kai Zhu, Kang Zhao, Keyu Yan, Lianghua Huang, Mengyang Feng, Ningyi Zhang, Pandeng Li, Pingyu Wu, Ruihang Chu, Ruili Feng, Shiwei Zhang, Siyang Sun, Tao Fang, Tianxing Wang, Tianyi Gui, Tingyu Weng, Tong Shen, Wei Lin, Wei Wang, Wei Wang, Wenmeng Zhou, Wente Wang, Wenting Shen, Wenyuan Yu, Xianzhong Shi, Xiaoming Huang, Xin Xu, Yan Kou, Yangyu Lv, Yifei Li, Yijing Liu, Yiming Wang, Yingya Zhang, Yi-tong Huang, Yong Li, You Wu, Yu Liu, Yulin Pan, Yun Zheng, Yuntao Hong, Yupeng Shi, Yutong Feng, Zeyinzi Jiang, Zhen Han, Zhi-Fan Wu, and Ziyu Liu. Wan: Open and advanced large-scale video generative models, 2025. 6 [58] Jiangshan Wang, Yue Ma, Jiayi Guo, Yicheng Xiao, Gao Huang, and Xiu Li. Cove: Unleashing the diffusion fea-ture correspondence for consistent video editing. Advances in Neural Information Processing Systems , 37:96541–96565, 2024. 2 [59] Jiangshan Wang, Junfu Pu, Zhongang Qi, Jiayi Guo, Yue Ma, Nisha Huang, Yuxin Chen, Xiu Li, and Ying Shan. Tam-ing rectified flow for inversion and editing. arXiv preprint arXiv:2411.04746 , 2024. 2 [60] Jianyi Wang, Shanchuan Lin, Zhijie Lin, Yuxi Ren, Meng Wei, Zongsheng Yue, Shangchen Zhou, Hao Chen, Yang Zhao, Ceyuan Yang, et al. Seedvr2: One-step video restora-tion via diffusion adversarial post-training. arXiv preprint arXiv:2506.05301 , 2025. 3 [61] Xiang Wang, Shiwei Zhang, Han Zhang, Yu Liu, Yingya Zhang, Changxin Gao, and Nong Sang. Videolcm: Video latent consistency model. arXiv preprint arXiv:2312.09109 ,2023. 3 [62] Jay Zhangjie Wu, Yixiao Ge, Xintao Wang, Stan Weixian Lei, Yuchao Gu, Yufei Shi, Wynne Hsu, Ying Shan, Xiaohu Qie, and Mike Zheng Shou. Tune-a-video: One-shot tuning of image diffusion models for text-to-video generation. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , pages 7623–7633, 2023. 2 [63] Yunfeng Wu, Jiayi Song, Zhenxiong Tan, Zihao He, and Songhua Liu. Freeswim: Revisiting sliding-window atten-tion mechanisms for training-free ultra-high-resolution video generation. arXiv preprint arXiv:2511.14712 , 2025. S1 [64] Yunfeng Wu, Hongying Cheng, Zihao He, and Songhua Liu. Vibe: Ultra-high-resolution video synthesis born from pure images. arXiv preprint arXiv:2603.23326 , 2026. [65] Xuancheng Xu, Yaning Li, Sisi You, and Bing-Kun Bao. Smrabooth: Subject and motion representation alignment for customized video generation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 16130–16141, 2026. S1 [66] Shuo Yang, Haocheng Xi, Yilong Zhao, Muyang Li, Jintao Zhang, Han Cai, Yujun Lin, Xiuyu Li, Chenfeng Xu, Kelly Peng, Jianfei Chen, Song Han, Kurt Keutzer, and Ion Stoica. Sparse videogen2: Accelerate video generation with sparse attention via semantic-aware permutation, 2025. 3 [67] Xiangpeng Yang, Ji Xie, Yiyuan Yang, Yan Huang, Min Xu, and Qiang Wu. Unified video editing with temporal reasoner. 
+
+arXiv preprint arXiv:2512.07469 , 2025. 2, 7 [68] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiao-han Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072 , 2024. 3 [69] Zixuan Ye, Xuanhua He, Quande Liu, Qiulin Wang, Xintao Wang, Pengfei Wan, Di Zhang, Kun Gai, Qifeng Chen, and Wenhan Luo. Unic: Unified in-context video editing. arXiv preprint arXiv:2506.04216 , 2025. 3 [70] Tianwei Yin, Micha¨ el Gharbi, Taesung Park, Richard Zhang, Eli Shechtman, Fredo Durand, and Bill Freeman. Im-proved distribution matching distillation for fast image syn-thesis. Advances in neural information processing systems ,37:47455–47487, 2024. 3 [71] Tianwei Yin, Qiang Zhang, Richard Zhang, William T Free-man, Fredo Durand, Eli Shechtman, and Xun Huang. From slow bidirectional to fast autoregressive video diffusion mod-els. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , pages 22963–22974, 2025. 3, S1 [72] Tianjun Zhang, Yi Zhang, Vibhav Vineet, Neel Joshi, and Xin Wang. Controllable text-to-image generation with gpt-4. arXiv preprint arXiv:2305.18583 , 2023. 2 [73] Shikang Zheng, Liang Feng, Xinyu Wang, Qinming Zhou, Peiliang Cai, Chang Zou, Jiacheng Liu, Yuqi Lin, Junjie Chen, Yue Ma, et al. Forecast then calibrate: Feature caching as ode for efficient diffusion transformers. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 13449– 13457, 2026. 3 [74] Zhixin Zheng, Xinyu Wang, Chang Zou, Shaobo Wang, and Linfeng Zhang. Compute only 16 tokens in one timestep: Accelerating diffusion transformers with cluster-driven fea-ture caching. In Proceedings of the 33rd ACM International Conference on Multimedia , pages 10181–10189, 2025. 3 [75] Hongzhou Zhu, Min Zhao, Guande He, Hang Su, Chongx-uan Li, and Jun Zhu. Causal forcing: Autoregressive diffu-sion distillation done right for high-quality real-time inter-active video generation. arXiv preprint arXiv:2602.02214 ,2026. S1 [76] Junhao Zhuang, Shi Guo, Xin Cai, Xiaohui Li, Yihao Liu, Chun Yuan, and Tianfan Xue. Flashvsr: Towards real-time diffusion-based streaming video super-resolution. arXiv preprint arXiv:2510.12747 , 2025. 3 LiveEdit User input 
+
+Change the blue sky to a gradient of deep indigo and magenta with faint constellations.  
+
+> LiveEdit User input
+
+Change the brown horse to a dappled gray mare with a white star on its forehead.  
+
+> LiveEdit User input
+
+Change the light brown granite countertops to a white marble with dark gray veining.  
+
+> LiveEdit User input
+
+Change the long dreadlocks to flowing silver hair that glimmers under the sunlight like liquid metal.  
+
+> LiveEdit User input
+
+Change the woman's white shirt with ruffled sleeves to a bright yellow one with a high collar.  
+
+> LiveEdit User input
+
+Replace the bright yellow surface with a dark maroon velvet cloth that enhances color contrast.  
+
+> LiveEdit User input
+
+Transform the wooden block into a piece of polished stone with a gray marble finish and subtle veining. Figure 2. More cases generated by LiveEdit .LiveEdit User input 
+
+Replace the teal tank top with a white linen shirt with a subtle floral pattern.  
+
+> LiveEdit User input
+
+Replace the olive green uniform fabric with a deep maroon velvet material that catches the light . 
+
+> LiveEdit User input
+
+Replace the mustard yellow suit with a deep forest green suit that subtly shimmers under the light.  
+
+> LiveEdit User input
+
+Replace the man’s striped scarf with a solid emerald green one.  
+
+> LiveEdit User input
+
+Replace the dog’s dark collar with a bright red leather one with a silver tag.  
+
+> LiveEdit User input
+
+Replace the man’s plaid shirt with a solid dark gray sweater.  
+
+> LiveEdit User input
+
+Change the textured white bowl to a smooth black ceramic one with a single red dot. Figure 3. More cases generated by LiveEdit .LiveEdit User input 
+
+Change the blurred white queen to a translucent crystal version with internal light patterns . 
+
+> LiveEdit User input
+
+Replace the golden glow of the sun with a soft lavender hue, casting a dreamlike light.  
+
+> LiveEdit User input
+
+Replace the seagull's black feathers with feathers ranging from silver to white.  
+
+> LiveEdit User input
+
+Change the calm water’s surface to reflect a fiery orange and gold sunset.  
+
+> LiveEdit User input
+
+Change the cameraperson‘s red shirt to a deep navy blue one . 
+
+> LiveEdit User input
+
+Replace the stone statue with a bronze one, giving it a warmer, more reflective surface.  
+
+> LiveEdit User input
+
+Transform the knots in the wood into glowing amber veins that pulse softly. Figure 4. More cases generated by LiveEdit .InsV2V 
+
+Change the Canada goose’s feathers from grayish -brown to iridescent deep blue with metallic sheen. 
+
+> LucyEdit VideoCoF StreamV2V Stream. Stream. V2 LiveEdit  User Input
+
+Figure 5. More comparison between baseline and our LiveEdit .InsV2V 
+
+Change the dark shorts to navy blue gym shorts with a reflective stripe on the side. 
+
+> LucyEdit VideoCoF StreamV2V Stream. Stream. V2 LiveEdit  User Input
+
+Figure 6. More comparison between baseline and our LiveEdit .

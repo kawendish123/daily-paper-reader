@@ -1,0 +1,423 @@
+Title: CoVStream: Edge-Cloud Collaboration for Understanding of Long Video Streams
+
+URL Source: https://arxiv.org/pdf/2606.22804v2
+
+Published Time: Fri, 26 Jun 2026 00:34:10 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Co-VStream : Edge-Cloud Collaboration for Understanding of Long Video Streams 
+
+# Xu Liu 1, Guikun Chen 1, Zihao Yan 2, Kanzhi Wu 2, Wenguan Wang 1∗
+
+> 1
+
+The State Key Lab of Brain-Machine Intelligence, Zhejiang University 
+
+> 2
+
+vivo Mobile Communication Co., Ltd., Shenzhen, China. 
+
+Abstract 
+
+Long, continuous video streams are an increasingly critical driver of multimedia intelligence. Existing efforts often han-dle long videos with a sample–encode–reason approach using large models. However, they overlook a crucial deployment fact: the stream is often produced by computationally con-strained devices. This forces an untenable compromise: cloud offloading unlocks strong reasoning but incurs prohibitive bandwidth overhead, while on-device processing remains lim-ited by edge hardware capacity. Therefore, we propose Co-VStream , the first edge-cloud collaborative framework for understanding long video streams. The edge node distills raw video streams into compact visual features and semantic cap-tions for transmission to the cloud, minimizing bandwidth costs, while the cloud server integrates this data into an entity graph and global visual context, activating the heavy reason-ing model only when a user query arrives. Experiments on VideoMME-Long, LVBench, and RTV-Bench show that Co-VStream reduces bandwidth usage by 87.6% while retaining 
+
+99.2% of the cloud baseline accuracy on LVBench. 
+
+# 1 Introduction 
+
+Background. The proliferation of always-on devices, such as AI glasses, has elevated long, continuous video streams as a critical modality (Grauman et al. 2022; Engel et al. 2023; Yang et al. 2025b; Tang et al. 2025; Chandrasegaran et al. 2024). With richer temporal context, models may solve episodic memory tasks (He et al. 2024a; Wang et al. 2025e), such as recalling past interactions or finding lost items (Xu et al. 2023; Ramakrishnan, Al-Halah, and Grauman 2023; Liang et al. 2025; Mangalam, Akshulakov, and Malik 2023). Consequently, effectively processing the continuous data is essential for unlocking new possibilities in personalized as-sistance, long-term healthcare monitoring, etc .
+
+Motivation. Existing efforts mainly handle long videos us-ing a sample-encode-reason approach (Song et al. 2025; Li, Wang, and Jia 2024; Wang et al. 2025b; Ren et al. 2024), which relies on heavy, centralized, large multimodal mod-els (LMMs) (Liu et al. 2025; Chen et al. 2025; Fei et al. 2024; Shu et al. 2025). While effective in offline benchmarks, such methods ignore a fundamental deployment constraint: the streams originate from computationally constrained edge 
+
+> ∗
+
+Corresponding author. Edge Node Cloud Server              
+
+> High Bandwidth Costs
+> (a) Cloud -Only :Offloading raw data for cloud reasoning.
+> Edge Node Cloud Server
+> Hardware Constraints
+> (b) Local -Only :Executing inference on limited edge node.
+> Edge Node Cloud Server
+> Hardware Abundance
+> (c) CO-VS TREAM (Ours): Synergizing edge process with cloud inference.
+> Video Stream Capture
+> Raw Video Data
+> Lo wBandwidth Costs
+> No Bandwidth Costs
+
+Figure 1: Comparison of deployment constraints for long video understanding on computationally limited devices. devices ( e.g., smart glasses). This disconnect forces an un-tenable compromise. Cloud-centric offloading (Fig. 1a) un-locks powerful reasoning but necessitates continuous raw-video transmission, causing prohibitively high bandwidth cost. Conversely, on-device processing (Fig. 1b) preserves bandwidth but is strictly bound by tight hardware limitations, preventing the deployment of the heavy models typically re-quired for reasoning. Therefore, there is an urgent need for a collaborative framework that resolves this dilemma, rec-onciling the reasoning capacity of the cloud with the strict bandwidth constraints of edge deployment. 
+
+Methodology. We address this challenge by rethinking the spatiotemporal redundancy inherent in video streams. We posit that to resolve memory-intensive queries, compact se-mantic representation serves as a sufficient surrogate for raw pixels. This insight suggests an optimal division of labor: the edge acts as a semantic compressor to filter redundancy, enabling the cloud to focus on long-term memory main-tenance and on-demand reasoning. To implement this, we propose the training-free Co-VStream (Fig. 1c), the first 
+
+edge-cloud collaborative framework designed for long video streams. On the edge, a Dual-Condensed Perception Pipeline (§2.2) processes the stream into two modalities in parallel: condensed visual features and semantic captions. These com-
+
+> arXiv:2606.22804v2 [cs.CV] 25 Jun 2026
+
+pact payloads are uploaded to the cloud, which continuously integrates them into a global visual context and an entity graph (§2.3). The reasoning model remains dormant until triggered by a user query. This design ensures that high-cost computation is incurred only when necessary. 
+
+Merits. Through this collaborative design, Co-VStream of-fers four advantages. First, it is bandwidth-efficient . The dual-condensation pipeline drastically reduces data transmission requirements compared to raw streaming, enabling sustain-able long-duration operation characterized by a low mem-ory footprint and bandwidth costs (§3). Second, it is cloud-empowered . Unlike edge-only solutions limited by hardware, it leverages cloud-side memory and reasoning to achieve per-formance comparable to Cloud-Only. Third, it is real-time responsive . By decoupling memory management from rea-soning, the cloud maintains the memory without blocking, enabling instantaneous query responses with latency lower than the Cloud-Only. Finally, it is training-free . By perform-ing all data processing in the LMM’s original feature space, preserving the original semantic distribution, Co-VStream 
+
+allows for plug-and-play integration with various LMMs. 
+
+Results and Analysis. We evaluate Co-VStream on three streaming-oriented benchmarks, VideoMME-Long, LVBench, and RTV-Bench, comparing it against three base-lines: Local-Only ( LO ), Cloud-Only ( CO ), and Edge-Cloud (EC ). The results show that Co-VStream balances perfor-mance, bandwidth, and latency. Specifically, it reduces band-width consumption by 87.59% compared to CO and achieves a latency of 2.99s , improving over CO (4.08s), while retaining 
+
+99.2% of CO upper-bound accuracy on LVBench (§3.2). Cru-cially, Co-VStream exhibits robustness in ultra-long video tests (>6,000s). It surpasses CO by 7.92% . Furthermore, a 24-hour continuous stream simulation reveals a 523 × reduc-tion in memory footprint (stabilizing at 439 MB vs. 230 GB for all baselines), verifying its viability for always-on de-ployment on mobile agents (§3.3). We also include several comprehensive additional evaluations on open-ended QA, payload formatting, network stress tests, and bank-capacity ablations in the Appendix. 
+
+# 2 Methodology 
+
+2.1 System Overview 
+
+Co-VStream is formalized as a dual-end collaborative sys-tem comprising an edge node and a cloud server ( cf . Fig. 1). The workflow originates at the edge, which transforms video streams into semantic payloads and user questions into query triggers. These transmissions drive video memory manage-ment and instant reasoning on the cloud. 
+
+Edge Node. The edge acts as the perception unit, executing two concurrent processes: i) Perception Stream. The edge continuously acquires the video stream and maps the raw frames into a semantic payload Pload to mitigate redun-dancy. Pload integrates condensed visual features Zcond and keyframe captions Ctext . ii ) Query Monitoring. The edge lis-tens for user query Q, which serves as a wake-up signal. Upon receiving Q, the edge transmits a single trigger to the cloud, activating the dormant inference module in parallel without interrupting the perception stream. 
+
+Cloud Server. The cloud is modeled as two decoupled, par-allel processes: i) Memory Management. It continuously in-tegrates the incoming Pload to dynamically update both a global visual context ( H) and a semantic entity graph ( G). 
+
+ii ) On-Demand Reasoning. A process remains in sleep mode by default to conserve resources, switching to active mode only upon receiving a trigger which is sent by the edge node. It then generates a response R to the user query Q based on 
+
+Co-VStream ’s current memory. 
+
+2.2 Edge Node: Dual-Stream Perception and Condensation Pipeline 
+
+Given the limited resources on edge devices and the high computational cost of neural networks, serial execution of perception tasks inevitably leads to latency accumulation, rendering real-time video stream processing unfeasible. To mitigate this bottleneck, we design a cascaded pipeline that processes data across asynchronous stages. The pipeline initi-ates with Visual Feature Extraction (Eq. 1), which processes the video stream and pushes extracted features into a primary 
+
+Feature Queue . Subsequently, these features are retrieved to concurrently execute Temporal Feature Condensation (Eq. 2) and Adaptive Keyframe Selection (Eq. 3), where the latter pushes the selected keyframes into a secondary Keyframe Queue . Finally, this queue feeds Semantic Caption Gener-ation (Eq. 4), acting as the terminal consumer to produce captions. To explain the internal mechanism of this pipeline, details are elaborated below: 
+
+Dual-Condensed Perception Pipeline. It transforms the video stream into compact semantic payloads through the following four operations: 
+
+• Visual Feature Extraction. The visual encoder Evis extracts a feature vector ft for each frame vt in the video stream, and buffers it into the Feature Queue :
+
+ft = Evis (vt), ft ∈ RN ×d, (1) where N denotes the number of visual patches and d denotes the embedding dimension. To mitigate the spatiotemporal redundancy contained within the raw feature stream, the fol-lowing condensation and filtering mechanism is required. 
+
+• Temporal Feature Condensation. The features are continu-ously retrieved from the Feature Queue to populate a conden-sation buffer. Only when this buffer reaches its full capacity 
+
+Ntemp is the iterative merging algorithm triggered. The al-gorithm recursively calculates cosine similarities between adjacent feature pairs, identifies the pair with the maximum similarity, and merges them into a mean feature: 
+
+j∗ = argmax 
+
+> i
+
+cos( fi, fi+1 ), fj∗ := fj∗ + fj∗+1 
+
+2 . (2) This iteration continues until the feature count is reduced to a pre-set quota Ntarget , yielding a set of condensed visual features Zcond . At this stage, the raw video stream is distilled into condensed features for cloud transmission. This process achieves a compression rate of 87.6% (Table 2). 
+
+• Adaptive Keyframe Selection. Concurrently, the features in the Feature Queue are continuously dequeued to populate a selection buffer. Once the buffer accumulates Nw frames, Cloud Server: Manager & Reasoner ($3.3)          
+
+> Reasoning Task
+> Sleep Mode
+> Visual Task
+> Visual Context
+> Maintenance (Alg. S2)
+> Entity Graph
+> Visual Context
+> Active Mode (Eq. 10)
+> Edge Node: User
+> Image Encoder (GPU)
+> Edge Node: Extractor
+> Feature Queue
+> . . . . . . . .
+> Streams
+> Activate
+> Find my key.
+> Trigger
+
+Edge Node: Filter & Compressor ($3.2)              
+
+> ... . ..
+> Caption
+> Generation
+> (Eq. 4 )
+> GPU
+> CPU
+> …
+> …
+> …
+> …
+> …
+> Temporal Feature
+> Condensation (Alg. S2)
+> Adaptive Keyframe
+> Selection (Alg. S1)
+> CPU
+> Captions Keyframes
+> Keyframe Queue Graph Task
+> Entity Graph
+> Construction (Eq. 5 -6) (Eq. 5-6)
+> (§2.2) (§2.3)
+> (Eq. 10)
+
+Figure 2: Overview of Co-VStream (§2.1). an iterative clustering algorithm is triggered to filter out the redundancy of raw features. Starting with k = ⌊√Nw⌋ clus-ters, the algorithm iteratively merges the nearest cluster pairs to find the structure that maximizes the silhouette coefficient. The frames closest to the cluster centers of this optimal con-figuration are selected as the keyframe set K:
+
+K = Select ({fi}Nw
+
+> i=1
+
+) = {k1, k 2, ..., k m}, (3) where m ≪ | Nw|. Upon selection, the keyframes are pushed into the Keyframe Queue , which subsequently triggers the downstream semantic caption generation task. 
+
+• Semantic Caption Generation. Once triggered by the arrival of the keyframes, a lightweight language model (Yang et al. 2025a) is employed to generate a frame caption Ctext for each frame stored in the Keyframe Queue :
+
+Ctext = {ci|ci = Caption (ki), ∀ki ∈ K} . (4) We enforce a “strict simple sentences” constraint via the prompt engineering to minimize parsing ambiguity for the cloud-side graph construction. The final payload Pload = {Zcond , Ctext } is transmitted to the cloud. Raw video frames are converted into compact features and captions for upload. To enable the real-time execution of this pipeline on constrained edge nodes, we orchestrate a hardware scheduling: 
+
+Hardware-Aware Parallel Scheduling. A hardware affin-ity partitioning strategy is implemented to execute the above pipeline on heterogeneous edge hardware by mapping each operation to a suitable processor. Visual Feature Extraction 
+
+and Semantic Caption Generation involving dense matrix calculations and requiring high parallel throughput are as-signed to the GPU. Adaptive Keyframe Selection and Tem-poral Feature Condensation , relying on dynamic clustering and iterative calculations, are assigned to the CPU. This hardware-aware mapping eliminates resource contention and maximizes the overall system throughput. 
+
+Merits. The cascaded design decouples the computational loads of different modules, ensuring that their execution does not mutually interfere, thereby maximizing Co-VStream ef-ficiency. The hardware scheduling mitigates resource con-tention by directing tasks to their suitable processors. Specif-ically, a naive serial implementation requires 64.98ms to process each frame, whereas Co-VStream reduces it to 52.03ms. Collectively, these optimizations maximize Co-VStream efficiency, enabling real-time perception even on resource-constrained edge nodes. 
+
+2.3 Cloud Server: Decoupled Management and Reasoning Architecture 
+
+The cloud server is tasked with concurrently processing con-tinuous semantic streams and providing timely responses to user queries. A serial architecture would allow memory updates to block reasoning, causing high latency. We thus propose a multi-process asynchronous architecture where 
+
+Memory Management continuously updates Co-VStream ’s memory, while On-demand Reasoning remains dormant un-til triggered to instantaneously generate responses. 
+
+Memory Management. This process persistently listens to and decomposes the payload Pload into visual and textual components to update Co-VStream ’s memory: 
+
+• Global Visual Context Maintenance. It receives visual com-ponent Zcond to maintain the global visual context Ht. To prevent memory saturation under infinite video streaming conditions, we employ the iterative merging algorithm to manage a compression bank with a capacity limit Nbank .While the global visual context provides a condensed visual history, it loses fine-grained details. To compensate for this deficiency, we parallelly process the textual component Ctext 
+
+to build a structured entity graph in the cloud. 
+
+• Real-time Entity Graph Construction. It incrementally transforms the unstructured captions Ctext into a structured, dynamic Entity Graph G = ( V, E) in real-time. The con-struction is executed via a three-stage pipeline: 
+
+i) Syntactic Parsing : We first deconstruct captions into Subject-Verb-Object (SVO) triplets. For instance, “A man sits on the bench” is parsed into the triplet (man, sit, bench). Subsequently, we map these components to graph elements. The extracted subjects and objects are instantiated as entity nodes ( V), while the Verbs are modeled as directed edges ( E)connecting the source and target nodes. 
+
+ii ) Dynamic Entity Fusion : However, raw triplets often suf-fer from inconsistent entity references across time. To re-solve this, a Temporal Candidate Pool Ptemp containing en-tities detected within the last 30-second window is main-tained. We employ a Natural Language Inference (NLI) clas-sifier for bidirectional entailment verification (Wang et al. 2025c), where the output space is {Entailment, Contradic-tion, Neutral} . For a new entity Enew and a candidate entity 
+
+Eold ∈ P temp , they are fused into a single node if and only if the bidirectional logical implication holds: 
+
+NLI (Enew , E old ) = NLI (Eold , E new ) = Entailment . (5) Otherwise, instantiate Enew as a new node, maintaining en-tity continuity without redundant nodes. 
+
+iii ) Vectorized Node Mounting : Finally, we adopt an em-bedding model Etxt to encode each caption c ∈ C text into a vector and attach it to the corresponding entity node for efficient natural language retrieval.: 
+
+e = Etxt (c), ∀c ∈ C text . (6) Consequently, each node in Gt enables rapid retrieval based on similarity in the reasoning phase. Through the management, Co-VStream maintains an up-to-date memory. To ensure timely responses, the follow-ing reasoning module remains decoupled from this memory management, engaging only when triggered by the users. 
+
+On-Demand Reasoning. This process is event-driven. It re-mains dormant to conserve resources and activates instan-taneously upon receiving a trigger to generate responses, referencing the latest state snapshot without contention. 
+
+• Sleep-Wake Mechanism. To minimize computational over-head during idle periods, we incorporate a Sleep-Wake Mech-anism. The cloud reasoning model defaults to a sleep mode ,remaining suspended and occupying negligible resources. The process transitions to the active mode instantaneously upon receiving a trigger from the edge. Upon activation, 
+
+Co-VStream initiates the following reasoning pipeline to generate responses based on current memory. 
+
+• Graph-Augmented Reasoning. Co-VStream executes a four-step workflow to generate the response R:
+
+i) Query Vectorization : The user query Q is encoded into a vector Vq with the identical embedding model Etxt employed in the graph construction phase: 
+
+Vq = Etxt (Q). (7) 
+
+ii ) Caption Retrieval : We then calculate the cosine similarity between the query vector Vq and the caption vectors eu
+
+mounted on each node u in the graph node set V. The nodes associated with the top-k most relevant captions are identified as a semantic anchors set A:
+
+A = Top-k ({u ∈ V | cos( Vq , eu)}). (8) 
+
+iii ) Subgraph Extraction : Centered on these anchors, we tra-verse the graph to extract their first-order neighbors and in-terconnecting edges. This induces a structure that forms a relevant subgraph Gsub ⊂ G t, which retains only the entities and relations directly relevant to the user’s query: 
+
+Vsub = A ∪ [
+
+> a∈A
+
+N (a),
+
+Gsub = ( Vsub , {(u, v ) ∈ E | u, v ∈ V sub }).
+
+(9) 
+
+iv ) Graph Serialization : The retrieved Gsub is serialized into the JSON format. Finally, the serialized subgraph, the global visual context Ht, and the original query are jointly fed into the LMM to generate the final response: 
+
+R = LMM (Ht, Serialize (Gsub ), Q ). (10) 
+
+Merits. The multi-process asynchronous architecture decou-ples the memory management from reasoning, ensuring that continuous graph updates do not block instantaneous user in-teractions. Graph-augmented retrieval further reduces over-head by filtering out irrelevant context, enabling LMM rea-soning on a concise subgraph instead of the full history. Col-lectively, these optimizations ensure responsiveness, reduc-ing end-to-end latency to 2.99s, significantly outperforming cloud-only baselines (4.08s) while remaining comparable to local-only baseline (2.72s, cf. Table 1). 
+
+2.4 Implementation Details 
+
+Edge Node. Visual Feature Extraction (Eq. 1) adopts the vision encoder (0.4B) from VideoLLaMA3 -7B (Zhang et al. 2025a), and Semantic Caption Generation (Eq. 4) is powered by Qwen3 -VL -2B -Instruct (Yang et al. 2025a). 
+
+Cloud Server. The Graph Builder employs SpaCy for syntac-tic parsing, NLI -Deberta -v3 (He et al. 2020) for entailment verification (Eq. 5), and Qwen3 -Embedding -0.6B (Yang et al. 2025a) for caption vectorization (Eq. 6). The Inference En-gine is based on VideoLLaMA3 -7B (Zhang et al. 2025a). The following hyperparameters are adopted: the keyframe selec-tion buffer is Nw = 64 , and the edge node condenses every 
+
+Ntemp = 16 raw frame features into Ntarget = 2 . The visual compression bank size Nbank is 128. For subgraph extrac-tion, Co-VStream retrieves the top-3 most relevant captions. 
+
+# 3 Experiment 
+
+3.1 Experimental Setting 
+
+Datasets. To evaluate Co-VStream in realistic streaming scenarios, we employ three benchmarks: 
+
+• VideoMME -Long (Fu et al. 2025): A comprehensive bench-mark spanning 6 primary visual domains with 30 sub-fields designed to evaluate multi-modal reasoning and cross-domain generalization. The subset, with an average dura-tion of 3,160 seconds, contains 900 single-choice questions that require temporal reasoning and long-term context un-derstanding across varying video lengths. 
+
+• LVBench (Wang et al. 2025d): An extremely long video understanding benchmark, designed to assess long-term memory and “needle-in-a-haystack” retrieval through single-choice QA pairs. A specific subset of videos with durations exceeding 2,800 seconds is adopted to measure the ultra-long video understanding capability (average duration of 5,018 seconds), comprising a total of 1,007 questions. Baselines LVBench VideoMME RTV-Bench Efficiency Metrics Acc. (%) ↑ Acc. (%) ↑ Acc. (%) ↑ Comm. (MB) ↓ Comp. (%) ↑ Lat. (s) ↓                        
+
+> LO 32.42 ±0.05 34.11 ±2.33 30.44 ±0.12 0.00 –2.72
+> CO 39.23 ±0.50 46.67 ±0.26 35.39 ±0.27 2549.78 –4.08
+> EC 36.59 ±0.12 43.33 ±0.67 34.55 ±0.40 637.45 75.00 4.09
+> Co-VStream 38.93 ±0.38 44.11 ±0.23 34.96 ±0.31 316.42 87.59 2.99
+
+Table 1: Main results on LVBench, VideoMME-Long, and RTV-Bench (§3.2). Efficiency Metrics uses LVBench as the repre-sentative example. “Comp.” denotes the data compression rate relative to the CO . “Lat.” measures the end-to-end latency time, spanning from the user’s query to the response. Bold denotes the best result, underlined denotes the second-best. 
+
+• RTV-Bench (Xun et al. 2026): A real-time video bench-mark designed for dynamic streaming tasks. It includes 167.2 hours of streaming-style videos, averaging 1,092 seconds per session, across domains such as egocentric intelligence, in-telligent driving, and sports analytics. 
+
+Baselines. We compare Co-VStream with three baselines: 
+
+• Local-Only ( LO ): Powered by the lightweight VideoL-LaMA3 -2B (Zhang et al. 2025a), it processes all video frames locally and establishes the lower bound for task accuracy due to limited model capacity, while representing the upper bound for communication efficiency. 
+
+• Cloud-Only ( CO ): VideoLLaMA3 -7B (Zhang et al. 2025a) is adopted to process raw video frames uploaded from the edge at 1 FPS and serves as the accuracy upper bound, but incurs the maximum communication overhead. 
+
+• Edge-Cloud Hybrid ( EC ): A collaborative baseline de-signed to reduce bandwidth consumption. The edge sam-ples frames at 1 FPS and performs 4 × downsampling be-fore transmission. The cloud applies a latent diffusion model (AuraSR -v2 ) to restore resolution for inference. 
+
+3.2 Main Results 
+
+Table 1 summarizes the performance across the main bench-marks. On VideoMME-Long, Co-VStream (44.1%) gains 
+
++10.0% over LO (34.1%) and retains 94.5% of CO ’s per-formance (46.7%). On LVBench, Co-VStream (38.9%) out-performs LO (32.4%) by +6.5% and retaining 99.2% of 
+
+CO ’s performance (39.2%). Regarding latency, Co-VStream 
+
+(2.99s) reduces end-to-end latency by 1.09s compared with 
+
+CO (4.08s), while remaining close to LO (2.72s). This effi-ciency stems from our asynchronous design (§2.3), where the cloud memory is constructed in real time and requires only 0.16s to retrieve the subgraph for inference. On RTV-Bench (Xun et al. 2026), Co-VStream further achieves 35.0%, compared with LO (30.4%), EC (34.6%), and CO 
+
+(35.4%), indicating that the same edge-cloud decomposition transfers to streaming perception tasks. We additionally eval-uate open-ended QA on VideoSIAH-Eval (Yang et al. 2026) (Appendix) and test H.264-matched transmission (Appendix. For additional details on the latency calculation, please refer to Appendix. 
+
+3.3 Diagnostic Experiment 
+
+To provide a deeper understanding of Co-VStream ’s internal mechanisms, we conduct diagnostic analyses:                                 
+
+> ID Components Acc. ( ↑)Comm. ( ↓)Comp. ( ↑)
+> 1T35.45 316.41 87.59% 2S36.94 137.62 94.61 %3G37.24 2590.67 0.00% 4T+G 38.16 316.42 87.59% 5S+G 38.23 137.63 94.60% 6T+S 34.66 333.22 86.93% 7T+S+G 38.93 316.42 87.59%
+
+Table 2: Ablation study of components. T for Temporal Fea-ture Condensation; S for Adaptive Keyframe Selection; G for Entity Graph Construction (Eq. 5-6). 
+
+Key Component Analysis. To verify the contribution of each module, we progressively dismantle Co-VStream . The re-sults are shown in Table 2. Comparing ID 6 ( T + S) and ID 7 ( Co-VStream ), the inclusion of the G increases accuracy from 34.66% to 38.93%. This suggests that the structured graph compensates for the information loss caused by the compression. Furthermore, it is worth noting that while ID 4 ( T + G) and ID 5 ( S + G) yield substantial compression rates, their accuracy degrades when failing to construct the graph over keyframes or omitting temporal condensation. Ultimately, by jointly integrating these components (ID 7), 
+
+Co-VStream achieves best performance and reduces band-width by approximately 88% compared to CO .
+
+Compression Strategy Trade-off . To evaluate how window size and output frame count affect Temporal Feature Con-densation, we test on the full LVBench and find two key trends, as shown in Fig. 3a. Regarding the window size, a setting of 16 frames yields higher performance than both larger ( 32 ) and smaller ( 8) windows. This indicates that an overly large window tends to blend distinct semantic events, whereas a smaller window fragments context. Regarding the compression rate, within the optimal window size ( 16 ), re-ducing the compression rate from 87.5% ( 16 → 2) to 75.0% (16 → 4) yields only a marginal accuracy gain (+0.28%) but doubles the bandwidth cost. Meanwhile, extreme compres-sion (93.8%, 32 → 2) causes a significant performance drop to 31.16%. Consequently, the 87.5% setting ( 16 → 2) is adopted as the standard configuration. A finer bank-capacity ablation is deferred to Appendix. 
+
+Temporal Robustness Analysis . We categorize the LVBen-ch into 1,000-second intervals (starting from 1,000s) to eval-31                   
+
+> 32
+> 33
+> 34
+> 35
+> 36
+> 70 80 90 100
+> Compression Rate (%)
+> Accuracy  (%)
+> Window Size
+> 32
+> 16
+> 8
+> 4
+> Optimal
+> Trade -off
+> Performance
+> Degradation
+> 41
+> 37
+> 33
+> 29
+> 25
+> Video Duration (s)
+> Accuracy  (%)
+> 2.5k 3.5k 4.5k 5.5k 6.5k 6.5k+
+> Memory  (GB)
+> 0
+> 10
+> 5
+> Video Duration (s)
+> 80k 40k 20k 60k
+> 2.55  MB/s
+> LO / CO / EC
+> CO-VS TREAM
+> 019k
+> 0.05
+> 0.31
+> Stable
+> Slow Growth
+> Total
+> Visual Context
+> Entity Graph
+> LO
+> CO-VS TREAM
+> CO EC
+
+(a) (b) (c) Figure 3: Diagnostic experiments of Co-VStream performance (§3.3). uate Co-VStream ’s robustness over extended durations. As illustrated in Fig. 3b, all baselines exhibit a downward trend for durations >5,000s. Conversely, Co-VStream demon-strates an upward trend starting from the 4,000s’ mark. No-tably, in the ultra-long category (>6,000s), Co-VStream 
+
+achieves 42.92% accuracy, surpassing CO (35.00%) by 
+
+7.92% . This divergence highlights the robustness of Co-VStream when processing ultra-long videos. LMMs are con-strained by context windows, which restrict their handling of long videos and lead to severe information loss and escalat-ing computational costs. In contrast, Co-VStream maintains a low-cost structured graph. Through query-driven retrieval, it identifies the most relevant subgraph, preserving critical information without overloading the inference engine. 
+
+Memory Scalability Analysis . While existing datasets are limited to hours-long videos, which are far shorter than true always-on scenarios, we assess Co-VStream ’s feasibility for 24/7 deployment by proactively simulating a continu-ous video stream of 90,000 seconds (exceeding 24 hours) and monitoring the memory footprint on the cloud server. As shown in Fig. 3c, baselines require storing all historical frames. resulting in a steep linear memory expansion (2.55 MB/s), accumulating to 229.5 GB after 90,000s. Such un-bounded growth makes long-term deployment computation-ally prohibitive. In contrast, Co-VStream exhibits a satura-tion behavior, maintaining a low memory footprint totaling only 438.3 MB, a 523 × reduction compared to baselines, at the end of the simulation. Fig. 3c provides a zoomed-in view of our memory dynamics: the Global Visual Context grows initially, but will hit the pre-defined capacity limit, sta-bilizing at approximately 316 MB. Once saturated, the only growing component is the Entity Graph, which consumes merely 122.3 MB to represent the entire 24-hour stream. We further profile payload formatting in Appendix. 
+
+Hardware Deployment Analysis . All our experiments are conducted on an NVIDIA A40 (48GB). We further stress-test the edge pipeline on the RTX 3090 (24GB) and RTX 2080 (8GB). Table 3 shows that accuracy remains stable across the three hardware profiles. Since Co-VStream decouples perception from reasoning, the edge runs only the lightweight 0.4B vision encoder and 2B captioner, which fit within 8GB without performance loss. The 5.9 TFLOPs requirement is             
+
+> Device Memory FP32 TFLOPS Acc. (%)
+> A40 48 GB 37.42 38.93 RTX 3090 24 GB 35.58 38.63
+> RTX 2080 8 GB 10.10 39.32
+
+Table 3: Edge-device stress test. Accuracy remains stable across three hardware profiles. measured in Dense BF16 precision. For broader context, NVIDIA Jetson Thor delivers 162.3 TFLOPS of dense FP16 tensor-core performance, and we also provide a real-phone demo video in the supplementary material. 
+
+3.4 Qualitative Analysis 
+
+To intuitively demonstrate the Graph-Augmented Reasoning Pipeline, we visualize the workflow as a step-by-step pro-cess in Fig. 4. The user’s question ( e.g., “What does the man standing in the middle drink?”) is first encoded into a vector. Based on cosine similarity, Co-VStream retrieves the Top-3 captions that are most similar to the query ( e.g., “A man in a black suit holds water...”). Since these captions are mounted directly on the corresponding entities, Co-VStream identi-fies these entity nodes ( e.g., Man, Black Suit) and their 1-hop neighbors, thus extracting a minimal relevant subgraph. Finally, the subgraph is serialized into a structured JSON format and injected into the original input prompt as graph context to generate the response. 
+
+# 4 Related Work 
+
+Long-term Video Understanding . Enhancing LMMs’ ca-pabilities for long video understanding attracts widespread community attention. These approaches can be broadly cat-egorized into three main streams. The first category focuses on context scaling and architectural adaptation. Some work on scaling training infrastructure (Liu et al. 2025; Chen et al. 2025). Others focus on efficient long-context modeling (Li, Wang, and Jia 2024; Zhang et al. 2024b; Weng et al. 2024; Fei et al. 2024). The second category is memory-augmented streaming and compression. These approaches manage mem-ory banks (Song et al. 2024; He et al. 2024b; Zeng et al. 2025; Video Context Entity Graph                      
+
+> What does the man standing
+> in the middle drink ?
+> Embedding Model
+> A man in a black suit holds water.
+> A man in a gray suit looks him.
+> The man in a black suit drinks
+> water and looks at the glass .
+> man
+> wears
+> black suit
+> wears
+> looks
+> man
+> gray
+> suit
+> white shirt
+> wears
+> drinks
+> water
+> man
+> wears
+> holds black suit
+> water
+> looks
+> glass
+> Query Vectorization (Eq.2) Subgraph Extraction (Eq.3) Graph Serialization (Eq.4) Caption Retrieval (Eq.2)
+> The man standing in the
+> middle is drinking water .(Eq. 7) (Eq. 8) (Eq. 9) (Eq. 10)
+
+Figure 4: Demonstration of Graph-Augmented Reasoning Pipeline’s workflow (§3.4). Zhang et al. 2025b), compress features (Shen et al. 2025; Fang et al. 2025; Shu et al. 2025; Qian et al. 2024; Song et al. 2025), or select visual subsets (Wang et al. 2025b). The third category is agentic reasoning and structured retrieval. These methods leverage LMMs as planners (Wang et al. 2024; Zhi et al. 2025; Jeoung et al. 2024; Zhang et al. 2025c; Sun et al. 2024). Retrieval-augmented generation based frame-works index video content (Ataallah et al. 2024; Luo et al. 2025; Wang et al. 2024) or convert videos into textual logs or semantic graphs (Huang et al. 2025; Chu, Li, and Chua 2025; Wang, Yang, and Ren 2023). Despite impressive, existing methods require offline process-ing of entire videos . This reliance causes latency bottlenecks and high bandwidth costs, rendering them impractical for constrained devices that require immediate responsiveness. 
+
+Co-VStream instead treats video as continuous streams and operates as an edge-cloud collaborative framework. The edge condenses the video streams to minimize bandwidth, while the cloud concurrently manages memory and executes rea-soning, guaranteeing low-latency responsiveness. 
+
+Collaborative Cloud-Edge Intelligence. Deploying LMMs in resource-constrained edge nodes also receives widespread attention from the community. These approaches can be broadly categorized into three main streams. The first cat-egory focuses on the dynamic inference offloading (Jin and Wu 2025; She et al. 2025; Zhang et al. 2024a; Yang et al. 2024; Yuan et al. 2025; He et al. 2024c; Hu et al. 2024; Gan et al. 2023). These methods decompose the inference process to balance latency and computational consumption, e.g., by routing tokens (Jin and Wu 2025; She et al. 2025; Hou et al. 2025; Gan et al. 2023), partitioning model layers (Zhang et al. 2024a), or employing different decision-making algo-rithms (Yang et al. 2024; Yuan et al. 2025; He et al. 2024c; Hu et al. 2024). The second category is cloud-driven model adap-tation (Park, Cho, and Han 2025; Shen et al. 2024; Wang et al. 2023; Dong, Chen, and Satyanarayanan 2024; Hu et al. 2025; Gan et al. 2023). These methods leverage the cloud models to enhance the edge performance, e.g., distilling knowledge (Hu et al. 2025; Gan et al. 2023) or generating codes for the edge nodes (Shen et al. 2024; Dong, Chen, and Satyanarayanan 2024). The third category is context-aware collaborative gen-eration (Xia et al. 2024; Zhang et al. 2025d; Chen et al. 2024; Qian et al. 2025; Ghasemi et al. 2024). In text domains, meth-ods either retrieve cloud-hosted summaries or perform local prompt completion. In visual domains, common methods include edge-based filtering (Zhang et al. 2025d; Ghasemi et al. 2024) or using cloud inference as historical context to guide edge predictions. While edge-cloud video analysis is well-established, existing methods (Li et al. 2026; Wang et al. 2025a; Hu et al. 2026) predominantly tackle low-level vision tasks ( e.g., frame tag-ging, motion detection, and object counting) rather than high-level video understanding. Unlike these methods, Co-VStream enables video understanding ( e.g., localization, summarization, and open-ended QA). Specifically, by de-coupling edge-side semantic condensation from cloud-side memory maintenance, Co-VStream ensures low-latency ex-ecution and low bandwidth usage for streaming videos. 
+
+# 5 Conclusion 
+
+This work bridges the disparity between the limited hardware capacity of edge devices and the computational demands of long video understanding. We propose Co-VStream , a col-laborative framework that reconciles bandwidth and reason-ing constraints by decoupling edge-side condensation cloud-side memory and reasoning. We hope this work directs com-munity attention toward the domain of always-on deploy-ment, thereby extending the research scope of video under-standing beyond offline benchmarks to real-world streams. References 
+
+Ataallah, K.; Shen, X.; Abdelrahman, E.; Sleiman, E.; Zhuge, M.; Ding, J.; Zhu, D.; Schmidhuber, J.; and Elhoseiny, M. 2024. Gold-fish: Vision-language understanding of arbitrarily long videos. In 
+
+ECCV , 251–267. Chandrasegaran, K.; Gupta, A.; Hadzic, L. M.; Kota, T.; He, J.; Eyzaguirre, C.; Durante, Z.; Li, M.; Wu, J.; and Fei-Fei, L. 2024. Hourvideo: 1-hour video-language understanding. In NeurIPS ,53168–53197. Chen, Y.; Li, R.; Zhao, Z.; Peng, C.; Wu, J.; Hossain, E.; and Zhang, H. 2024. NetGPT: An AI-native network architecture for provision-ing beyond personalized generative services. IEEE Network , 38(6): 404–413. Chen, Y.; Xue, F.; Li, D.; Hu, Q.; Zhu, L.; Li, X.; Fang, Y.; Tang, H.; Yang, S.; Liu, Z.; et al. 2025. LongVILA: Scaling Long-Context Visual Language Models for Long Videos. In ICLR .Chu, M.; Li, Y.; and Chua, T.-S. 2025. GraphVideoAgent: Enhanc-ing Long-form Video Understanding with Entity Relation Graphs. In ACM MM , 4639–4648. Dong, Q.; Chen, X.; and Satyanarayanan, M. 2024. Creating edge ai from cloud-based llms. In Proceedings of the 25th International Workshop on Mobile Computing Systems and Applications , 8–13. Engel, J.; Somasundaram, K.; Goesele, M.; Sun, A.; Gamino, A.; Turner, A.; Talattof, A.; Yuan, A.; Souti, B.; Meredith, B.; et al. 2023. Project aria: A new tool for egocentric multi-modal ai re-search. arXiv preprint arXiv:2308.13561 .Fang, J.; Deng, X.; Xu, H.; Jiang, Z.; Tang, Y.; Xu, Z.; Deng, S.; Yao, Y.; Wang, M.; Qiao, S.; et al. 2025. Lightmem: Lightweight and efficient memory-augmented generation. arXiv preprint arXiv:2510.18866 .Fei, J.; Li, D.; Deng, Z.; Wang, Z.; Liu, G.; and Wang, H. 2024. Video-ccam: Enhancing video-language understanding with causal cross-attention masks for short and long videos. arXiv preprint arXiv:2408.14023 .Fu, C.; Dai, Y.; Luo, Y.; Li, L.; Ren, S.; Zhang, R.; Wang, Z.; Zhou, C.; Shen, Y.; Zhang, M.; et al. 2025. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In CVPR , 24108–24118. Gan, Y.; Pan, M.; Zhang, R.; Ling, Z.; Zhao, L.; Liu, J.; and Zhang, S. 2023. Cloud-device collaborative adaptation to continual chang-ing environments in the real-world. In CVPR , 12157–12166. Ghasemi, M.; Kostic, Z.; Ghaderi, J.; and Zussman, G. 2024. Edge-CloudAI: Edge-Cloud Distributed Video Analytics. In MobiCom ,1778–1780. Grauman, K.; Westbury, A.; Byrne, E.; Chavis, Z.; Furnari, A.; Girdhar, R.; Hamburger, J.; Jiang, H.; Liu, M.; Liu, X.; et al. 2022. Ego4d: Around the world in 3,000 hours of egocentric video. In 
+
+CVPR , 18995–19012. He, B.; Li, H.; Jang, Y. K.; Jia, M.; Cao, X.; Shah, A.; Shrivastava, A.; and Lim, S.-N. 2024a. Ma-lmm: Memory-augmented large multimodal model for long-term video understanding. In CVPR ,13504–13514. He, B.; Li, H.; Jang, Y. K.; Jia, M.; Cao, X.; Shah, A.; Shrivastava, A.; and Lim, S.-N. 2024b. Ma-lmm: Memory-augmented large multimodal model for long-term video understanding. In CVPR ,13504–13514. He, P.; Liu, X.; Gao, J.; and Chen, W. 2020. Deberta: Decoding-enhanced bert with disentangled attention. arXiv preprint arXiv:2006.03654 .He, Y.; Fang, J.; Yu, F. R.; and Leung, V. C. 2024c. Large lan-guage models (LLMs) inference offloading and resource allocation in cloud-edge computing: An active inference approach. TMC .Hou, Q.; Park, S.; Zecchin, M.; Cai, Y.; Yu, G.; Simeone, O.; and Melodia, T. 2025. Reliable LLM-Based Edge-Cloud-Expert Cascades for Telecom Knowledge Systems. arXiv preprint arXiv:2512.20012 .Hu, S.; Lu, Z.; Xu, X.; Deng, R.; Du, X.; and Duan, Q. 2025. LAECIPS: Large vision model assisted adaptive edge-cloud col-laboration for iot-based embodied intelligence system. Journal of Industrial Information Integration , 100955. Hu, Y.; Yang, Z.; Zhao, C.; Guo, Q.; Gao, M.; Li, P.; and Ji, W. 2026. AIVD: Adaptive Edge-Cloud Collaboration for Accurate and Effi-cient Industrial Visual Detection. arXiv preprint arXiv:2601.04734 .Hu, Y.; Ye, D.; Kang, J.; Wu, M.; and Yu, R. 2024. A cloud-edge collaborative architecture for multimodal llms-based advanced driver assistance systems in iot networks. IEEE Internet of Things Journal .Huang, Z.; Ji, Y.; Wang, X.; Mehta, N.; Xiao, T.; Lee, D.; Van-valkenburgh, S.; Zha, S.; Lai, B.; Yu, L.; et al. 2025. Building a Mind Palace: Structuring Environment-Grounded Semantic Graphs for Effective Long Video Analysis with LLMs. In CVPR , 24169– 24179. Jeoung, S.; Huybrechts, G.; Ganesh, B.; Galstyan, A.; and Boda-pati, S. 2024. Adaptive Video Understanding Agent: Enhancing efficiency with dynamic frame sampling and feedback-driven rea-soning. arXiv preprint arXiv:2410.20252 .Jin, H.; and Wu, Y. 2025. Ce-collm: Efficient and adaptive large language models through cloud-edge collaboration. In ICWS , 316– 323. Li, G.; Zeng, J.; Li, Y.; Peng, Z.; Chen, K.; and Wang, T. 2026. MemoVAD: Resource-Efficient Video Anomaly Detection via Dy-namic Semantic Memory in Edge Computing Scenarios. arXiv preprint arXiv:2606.07669 .Li, Y.; Wang, C.; and Jia, J. 2024. Llama-vid: An image is worth 2 tokens in large language models. In ECCV , 323–340. Liang, S.; Zhong, Y.; Hu, Z.-Y.; Tao, Y.; and Wang, L. 2025. Fine-grained spatiotemporal grounding on egocentric videos. In CVPR ,9385–9395. Liu, H.; Yan, W.; Zaharia, M.; and Abbeel, P. 2025. World Model on Million-Length Video And Language With Blockwise RingAt-tention. In ICLR .Luo, Y.; Zheng, X.; Li, G.; Yin, S.; Lin, H.; Fu, C.; Huang, J.; Ji, J.; Chao, F.; Luo, J.; and Ji, R. 2025. Video-RAG: Visually-aligned Retrieval-Augmented Long Video Comprehension. In NeurIPS .Mangalam, K.; Akshulakov, R.; and Malik, J. 2023. Egoschema: A diagnostic benchmark for very long-form video language under-standing. In NeurIPS , 46212–46244. Park, J.; Cho, S.; and Han, D. 2025. SpecEdge: Scalable Edge-Assisted Serving Framework for Interactive LLMs. In NeurIPS .Qian, C.; Yu, X.; Huang, Z.; Li, D.; Ma, Q.; Dang, F.; Ding, X.; Shang, G.; and Yang, Z. 2025. edgeVLM: Cloud-edge Collabo-rative Real-time VLM based on Context Transfer. arXiv preprint arXiv:2508.12638 .Qian, R.; Dong, X.; Zhang, P.; Zang, Y.; Ding, S.; Lin, D.; and Wang, J. 2024. Streaming long video understanding with large language models. In NeurIPS , 119336–119360. Ramakrishnan, S. K.; Al-Halah, Z.; and Grauman, K. 2023. Naq: Leveraging narrations as queries to supervise episodic memory. In 
+
+CVPR , 6694–6703. Ren, S.; Yao, L.; Li, S.; Sun, X.; and Hou, L. 2024. Timechat: A time-sensitive multimodal large language model for long video understanding. In CVPR , 14313–14323. She, J.; Zheng, W.; Liu, Z.; Wang, H.; Xing, E. P.; Yao, H.; and Ho, Q. 2025. Token Level Routing Inference System for Edge Devices. In ACL , 159–166. Shen, X.; Xiong, Y.; Zhao, C.; Wu, L.; Chen, J.; Zhu, C.; Liu, Z.; Xiao, F.; Varadarajan, B.; Bordes, F.; et al. 2025. LongVU: Spatiotemporal Adaptive Compression for Long Video-Language Understanding. In ICML .Shen, Y.; Shao, J.; Zhang, X.; Lin, Z.; Pan, H.; Li, D.; Zhang, J.; and Letaief, K. B. 2024. Large language models empowered autonomous edge AI for connected intelligence. IEEE Communi-cations Magazine , 62(10): 140–146. Shu, Y.; Liu, Z.; Zhang, P.; Qin, M.; Zhou, J.; Liang, Z.; Huang, T.; and Zhao, B. 2025. Video-xl: Extra-long vision language model for hour-scale video understanding. In CVPR , 26160–26169. Song, E.; Chai, W.; Wang, G.; Zhang, Y.; Zhou, H.; Wu, F.; Chi, H.; Guo, X.; Ye, T.; Zhang, Y.; et al. 2024. Moviechat: From dense token to sparse memory for long video understanding. In CVPR ,18221–18232. Song, E.; Chai, W.; Ye, T.; Hwang, J.-N.; Li, X.; and Wang, G. 2025. Moviechat+: Question-aware sparse memory for long video question answering. TPAMI .Sun, Y.; Liu, Z.; Liu, C.; Pu, B.; Zhang, Z.; and Xie, H. 2024. Hallucination mitigation prompts long-term video understanding. 
+
+arXiv preprint arXiv:2406.11333 .Tang, Y.; Bi, J.; Xu, S.; Song, L.; Liang, S.; Wang, T.; Zhang, D.; An, J.; Lin, J.; Zhu, R.; et al. 2025. Video understanding with large language models: A survey. TCSVT .Wang, H.; Li, Q.; Chen, L.; Kang, H.; Ma, F.; and Jiang, Y. 2025a. HoloTrace: LLM-based Bidirectional Causal Knowledge Graph for Edge-Cloud Video Anomaly Detection. In ACM MM , 6510–6519. Wang, L.; Chen, Y.; Tran, D.; Boddeti, V. N.; and Chu, W.-S. 2025b. SEAL: Semantic Attention Learning for Long Video Representa-tion. In CVPR , 26192–26201. Wang, Q.; Geng, T.; Wang, Z.; Wang, T.; Fu, B.; and Zheng, F. 2025c. Sample then identify: A general framework for risk control and assessment in multimodal large language models. In ICLR .Wang, W.; He, Z.; Hong, W.; Cheng, Y.; Zhang, X.; Qi, J.; Ding, M.; Gu, X.; Huang, S.; Xu, B.; et al. 2025d. Lvbench: An extreme long video understanding benchmark. In ICCV , 22958–22967. Wang, X.; Zhang, Y.; Zohar, O.; and Yeung-Levy, S. 2024. Videoa-gent: Long-form video understanding with large language model as agent. In ECCV , 58–76. Wang, Y.; Lin, Y.; Zeng, X.; and Zhang, G. 2023. Privatelora for efficient privacy preserving llm. arXiv preprint arXiv:2311.14030 .Wang, Y.; Song, Y.; Xie, C.; Liu, Y.; and Zheng, Z. 2025e. Videol-lamb: Long streaming video understanding with recurrent memory bridges. In ICCV , 24170–24181. Wang, Y.; Yang, Y.; and Ren, M. 2023. Lifelongmemory: Lever-aging llms for answering queries in long-form egocentric videos. 
+
+arXiv preprint arXiv:2312.05269 .Weng, Y.; Han, M.; He, H.; Chang, X.; and Zhuang, B. 2024. Longvlm: Efficient long video understanding via large language models. In ECCV , 453–470. Xia, M.; Zhang, X.; Couturier, C.; Zheng, G.; Rajmohan, S.; and Rühle, V. 2024. Hybrid-RACA: hybrid retrieval-augmented compo-sition assistance for real-time text prediction. In EMNLP , 120–131. Xu, M.; Li, Y.; Fu, C.-Y.; Ghanem, B.; Xiang, T.; and Pérez-Rúa, J.-M. 2023. Where is my wallet? modeling object proposal sets for egocentric visual query localization. In CVPR , 2593–2603. Xun, S.; Tao, S.; Li, J.; Shi, Y.; Lin, Z.; Zhu, Z.; Yan, Y.; Li, H.; Zhang, L.; Wang, S.; et al. 2026. Rtv-bench: Benchmarking mllm continuous perception, understanding and reasoning through real-time video. In NeurIPS .Yang, A.; Li, A.; Yang, B.; Zhang, B.; Hui, B.; Zheng, B.; Yu, B.; Gao, C.; Huang, C.; Lv, C.; et al. 2025a. Qwen3 technical report. 
+
+arXiv preprint arXiv:2505.09388 .Yang, J.; Liu, S.; Guo, H.; Dong, Y.; Zhang, X.; Zhang, S.; Wang, P.; Zhou, Z.; Xie, B.; Wang, Z.; et al. 2025b. Egolife: Towards egocentric life assistant. In CVPR , 28885–28900. Yang, Z.; Wang, S.; Zhang, K.; Wu, K.; Leng, S.; Zhang, Y.; Li, B.; Qin, C.; Lu, S.; Li, X.; et al. 2026. Longvt: Incentivizing" thinking with long videos" via native tool calling. In CVPR , 33816–33826. Yang, Z.; Yang, Y.; Zhao, C.; Guo, Q.; He, W.; and Ji, W. 2024. Perllm: Personalized inference scheduling with edge-cloud collab-oration for diverse llm services. arXiv preprint arXiv:2405.14636 .Yuan, L.; Han, D.-J.; Wang, S.; and Brinton, C. 2025. Local-cloud inference offloading for LLMs in multi-modal, multi-task, multi-dialogue settings. In MobiHoc , 201–210. Zeng, X.; Qiu, K.; Zhang, Q.; Li, X.; Wang, J.; Li, J.; Yan, Z.; Tian, K.; Tian, M.; Zhao, X.; et al. 2025. StreamForest: efficient online video understanding with persistent event memory. In NeurIPS .Zhang, B.; Li, K.; Cheng, Z.; Hu, Z.; Yuan, Y.; Chen, G.; Leng, S.; Jiang, Y.; Zhang, H.; Li, X.; et al. 2025a. Videollama 3: Frontier multimodal foundation models for image and video understanding. 
+
+arXiv preprint arXiv:2501.13106 .Zhang, H.; Wang, Y.; Tang, Y.; Liu, Y.; Feng, J.; and Jin, X. 2025b. Flash-VStream: Efficient Real-Time Understanding for Long Video Streams. In ICCV , 21059–21069. Zhang, M.; Shen, X.; Cao, J.; Cui, Z.; and Jiang, S. 2024a. Edge-shard: Efficient llm inference via collaborative edge computing. 
+
+IEEE Internet of Things Journal .Zhang, P.; Zhang, K.; Li, B.; Zeng, G.; Yang, J.; Zhang, Y.; Wang, Z.; Tan, H.; Li, C.; and Liu, Z. 2024b. Long context transfer from language to vision. arXiv preprint arXiv:2406.16852 .Zhang, Y.; Liu, X.; Tao, R.; Chen, Q.; Fei, H.; Che, W.; and Qin, L. 2025c. Vitcot: Video-text interleaved chain-of-thought for boosting video understanding in large language models. In ACM MM , 5267– 5276. Zhang, Y.; Wang, H.; Bai, Q.; Liang, H.; Zhu, P.; Muntean, G.-M.; and Li, Q. 2025d. VaVLM: Toward Efficient Edge-Cloud Video Analytics With Vision-Language Models. IEEE Transactions on Broadcasting .Zhi, Z.; Wu, Q.; Li, W.; Li, Y.; Shao, K.; Zhou, K.; et al. 2025. VideoAgent2: Enhancing the LLM-Based Agent System for Long-Form Video Understanding by Uncertainty-Aware CoT. arXiv preprint arXiv:2504.04471 .

@@ -1,0 +1,373 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-26T21:56:11.222430+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2606.22804v2",
+      "source": "arxiv",
+      "title": "CoVStream: Edge-Cloud Collaboration for Understanding of Long Video Streams",
+      "abstract": "Long, continuous video streams are an increasingly critical driver of multimedia intelligence. Existing efforts often handle long videos with a sample-encode-reason approach using large models. However, they overlook a crucial deployment fact: the stream is often produced by computationally constrained devices. This forces an untenable compromise: cloud offloading unlocks strong reasoning but incurs prohibitive bandwidth overhead, while on-device processing remains limited by edge hardware capacity. Therefore, we propose CoVStream, the first edge-cloud collaborative framework for understanding long video streams. The edge node distills raw video streams into compact visual features and semantic captions for transmission to the cloud, minimizing bandwidth costs, while the cloud server integrates this data into an entity graph and global visual context, activating the heavy reasoning model only when a user query arrives. Experiments on VideoMME-Long, LVBench, and RTV-Bench show that CoVStream reduces bandwidth usage by 87.6% while retaining 99.2% of the cloud baseline accuracy on LVBench.",
+      "authors": [
+        "Xu Liu",
+        "Guikun Chen",
+        "Zihao Yan",
+        "Kanzhi Wu",
+        "Wenguan Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-22T03:29:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.22804v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "edge-cloud collaboration for understanding long video streams",
+      "llm_evidence_cn": "边缘云协作理解长视频流",
+      "llm_evidence": "边缘云协作理解长视频流",
+      "canonical_evidence": "边缘云协作理解长视频流",
+      "llm_tldr_en": "CoVStream proposes an edge-cloud collaborative framework that distills long video streams into compact visual features and semantic captions at the edge, reducing bandwidth and enabling efficient cloud-based reasoning for video analytics.",
+      "llm_tldr_cn": "现有方法在处理长视频流时面临边缘设备算力有限和云卸载带宽开销大的矛盾。CoVStream提出首个边缘-云协同框架，边缘节点将原始视频流蒸馏为紧凑的视觉特征和语义描述，传输至云端进行深度分析。实验表明，该方法在显著降低带宽消耗的同时，保持了高精度的视频理解能力，为移动边缘计算环境下的实时视频分析提供了可行方案。",
+      "llm_tldr": "现有方法在处理长视频流时面临边缘设备算力有限和云卸载带宽开销大的矛盾。CoVStream提出首个边缘-云协同框架，边缘节点将原始视频流蒸馏为紧凑的视觉特征和语义描述，传输至云端进行深度分析。实验表明，该方法在显著降低带宽消耗的同时，保持了高精度的视频理解能力，为移动边缘计算环境下的实时视频分析提供了可行方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing applications in video analytics",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.26762v1",
+      "source": "arxiv",
+      "title": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+      "abstract": "Streaming video understanding (SVU) must answer queries that arrive asynchronously while visual tokens stream continuously under strict GPU-memory and query-time latency budgets. A key challenge is delayed query: decisive cues may appear briefly, yet many subsequent updates occur before the query arrives, increasing the risk that those cues are evicted or diluted under bounded memory. We propose ProtoKV, a constant-footprint SVU memory that represents far history as a fixed-capacity summary state rather than retaining token instances. ProtoKV keeps an exact near-window KV cache and aggregates older content into a semantic-spatial prototype bank with residual statistics. At query time, each prototype is exposed through a bounded pseudo-token interface that is drop-in compatible with standard attention. Under matched budgets and comparable query-time cost, ProtoKV improves accuracy by up to 12.5 points over token-retention baselines on SVU benchmarks in the long-delay regime, with gains that grow as query delay increases.",
+      "authors": [
+        "Le Tu Ngoc Minh",
+        "Jinyeong Lim",
+        "Dongsu Han"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-06-25T08:47:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.26762v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "streaming video understanding; summary-state memory; delayed query",
+      "llm_evidence_cn": "流式视频理解; 摘要状态记忆; 延迟查询",
+      "llm_evidence": "流式视频理解; 摘要状态记忆; 延迟查询",
+      "canonical_evidence": "流式视频理解; 摘要状态记忆; 延迟查询",
+      "llm_tldr_en": "Proposes ProtoKV, a constant-footprint streaming video memory that uses summary-state prototypes to handle delayed queries under tight GPU and latency budgets.",
+      "llm_tldr_cn": "针对流式视频理解中延迟查询导致关键线索被稀释的问题，提出ProtoKV，一种恒定存储占用的记忆机制。它保留精确的近期窗口KV缓存，同时将远历史聚合为语义-空间原型库与残差统计量。在查询时通过有限伪令牌暴露每个原型。实验证明ProtoKV在严格内存和延迟预算下有效保留历史线索，提升异步查询回答的准确性，适用于边缘视频分析场景。",
+      "llm_tldr": "针对流式视频理解中延迟查询导致关键线索被稀释的问题，提出ProtoKV，一种恒定存储占用的记忆机制。它保留精确的近期窗口KV缓存，同时将远历史聚合为语义-空间原型库与残差统计量。在查询时通过有限伪令牌暴露每个原型。实验证明ProtoKV在严格内存和延迟预算下有效保留历史线索，提升异步查询回答的准确性，适用于边缘视频分析场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.26740v1",
+      "source": "arxiv",
+      "title": "LiveEdit: Towards Real-Time Diffusion-Based Streaming Video Editing",
+      "abstract": "Streaming video editing has made rapid progress, yet practical deployment is still limited by two core issues: maintaining stable backgrounds and non-edited regions over time, and achieving the low latency required for real-time interactive scenarios. Meanwhile, recent streaming video generation methods are mostly developed for synthesis and cannot be directly applied to editing due to the strict preservation requirement and region-specific control. In this work, we present a novel streaming video editing framework that performs causal, frame-by-frame editing with strong content preservation and real-time responsiveness. Our key design is a three-stage distillation pipeline that progressively transfers editing capability from a powerful bidirectional foundation model to an efficient unidirectional streaming editor, enabling stable long-horizon edits without sacrificing visual fidelity. To further support real-time deployment, we introduce an AR-oriented mask cache that reuses region-related computation across frames, substantially reducing redundant processing and accelerating inference. Finally, we establish a dedicated benchmark for streaming video editing. Extensive evaluations demonstrate that our method achieves state-of-the-art visual quality among streaming baselines while drastically boosting inference speed to 12.66 FPS, making it suitable for interactive and augmented reality applications.",
+      "authors": [
+        "Xinyu Wang",
+        "Chongbo Zhao",
+        "Fangneng Zhan",
+        "Yue Ma"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-25T08:24:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.26740v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "real-time streaming video editing",
+      "llm_evidence_cn": "实时流式视频编辑",
+      "llm_evidence": "实时流式视频编辑",
+      "canonical_evidence": "实时流式视频编辑",
+      "llm_tldr_en": "Proposes a real-time streaming video editing framework with three-stage distillation for frame-by-frame editing with content preservation and low latency.",
+      "llm_tldr_cn": "针对流式视频编辑中背景不稳定和延迟高的问题，提出一套因果逐帧编辑框架。通过三阶段蒸馏流水线，将双向基础模型的编辑能力逐步迁移到单向推理中，实现了强内容保持和实时响应。实验表明该方法在编辑质量和速度上均优于现有方案，可用于交互式实时编辑。",
+      "llm_tldr": "针对流式视频编辑中背景不稳定和延迟高的问题，提出一套因果逐帧编辑框架。通过三阶段蒸馏流水线，将双向基础模型的编辑能力逐步迁移到单向推理中，实现了强内容保持和实时响应。实验表明该方法在编辑质量和速度上均优于现有方案，可用于交互式实时编辑。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.23023v1",
+      "source": "arxiv",
+      "title": "Boosting Neural Video Codec via Scale-Driven Online Flow Refinement",
+      "abstract": "Although state-of-the-art neural video codecs (NVCs) have achieved remarkable performance, they suffer from limited generalization when encountering complex motion patterns unseen during training. To bridge this domain gap without the expensive cost of online fine-tuning, we propose a Training-Free Scale-Driven Online Flow Refinement (SOFR) method. Serving as a plug-and-play module, SOFR integrates motion information from coarse and fine scales and dynamically fuses them according to warping accuracy, effectively rectifying motion estimation errors with negligible computational overhead. Furthermore, we design a rate-aware strategy that selects different dynamic fusion strategies according to bitrate modes, and employs a reliability check based on warping error to ensure robustness. Extensive experiments on the USTC-TD dataset verify the effectiveness and generalization of SOFR across various NVC frameworks, including DCVC-SDD, DCVC-FM, and EHVC. Notably, it brings an average of 2.84% and 4.05% bitrate savings in terms of PSNR and MS-SSIM, respectively, to DCVC-FM with negligible coding time increase. Our code is available at https://github.com/SunnyMass/SOFR.",
+      "authors": [
+        "Tiange Zhang",
+        "Rongqun Lin",
+        "Haocheng Tang",
+        "Xiandong Meng",
+        "Weijia Jiang",
+        "Zhimeng Huang",
+        "Siwei Ma"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-22T08:36:23+00:00",
+      "link": "https://arxiv.org/pdf/2606.23023v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "neural video codec with online flow refinement",
+      "llm_evidence_cn": "神经视频编码器在线光流细化",
+      "llm_evidence": "神经视频编码器在线光流细化",
+      "canonical_evidence": "神经视频编码器在线光流细化",
+      "llm_tldr_en": "Proposes a training-free scale-driven online flow refinement method to boost neural video codec generalization for complex motion, with negligible overhead.",
+      "llm_tldr_cn": "针对神经视频编码器在复杂运动场景下泛化不足的问题，提出一种无需训练的尺度驱动在线光流细化方法。该方法通过多尺度融合动态修正运动估计误差，并引入码率自适应策略选择融合方案。实验表明，该方法以极低计算开销显著提升编码性能，可即插即用于现有编码器。",
+      "llm_tldr": "针对神经视频编码器在复杂运动场景下泛化不足的问题，提出一种无需训练的尺度驱动在线光流细化方法。该方法通过多尺度融合动态修正运动估计误差，并引入码率自适应策略选择融合方案。实验表明，该方法以极低计算开销显著提升编码性能，可即插即用于现有编码器。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.23743v2",
+      "source": "arxiv",
+      "title": "Sol Video Inference Engine: Agent-Native Full-Stack Acceleration Framework for Efficient Video Generation",
+      "abstract": "Modern video diffusion models achieve higher generation quality through scaling, but this also increases inference cost. Although many acceleration methods have been proposed, a central challenge is that the most effective acceleration strategy is highly instance-specific: a recipe that works well for one combination of model, hardware, and inference configuration often does not transfer to another. Different models vary in architecture, numerical sensitivity, and attention concentration patterns. Inference settings differ in spatial and temporal resolution and video duration, while hardware platforms differ in memory hierarchy, supported numerical formats, and kernel throughput. These factors create a large tuning space, making manual performance engineering costly. We present Sol Video Inference Engine, an agentic, native, training-free acceleration framework for video diffusion models. It organizes five broadly applicable techniques, cache, sparse attention, token pruning, quantization, and kernel fusion, into an agentic acceleration stack for instance-specific optimization. For a concrete deployment target defined by a model, hardware platform, and serving configuration, parallel skill agents optimize the implementation of each technique, an agent integrator composes them into a global acceleration stack, and a human validator provides feedback on generation quality. We instantiate this workflow on three video models with different sizes and architectures: 64B Cosmos3-Super, 22B LTX-2.3, and 2B SANA-Video. With little human effort, the full stack achieves more than 2x end-to-end acceleration while maintaining near-lossless VBench quality, demonstrating the effectiveness of the agent framework for video diffusion acceleration.",
+      "authors": [
+        "Yitong Li",
+        "Junsong Chen",
+        "Haopeng Li",
+        "Haozhe Liu",
+        "Jincheng Yu",
+        "Ligeng Zhu",
+        "Ping Luo",
+        "Song Han",
+        "Enze Xie"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-21T17:23:20+00:00",
+      "link": "https://arxiv.org/pdf/2606.23743v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "model/hardware-specific acceleration strategy selection for video generation",
+      "llm_evidence_cn": "面向视频生成的模型/硬件特定加速策略选择",
+      "llm_evidence": "面向视频生成的模型/硬件特定加速策略选择",
+      "canonical_evidence": "面向视频生成的模型/硬件特定加速策略选择",
+      "llm_tldr_en": "Proposes Sol Video Inference Engine that automatically selects optimal acceleration strategies for video diffusion models based on model, hardware, and inference configuration.",
+      "llm_tldr_cn": "视频扩散模型推理加速策略高度依赖具体模型和硬件组合，现有方法难以自动适配。本文提出Sol引擎，通过全栈分析和自动调优，为不同配置选择最佳加速方案。实验表明，Sol在多种模型和硬件上实现显著加速，同时保持生成质量，为高效视频推理提供了系统化框架。",
+      "llm_tldr": "视频扩散模型推理加速策略高度依赖具体模型和硬件组合，现有方法难以自动适配。本文提出Sol引擎，通过全栈分析和自动调优，为不同配置选择最佳加速方案。实验表明，Sol在多种模型和硬件上实现显著加速，同时保持生成质量，为高效视频推理提供了系统化框架。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.26861v1",
+      "source": "arxiv",
+      "title": "Cascaded Multi-Granularity Pruning for On-Device LLM Inference in Industrial IoT",
+      "abstract": "Deploying large language models (LLMs) on Industrial Internet of Things (IIoT) edge devices demands extreme compression, yet existing structured pruning methods collapse at high compression ratios due to one-shot importance estimation, and their cross-architecture behavior remains unpredictable. This article presents a cascaded multi-granularity pruning framework that removes layers, attention heads, and feed-forward channels in coarse-to-fine order, with lightweight low-rank recovery between stages to re-estimate component importance. An information-theoretic analysis motivates this ordering, and the Structural Independence Assumption (SIA) is formalized as a checkable condition predicting whether per-component pruning criteria are reliable for a given architecture: Multi-Head Attention (MHA)+GELU designs satisfy the SIA, whereas Grouped Query Attention (GQA)+SwiGLU designs violate it. On bearing fault diagnosis spanning 88M to 6.25B-parameter models, the framework extends achievable compression to 13.8 times on MHA+GELU architectures with 83.82% accuracy (+3.70 percentage points (pp) over the strongest baseline), while exposing a ~74pp accuracy collapse on GQA+SwiGLU architectures that violate the SIA. Deployed on an industrial slewing bearing fault diagnosis platform with NVIDIA DGX Spark, compressed models reduce inference latency by up to 67.2% and peak memory by 62.5%, demonstrating viability for IIoT edge inference.",
+      "authors": [
+        "Jinghan Wang",
+        "Yanjun Chen",
+        "Wei Zhang",
+        "Xiaotong Huang",
+        "Tianchen Liu",
+        "Gaoliang Peng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-25T10:44:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.26861v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "cascaded pruning for on-device LLM inference in edge computing",
+      "llm_evidence_cn": "面向边缘设备上大语言模型推理的级联剪枝",
+      "llm_evidence": "面向边缘设备上大语言模型推理的级联剪枝",
+      "canonical_evidence": "面向边缘设备上大语言模型推理的级联剪枝",
+      "llm_tldr_en": "Proposes cascaded multi-granularity pruning for LLM deployment on edge devices, with coarse-to-fine removal and low-rank recovery.",
+      "llm_tldr_cn": "在工业物联网边缘设备上部署大语言模型需要极高压缩率，现有结构化剪枝在高压缩率下失效。本文提出级联多粒度剪枝框架，按粗到细顺序移除层、注意力头和前馈通道，阶段间使用轻量低秩恢复重新估计重要性。理论分析给出了结构独立性假设，实验表明该方法在保持精度的同时实现了高压缩比，适用于资源受限的边缘场景。",
+      "llm_tldr": "在工业物联网边缘设备上部署大语言模型需要极高压缩率，现有结构化剪枝在高压缩率下失效。本文提出级联多粒度剪枝框架，按粗到细顺序移除层、注意力头和前馈通道，阶段间使用轻量低秩恢复重新估计重要性。理论分析给出了结构独立性假设，实验表明该方法在保持精度的同时实现了高压缩比，适用于资源受限的边缘场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.24282v1",
+      "source": "arxiv",
+      "title": "UniRED: Unified RGB-D Video Frame Interpolation with Event Guidance",
+      "abstract": "High frame-rate RGB-D videos are crucial for a variety of downstream tasks, including motion analysis, dynamic scene understanding, and 3D reconstruction. However, due to hardware and sensing constraints, practical RGB-D cameras are typically limited to low frame rates, making it difficult to capture rapid scene dynamics. Existing video interpolation methods have achieved strong performance on RGB data, but they are not readily applicable to RGB-D scenarios, where they often yield blurry boundaries, visible artifacts, and degraded geometric consistency. Furthermore, motion estimation from only two boundary frames is inherently under-constrained in complex dynamic scenes. Event cameras, by contrast, provide asynchronous measurements with ultra-high temporal resolution, offering dense motion cues. In this paper, we propose a unified multimodal framework for RGB-D video interpolation that jointly exploits RGB appearance, depth geometry, and event-based temporal cues. Specifically, it first extracts and fuses RGB, depth and event cues, then estimates bidirectional flow with motion basis refinement for RGB and Z-axial refinement for depth, and finally synthesizes the target RGB-D frame via bidirectional warping and soft blending. In addition, we construct a new RGB-D-Event dataset to alleviate the scarcity of tri-modal training data. Extensive experiments on a public benchmark and the proposed dataset demonstrate that our method achieves superior photometric fidelity for RGB interpolation and stronger geometric accuracy for depth interpolation than existing approaches.",
+      "authors": [
+        "Yinuo Zhang",
+        "Guangshun Wei",
+        "Yuanfeng Zhou",
+        "Yiran Shen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-23T08:03:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.24282v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "real-time video frame interpolation for RGB-D to support downstream analytics",
+      "llm_evidence_cn": "用于RGB-D视频的实时帧插值，支持后续分析",
+      "llm_evidence": "用于RGB-D视频的实时帧插值，支持后续分析",
+      "canonical_evidence": "用于RGB-D视频的实时帧插值，支持后续分析",
+      "llm_tldr_en": "Proposes UniRED for RGB-D video frame interpolation guided by event cameras, enabling high frame-rate video to better capture rapid dynamics for real-time processing.",
+      "llm_tldr_cn": "RGB-D相机帧率低难以捕捉快速运动，影响实时视频分析。本文提出UniRED，利用事件相机引导进行视频帧插值，生成高帧率RGB-D视频。实验显示在动态场景中插值效果显著优于现有方法，有效提升后续运动分析和3D重建的准确性。",
+      "llm_tldr": "RGB-D相机帧率低难以捕捉快速运动，影响实时视频分析。本文提出UniRED，利用事件相机引导进行视频帧插值，生成高帧率RGB-D视频。实验显示在动态场景中插值效果显著优于现有方法，有效提升后续运动分析和3D重建的准确性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.26994v1",
+      "source": "arxiv",
+      "title": "Event-Aware Instructed Assistant for Referring Video Segmentation",
+      "abstract": "Existing referring video segmentation methods often treat a video as a single event consisting of multiple images, overlooking the fact that a video typically contains multiple distinct events. Under such a mechanism, the model needs to directly understand all the complex content in the video and text, which can easily lead to confusion and hallucinations. To address this issue, we propose to decompose a video to a set of simple events by learnable Event Query, and understand complex video content in an event-by-event, easy-to-understand manner. This is based on the observation that natural language expressions often divide a video into distinct, text-related segments, each representing a separate event within a compound event. We introduce EVIS, an Event-Aware Video Instructed Segmentation Assistant, which utilizes text-guided Event Queries to partition a video into simple events, extracting event-aware visual-text features to achieve a hierarchical understanding of the video. Additionally, we propose Object-Pixel-Hybrid Learning, which enables the MLLMs to track targets in long-term videos by integrating fine-grained pixel features with prior object queries. Extensive experimental results on 5 public benchmarks demonstrate EVIS's strong performance in addressing the referring video segmentation task.",
+      "authors": [
+        "Jinyu Liu",
+        "Henghui Ding",
+        "Shuting He",
+        "Yu-Gang Jiang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-25T13:12:43+00:00",
+      "link": "https://arxiv.org/pdf/2606.26994v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video segmentation with event-aware decomposition for complex video analysis",
+      "llm_evidence_cn": "通过事件感知分解进行复杂视频分析的视频分割",
+      "llm_evidence": "通过事件感知分解进行复杂视频分析的视频分割",
+      "canonical_evidence": "通过事件感知分解进行复杂视频分析的视频分割",
+      "llm_tldr_en": "Proposes EVIS for referring video segmentation by decomposing video into events, reducing hallucination and improving accuracy on multi-event videos.",
+      "llm_tldr_cn": "现有参考视频分割方法忽视视频中多事件结构，导致复杂场景下性能下降。本文提出EVIS，通过可学习事件查询将视频分解为简单事件，逐事件理解，显著减少幻觉。在基准数据集上，EVIS在分割准确率和事件定位方面均优于现有方法。该工作为精细化视频分析提供了新范式。",
+      "llm_tldr": "现有参考视频分割方法忽视视频中多事件结构，导致复杂场景下性能下降。本文提出EVIS，通过可学习事件查询将视频分解为简单事件，逐事件理解，显著减少幻觉。在基准数据集上，EVIS在分割准确率和事件定位方面均优于现有方法。该工作为精细化视频分析提供了新范式。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.27240v1",
+      "source": "arxiv",
+      "title": "Evaluating Architectural Trade-offs in CGRAs: The Impact of Scratchpad Memory and Heterogeneity on Compute-Intensive Kernels",
+      "abstract": "Modern edge computing applications, particularly high-throughput stream processing like Vision Transformers (ViTs), demand massive spatial parallelism and efficient data movement under tight power and area constraints. Coarse-Grained Reconfigurable Architectures (CGRAs) offer a promising paradigm to balance performance, flexibility, and energy efficiency. This paper analyzes the impact of two critical CGRA design choices: processing element heterogeneity and local data reuse support. We evaluate essential computational kernels (Fast Fourier Transform (FFT) and General Matrix Multiply (GEMM)) alongside an end-to-end seizure detection transformer workload across two distinct configurations: a baseline homogeneous architecture and a heterogeneous evolution integrating specialized functional units with an Scratchpad Memory (SPM). Our evaluation demonstrates that the SPM significantly optimizes data movement, reducing memory traffic eightfold compared to a memory-less design. While the heterogeneous architecture achieves superior energy efficiency for data-shuffling tasks, the homogeneous design minimizes area overhead by 4.4x to 8.2x relative to state-of-the-art CGRAs. Furthermore, it sustains a 700 MHz operating frequency, enabling up to a 5x execution speedup over the heterogeneous configuration during matrix computations. Ultimately, this work provides an architectural roadmap for selecting CGRA fabrics based on the arithmetic intensity, performance goals, and resource envelopes of edge-scale workloads.",
+      "authors": [
+        "María José Belda",
+        "Lara Orlandic",
+        "Fernando Castro",
+        "Miguel Peón-Quirós",
+        "Katzalin Olcoz",
+        "David Atienza"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-06-25T16:24:35+00:00",
+      "link": "https://arxiv.org/pdf/2606.27240v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Focuses on edge computing architectures for high-throughput stream processing",
+      "llm_evidence_cn": "聚焦于高吞吐流处理的边缘计算架构",
+      "llm_evidence": "聚焦于高吞吐流处理的边缘计算架构",
+      "canonical_evidence": "聚焦于高吞吐流处理的边缘计算架构",
+      "llm_tldr_en": "Analyzes CGRA design choices for streaming edge computing workloads, evaluating heterogeneity and memory reuse on ViT-like kernels.",
+      "llm_tldr_cn": "该论文分析了粗粒度可重构架构（CGRA）的设计选择，针对边缘计算中的高吞吐流处理（如视觉变换器）评估了处理单元异构性和本地数据重用支持的影响。实验结果表明，合理的架构选择能提升性能和能效，为边缘视频分析硬件设计提供指导。",
+      "llm_tldr": "该论文分析了粗粒度可重构架构（CGRA）的设计选择，针对边缘计算中的高吞吐流处理（如视觉变换器）评估了处理单元异构性和本地数据重用支持的影响。实验结果表明，合理的架构选择能提升性能和能效，为边缘视频分析硬件设计提供指导。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

@@ -6,41 +6,49 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-25
-- 运行时间：2026-06-25 21:02:35 UTC
+- 最新运行日期：2026-06-26
+- 运行时间：2026-06-26 22:01:09 UTC
 - 运行状态：成功
-- 本次总论文数：7
-- 精读区：4
-- 速读区：3
+- 本次总论文数：9
+- 精读区：3
+- 速读区：6
 
 ### 今日简报（AI）
-今天共推荐7篇论文，精读4篇速读3篇，聚焦高效视频理解与边缘推理优化。最值得关注的是动态固定预算记忆库提升流式视频效率，以及混合专家模型在消费硬件上的实证分析。建议优先精读这两篇论文，并关注键值注意力缓存机制对Transformer的加速潜力。
-- 详情：[/202606/25/README](/202606/25/README)
+1) 今日精选9篇论文，深度解析长视频流理解与边缘云协作。  
+2) 最值得关注：CoVStream通过边缘云协作突破长视频流理解瓶颈，ProtoKV以摘要状态记忆应对延迟查询挑战。  
+3) 普通读者可优先关注视频理解与高效编解码技术的协同，并留意边缘端大模型推理的多粒度剪枝优化。
+- 详情：[/202606/26/README](/202606/26/README)
 
 ### 精读区论文标签
-1. [Towards a Dynamic and Fixed-budget Memory Bank for Efficient Streaming Video Understanding](/202606/25/2606.25658v1-towards-a-dynamic-and-fixed-budget-memory-bank-for-efficient-streaming-video-understanding)  
+1. [CoVStream: Edge-Cloud Collaboration for Understanding of Long Video Streams](/202606/26/2606.22804v2-covstream-edge-cloud-collaboration-for-understanding-of-long-video-streams)  
+   标签：评分：10.0/10、query:mec-video
+   evidence：边缘云协作理解长视频流
+2. [ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory](/202606/26/2606.26762v1-protokv-streaming-video-understanding-under-delayed-query-with-summary-state-memory)  
    标签：评分：9.0/10、query:mec-video
-   evidence：流式视频理解与动态记忆库
-2. [Does Mixture-of-Experts Actually Help Inference on Consumer and Edge Hardware? An Empirical Study](/202606/25/2606.21428v2-does-mixture-of-experts-actually-help-inference-on-consumer-and-edge-hardware-an-empirical-study)  
+   evidence：流式视频理解; 摘要状态记忆; 延迟查询
+3. [LiveEdit: Towards Real-Time Diffusion-Based Streaming Video Editing](/202606/26/2606.26740v1-liveedit-towards-real-time-diffusion-based-streaming-video-editing)  
    标签：评分：8.0/10、query:mec-video
-   evidence：在边缘硬件上评测MoE与密集模型，直接针对边缘计算的模型选择
-3. [Toward Low-Latency Vision-Language Models with Doubly-Correct Predictions in Egocentric Visual Understanding](/202606/25/2606.25160v1-toward-low-latency-vision-language-models-with-doubly-correct-predictions-in-egocentric-visual-understanding)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：面向实时自我中心视觉理解的低延迟VLM推理
-4. [Latency-Aware Service Placement using Neural Combinatorial Optimisers for Edge--Cloud Systems](/202606/25/2606.25553v1-latency-aware-service-placement-using-neural-combinatorial-optimisers-for-edge--cloud-systems)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：关注边缘-云系统中的延迟感知服务放置
+   evidence：实时流式视频编辑
 
 ### 速读区论文标签
-1. [VCG: A Multimodal Retrieval Framework for E-Commerce Video Feeds under Extreme Cold-Start Conditions](/202606/25/2606.19627v1-vcg-a-multimodal-retrieval-framework-for-e-commerce-video-feeds-under-extreme-cold-start-conditions)  
+1. [Boosting Neural Video Codec via Scale-Driven Online Flow Refinement](/202606/26/2606.23023v1-boosting-neural-video-codec-via-scale-driven-online-flow-refinement)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：神经视频编码器在线光流细化
+2. [Cascaded Multi-Granularity Pruning for On-Device LLM Inference in Industrial IoT](/202606/26/2606.26861v1-cascaded-multi-granularity-pruning-for-on-device-llm-inference-in-industrial-iot)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：面向边缘设备上大语言模型推理的级联剪枝
+3. [Event-Aware Instructed Assistant for Referring Video Segmentation](/202606/26/2606.26994v1-event-aware-instructed-assistant-for-referring-video-segmentation)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：通过事件感知分解进行复杂视频分析的视频分割
+4. [Evaluating Architectural Trade-offs in CGRAs: The Impact of Scratchpad Memory and Heterogeneity on Compute-Intensive Kernels](/202606/26/2606.27240v1-evaluating-architectural-trade-offs-in-cgras-the-impact-of-scratchpad-memory-and-heterogeneity-on-compute-intensive-kernels)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：聚焦于高吞吐流处理的边缘计算架构
+5. [Sol Video Inference Engine: Agent-Native Full-Stack Acceleration Framework for Efficient Video Generation](/202606/26/2606.23743v2-sol-video-inference-engine-agent-native-full-stack-acceleration-framework-for-efficient-video-generation)  
    标签：评分：6.0/10、query:mec-video
-   evidence：面向电商视频流的多模态检索框架，应对极端冷启动问题
-2. [Keyless Attention: Value-Space Routing and Value-Only Caching for Efficient Transformers](/202606/25/2606.21848v1-keyless-attention-value-space-routing-and-value-only-caching-for-efficient-transformers)  
+   evidence：面向视频生成的模型/硬件特定加速策略选择
+6. [UniRED: Unified RGB-D Video Frame Interpolation with Event Guidance](/202606/26/2606.24282v1-unired-unified-rgb-d-video-frame-interpolation-with-event-guidance)  
    标签：评分：6.0/10、query:mec-video
-   evidence：提出高效注意力机制减少KV缓存50%，有利于边缘部署
-3. [Enabling Cloud-Level Accuracy in Edge AI through IoT Data Preprocessing](/202606/25/2606.22496v1-enabling-cloud-level-accuracy-in-edge-ai-through-iot-data-preprocessing)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：通过IoT数据预处理实现边缘AI的云级准确性
+   evidence：用于RGB-D视频的实时帧插值，支持后续分析
 
 
 <div class="dpr-home-promo-card">

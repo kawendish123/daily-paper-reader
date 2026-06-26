@@ -1,0 +1,274 @@
+Title: Boosting Neural Video Codec via Scale-Driven Online Flow Refinement
+
+URL Source: https://arxiv.org/pdf/2606.23023v1
+
+Published Time: Tue, 23 Jun 2026 02:50:59 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Boosting Neural Video Codec via Scale-Driven Online Flow Refinement 
+
+Tiange Zhang 1,2,4,∗, Rongqun Lin 3,∗, Haocheng Tang 4, Xiandong Meng 2,†,
+
+Weijia Jiang 5, Zhimeng Huang 4,† and Siwei Ma 1,2,41Peking University Shenzhen Graduate School 2Pengcheng Laboratory 3City University of Hong Kong 
+
+4School of Computer Science, Peking University 5Migu Interactive Entertainment Co., Ltd 
+
+{tgzhang, hctang }@stu.pku.edu.cn, rqlin3-c@my.cityu.edu.hk, mengxd@pcl.ac.cn jiangweijia@migu.chinamobile.com, {zmhuang, swma }@pku.edu.cn 
+
+Abstract —Although state-of-the-art neural video codecs (NVCs) have achieved remarkable performance, they suffer from limited generalization when encountering complex motion patterns unseen during training. To bridge this domain gap without the expensive cost of online fine-tuning, we propose a Training-Free Scale-Driven Online Flow Refinement (SOFR) method. Serving as a plug-and-play module, SOFR integrates motion information from coarse and fine scales and dynam-ically fuses them according to warping accuracy, effectively rectifying motion estimation errors with negligible computational overhead. Furthermore, we design a rate-aware strategy that selects different dynamic fusion strategies according to bitrate modes, and employs a reliability check based on warping error to ensure robustness. Extensive experiments on the USTC-TD dataset verify the effectiveness and generalization of SOFR across various NVC frameworks, including DCVC-SDD, DCVC-FM, and EHVC. Notably, it brings an average of 2.84% and 4.05% bitrate savings in terms of PSNR and MS-SSIM, respectively, to DCVC-FM with negligible coding time increase. Our code is available at https://github.com/SunnyMass/SOFR. 
+
+Index Terms —neural video coding, optical flow refinement, multi-scale flow, test-time adaptation, training-free 
+
+I. I NTRODUCTION 
+
+In recent years, the explosive growth of high-definition video traffic has placed immense pressure on internet band-width, necessitating more efficient video compression tech-nologies. While traditional standards like H.266/VVC [1] have largely plateaued in coding efficiency, Neural Video Codecs (NVCs) [2]–[4] have emerged as a promising alternative. By leveraging pure neural network architectures in an end-to-end manner, state-of-the-art NVCs have demonstrated rate-distortion (R-D) performance comparable to or even surpass-ing traditional codecs. However, the practical deployment of NVCs faces a critical challenge: the domain gap between training datasets and real-world inference scenarios. Most NVCs are trained on static datasets with limited motion diversity (e.g., Vimeo-90k [5]). When exposed to complex, unseen motion patterns during inference, the pre-trained optical flow networks often fail to  
+
+> ∗Equal contribution. †Corresponding authors: Xiandong Meng and Zhimeng Huang. This work was supported in part by R24115SG MIGU-PKU META VISION TECH-NOLOGY INNOVATION LAB, the Key Research & Development Program of Peng Cheng Laboratory under grant PCL2024A02, Beijing Natural Science Foundation No. 4264094 and New Cornerstone Science Foundation through the XPLORER PRIZE.
+
+generate accurate motion vectors (MVs). Inaccurate motion es-timation results in imprecise warped contextual features. This misalignment disrupts effective temporal feature propagation, thereby limiting coding gains. To mitigate this domain shift, recent research has explored various adaptation strategies. Some works [6]–[9] focus on 
+
+offline optimization , incorporating advanced optical flow con-straints or motion priors during the training phase to enhance generalization. However, these models remain fixed and lack the flexibility to adapt to the specific motion statistics of unseen test videos. Other approaches employ online optimization [7], [10]–[12] to achieve instance-level adaptation, where network param-eters are updated via back-propagation to minimize the R-D cost. While effective, this process brings significant com-putational overhead and latency. Alternatively, training-free methods [13]–[15] attempt to optimize motion representation by exhaustively searching through multiple down-sampling scales. However, these methods typically operate on a rigid selection mechanism, choosing only the single best scale while discarding others. This overlooks the inherent complementar-ity between granularities: coarse-grained flows ensure robust structural stability, while fine-grained flows preserve intricate local details. By failing to synergize these conflicting yet complementary signals, existing approaches cannot achieve the optimal balance required for precise motion alignment. To address these limitations, we propose SOFR, a Scale-driven Online Flow Refinement module for neural video com-pression. Unlike parameter-updating methods, our approach is entirely training-free and serves as a plug-and-play module for existing NVCs. The core insight is that motion estimation errors often vary across scales: coarse scales capture global motion trends, while fine scales preserve local details. There-fore, we introduce a dual-granularity fusion mechanism that generates a soft mask to synergize coarse and fine optical flows during inference. Furthermore, to adapt to varying bitrates levels, we design a rate-aware strategy. This mechanism dynamically modulates the down-sampling scale of the coarse candidate and the fusion bias based on the quantization param-eter, and incorporates a reliability check to filter out ineffective coarse flows. This ensures the preservation of fine-grained                               
+
+> arXiv:2606.23023v1 [cs.CV] 22 Jun 2026 𝑓𝑓 𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓 𝑓𝑓 𝑐𝑐𝑐𝑐𝑐𝑐𝑐𝑐 𝑓𝑓 𝑐𝑐𝑐𝑐
+> 𝑓𝑓 𝑓𝑓𝑐𝑐𝑐𝑐 𝑚𝑚 𝑐𝑐𝑐𝑐
+> 𝑓𝑓 𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓 𝑓𝑓 𝑐𝑐𝑐𝑐𝑐𝑐𝑐𝑐 𝑓𝑓 𝑐𝑐𝑐𝑐 𝑓𝑓 𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓𝑓
+> 𝑓𝑓 𝑓𝑓𝑐𝑐𝑐𝑐 𝑚𝑚 𝑐𝑐𝑐𝑐
+> Feature
+> Propagation
+> 𝑥𝑥 𝑐𝑐 −2𝑥𝑥 𝑐𝑐 −1𝑥𝑥 𝑐𝑐
+> �𝑥𝑥 𝑐𝑐 −2�𝑥𝑥 𝑐𝑐 −1�𝑥𝑥 𝑐𝑐
+> 𝐶𝐶 𝑐𝑐 −2 𝐶𝐶 𝑐𝑐 −1 𝐹𝐹 𝑐𝑐 −1 𝐶𝐶 𝑐𝑐 𝐹𝐹 𝑐𝑐
+> 𝑓𝑓 𝑆𝑆𝑆𝑆𝑆𝑆𝑆𝑆 𝑓𝑓 𝑆𝑆𝑆𝑆𝑆𝑆𝑆𝑆
+> 𝐹𝐹 𝑐𝑐 −2
+> Frames
+> �𝑥𝑥 𝑐𝑐 −1 ,𝑥𝑥 𝑐𝑐
+> Coarse-Grained
+> Flow
+> Fine-Grained
+> Flow
+> Mask and Fuse
+> Q-Index Rate-Aware
+> Control
+> 𝑣𝑣 𝑐𝑐
+> 𝑣𝑣 𝑐𝑐 𝑣𝑣 𝑐𝑐 -1
+> �𝑣𝑣 𝑐𝑐 -1�𝑣𝑣 𝑐𝑐
+> 𝒇𝒇 𝑺𝑺𝑺𝑺𝑺𝑺𝑺𝑺 Fig. 1. Overview of the proposed neural video compression framework. The left panel depicts the temporal context propagation pipeline. At each timestamp
+> t, the proposed SOFR module fSOF R takes the current frame xtand the reconstructed reference frame ˆxt−1to generate a refined optical flow vt. This flow is then coded by fmotion to produce ˆvtfor warping the temporal context Ct−1. The right panel details the internal structure of fSOF R . It generates dual-granularity motion candidates Coarse-Grained Flow and Fine-Grained Flow via parallel branches. A Rate-Aware Control module utilizing the Q-Index dynamically guides this generation and their subsequent fusion, ensuring an adaption to varying bitrates.
+
+details at high bitrates while prioritizing structural information at low bitrates. The main contributions of this paper are summarized as follows:  
+
+> •
+
+We propose a plug-and-play online flow refinement mod-ule that effectively bridges the domain gap by fusing multi-granularity motion flows via a soft fusion mask derived from warping accuracy.  
+
+> •
+
+We develop a rate-aware strategy that dynamically mod-ulates the down-sampling scale of the coarse candidate and the fusion bias based on the quantization parameter, and incorporates a reliability check to filter out ineffective coarse candidates.  
+
+> •
+
+Extensive experiments on USTC-TD dataset verify the generalization of our method to advanced NVCs like DCVC-SDD, DCVC-FM and EHVC, notably achieving average BD-Rate reductions of 2.84% (PSNR) and 4.05% (MS-SSIM) on DCVC-FM. II. R ELATED WORK 
+
+A. Neural Video Compression 
+
+In recent years, end-to-end neural video codecs (NVCs) have evolved rapidly, challenging the dominance of traditional standards like H.265/HEVC [16] and H.266/VVC [1]. Early works such as DVC [17] introduced the residual coding paradigm, where optical flow is used for motion compensation and the residuals are compressed by autoencoders. Building upon this, subsequent approaches like DCVC [18] and its advanced variants [13], [19]–[28] have significantly enhanced coding efficiency by incorporating conditional coding mecha-nisms and exploring more effective predicted features. Specifi-cally, these improvements are generally achieved through more precise feature alignment in motion estimation and compen-sation, the mining and enhancement of contextual conditional information, and the design of high-efficiency entropy models. Furthermore, recent studies have also investigated diverse architectures, ranging from implicit neural representations [29] that enable fast decoding, to generative models [30] targeting extremely low bitrates, to further push the boundaries of rate-distortion performance. 
+
+B. Optical Flow Optimization in NVC 
+
+Motion estimation is pivotal for video coding performance. To enhance robustness, Agustsson et al. [8] introduced a generalized warping operator with a learnable scale to model uncertainty without pre-trained flows. Addressing the domain gap via online adaptation, Tang et al. [7] combined offline VVC distillation with online flow latent optimization, while Cong et al. [6] dynamically adjusted sampling factors to exploit spatio-temporal redundancy. To reduce the computa-tional overhead of such updates, Oh et al. [11] and Chen et al. [10] proposed inserting lightweight adapter modules for ef-ficient instance-specific fine-tuning, with the latter employing a group-aware strategy to mitigate error propagation. Regarding inference-time optimization for bi-directional coding, Zhai et al. [13] and Yilmaz et al. [15] dynamically selected flow resolutions based on motion complexity. Although Bilican et al. [14] explored content-adaptive inference to map motion vectors into the training distribution, their method relies on exhaustively searching for the optimal downsampling factor from a dense set of over 30 candidates (ranging from 1 to 8.75), which leads to excessive computational latency. III. P ROPOSED METHOD 
+
+A. Overview 
+
+As illustrated in Fig. 1, we integrate our proposed method into a typical contextual Neural Video Codec (NVC). Let xt
+
+denote the current input frame, ˆxt−1 the reconstructed previous frame, and Ct−1 the propagated temporal context feature. In the encoding pipeline, the motion estimation module fmotion 
+
+first computes the optical flow vt between xt and ˆxt−1. This motion vector is then compressed and reconstructed into ˆvt,which is utilized to warp the temporal feature Ft−1 to generate Frames 
+
+�𝑥𝑥 𝑡𝑡−1 , 𝑥𝑥 𝑡𝑡  Q-Index 
+
+Rate-Aware 
+
+Control 
+
+↓s  ↑s FlowNet 
+
+FlowNet 
+
+Coarse-Grained Scale 
+
+Warp �𝑥𝑥 𝑡𝑡−1 
+
+Diff 𝑥𝑥 𝑡𝑡 
+
+Warp 
+
+Diff 
+
+�𝑥𝑥 𝑡𝑡−1 
+
+𝑥𝑥 𝑡𝑡 
+
+Fine-Grained Scale 
+
+− σ(�)
+
+×
+
+×
+
+1-mask 
+
+mask 
+
+𝑣𝑣 𝑐𝑐𝑐𝑐𝑐𝑐𝑐𝑐𝑐𝑐𝑐𝑐 
+
+𝑣𝑣 𝑓𝑓𝑓𝑓𝑓𝑓 𝑐𝑐 
+
++
+
+s
+
+bias 
+
+𝑣𝑣 𝑡𝑡 
+
+Reliability Check  𝑣𝑣 𝑓𝑓𝑓𝑓𝑓𝑓 𝑐𝑐 Fig. 2. Illustration of the proposed Scale-Driven Online Flow Refinement (SOFR) module. The architecture employs parallel branches to produce coarse-grained flow vcoarse and fine-grained flow vf ine . This generation is dynamically modulated by a Rate-Aware Control unit, which configures the down-sampling scale s and decision bias according to the Q-Index, and incorporates a reliability check to filter out ineffective coarse candidates. Finally, the candidates are fused into the output vt via a spatial mask derived from the bias-corrected warping accuracy. 
+
+current priors Ct−1 through fcontext module. Conditioned on this motion-aligned context priors, the frame encoder module 
+
+ff rame takes xt as input to yield the reconstructed frame ˆxt,while simultaneously generating the propagation feature Ft for the next timestamp. To bridge the domain gap without updating model param-eters, we introduce the Scale-Driven Online Flow Refinement (SOFR) module, denoted as fSOF R . As shown in the diagram, 
+
+fSOF R functions as a plug-and-play component for motion estimation during inference. The proposed method consists of two stages. First, the Scale-Driven Dual-Granularity Flow Generation produces coarse-grained and fine-grained motion candidates to serve as complementary motion flows. Subse-quently, the Rate-Aware Fusion Strategy dynamically syn-thesizes the final refined flow field vt to adapt to varying bitrates. The detailed formulations of these two components are presented in the following subsections. 
+
+B. Scale-Driven Dual-Granularity Flow Generation 
+
+The core insight of SOFR is that motion estimation errors show distinct characteristics across spatial scales. While fine-grained flows preserve local structural details, they are vulner-able to large displacements and outliers. Conversely, coarse-grained flows offer robust structural information. To exploit this complementarity, we generate two distinct motion flow candidates in parallel. 
+
+Fine-Grained Flow. We first compute optical flow at the original resolution using the pre-trained motion estimation network Fθ . This captures intricate motion details but may fail in regions with complex patterns like large displacements: 
+
+vf ine = Fθ (xt, ˆxt−1) (1) 
+
+Coarse-Grained Flow. To capture dominant motion trends, we introduce a scale-driven down-sampling operation. The down-sampling scale s is dynamically determined by the Rate-Aware Control module. Let ↓s denote the bilinear down-sampling operator and ↑s the corresponding bilinear up-sampling. The coarse flow is computed as: 
+
+vcoarse =↑s (Fθ (↓s (xt), ↓s (ˆ xt−1))) × s (2) where the multiplication by s rescales the magnitude of the motion vectors to the original domain. This process effectively filters out high-frequency noise and provides a smoother motion flow that is easier to compression. 
+
+C. Rate-Aware Fusion Strategy 
+
+To effectively synthesize the dual-granularity flows, we propose a Rate-Aware Fusion Strategy that adapts to the varying bitrates. As illustrated in Fig. 2, this module takes the quantization parameter (Q-Index) as input to control the generation and fusion process via two hyper-parameters: the down-sampling scale s and the decision bias b.
+
+Rate-Aware Control. We categorize the coding scenarios into high bitrates and low bitrates states based on the quality levels defined by the Q-Index. 1) High Bitrates Mode: This corresponds to the upper half of the quality levels. In this regime, we prioritize fine-grained detail preservation. We set the scale to s = 2 to retain more spatial information and assign a lower bias b = 0 .005 to encourage the usage of fine-grained details. 2) Low Bitrates Mode: This corresponds to the lower half of the quality levels. In this regime, minimizing the coding cost of motion vectors is critical. We set the scale to s = 4 
+
+to strongly filter noise and generate a compact motion field. Simultaneously, we increase the bias to b = 0 .03 . By adding this larger penalty to the fine flow error, we guide the network to prefer the smoother coarse flow, thereby saving bits. TABLE I BD-R ATE PERFORMANCE COMPARISON ON THE USTC-TD DATASET . M ODELS INTEGRATED WITH OUR SOFR AND OPTIMIZED FOR PSNR ARE MARKED WITH AN ASTERISK (∗), WHILE THOSE OPTIMIZED FOR MS-SSIM ARE MARKED WITH A DAGGER († ). N EGATIVE VALUES INDICATE BITRATE SAVINGS COMPARED TO THEIR RESPECTIVE UNOPTIMIZED BASELINES .
+
+Method Badminton BasketDrill BasketPass BicycleDriving Dancing FourPeople ParkWalking Running ShakeHands Snooker Average Coding Time 
+
+DCVC-FM ∗ -0.88 -9.65 -6.81 -2.06 0.18 0.19 -4.40 0.04 -2.68 -2.34 -2.84 1.0240 ×
+
+DCVC-FM † -0.56 -13.31 -8.53 -3.07 0.08 -0.18 -7.43 0.24 -4.37 -3.34 -4.05 
+
+DCVC-SDD ∗ 0.14 -0.87 -0.27 -6.61 0.03 -0.01 -0.32 0.09 0.27 -2.61 -0.97 1.0144 ×
+
+DCVC-SDD † 0.01 -0.81 0.00 -3.74 0.01 -0.03 0.08 -0.06 0.33 -0.15 -0.44 
+
+EHVC ∗ 0.22 -3.78 -1.78 -3.59 -0.06 -0.04 2.27 0.01 -0.26 -2.11 -0.91 1.0181 ×
+
+EHVC † 0.02 -4.67 -2.32 -4.68 0.05 -0.03 1.89 -0.03 -0.61 -2.30 -1.27 GT bpp/PSNR DCVC-SDD 0.035/35.68 DCVC-SDD * 0.028/36.06 DCVC-SDD Flow DCVC-SDD * Flow 
+
+GT bpp/PSNR DCVC-FM 0.144/38.81 DCVC-FM * 0.135/38.89 DCVC-FM F low DCVC-FM * Flow 
+
+GT bpp/PSNR EHVC 0.029/41.68 EHVC * 0.022/41.91 EHVC Flow EHVC * Flow 
+
+GT bpp/PSNR 
+
+GT bpp/PSNR 
+
+GT bpp/PSNR 
+
+Fig. 3. Visual comparison on the USTC-TD dataset, specifically selecting the 69th frame of the BicycleDriving sequence for DCVC-SDD, the 23rd frame of the BasketDrill sequence for DCVC-FM, and the 15th frame of the Snooker sequence for EHVC. The columns from left to right display the ground truth, the reconstruction details comparison, and the optical flow comparison. As observed in the flow maps, the baseline suffers from estimation noise in dynamic regions, whereas SOFR produces precise and coherent motion flows. This accurate motion propagation enables our method to achieve higher reconstruction quality at a lower bitrate. 
+
+Reliability Check and Fusion. Subsequently, to synthesize the final motion flow, we evaluate the pixel-wise prediction consistency. Let W(·, v ) denote the warping operation. We first compute the prediction error maps Ek for both fine and coarse candidates ( k ∈ { f ine, coarse }): 
+
+Ek = |xt − W (ˆ xt−1, v k)| (3) To avoid performance degradation caused by dual-granularity flow fusion on sequences where additional adjust-ment is unnecessary, we employ a global reliability check. We calculate the Mean Absolute Difference (MAD) for each candidate as ¯Ek = mean (Ek). The effective coarse candidate 
+
+˜vcoarse is determined by comparing these global metrics: 
+
+˜vcoarse =
+
+(
+
+vf ine , if ¯Ecoarse ≥ ¯Ef ine 
+
+vcoarse , otherwise (4) This ensures that if the coarse flow yields larger errors, the system effectively reverts to the fine-grained flow. Based on the validated candidates, we derive a soft fusion mask M
+
+incorporating the rate-aware bias b:
+
+M = σ
+
+
+
+α · ( ˜Ecoarse − Ef ine − b)
+
+
+
+(5) where ˜Ecoarse corresponds to the error of ˜vcoarse , and α
+
+is a sharpness factor. Finally, the refined motion field vt is synthesized as: 
+
+vt = M ⊙ vf ine + (1 − M ) ⊙ ˜vcoarse (6) IV. E XPERIMENTS 
+
+A. Experimental Settings 
+
+Test Datasets. To validate the effectiveness of the pro-posed SOFR module, we conduct experiments on USTC-TD datasets [31]. Recognized as a high quality benchmark from the 2020s, USTC-TD offers a comprehensive representation of modern video content characteristics. It features 10 sequences with diverse motion patterns and textures, all at a resolution of 1920 × 1080 . All raw YUV sequences are converted to the RGB color space using the BT.709 standard. During inference, we apply padding to the input frames to align with the network’s down-sampling requirements. 
+
+Implementation Details and Baselines. Since SOFR func-tions as a training-free inference optimization strategy, we directly integrate it into three representative SOTA baselines from recent years: DCVC-SDD [24], DCVC-FM [22], and TABLE II ABLATION RESULTS IN TERMS OF PSNR ON THE FIRST 96 FRAMES OF THE USTC-TD DATASET RELATIVE TO THE DCVC-FM BASELINE UNDER INTRA                                          
+
+> PERIOD -1 SETTINGS . T HE STUDY ANALYZES THE IMPACT OF FIXED VERSUS DYNAMIC SCALE STRATEGIES AND THE EFFECTIVENESS OF THE
+> RATE -A WARE FUSION MECHANISM .
+> Method Model Coarse Scale ( s)Rate-Aware Control Reliability Check BD-Rate (%) Coding Time
+> Baseline Anchor –––0.00 1.0000 ×
+> Dual-Granularity Flow
+> Ma2No No -2.15 –
+> Mb4No No 3.01 –
+> Mc8No No 30.04 –Rate-Aware Fusion MdDynamic Yes No -2.19 –
+> MeDynamic Yes Yes -2.84 1.0240 ×
+
+EHVC [32]. For evaluation, we strictly adhere to the optimal configurations provided in their official implementations. We set the Intra Period (IP) to 32 for DCVC-SDD, while config-uring DCVC-FM and EHVC with an IP of -1. We conduct all experiments on the first 96 frames of each sequence and perform actual encoding and decoding processes to generate real binary bitstreams for precise bitrate calculation. 
+
+Evaluation Metrics. We measure the bitrate using bits-per-pixel (bpp). The reconstruction quality is assessed by both PSNR and MS-SSIM. To quantify the coding efficiency improvement, we utilize the Bjontegaard Delta Rate (BD-Rate) [33], where negative values indicate bitrate savings at the same quality level. 
+
+B. Main Results 
+
+We evaluate the R-D performance of SOFR integrated with the aforementioned baselines. Table I summarizes the BD-Rate savings on the USTC-TD dataset. As shown, SOFR consistently boosts the compression efficiency across all three SOTA baselines in terms of both PSNR and MS-SSIM. In detail, it brings average bitrate savings of 0.97% (PSNR) and 0.44% (MS-SSIM) to DCVC-SDD, and reduces the BD-Rate of EHVC by 0.91% (PSNR) and 1.27% (MS-SSIM). Most notably, when integrated into DCVC-FM, our method achieves substantial average gains of 2.84% and 4.05% in terms of PSNR and MS-SSIM, respectively. Specifically, complex sequences like BasketDrill and BasketPass show remarkable savings of up to 9.65% (PSNR) / 13.31% (MS-SSIM) and 6.81% (PSNR) / 8.53% (MS-SSIM) with negligible computational overhead. These extensive results across diverse baselines demonstrate the wide applicability and robustness of the proposed strategy. 
+
+C. Ablation Studies 
+
+To strictly isolate and verify the contribution of each compo-nent in SOFR, we conduct ablation experiments on the USTC-TD dataset using DCVC-FM as the anchor, evaluated on the first 96 frames with an Intra Period of -1. The quantitative results of five variants, measured in terms of BD-Rate (PSNR), are summarized in Table II. 
+
+Impact of Dual-Granularity Flow. We first investigate the Dual-Granularity Flow with fixed down-sampling scales. As shown in the first group, Model Ma (s = 2 ) achieves a bitrate saving of 2.15%. However, simply increasing the down-sampling ratio proves detrimental: Mb (s = 4 ) and Mc
+
+(s = 8 ) result in performance degradation with BD-Rate in-creases of 3.01% and 30.04%, respectively. This indicates that while coarse flows can be beneficial, excessive down-sampling indiscriminately destroys motion structure in complex regions, leading to inaccurate flow estimation. 
+
+Effectiveness of Rate-Aware Fusion. We then evaluate the proposed Rate-Aware strategies. Model Md, which introduces the Rate-Aware Control like dynamic scale s and bias b
+
+based on Q-Index, achieves a saving of 2.19%, outperforming the best fixed-scale variant Ma. This validates the benefit of adaptively adjusting the fusion strategy according to bitrates. Crucially, equipping the system with the Reliability Check 
+
+Me further boosts the performance to 2.84%. Comparing Me
+
+with Md, the gating mechanism provides a substantial gain, confirming its ability to identify and filter out low-quality coarse flows, which caused the losses in Mb.
+
+D. Case Analysis 
+
+We select representative frames from the USTC-TD dataset to provide a qualitative comparison in Fig. 3. Specifically, we select the 69th frame of the BicycleDriving sequence for DCVC-SDD, the 23rd frame of the BasketDrill sequence for DCVC-FM, and the 15th frame of the Snooker sequence for EHVC. As illustrated, our proposed SOFR achieves higher re-construction quality while consuming a significantly lower bpp compared to the baselines. Looking specifically at the optical flow visualization, the baseline model tends to produce noisy estimations in regions with complex dynamics. In contrast, SOFR effectively optimizes motion details by dynamically fusing dual-granularity flows, yielding a more precise and coherent motion flow. This improvement directly translates to the pixel domain, where the reconstructed frame shows sharper structural edges and fewer artifacts in the highlighted areas. 
+
+E. Complexity Analysis 
+
+Computational efficiency is critical for online optimization. We evaluate the complexity on an NVIDIA A100 GPU (40G). As reported in Table II, SOFR increases the entire coding time from 1.0000 × to 1.0240 ×, representing a negligible overhead, while the decoding time remains unchanged. In contrast to time-consuming gradient-based iterative methods, our feed-forward design ensures high efficiency for practical deployment. V. C ONCLUSION 
+
+In this paper, we proposed SOFR, a training-free module designed to bridge the motion domain gap in neural video codecs. By integrating coarse-grained structural stability with fine-grained local details via a warping-accuracy based soft mask, our method effectively rectifies motion estimation er-rors. Furthermore, the proposed rate-aware strategy ensures robust performance across varying bitrates by dynamically adjusting fusion parameters and filtering ineffective candidates through a reliability check. Extensive experiments verify that SOFR serves as an efficient plug-and-play solution, consis-tently improving the rate-distortion performance of state-of-the-art frameworks, including DCVC-SDD, DCVC-FM, and EHVC, with negligible computational overhead. REFERENCES [1] Benjamin Bross, Ye-Kui Wang, Yan Ye, Shan Liu, Jianle Chen, Gary J Sullivan, and Jens-Rainer Ohm, “Overview of the versatile video coding (vvc) standard and its applications,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 31, no. 10, pp. 3736–3764, 2021. [2] Siwei Ma, Xinfeng Zhang, Chuanmin Jia, Zhenghui Zhao, Shiqi Wang, and Shanshe Wang, “Image and video compression with neural net-works: A review,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 30, no. 6, pp. 1683–1698, 2019. [3] Chuanmin Jia, Feng Ye, Siwei Ma, Wen Gao, Huifang Sun, and Leonardo Chiariglione, “Emerging advances in learned video com-pression: models, systems and beyond,” in Proceedings of the Thirty-Fourth International Joint Conference on Artificial Intelligence , 2025, pp. 10490–10498. [4] Rongqun Lin, Meng Wang, Pingping Zhang, Shiqi Wang, and Sam Kwong, “Multiple hypotheses based motion compensation for learned video compression,” Neurocomputing , vol. 548, pp. 126396, 2023. [5] Tianfan Xue, Baian Chen, Jiajun Wu, Donglai Wei, and William T Freeman, “Video enhancement with task-oriented flow,” International Journal of Computer Vision , vol. 127, no. 8, pp. 1106–1125, 2019. [6] Wuyang Cong, Yuzhuo Kong, Ming Lu, Lizhong Wang, Weijing Shi, and Zhan Ma, “Integrating adaptive sampling for optimal learned video compression,” in IEEE International Conference on Acoustics, Speech and Signal Processing , 2025. [7] Chuanbo Tang, Xihua Sheng, Zhuoyuan Li, Haotian Zhang, Li Li, and Dong Liu, “Offline and online optical flow enhancement for deep video compression,” in Proceedings of the AAAI Conference on Artificial Intelligence , 2024, vol. 38, pp. 5118–5126. [8] Eirikur Agustsson, David Minnen, Nick Johnston, Johannes Balle, Sung Jin Hwang, and George Toderici, “Scale-space flow for end-to-end optimized video compression,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2020, pp. 8503–8512. [9] Zhihao Hu, Guo Lu, Jinyang Guo, Shan Liu, Wei Jiang, and Dong Xu, “Coarse-to-fine deep video coding with hyperprior-guided mode prediction,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2022, pp. 5921–5930. [10] Zhenghao Chen, Luping Zhou, Zhihao Hu, and Dong Xu, “Group-aware parameter-efficient updating for content-adaptive neural video compres-sion,” in Proceedings of the 32nd ACM International Conference on Multimedia , 2024, pp. 11022–11031. [11] Seungjun Oh, Hyunmo Yang, and Eunbyung Park, “Parameter-efficient instance-adaptive neural video compression,” in Proceedings of the Asian Conference on Computer Vision , 2024, pp. 250–267. [12] Tiange Zhang, Rongqun Lin, Xiandong Meng, Haofeng Wang, Xing Tian, Qi Zhang, and Siwei Ma, “Neural video compression with domain transfer,” in IEEE International Symposium on Circuits and Systems ,2026, pp. 1551–1555. [13] Yongqi Zhai, Luyang Tang, Wei Jiang, Jiayu Yang, and Ronggang Wang, “L-lbvc: Long-term motion estimation and prediction for learned bi-directional video compression,” in IEEE Data Compression Conference ,2025, pp. 53–62. [14] Ahmet Bilican, M Akın Yılmaz, and A Murat Tekalp, “Content-adaptive inference for state-of-the-art learned video compression,” IEEE Open Journal of Signal Processing , 2025. [15] M Akin Yilmaz, O Ugur Ulas, Ahmet Bilican, and A Murat Tekalp, “Motion-adaptive inference for flexible learned b-frame compression,” in IEEE International Conference on Image Processing , 2024, pp. 1760– 1766. [16] Gary J Sullivan, Jens-Rainer Ohm, Woo-Jin Han, and Thomas Wiegand, “Overview of the high efficiency video coding (hevc) standard,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 22, no. 12, pp. 1649–1668, 2012. [17] Guo Lu, Wanli Ouyang, Dong Xu, Xiaoyun Zhang, Chunlei Cai, and Zhiyong Gao, “Dvc: An end-to-end deep video compression framework,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2019, pp. 11006–11015. [18] Jiahao Li, Bin Li, and Yan Lu, “Deep contextual video compression,” 
+
+Advances in Neural Information Processing Systems , vol. 34, pp. 18114– 18125, 2021. [19] Xihua Sheng, Jiahao Li, Bin Li, Li Li, Dong Liu, and Yan Lu, “Temporal context mining for learned video compression,” IEEE Transactions on Multimedia , vol. 25, pp. 7311–7322, 2022. [20] Kai Lin, Chuanmin Jia, Xinfeng Zhang, Shanshe Wang, Siwei Ma, and Wen Gao, “Dmvc: Decomposed motion modeling for learned video compression,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 33, no. 7, pp. 3502–3515, 2022. [21] Jiahao Li, Bin Li, and Yan Lu, “Neural video compression with diverse contexts,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2023, pp. 22616–22626. [22] Jiahao Li, Bin Li, and Yan Lu, “Neural video compression with feature modulation,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 26099–26108. [23] Feng Ye, Li Zhang, and Chuanmin Jia, “Deep video compression with scaled hierarchical bi-directional motion model,” in Proceedings of the 32nd ACM International Conference on Multimedia , 2024, pp. 11244– 11247. [24] Xihua Sheng, Li Li, Dong Liu, and Houqiang Li, “Spatial decomposition and temporal fusion based inter prediction for learned video compres-sion,” IEEE Transactions on Circuits and Systems for Video Technology ,vol. 34, no. 7, pp. 6460–6473, 2024. [25] Zhaoyang Jia, Bin Li, Jiahao Li, Wenxuan Xie, Linfeng Qi, Houqiang Li, and Yan Lu, “Towards practical real-time neural video compres-sion,” in Proceedings of the Computer Vision and Pattern Recognition Conference , 2025, pp. 12543–12552. [26] Xihua Sheng, Li Li, Dong Liu, and Shiqi Wang, “Bi-directional deep contextual video compression,” IEEE Transactions on Multimedia , 2025. [27] Tiange Zhang, Xiandong Meng, and Siwei Ma, “Content adaptive based motion alignment framework for learned video compression,” in IEEE Data Compression Conference , 2026, pp. 486–486. [28] Tiange Zhang, Zhimeng Huang, Xiandong Meng, Kai Zhang, Zhipin Deng, and Siwei Ma, “L-stec: Learned video compression with long-term spatio-temporal enhanced context,” in IEEE Data Compression Conference , 2026, pp. 13–22. [29] Tiange Zhang, Haofeng Wang, Xiandong Meng, Kai Zhang, Xuan Deng, Zhimeng Huang, and Siwei Ma, “Chnerv: Condition enhanced hybrid neural representation for videos,” in IEEE International Conference on Acoustics, Speech and Signal Processing , 2026, pp. 8377–8381. [30] Siwei Ma, Shenpeng Song, Bolin Chen, Qi Mao, Xiaohan Fang, Chuan-min Jia, and Shiqi Wang, “Generative coding: Promise and challenges,” 
+
+APSIPA Transactions on Signal and Information Processing , vol. 14, 2025. [31] Zhuoyuan Li, Junqi Liao, Chuanbo Tang, Haotian Zhang, Yuqi Li, Yifan Bian, Xihua Sheng, Xinmin Feng, Yao Li, Changsheng Gao, et al., “Ustc-td: A test dataset and benchmark for image and video coding in 2020s,” IEEE Transactions on Multimedia , 2025. [32] Junqi Liao, Yaojun Wu, Chaoyi Lin, Zhipin Deng, Li Li, Dong Liu, and Xiaoyan Sun, “Ehvc: Efficient hierarchical reference and quality structure for neural video coding,” in Proceedings of the 33rd ACM International Conference on Multimedia , 2025, pp. 12083–12091. [33] Gisle Bjontegaard, “Calculation of average psnr differences between rd-curves,” ITU-T SG16, Doc. VCEG-M33 , 2001.
