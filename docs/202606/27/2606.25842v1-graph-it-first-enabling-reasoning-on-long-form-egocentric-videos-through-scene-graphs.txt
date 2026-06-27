@@ -1,0 +1,725 @@
+Title: Graph it first! Enabling Reasoning on Long-form Egocentric Videos through Scene Graphs
+
+URL Source: https://arxiv.org/pdf/2606.25842v1
+
+Published Time: Thu, 25 Jun 2026 01:03:12 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+# Graph it first! Enabling Reasoning on Long-form Egocentric Videos through Scene Graphs 
+
+Agnese Taluzzi 1, Riccardo Santambrogio 1, Simone Mentasti 1, Chiara Plizzari 2,and Matteo Matteucci 1 
+
+> 1
+
+Politecnico di Milano, Milan, Italy 
+
+{agnese.taluzzi,riccardo.santambrogio,simone.mentasti,matteo.matteucci}@polimi.it  
+
+> 2
+
+Bocconi University, Milan, Italy 
+
+chiara.plizzari@unibocconi.it 
+
+Abstract. Existing multi-modal large language models (MLLMs) face significant challenges in processing long video sequences due to strict input token limitations. As a result, current video understanding approaches, es-pecially in egocentric settings characterized by complex dynamics, frequent state changes, and moving cameras, are forced to massively subsample frames. This leads to severe loss of temporal and contextual information, constraining their ability to perform fine-grained video reasoning. In this work, we introduce a framework for egocentric video question answering (VQA) that overcomes these input constraints through Egocentric Scene Graphs (EgoSGs) , i.e., temporally grounded, structured representations that capture objects, attributes, spatial relations, and interactions over time. By representing videos as compact, text-based scene graphs, our method preserves the essential visual and temporal information of the original video in a symbolic form that drastically reduces input length while maintaining semantic richness. Crucially, this enables MLLMs to reason efficiently over entire video sequences within their token budget. On 
+
+HD-EPIC VQA , our method achieves state-of-the-art results, outperform-ing strong video-based baselines on multiple models and suggesting that structured, temporally grounded representations like EgoSGs can bridge long-form egocentric video understanding and the context limitations of today’s MLLMs. 
+
+Keywords: Egocentric Vision · Multi-Modal Large Language Models 
+
+1 Introduction 
+
+Egocentric videos are uniquely rich in capturing users’ interactions with objects and their surroundings [34]. Compared to third-person video understanding, ego-centric footage exhibits complex dynamics, frequent viewpoint changes, and long temporal dependencies that demand reasoning across extended time horizons. However, current multi-modal large language models (MLLMs), despite their strong perception and reasoning capabilities, are constrained by limited input token capacity. As a result, existing methods must heavily subsample long videos, leading to severe loss of temporal context and incomplete understanding of long-term activities [14, 45] (see Fig. 1). 
+
+> arXiv:2606.25842v1 [cs.CV] 24 Jun 2026
+
+2 A. Taluzzi et al. MLLM            
+
+> token budget
+> DYNAMIC OBJECTS:
+> mug_1: inside cabinet_1
+> EVENTS:
+> 00:09: pick_up mug_1 FROM cabinet_1
+> 00:13: put_down mug_1 ON counter_1
+> t
+> Frame Sub-sampling
+> EgoSG Generation
+> MLLM
+> ✗✗✗✗✗✗
+> Q: When did the action <pick up mug> happened?
+> ✗✗counter_1
+> NEXT TO
+> refrigerator
+> cabinet_1
+> mug_1 put down
+> FROM
+> INSIDE
+> cabinet_2
+> pick up
+> ON
+> 00:09
+> 00:13
+> static objects
+> dynamic objects
+> action
+> ✗
+> MLLM A MLLM B
+> Video
+> EgoSG
+> Input video Input
+> Tokens
+
+Fig. 1: Given a long input video, frames are sub-sampled (blue, green) to respect the 
+
+multi-modal large language model (MLLM) token budget , shown as limited token slots (left). Instead of directly feeding visual tokens, EgoSG generation builds a compact open-vocabulary scene graph capturing objects, spatial relations, and actions over time, which is produced in the form of text from an MLLM (right). Nodes represent dynamic (rounded) and static (rectangular) objects, while diamonds denote temporally grounded actions (e.g., pick up , put down ); edges encode spatial ( ON , ABOVE , NEXT TO ) and interaction ( FROM , ON ) relations. The resulting text representation preserves temporal and semantic context while reducing token usage, enabling efficient long-video reasoning on different MLLMs. 
+
+In this work, we propose a framework that addresses these challenges by in-corporating intermediate structured representations that enable fine-grained rea-soning over long video sequences without exceeding token limits. Central to our approach are scene graphs specifically designed to capture the dynamic struc-ture of scenes in egocentric video, that we refer to as Egocentric Scene Graphs (EgoSGs). Originally developed for static image understanding [20] and later ex-tended to video domains [31, 37, 43], scene graphs represent temporal dynamics and spatial relations, and interactions in a structured, symbolic format. We first prompt a large multi-modal language model (MLLM) to extract EgoSG representations from egocentric videos in an open-vocabulary fashion, cap-turing the temporal evolution of objects, interactions, and spatial relations in a structured symbolic form. This process yields a compact, text-based intermediate representation that abstracts dense video content into a structured form. Rather than feeding raw video frames directly to MLLMs, we use these scene graphs as the sole input, enabling reasoning over abstracted text instead of low-level pix-els. Importantly, while graph generation leverages a large MLLM for high-quality, open-vocabulary parsing, the resulting text-based EgoSGs can subsequently be processed by smaller MLLMs for downstream reasoning without frame subsam-pling. As shown in Fig. 2, traditional frame-level inputs exceed the context bud-get within seconds or minutes, whereas EgoSG (computed over 1-minute video segments; see Sec. 4.2) grows slowly and, even after 25 minutes, only reaches In-Graph it first! 30 20 40 60      
+
+> Seconds
+> 10 2
+> 10 3
+> 10 4
+> 10 5
+> 10 6
+> Number of Tokens
+> 510 15 20 25 30
+> Minutes
+> Gemini Flash 2.0
+> Qwen2.5-VL
+> InternVL3
+> VideoLLaMa3
+> InternVL3
+> Qwen2.5
+> VideoLLaMa3
+> Gemini Flash 2.0
+> EgoSG
+
+Fig. 2: Token-budget comparison. Cu-mulative input tokens needed to represent a 1 FPS video across four MLLMs, com-pared to EgoSG, over short (0–60 s) and long (0–30 min) timescales. Differences in frame-level token counts arise from model-specific tokenizers, whereas EgoSG yields similar token counts across all models. Dashed horizontal lines mark each model’s maximum context window. ENVIRONMENTAL ELEMENTS:        
+
+> counter_1: next to the refrigerator_1 - wooden surface
+> cabinet_1: above counter_1 - dark blue with glass doors
+> DYNAMIC OBJECTS:
+> mug_1: inside cabinet_1 -white ceramic
+> EVENTS:
+> 00:09: pick_up mug_1 FROM cabinet_1
+> 00:13: put_down mug_1 ON counter_1
+> counter_1
+
+NEXT TO 
+
+> refrigerator
+> cabinet_1
+
+FROM 
+
+ABOVE 
+
+> pick up
+> 00:09
+> environmental element
+> dynamic objects
+> action
+
+ON put down  
+
+> 00:13
+> binary relationship
+> primary object
+> secondary object
+> wooden surface
+> dark blue with
+> glass doors
+> Serialized Scene Graph
+> mug_1
+> white
+> ceramic
+
+Fig. 3: EgoSG Schema. Visualization of EgoSG schema (top) and its serialized tex-tual representation (bottom). 
+
+ternVL3 and VideoLLaMa3 limits, demonstrating the efficiency of our symbolic intermediate representation. We validate our approach on the challenging HD-EPIC VQA benchmark [33], which contains long-form, egocentric videos requiring multi-step temporal and causal reasoning, showing EgoSG input largely outperforms video-only inputs on multiple MLLMs. In summary, our key contributions are: 
+
+– We introduce EgoSG, a text-based representation that encodes video content into dynamic scene graphs capturing object interactions, spatial relations, and temporal context. 
+
+– We propose a pipeline that decouples raw video processing from reasoning by first extracting EgoSGs as an intermediate representation and then feeding only these graphs into off-the-shelf MLLMs, enabling efficient VQA. 
+
+– We evaluate our framework on the HD-EPIC VQA benchmark, demonstrating state-of-the-art performance over existing MLLMs fed with video input and highlighting the benefits of the proposed graph-based representation. 
+
+2 Related Works 
+
+2.1 Egocentric VQA 
+
+While egocentric video has gained significant attention in recent years, few datasets are explicitly designed to address the challenges of egocentric VQA, and existing benchmarks fall short in evaluating long-form temporal reasoning. Early efforts such as EgoVQA [12] and EgoTaskQA [19] focus on coarse-level questions or 4 A. Taluzzi et al. 
+
+short-term action dependencies, often relying on synthetic or weakly grounded annotations that allow models to exploit commonsense priors rather than genuine temporal reasoning [35]. SGQA [7] captures real-world smart glasses data but re-mains small in scale ( <6 hours). More recent efforts build on large-scale datasets like Ego4D [16], including EgoSchema [25] and QAEgo4D [5, 30]. However, exist-ing benchmarks consist of relatively short clips, for example, EgoSchema (avg ∼3minutes) and EgoTaskQA (avg ∼25 seconds), which limits their ability to evaluate how severe frame subsampling affects overall model performance. We evaluate our approach on the HD-EPIC benchmark [33], a large-scale dataset specifically designed for fine-grained reasoning in egocentric settings. Un-like prior benchmarks composed of short, trimmed clips, HD-EPIC features long, untrimmed videos (averaging 44.6 minutes per question), making it uniquely suited to assess models’ ability to reason over extended temporal contexts. While long-form video QA also exists in exocentric settings, our focus is egocentric; extending the approach to datasets with multiple interacting agents and exocentric dynamics is non-trivial, and we leave it to future work. 
+
+2.2 Multi-Modal LLMs 
+
+Large Language Models (LLMs) such as GPT-4 [27] and LLaMA [40] have demonstrated impressive generalization and reasoning capabilities across a wide range of text-based tasks. Building on this foundation, recent models like GPT-4V(ision) [28] and Gemini [39] extend these capabilities to the visual domain, enabling multi-modal reasoning over both text and images. This has led to the emergence of Multi-Modal Large Language Models (MLLMs) such as BLIP [21], Flamingo [1], Kosmos [32], PaLM-E [11], and others [17], which achieve strong results across vision-language benchmarks. More recently, MLLMs have been adapted to video understanding, with models such as Gemini [39], GPT-4o [29], Qwen-VL [4,42], VideoLLaMA [47], VideoLLaVA [24], MiniCPMV [46], InternLM-XComposer [10], and LLaVANext [23] incorporating multi-frame context and tem-poral reasoning modules. However, despite improvements in context length, e.g., GPT-4o supports ∼128K tokens and Gemini up to two million tokens, the number of frames that can be effectively processed remains limited. When video frames are tokenized into visual embeddings, even high-capacity MLLMs can handle only a few hundred frames, corresponding to less than a few minutes of footage. As a result, models must heavily subsample long videos, discarding the majority of temporal information and losing continuity in actions and object interactions. Moreover, reasoning di-rectly on pixel-level inputs introduces redundancy and hinders the modeling of higher-level temporal and semantic structure [35]. To overcome these limitations, we propose to extract intermediate Egocen-tric Scene Graph (EgoSG) representations that capture objects, attributes, spa-tial relations, and interactions over time. By feeding these compact, structured representations to MLLMs, our framework directly addresses the token bottle-neck and enables faithful long-term reasoning across entire video sequences in a token-efficient and interpretable manner, eliminating the need for aggressive frame subsampling and outperforming direct video-to-MLLM approaches. Graph it first! 5
+
+2.3 Scene Graphs for Video Understanding Tasks 
+
+Scene graphs have emerged as effective intermediate representations to bridge raw visual input and structured semantic understanding in video analysis [3,18,26,36, 48]. For instance, [3] proposed a unified transformer model that jointly reasons over video frames and scene graphs for improved spatio-temporal grounding. The Ac-tion Genome dataset [18] provides dense scene graph annotations to model human-object interactions and improve action detection. Other works have explored dy-namic scene graphs to capture temporal changes in object relations [26, 48]. In first-person settings, the egocentric viewpoint introduces unique challenges and opportunities for capturing interactions grounded in the camera wearer’s perspec-tive. Prior work has demonstrated the benefits of structured graph-based represen-tations in this domain. In [36], hierarchical graph structures tailored to egocentric videos are employed for predicting future actions. Ego-Topo [13] focuses on spa-tial topology in egocentric videos to support long-term understanding and action anticipation, though it does not explicitly encode object-relationships. EASG [38] defines a time-varying graph with nodes for the camera wearer, objects, and ac-tions, and edges capturing fine-grained temporal and relational dependencies such as with, from, or direct object. In a concurrent work, [8] explores the use of scene graph for improving on a captioning task. In this work, we use scene graphs as intermediate representations for ego-centric VQA. However, our approach differs fundamentally from prior methods that rely on manually annotated or task-specific scene graphs [18, 38]. By lever-aging an MLLM, EgoSG automatically generates scene graphs in zero-shot, open-vocabulary manner, without requiring any ground-truth annotations. We show that these general-purpose structured abstractions significantly enhance the abil-ity of MLLMs to efficiently perform reasoning over long time horizons. 
+
+3 Our Approach: EgoSG 
+
+We replace video inputs with MLLM-extracted, text-based Egocentric Scene Graphs (EgoSGs). Given a video, a multi-modal LLM is prompted to parse each video into a temporally grounded graph (serialized as text). The resulting textual EgoSG preserves semantics across all frames while removing redundancy, allowing down-stream MLLMs to reason over the full sequence within input-token limits. We define the task in Sec. 3.1, describe the graph generation process in Sec. 3.2, present the prompting schema in Sec. 3.3, and outline post-processing steps and the MLLM inference in Sec. 3.4 and Sec. 3.5. 
+
+3.1 Task Definition 
+
+Formally, given a video  V and a natural language question  Q from the set of question types, the goal is to predict the correct answer  a∗ from a candidate answer set  A = {a1, a 2, a 3, a 4, a 5}. The model must learn a mapping f : ( V, Q ) →
+
+a∗, where  f effectively integrates temporal and spatial cues from the video with semantic understanding of the question to select the correct answer. 6 A. Taluzzi et al. 
+
+Table 1: EgoSG schema. Structured overview of EgoSG components, types, and rep-resentative attributes.                                  
+
+> Component Category Types and Attributes Nodes ( N)Node Types Dynamic Object ,Environmental Element
+> Node Attributes element_id (label), V(visual properties)
+> Binary Relationships ( EB)Relation Types INSIDE ,ON ,UNDER ,NEXT_TO , etc. (expressed in free-form natural language)
+> Action Hyperedges ( A)Action Types Free-form verbs describing user-object interactions, e.g., open ,pour_FROM ,
+> place ,take
+> Main Object Primary entity involved in the action (from Dynamic Object or Environmental Element )
+> Secondary Objects Entities affected or referenced by the action (from Dynamic Object or
+> Environmental Element )
+> Temporal Scope Single timestamp or interval (ts, t e)denoting when the action occurs
+
+3.2 EgoSG Generation 
+
+MLLMs have become a popular choice for scene graph generation in recent times, given the large amount of pre-trained knowledge they have [6,22,44]. Given an in-put video V of total duration T , we partition it into a sequence of non-overlapping temporal chunks of fixed length ∆t (e.g., ∆t = 60 seconds), resulting in N =  T∆t 
+
+
+
+non-overlapping segments: 
+
+V = {v1, v 2, . . . , v N }, with vi ∈ [ti, t i + ∆t ) (1) For each segment vi, we generate a corresponding scene graph Gi using a prompted MLLM, following the schema described in Sec. 3.3. The scene graphs are con-structed in a temporally iterative fashion: the initial graph G1 is generated from 
+
+v1, and for each subsequent segment vi (i > 1), the scene graph Gi is obtained by prompting the MLLM to update Gi−1 based on new observations in vi. That is, 
+
+Gi = Update (Gi−1, v i) (2) where Update (·) denotes a prompted reasoning step guided by the MLLM that incrementally modifies the previous graph to reflect the new visual context. In par-ticular, the initial prompt instructs the model to extract environment elements, dynamic objects, and actions from the first clip, while subsequent prompts explic-itly condition on the accumulated context from prior clips. This design ensures continuity across time, prevents redundant listings of previously observed entities, and encourages the model to focus on novel objects and interactions in each new segment. The supplementary material provides the exact prompts employed for both the initial graph generation and the subsequent update steps. This process produces a temporally-evolving sequence of scene graphs {G 1, G2,. . . , GN } that captures the dynamic structure of the egocentric scene over time. At the final timestep, the graph GN serves as a compact representation of the entire video V .Graph it first! 7
+
+3.3 EgoSG Schema 
+
+An Egocentric Scene Graph G is structured as G = ( N, E B , A ), where N is the set of nodes (entities), EB is the set of binary edges representing direct structural rela-tionships, and A is the set of hyperedges representing interactions of the user with objects in the video. The conceptual design of the entity set N and its associated structural relations EB draws inspiration from 3D scene representations [2], here adapted to 2D video. The use of hyperedges in A to model interactions follows from recent work on situation hypergraphs for multi-entity video understanding [41]. The structure and content of N , EB , and A are described below and illustrated in Fig. 3, with their examples summarized in Tab. 1. 
+
+Core Entities (Nodes,  N ). The node set  N = {n1, n 2, . . . , n |N |} includes all identifiable entities within the scene. These comprise both dynamic objects (en-tities with which the user can interact) and environmental elements , which refer to static components of the environment. Each node  n ∈ N is associated with a label ( element ID ) and an attributes  V that describe its visual properties. 
+
+Direct Relationships (Binary Edges,  EB ). The set  EB ⊆ N × RB × N de-fines the directed binary relationships between pairs of nodes, where  RB is the set of binary relation types. Each edge  eb = ( ni, r b, n j ) expresses that node  ni
+
+stands in a location-based relationship  rb with node  nj . These relationships are described in free-form natural language and capture either the spatial configu-ration of environmental elements relative to each other or the initial position of dynamic objects with respect to the surrounding environment, e.g. milk_bottle_1 INSIDE fridge_1 .
+
+Interactions (Action Relationships / Hyperedges,  A). We define the in-teraction set as  A = {a1, a 2, . . . , a |A|}, where each element  a ∈ A is a hyperedge representing a temporally localized, multi-entity interaction. Each interaction is defined as a = ( action , preposition(s) , Ma, Sa, t ), where: 
+
+– action is a semantic verb label (e.g., pour ) denoting the type of interaction occurring between entities. 
+
+– prepositions is a set of typed relational markers (e.g., FROM , INTO ) that define directed roles between the primary object and one or more secondary objects. 
+
+– Ma = nk denotes the primary object associated with action  a (e.g., pour milk FROM , INTO )
+
+– Sa = {(pi, n j )} is a set of secondary object tuples, where each  (pi, n j ) binds a secondary object  nj to the primary object via preposition  pi, specifying its role (e.g., pour milk FROM bottle INTO glass ). 
+
+– t denotes the temporal extent of the interaction, expressed either as a single timestamp or an interval  (ts, t e).8 A. Taluzzi et al. 
+
+3.4 Post-processing 
+
+We serialize each scene graph as a structured textual representation. The output begins with a listing of all static environment elements and dynamic objects ob-served in the scene, using the format: ENVIRONMENT ELEMENTS: {...} , DYNAMIC OBJECTS: {...} . Each entry includes object identifiers, their location-based re-lations, and a brief visual description. Subsequently, we describe interactions in the form of timestamped events under the section EVENTS . Each event is written as a line in the format: timestamp: action relationship , where relationships denote the interaction between agents and objects (e.g., pick_up mug_1 FROM cabinet_1 ). An example of serialized graph is shown in Fig. 3. To reduce redundancy and improve clarity, consecutive identical actions are merged into a single entry using a timestamp range notation  (ts, t e), preserving both temporal dynamics and readability. 
+
+3.5 MLLM Inference 
+
+During inference, the MLLM receives as input the natural language question  Q,along with the encoded graph representation  G generated by the EgoSG pipeline, which substitutes the raw video  V . The graph  G serves as a compact and struc-tured summary of the dynamic video content, capturing key spatial and temporal relationships among entities. Based on this input, the MLLM selects the most likely answer  a∗ from the candidate set  A via the mapping f : ( G, Q ) → a∗. This approach enables the model to integrate the question’s semantic understanding with structured scene information. 
+
+4 Experiments 
+
+4.1 Dataset 
+
+Our evaluation leverages the rich annotations of the HD-EPIC dataset [33], fo-cusing on five key question types: Recipe localization and recognition, Ingredient 
+
+identification including amounts and order, fine-grained Action details, 3D Per-ception of object positions, and Object Motion tracking over time. Categories concerning nutritional content and gaze estimation are excluded for our evalua-tion as they do not inherently require long-term temporal reasoning. For instance, the Nutrition category includes questions such as “What is the ingredient with the highest carbs in this recipe?”, which can be answered through commonsense or static attribute reasoning rather than temporal understanding. Similarly, the 
+
+Gaze category focuses on questions like “What is the person looking at in this seg-ment?”, which depend on fine-grained visual cues and gaze direction, features that are not explicitly captured in the graph-based abstraction. We further validate this choice empirically in Sec. 4.2. Each question is formulated as a 5-way multi-ple choice using 30 different question templates (or prototypes). Some questions require reasoning about specific objects and time intervals in the video. For exam-ple, a question like “How many times did the object <bbox> seen at <time> move Graph it first! 90  
+
+> 20
+> 40
+> 60
+> 80
+> Accuracy (%)
+> Recipe Recognition
+> Multi-Recipe Recognition
+> Multi-step Localization
+> Step Localization
+> Prep Localization
+> Step Recognition
+> Rough Step Localization
+> Following Activity Recognition
+> Exact Ingredient Recognition
+> Ingredient Adding Localization
+> Ingredient Recognition
+> Ingredient Retrieval
+> Ingredient Weight
+> Ingredient Adding Order
+> Action Localization
+> Action Recognition
+> How Recognition
+> Why Recognition
+> Fixture Interaction Counting
+> Fixture Location
+> Object Contents Retrieval
+> Object Location
+> Object Movement Counting
+> Object Movement Itinerary
+> Stationary Object Localization
+> Video only EgoSG Recipe
+> Ingredient
+> Fine-grained Action
+> 3D perception
+> Object motion
+> 0
+> 2500
+> 5000
+> 7500
+> 10000
+> 12500
+> 15000
+> 17500
+> Avg Video Length (seconds)
+> Avg Video Length
+
+Fig. 4: Per-prototype Results. Accuracy (%) of EgoSG vs raw video input for each question prototype. 
+
+in the video?” demands tracking the referenced object across frames and counting its movements, demonstrating the need for fine-grained spatio-temporal reason-ing. For our experiments, we select 50 Q&As per question prototype, for a total of 1250 questions. This ensures a balanced evaluation while reducing computational overhead. 
+
+4.2 Implementation details 
+
+We use a powerful model, Gemini Flash 2.0, to generate the EgoSGs, which then enables smaller MLLMs to reason over these compact, text-based graphs. We also attempted to use open-source models for scene-graph generation; nonetheless, even the latest open-source MLLMs struggle to reliably produce accurate graphs. An analysis of the quality of the generated graphs can be found in Supp. Videos are divided into non-overlapping 60-second clips and processed at 1 FPS. We selected 60-second segments based on empirical evaluation, as this duration balances tem-poral detail and processing efficiency (see ablation in the Supp.). For each 1-minute segment, we generate both a serialized scene graph and a textual summary; details of the prompts are provided in the Supp. We compare two input configurations for VQA inference: raw video and EgoSG. In both configurations, if the question explicitly contains visual references (e.g., bounding boxes or frame snippets), we extract the referenced images from the video and provide them alongside the in-put. For the video configuration, raw frames are sampled at 1 FPS. For EgoSG, the video input is replaced by the serialized scene graph. When the concatenated scene graphs fit within the model’s context window, we use them as input; if they exceed the context limit, we instead feed the concatenated per-segment summaries (see details in Supp.). Our ablation (Tab. 3) shows this causes only a minor drop in overall performance. 
+
+4.3 EgoSG Results 
+
+We evaluate our approach using Gemini Flash 2.0 [15], InternVL3 (2B/8B/14B) [49], Qwen2.5-VL (3B/7B) [4], and VideoLLaMA3 (2B/7B) [47]. Tab. 2 compares the 10 A. Taluzzi et al. 
+
+Table 2: EgoSG Results. Accuracy (%) comparison between EgoSG and raw video baseline. Best result per category is bolded . Performance deltas in the Overall column show improvement ( ↑) or degradation ( ↓) when using EgoSG.                                                                                                                             
+
+> Model Dim. Input Recipe Ingred. Action 3D Perc. Object Mot. Overall
+> Gemini Flash 2.0 –Videos 51.75 34.00 46.00 39.00 26.67 39.48 EgoSG 61.50 37.33 38.00 44.00 32.67 42.70 ↑3.22 Qwen2.5-VL 3B Videos 37.75 29.67 31.00 30.50 26.67 31.12 EgoSG 42.25 31.67 33.00 39.00 30.00 35.18 ↑4.06 7B Videos 37.25 30.67 32.00 25.50 38.00 32.68 EgoSG 46.25 27.00 34.50 37.00 34.67 35.88 ↑3.20 InternVL3 2B Videos 35.00 30.67 33.50 24.00 26.00 29.83
+> EgoSG 31.00 20.00 33.50 34.00 28.67 29.43 ↓0.40 8B Videos 35.00 29.00 40.00 31.00 20.00 31.00 EgoSG 42.25 18.67 33.00 38.50 34.00 33.28 ↑2.28 14B Videos 37.00 36.00 38.00 35.50 18.67 33.03 EgoSG 53.50 28.00 40.50 40.50 30.67 38.63 ↑5.60 VideoLLaMa3 2B Videos 31.75 30.67 25.00 29.00 30.00 29.28
+> EgoSG 28.25 20.33 27.00 28.00 26.00 25.92 ↓3.36 7B Videos 45.50 31.33 32.50 31.00 28.67 33.80 EgoSG 39.75 32.00 33.00 35.50 30.67 34.18 ↑0.38
+
+performance of models using raw video input versus EgoSG. Our raw video base-line is consistent with the evaluation method used in the original HD-EPIC pa-per [33], which also evaluated models directly on video inputs. Averaging across all categories ( Overall ), EgoSG consistently outperforms video input for most models, except for smaller models (InternVL3-2B and VideoLLaMa3-2B). The largest improvement is observed for Qwen2.5-VL 14B, with a gain of 5.6%. This suggests that as model capacity increases, the compact semantic infor-mation of a scene graph becomes a more efficient input than the high redundancy of raw video frames. Critically, EgoSG improves performance even for Gemini (+3.22%), the same model used to generate the scene graphs, confirming that the gains are driven by the intermediate EgoSG representation itself rather than by a stronger MLLM backbone. The largest category-level gains appear in Recipe (+16.5%), 3D Perception 
+
+(+11.5%), Object Motion (+14.0%), and Ingredient (+3.3%), which are the tasks that often involve long videos with complex spatial reasoning or multiple object interactions. Conversely, EgoSG performs worse in Action , which involves short video clips lasting a few seconds, and where short-term visual dynamics can fa-vor the raw video signal. Overall, EgoSG offers a significant advantage for tasks demanding structured reasoning over extended interactions. Fig. 4 shows performance of EgoSG vs raw video across different question prototypes. Within categories, results vary across question prototypes, reflecting the diversity of visual and reasoning demands. Prototypes requiring precise visual details (e.g., Action Recognition ) tend to favour video-only input, while those in-volving sequential reasoning or object tracking over time (e.g., Recipe Step Recog-nition ) benefit most from EgoSG. Graph it first! 11 0 10 20 30 40 50 60 
+
+Clip Length (minutes) 
+
+> 0
+> 100
+> 200
+> 300
+> Processing Time (seconds)
+
+Single Question       
+
+> Video VQA
+> EgoSG VQA
+> 010 20 30 40 50 60
+
+Clip Length (minutes) 
+
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> Processing Time (seconds)
+
+Multiple Questions (22 Questions)      
+
+> Video VQA
+> EgoSG VQA 10 20 30 40 50 60
+
+Clip Length (minutes) 
+
+Single Question       
+
+> Video VQA
+> EgoSG VQA
+> 010 20 30 40 50 60
+
+Clip Length (minutes) 
+
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> Processing Time (seconds)
+
+Multiple Questions (22 Questions) 
+
+> Video VQA
+> EgoSG VQA
+
+Fig. 5: Runtime comparison be-tween raw video and EgoSG. 0 60 120 180 240 300 360 420 480 
+
+> Video Length (s)
+> 0
+> 200k
+> 400k
+> 600k
+> GFLOPs
+> FLOPs Scaling Comparison
+> Video VQA
+> EgoSG VQA
+> EgoSG Generation
+> EgoSG (Gen + VQA)
+
+Fig. 6: FLOPs comparison between raw video and EgoSG. <10s 
+
+> 10s 10min
+> 10 20min
+> 20 30min
+> 30 40min
+> >40min
+> Video Duration
+> 0
+> 20
+> 40
+> 60
+> 80
+> Accuracy (%)
+> Video
+> EgoSG
+
+Fig. 7: Accuracy vs video length. 
+
+Relationship between model accuracy (%) and video length. 
+
+4.4 Runtime Analysis 
+
+We report a runtime analysis on Gemini in Fig. 5. Importantly, the EgoSG VQA 
+
+curve measures the end-to-end cost of our pipeline, i.e., scene-graph generation + downstream VQA . EgoSG incurs an upfront graph-generation cost ( ≈5.7 s per 1-minute clip) that scales linearly with video length. For a single question, this can make EgoSG slower than video-only inference (Fig. 5, top). However, graph generation is performed only once per video: the resulting scene graph is a reusable representation that can be queried multiple times without reprocessing the raw video. In the realistic multi-question setting of HD-EPIC (22 questions per video on average), the generation cost is amortized, and EgoSG achieves substantially lower total runtime than video-based VQA (Fig. 5, bottom). The efficiency gains of EgoSG are also reflected in inference compute . Video-based MLLMs attend over T visual tokens, with O(T 2) self-attention cost, whereas EgoSG converts the video into a compact textual representation of S tokens, yielding O(S2) complexity with S ≪ T . This leads to a reduced attention cost, consistent with token trends in Fig. 2. Since API models do not expose FLOPs, we estimate compute using Qwen2.5-VL-3B as an open-source proxy and report GFLOPs in Fig. 6. The analysis is performed on a representative video exam-ple using a fixed question prompt while varying video duration from 0 to 480 seconds. The figure compares Video VQA , EgoSG Generation , EgoSG VQA , and the combined EgoSG pipeline cost ( Gen+VQA ). As video length increases, Video VQA scales steeply, while EgoSG VQA remains nearly flat, and graph generation grows more slowly. Consequently, the end-to-end EgoSG cost remains lower for long videos, confirming its favorable scaling. 12 A. Taluzzi et al. 3D Perception 
+
+Fine Grained 
+
+Ingredient 
+
+Object Motion 
+
+Recipe 
+
+Overall 
+
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> Accuracy (%)
+> Avg Video Length (s)
+> Videos only
+> EgoSG only
+> Videos + EgoSG
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> Avg Video Length (s)
+
+Fig. 8: EgoSG (w/ and w/o video). Ac-curacy (%) of EgoSG w/ and w/o using the raw video input. 2 4 6 8 10 12 14 
+
+Number of Parameters (B) 
+
+26 
+
+28 
+
+30 
+
+32 
+
+34 
+
+36 
+
+38 
+
+> Accuracy (%)
+
+Model (Family - Input) 
+
+Qwen2.5-VL - EgoSG 
+
+Qwen2.5-VL - Videos 
+
+InternVL3 - EgoSG 
+
+InternVL3 - Videos 
+
+VideoLLaMa3 - EgoSG 
+
+VideoLLaMa3 - Videos 
+
+Fig. 9: Accuracy vs. Model Size. Rela-tionship between model accuracy (%) and number of parameters in different MLLMs. Q: Where was the object (989, 409, 1140, 890) (as shown in 
+
+the image) seen at 19:09 moved from/to throughout the video? 
+
+CHOICES: 
+
+(A) [...] 
+
+(B) “From counter bottom left of microwave to shelf left of 
+
+microwave, then from shelf left of microwave to counter left 
+
+of hob, then from counter left of hob to drawer left of 
+
+oven.” 
+
+(C) “From counter left of hob to drawer left of oven.” 
+
+(D) [...] 
+
+(E) [...] 
+
+Video: (B) EgoSG: (C) 
+
+EVENTS: 
+
+05:55: place baking_paper_1 ON counter_1 
+
+19:16: place baking_paper_1 IN drawer_1 
+
+Q: What step did the participant do between 32:10 and 32:38 in this video? 
+
+CHOICES: 
+
+(A) "Add the tomato puree to the mixture in the pan and mix it thoroughly. Cook the puree 
+
+for about 5 minutes on a low flame or until the butter separates out from the mixture." 
+
+(B) [...] 
+
+(C) [...] 
+
+(D) "In the morning, drain the water in which the dal and rajma was soaked. [...] Cook in 
+
+the pressure cooker on high-medium heat for 10 whistles, then lower the heat to low-medium 
+
+and cook for another 10 minutes. In total around 15 to 20 whistles." 
+
+(E) [...] 
+
+Video: (A) EgoSG: (D) 
+
+EVENTS: 
+
+32:11: pour water FROM [mug_1] INTO pressure_cooker_1 
+
+32:13: pick_up [mug_1] 
+
+32:14: fill [mug_1] WITH water FROM sink_1 
+
+32:20: pour water FROM [mug_1] INTO pressure_cooker_1 
+
+Motion 
+
+32:28: turn_on stove_1 
+
+32:33: put_down pressure_cooker_1 ON stove_1 
+
+32:34: put_on lid ON pressure_cooker_1 
+
+32:37: close lid ON pressure_cooker_1 
+
+Recipe 
+
+Fig. 10: Successful Cases. Instances where EgoSG succeeds and raw video fails. 
+
+4.5 Ablations Accuracy vs video length. Fig. 7 illustrates how the performance varies with video length. We observe that EgoSG outperforms the video-based approach on longer videos, where processing the full video becomes challenging for the models. This highlights the robustness of EgoSG in handling extended video sequences compared to conventional frame-based representations. 
+
+EgoSG (w/ and w/o video). Fig. 8 reports per-category results comparing EgoSG-only inference to EgoSG augmented with raw video. The impact of modal-ity fusion varies across categories. In some cases, adding video improves perfor-mance (e.g., Fine Grained and Ingredient ), suggesting complementary information between structured scene knowledge and raw visual cues. However, in other cate-gories such as Object Motion and Recipe , performance decreases, indicating that additional visual tokens may introduce noise, compete for attention, and consume limited context budget, which can ultimately reduce accuracy [9]. Graph it first! 13 Q: How much did the participant                                                       
+
+> weight of biscuits in this video?
+> CHOICES: (A) 472g (B) 438g (C)
+> 451g (D) 457g (E) 518g
+> Video: (D) EgoSG: (E)
+> EVENTS:
+> 03:13: place container ON scale_1
+> 03:16: move bowl_1 TO container
+> 03:25: pour contents FROM bowl_1
+> TO container
+> Q: Which of these sentences best describe the ongoing
+> action(s) in the video 1?
+> CHOICES:
+> (A) [...]
+> (B) "Shake my hands above the sink to remove excess
+> water from my hands."
+> (C) [...]
+> (D) [...]
+> (E) "Shake hands to get rid of any excess liquid from
+> them."
+> Video: (B) EgoSG: (E)
+> EVENTS:
+> 45:37-45:39: put_down scissors_1 IN cup_1
+> 45:40-45:48: dry hands WITH cloth_1
+> Ingredient Action
+
+Fig. 11: Failure cases. Instances where EgoSG fails and raw video succeeds. 
+
+Accuracy vs number of parameters. Fig. 9 illustrates how model accuracy varies with the number of parameters. The relative gain from using EgoSG is more pronounced for larger models. This trend suggests that small models may lack the capacity to effectively reason over structured representations like scene graphs, likely due to limited exposure to such data during training. 
+
+Ablation on graph structure. Tab. 3 ablates the impact of feeding EgoSG’s graph-based representation (Sec. 3.3) to an MLLM (Gemini Flash 2.0), compared to an unstructured language baseline. As an oracle upper bound, we report Nar-rations , i.e., the dataset’s annotations, which provide dense textual descriptions at an average rate of ∼24 sentences per minute (e.g., “ the person picks up a plate from a pile of plates using the right hand ”). We compare against two baselines: 
+
+Video -only, and Captions , where the same MLLM generates independent 1-minute descriptions directly from the video (i.e., it is prompted to produce text rather than EgoSG graphs). Our proposed representation, EgoSG, achieves the strongest average performance, outperforming both baselines. We also evaluate EgoSG †, a variant that replaces the structured graph-based format with 1-minute natural-language summaries generated by our pipeline alongside the scene graphs (see Sec. 4.2). Importantly, EgoSG † summaries are graph-grounded: they are generated in the same prompt as scene-graph extraction, and thus are produced given the predicted entities, relationships and timestamped events, unlike Captions , which are generated directly from video without constructing any graph. Overall, EgoSG 14 A. Taluzzi et al. 
+
+Table 3: Ablation on graph structure. Accuracy (%) across input formats and task categories. Narrations use ground-truth expert annotations (oracle upper bound). Video and Captions are baselines; Captions are 1-minute free-form descriptions generated directly from video without graph construction. EgoSG is our structured scene-graph event list, and EgoSG † replaces structured events with 1-minute summaries conditioned on (grounded in) the scene-graph extraction outputs.                                   
+
+> Format Recipe Ingredient Action 3D Motion Avg
+> Narrations 80.00 54.67 85.50 45.50 32.00 59.53 Video 51.75 34.00 46.00 39.00 26.67 39.48 Captions 65.00 34.00 28.50 40.00 30.00 39.50 EgoSG †42.50 30.00 41.33 31.33 63.25 41.15 EgoSG 44.00 38.00 37.33 32.67 61.50 42.70
+
+performs best, while EgoSG † remains competitive and consistently surpasses both baselines, making it a practical alternative under token-budget constraints. 
+
+4.6 Qualitative Results 
+
+Figs. 10 and 11 provide qualitative examples of EgoSG, illustrating both its strengths and limitations. Fig. 10 shows cases where EgoSG surpasses the video-only baseline: in a long Recipe video (over 3,000s), its compact graph represen-tation captures essential procedural steps that frame-based methods fail to track, and in the Object Motion category, it correctly infers object relocation using spa-tial relations. Fig. 11 shows two failure cases consistent with our quantitative analysis: in an Ingredient example, the graph omits visual details such as num-bers on a scale, and in an Action example it encodes the general “drying hands” motion but misses the precise positioning above the sink, reflecting the limited visual granularity of symbolic abstractions. 
+
+5 Conclusion 
+
+We introduced EgoSG, a method for egocentric VQA that leverages scene graphs for improving MLLMs’ reasoning. EgoSG constructs structured representations of both the environment and the user’s interactions, enabling MLLMs to per-form reasoning on a more structured input than raw video frames. Compared to conventional video processing, EgoSG is highly token-efficient, making it particu-larly well-suited for analyzing long-form videos. Our proposed framework relies on scene graphs with open-vocabulary capabilities, which currently require a power-ful model (Gemini Flash 2.0) to generate reliably. This dependency constitutes a current limitation of our approach. As open-source MLLMs continue to advance, more lightweight alternatives for constructing egocentric scene graphs will be key to enabling scalable and efficient VQA. Graph it first! 15 
+
+References 
+
+1. Alayrac, J.B., Donahue, J., Luc, P., Miech, A., Barr, I., Hasson, Y., Azar, M., Botvinick, M., Zisserman, A., Simonyan, K.: Flamingo: a visual language model for few-shot learning. In: Advances in Neural Information Processing Systems (2022) 2. Armeni, I., He, Z.Y., Gwak, J., Zamir, A.R., Fischer, M., Malik, J., Savarese, S.: 3d scene graph: A structure for unified semantics, 3d space, and camera. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 5664–5673 (2019) 3. Arnab, A., Sun, C., Schmid, C.: Unified graph structured models for video under-standing. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 8117–8126 (2021) 4. Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., Zhong, H., Zhu, Y., Yang, M., Li, Z., Wan, J., Wang, P., Ding, W., Fu, Z., Xu, Y., Ye, J., Zhang, X., Xie, T., Cheng, Z., Zhang, H., Yang, Z., Xu, H., Lin, J.: Qwen2.5-vl technical report. arXiv preprint arXiv:2502.13923 (2025) 5. Bärmann, L., Waibel, A.: Where did i leave my keys? - episodic-memory-based ques-tion answering on egocentric videos. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops. pp. 1560–1568 (June 2022) 6. Chen, Z., Wu, J., Lei, Z., Zhang, Z., Chen, C.: Gpt4sgg: Synthesizing scene graphs from holistic and region-specific narratives. arXiv preprint arXiv:2312.04314 (2023) 7. Cho, J.H., Madotto, A., Mavroudi, E., Afouras, T., Nagarajan, T., Maaz, M., Song, Y., Ma, T., Hu, S., Rasheed, H., Sun, P., Huang, P.Y., Bolya, D., Jain, S., Martin, M., Wang, H., Ravi, N., Jain, S., Stark, T., Moon, S., Damavandi, B., Lee, V., Westbury, A., Khan, S., Krähenbühl, P., Dollár, P., Torresani, L., Grauman, K., Feichtenhofer, C.: Perceptionlm: Open-access data and models for detailed visual understanding. arXiv:2504.13180 (2025) 8. Chu, S., Seo, S., Han, B.: Fine-grained captioning of long videos through scene graph consolidation. arXiv preprint arXiv:2502.16427 (2025) 9. Deng, A., Cao, T., Chen, Z., Hooi, B.: Words or vision: Do vision-language mod-els have blind faith in text? In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 3867–3876 (2025) 10. Dong, X., Zhang, P., Zang, Y., Cao, Y., Wang, B., Ouyang, L., Wei, X., Zhang, S., Duan, H., Cao, M., Zhang, W., Li, Y., Yan, H., Gao, Y., Zhang, X., Li, W., Li, J., Chen, K., He, C., Zhang, X., Qiao, Y., Lin, D., Wang, J.: Internlm-xcomposer2: Mastering free-form text-image composition and comprehension in vision-language large model. arXiv preprint arXiv:2401.16420 (2024) 11. Driess, D., Xia, F., Sajjadi, M.S., Lynch, C., Chowdhery, A., Ichter, B., Wahid, A., Tompson, J., Vuong, Q., Yu, T., et al.: Palm-e: An embodied multimodal language model. arXiv preprint arXiv:2303.03378 (2023) 12. Fan, C.: Egovqa-an egocentric video question answering benchmark dataset. In: Pro-ceedings of the IEEE/CVF International Conference on Computer Vision Work-shops. pp. 0–0 (2019) 13. Fan, C., Huang, J.B., Nevatia, R.: Ego-topo: Environment topology estimation from egocentric videos. In: CVPR (2021) 14. Fu, C., Dai, Y., Luo, Y., Li, L., Ren, S., Zhang, R., Wang, Z., Zhou, C., Shen, Y., Zhang, M., Chen, P., Li, Y., Lin, S., Zhao, S., Li, K., Xu, T., Zheng, X., Chen, E., Shan, C., He, R., Sun, X.: Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In: Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR). pp. 24108–24118 (June 2025) 16 A. Taluzzi et al. 15. Google: Gemini 2.0 flash, https://cloud.google.com/vertex- ai/generative-ai/docs/models/gemini/2-0-flash 
+
+16. Grauman, K., Westbury, A., Byrne, E., Chavis, Z., Furnari, A., Girdhar, R., Ham-burger, J., Jiang, H., Liu, M., Liu, X., et al.: Ego4d: Around the world in 3,000 hours of egocentric video. In: Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition. pp. 18995–19012 (2022) 17. Huang, S., Dong, L., Wang, W., Hao, Y., Singhal, S., Ma, S., Lv, T., Cui, L., Mo-hammed, O.K., Patra, B., et al.: Language is not all you need: Aligning percep-tion with language models. Advances in Neural Information Processing Systems 36 ,72096–72109 (2023) 18. Ji, J., Krishna, R., Fei-Fei, L., Niebles, J.C.: Action genome: Actions as compositions of spatio-temporal scene graphs. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 10236–10247 (2020) 19. Jia, B., Lei, T., Zhu, S.C., Huang, S.: Egotaskqa: Understanding human tasks in egocentric videos. Advances in Neural Information Processing Systems 35 , 3343– 3360 (2022) 20. Johnson, J., Krishna, R., Stark, M., Li, L.J., Shamma, D.A., Bernstein, M., Fei-Fei, L.: Image retrieval using scene graphs. In: CVPR (2015) 21. Li, J., Li, D., Xiong, C., Hoi, S.: Blip: Bootstrapping language-image pre-training for unified vision-language understanding and generation. In: International conference on machine learning. pp. 12888–12900. PMLR (2022) 22. Li, R., Zhang, S., Lin, D., Chen, K., He, X.: From pixels to graphs: Open-vocabulary scene graph generation with vision-language models. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 28076– 28086 (2024) 23. Liu, H., Li, C., Li, Y., Li, B., Zhang, Y., Shen, S., Lee, Y.J.: Llava-next: Improved reasoning, ocr, and world knowledge (January 2024), https://llava-vl.github. io/blog/2024-01-30-llava-next/ 
+
+24. Maaz, M., Rasheed, H., Khan, S., Khan, F.S.: Video-chatgpt: Towards detailed video understanding via large vision and language models. arXiv preprint arXiv:2306.05424 (2023) 25. Mangalam, K., Akshulakov, R., Malik, J.: Egoschema: A diagnostic benchmark for very long-form video language understanding. Advances in Neural Information Pro-cessing Systems 36 , 46212–46244 (2023) 26. Mao, J., Jiang, W., Wang, X., Feng, Z., Lyu, Y., Liu, H., Zhu, Y.: Dynamic multistep reasoning based on video scene graph for video question answering. In: Proceedings of the 2022 Conference of the North American Chapter of the Association for Com-putational Linguistics: Human Language Technologies. pp. 3894–3904 (2022) 27. OpenAI: Gpt-4 technical report (2023), https://cdn.openai.com/papers/gpt-4.pdf 
+
+28. OpenAI: Gpt-4v(ision) system card. https: //cdn.openai.com /papers/GPTV_ System_Card.pdf (2023), accessed: 2023 29. OpenAI: Gpt-4o. https://openai.com/index/hello- gpt- 4o/ (2024), accessed: 2024-11-15 30. Patel*, A., Chitalia*, V., Yang, Y.: Advancing egocentric video question answer-ing with multimodal large language models (2025), https://arxiv.org/abs/2504. 04550 
+
+31. Peddi, R., Saurabh, Shrivastava, A.A., Singla, P., Gogate, V.: Towards unbiased and robust spatio-temporal scene graph generation and anticipation (2025), https: //arxiv.org/abs/2411.13059 Graph it first! 17 32. Peng, Z., Wang, W., Dong, L., Hao, Y., Huang, S., Ma, S., Wei, F.: Kosmos-2: Grounding multimodal large language models to the world. arXiv preprint arXiv:2306.14824 (2023) 33. Perrett, T., Darkhalil, A., Sinha, S., Emara, O., Pollard, S., Parida, K.K., Liu, K., Gatti, P., Bansal, S., Flanagan, K., et al.: Hd-epic: A highly-detailed egocentric video dataset. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 23901–23913 (2025) 34. Plizzari, C., Goletto, G., Furnari, A., Bansal, S., Ragusa, F., Farinella, G.M., Damen, D., Tommasi, T.: An outlook into the future of egocentric vision. International Jour-nal of Computer Vision 132 (11), 4880–4936 (2024) 35. Plizzari, C., Tonioni, A., Xian, Y., Kulshrestha, A., Tombari, F.: Omnia de egotempo: Benchmarking temporal understanding of multi-modal llms in egocentric videos. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 24129– 24138 (2025) 36. Rai, N., Chen, H., Ji, J., Desai, R., Kozuka, K., Ishizaka, S., Adeli, E., Niebles, J.C.: Home action genome: Cooperative compositional action understanding. In: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 11184–11193 (2021) 37. Rodin, I., Furnari, A., Min, K., Tripathi, S., Farinella, G.M.: Action scene graphs for long-form understanding of egocentric videos (2023), https://arxiv.org/abs/ 2312.03391 
+
+38. Rodin, I., Furnari, A., Min, K., Tripathi, S., Farinella, G.M.: Action scene graphs for long-form understanding of egocentric videos. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 18622–18632 (2024) 39. Team, G., Georgiev, P., Lei, V.I., Burnell, R., Bai, L., Gulati, A., Tanzer, G., Vincent, D., Pan, Z., Wang, S., et al.: Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context. arXiv preprint arXiv:2403.05530 (2024) 40. Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux, M.A., Lacroix, T., Roz-ière, B., Goyal, N., Hambro, E., Azhar, F., et al.: Llama: Open and efficient founda-tion language models. arXiv preprint arXiv:2302.13971 (2023) 41. Urooj, A., Kuehne, H., Wu, B., Chheu, K., Bousselham, W., Gan, C., Lobo, N., Shah, M.: Learning situation hyper-graphs for video question answering. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 14879–14889 (2023) 42. Wang, P., Bai, S., Tan, S., Wang, S., Fan, Z., Bai, J., Chen, K., Liu, X., Wang, J., Ge, W., Fan, Y., Dang, K., Du, M., Ren, X., Men, R., Liu, D., Zhou, C., Zhou, J., Lin, J.: Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 (2024) 43. Xu, D., Zhu, Y., Choy, C.B., Fei-Fei, L.: Scene graph generation by iterative message passing. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. pp. 5410–5419 (2017) 44. Xu, M., Wu, M., Zhao, Y., Li, J.C.L., Ou, W.: Llava-spacesgg: Visual instruct tuning for open-vocabulary scene graph generation with enhanced spatial relations. In: 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV). pp. 6362–6372. IEEE (2025) 45. Yang, J., Liu, S., Guo, H., Dong, Y., Zhang, X., Zhang, S., Wang, P., Zhou, Z., Xie, B., Wang, Z., Ouyang, B., Lin, Z., Cominelli, M., Cai, Z., Zhang, Y., Zhang, P., Hong, F., Widmer, J., Gringoli, F., Yang, L., Li, B., Liu, Z.: Egolife: Towards egocentric life assistant (2025), https://arxiv.org/abs/2503.03803 18 A. Taluzzi et al. 46. Yao, Y., Yu, T., Zhang, A., Wang, C., Cui, J., Zhu, H., Cai, T., Li, H., Zhao, W., He, Z., et al.: Minicpm-v: A gpt-4v level mllm on your phone. arXiv preprint arXiv:2408.01800 (2024) 47. Zhang, B., Li, K., Cheng, Z., Hu, Z., Yuan, Y., Chen, G., Leng, S., Jiang, Y., Zhang, H., Li, X., Jin, P., Zhang, W., Wang, F., Bing, L., Zhao, D.: Videollama 3: Frontier multimodal foundation models for image and video understanding. arXiv preprint arXiv:2501.13106 (2025), https://arxiv.org/abs/2501.13106 
+
+48. Zhao, Y., Fei, H., Cao, Y., Li, B., Zhang, M., Wei, J., Zhang, M., Chua, T.S.: Constructing holistic spatio-temporal scene graph for video semantic role labeling. In: Proceedings of the 31st ACM International Conference on Multimedia. pp. 5281– 5291 (2023) 49. Zhu, J., Wang, W., Chen, Z., Liu, Z., Ye, S., Gu, L., Tian, H., Duan, Y., Su, W., Shao, J., Gao, Z., Cui, E., Wang, X., Cao, Y., Liu, Y., Wei, X., Zhang, H., Wang, H., Xu, W., Li, H., Wang, J., Deng, N., Li, S., He, Y., Jiang, T., Luo, J., Wang, Y., He, C., Shi, B., Zhang, X., Shao, W., He, J., Xiong, Y., Qu, W., Sun, P., Jiao, P., Lv, H., Wu, L., Zhang, K., Deng, H., Ge, J., Chen, K., Wang, L., Dou, M., Lu, L., Zhu, X., Lu, T., Lin, D., Qiao, Y., Dai, J., Wang, W.: Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models (2025), 
+
+https://arxiv.org/abs/2504.10479 Graph it first! 19                              
+
+> Table 4: Breakdown of common action prepositions in the generated EgoSGs.
+> The table shows total counts, successful relation to environmental ( env ) and dynamic (dyn ) objects, and the corresponding failure rate.
+> Preposition Total Env Dyn Fail Rate (%)
+> ON 10 ,834 6 ,900 2 ,968 8.9
+> FROM 10 ,825 6 ,404 3 ,014 13 .0
+> WITH 5,427 52 3 ,015 43 .5
+> IN 4,657 2 ,187 1 ,804 14 .3
+> INTO 1,416 513 729 12 .3
+> TO 955 367 400 19 .7
+> OF 335 99 234 0.6
+> UNDER 161 39 274 .5
+> AND 113 0110 2.7
+
+A Additional Analysis 
+
+A.1 EgoSG Generation Quality 
+
+We analyze the quality of the generated EgoSGs to highlight both their descriptive strengths and current limitations. 
+
+Preposition Grounding Analysis. Tab. 4 summarizes how well binary rela-tionships ( EB ), typically expressed via prepositions, are grounded to known ele-ments in the node set N . For each relationship, we evaluate whether the entities returned by the MLLM are present in the predefined set of nodes N . Prepositions like ON and FROM show strong grounding performance, with most arguments suc-cessfully resolved to existing node IDs. In contrast, prepositions such as WITH and 
+
+UNDER show high failure rates (43.5% and 74.5% respectively), often due to the MLLM’s inability to identify tools or instruments as discrete, trackable objects in the scene. 
+
+Graph Quality Analysis. EgoSG scene graphs capture ENVIRONMENTAL ELEMENTS ,
+
+DYNAMIC OBJECTS , and user-object interactions in the form of EVENTS (see Section 3.3 and Fig. 3 in the main paper). To evaluate the quality of our generated EgoSGs, we conducted a manual inspection on 5 random video clips ranging from 3.0 to 3.8 minutes each (total: 17.2 minutes), containing in total 322 Action Hyperedges A
+
+and 101 nodes N (53 Environment Elements and 48 Dynamic Objects ). Tab. 5 summarizes the key error patterns observed. For Nodes , the system consistently misses interacted objects that are in the video but are not listed in the graph (16 missing in total across clips), such as tools or utensils used in actions but not cataloged. Wrong Node Attributes (5.0%) reflect inaccurate visual properties 
+
+descriptions (colors, materials, labels). For Binary Relationships describing interactions between nodes, Wrong Spatial Relations (5.0%) include errors in the description of relations between nodes and general spatial understanding errors, such as misidentifying location-based relationships or incorrectly describing object 20 A. Taluzzi et al.             
+
+> Table 5: Graph quality analysis on 5 representative video clips.
+> Error Category Accuracy (%) (Correct/Total) Nodes ( N) Errors
+> Missing Nodes 16 missing Wrong Node Attributes 5.0% (5/101)
+> Binary Relationships ( EB) Errors
+> Wrong Spatial Relations 5.0% (5/101)
+> Action Hyperedges ( A) Errors
+> False Action Hyperedges 15.5% (50/322) Malformed Actions 9.9% (32/322) Actions with Wrong Nodes 8.1% (26/322) Missing Actions 13 missing Timestamp Errors 3.1% (10/322)
+
+positioning within the scene. For Action Hyperedges , False Action Hyperedges 
+
+represent the most significant challenge (15.5%), where the MLLM generates plau-sible but incorrect interaction descriptions (e.g., recording “pick_up bottle" when the person actually put it down). Malformed Actions (9.9%) involve missing ob-ject references, such as “move TO" without specifying the destination. Actions with Wrong Nodes (8.1%) occur when the action type is correct but references incorrect entities (e.g., “wash plate_1" instead of “wash bowl_2"). Missing Ac-tions represent significant interactions that occurred but were not captured in the scene graph (13 missing in total). Timestamp Errors (3.1%) indicate events recorded with a timing offset of more than 2 seconds from when they actually occurred. Overall, on average, 5% of the nodes or relationships contain errors, and the per-category error rate for actions is 9% . In addition, 16 /117 objects ( 13 .7% )are missing and 13 /335 actions ( 3.9% ) are undetected. These statistics are obtained from a rigorous manual inspection, a process that is complex and time-consuming due to the density of information in long-form ego-centric videos. Precisely measuring how generation errors affect VQA outcomes is challenging, as the impact of a single graph inaccuracy depends on several factors, such as the semantic grounding of the question within the graph-based reasoning process, and whether the question actually relies on the portion of the scene af-fected by the error. Moreover, manually tracing these dependencies across long, visually dense egocentric videos is infeasible in practice. Critically, this work does not focus on optimizing scene graph generation quality, but on demonstrating that structured intermediate abstractions encoding entities, relations, and events are effective representations for downstream reasoning. The strong results achieved de-spite generation imperfections underscore the robustness and utility of the EgoSG framework. Graph it first! 21                   
+
+> Table 6: Frame sampling limits. Maximum number of frames fed to each model per question.
+> Model Max Input Frames
+> Gemini Flash 2.0 3,900
+> Qwen2.5-VL 512
+> VideoLLaMA3 180
+> InternVL3 32
+> Table 7: Compression strategies for EgoSG inputs. The “Summaries Used” column indicates how often the full graph was replaced by its summary version. †: For InternVL3, 150 questions exceed the strict context limit even after summarization and cannot be processed; these instances are treated as incorrect predictions in the accuracy reported in the main paper.
+> Model Context Window Summaries Used
+> Gemini Flash 2.0 1,048 ,576 0 / 1,250 (0.0%) Qwen2.5-VL 32 ,768 154 / 1,250 (12.3%) VideoLLaMA3 32 ,768 154 / 1,250 (12.3%) InternVL3 8,192 565 / 1,100 †(51.4%)
+
+A.2 Input Processing Strategies 
+
+To accommodate the varying capacities of different MLLMs, particularly for ques-tions involving long or multi-video inputs, we employ model-specific frame sam-pling strategies. We initially sample all videos at a uniform rate of 1 FPS, applying further uniform subsampling whenever the resulting frame count exceeds the max-imum input limits per question reported in Tab. 6. For Gemini Flash 2.0, we utilize its high input capacity to process up to 3,900 frames, effectively covering over an hour of footage without further reduction. In contrast, open-source models require stricter limits: VideoLLaMA3 and InternVL3 are restricted to 180 and 32 frames, respectively, according to the capacity of their context length. For Qwen2.5-VL, we reduce the input from the standard limit of 768 to 512 frames to accommo-date GPU memory limitations. Consequently, for long-form videos exceeding these budgets, baseline models are forced to severely subsample frames. In contrast, our approach encodes the entire video duration, enabling the downstream model to reason over the full temporal context equivalent to 1 FPS resolution. For EgoSG inputs, we primarily employ the complete structured graph. How-ever, for models with limited context windows, this dense representation can oc-casionally exceed the token budget when processing long-form videos. In such instances, we employ a fallback strategy: replacing the structured graph with the concatenated natural language summaries generated for each video clip (see the “Summary” field in the prompt definitions in Sec. C). This provides a coarser narrative of the video that fits within stricter token limits. Tab. 7 details the fre-quency with which this adaptation was applied. Importantly, as demonstrated in 22 A. Taluzzi et al. 
+
+Fig. 12: EgoSG components distribution. From left to right: wordles of (1) environ-ment elements, (2) dynamic objects, (3) action types, (4) location-based relations and (5) action prepositions. 
+
+Table 8: Results on the complete evaluation subset. Accuracy (%) comparison between EgoSG and raw video across all selected categories, including Nutrition and 
+
+Gaze . The Overall column reports the mean accuracy across categories, following the reporting protocol used in the main paper. Best results are bolded .                        
+
+> Input Recipe Ingred. Nutrition Action 3D Perc. Object Mot. Gaze Overall
+> Video 51.75 34.00 32.67 46.00 39.00 26.67 34.00 37.73 EgoSG 61.50 37.33 24.67 38.00 44.00 32.67 29.00 38.17
+
+the ablation study in the main paper (Table 4), substituting the full graph with these summaries results in only a minor degradation in the overall accuracy. 
+
+A.3 EgoSG Components 
+
+We present in Fig. 12 the top 25 most frequent items for the following categories: (1) environment elements, (2) dynamic objects, (3) action types, (4) location-based relations, and (5) action prepositions. 
+
+B Results on the Complete Evaluation Subset 
+
+In the main paper, we focus our evaluation on the five HD-EPIC VQA cate-gories that most directly require long-term temporal and spatio-temporal rea-soning, excluding Nutrition and Gaze . For completeness, Tab. 8 reports results on the complete evaluation subset, including all seven selected categories. This subset contains 1,500 questions in total. 
+
+C Prompts for EgoSG Generation 
+
+To generate structured scene graphs from egocentric video clips, we adopt a se-quential prompting strategy designed to ensure temporal consistency and reduce redundancy across clips. Each prompt includes a description of the desired output format (see Fig. 15), organized into four main sections: Graph it first! 23 
+
+1. Environment Elements: Unique identifiers, spatial relationships, and visual descriptors. 2. Dynamic Objects: Positioning and appearance details for movable items. 3. Events: Timestamped actions, formatted using standardized capitalized prepo-sitions (e.g., PLACE ON , PICK UP FROM ). 4. Summary: A textual description summarizing the main activities in the clip. This structured format enables consistent parsing and seamless integration into our downstream video reasoning pipeline. 
+
+First Clip Prompt. For the first clip in each sequence, we use a comprehensive prompt (see Fig. 13) to initialize the scene graph. The model is instructed to extract all graph elements from scratch, and we provide an example scene graph (Fig. 16) as a reference. 
+
+Subsequent Clips Prompt. For each following clip, the prompt includes con-textual information extracted from previous clips (see Fig. 14). Specifically, it provides the full set of previously identified environment elements and dynamic objects. To manage token limits while preserving context, we only include the list of events from the immediately preceding clip, while earlier clips are summarized using their generated high-level summaries (for the second clip, only the events from the first are included). This design ensures the model retains relevant tem-poral and spatial context while staying within token limits. The model is then asked to identify new or changed entities and avoid repeating previously detected elements. This strategy helps maintain coherence across time while keeping the prompts concise and efficient. 
+
+D Ablation on Clip Duration 
+
+We study the effect of input clip duration when generating EgoSGs. Specifically, we evaluate four clip lengths: 30 seconds, 1 minute (default), 2 minutes, and 5 minutes, and report the results in Tab. 9. The results show that 1-minute clips achieve the best overall performance. Using shorter clips (30 seconds) leads to a larger number of temporal segments per video, increasing update frequency and often fragmenting continuous actions across multiple clips. This fragmentation slightly reduces accuracy. In contrast, longer clips (2–5 minutes) contain substantially more objects and actions within the same temporal window. The model must therefore summarize a larger amount of visual information, which leads to coarser scene-graph representations and lower accuracy across all evaluation categories. 24 A. Taluzzi et al. Prompt Template for Initial Clip Processing 
+
+You are processing the first clip of an egocentric activity video. Please carefully observe the video clip and extract the following: 1) Environment Elements: Large and medium appliances, built-in storage structures (e.g., cabinets, drawers), work surfaces (e.g., counters, tables), and fixtures (e.g., sinks, wall-mounted switches). List up to 10 items, describing their location relative to other environment elements, and key visual traits. 2) Dynamic Objects: Movable objects that the user interacts with during this clip and can be manipulated to change their location within the environment. List up to 10 items, describing their initial position relative to environment elements or other known objects, and appearance or label. 3) Events and Interactions: Key events and interactions the user performs in this clip, each with a timestamp. List up to 15 relevant events. 4) Brief summary describing the main actions of the clip. –-[SCENE GRAPH OUTPUT FORMAT (see Fig. 15)] –-Example: [EXAMPLE SCENE GRAPH (see Fig. 16)] –-Think step by step, then output only the three lists and the summary as described. 
+
+Fig. 13: Prompt template for processing the first clip in an egocentric video sequence. The template establishes the foundational scene graph structure by identify-ing environment elements, dynamic objects, and temporal events. 
+
+Table 9: Ablation on clip duration. Accuracy (%) for EgoSG generation with dif-ferent input clip lengths. Best result per category is bolded .
+
+Input Recipe Ingred. Action 3D Perc. Object Mot. Overall 
+
+30 sec 57.75 38.00 36.00 44.00 30.67 41.28 
+
+1 min 61.50 37.33 38.00 44.00 32.67 42.70 
+
+2 min 54.25 36.33 34.00 41.00 27.33 38.58 5 min 41.00 28.00 28.00 36.00 25.33 31.67 Graph it first! 25 Prompt Template for Subsequent Clip Processing 
+
+You are processing a new clip from an egocentric activity video. Below are the accumulated Environment Elements and Dynamic Objects identified from all previous clips: [ACCUMULATED ENVIRONMENT ELEMENTS] [ACCUMULATED DYNAMIC OBJECTS] Below are the Summaries of older clips and the Events from the most recent previous clip: [SUMMARIES FROM OLDER CLIPS] [EVENTS FROM MOST RECENT CLIP] –-Your task is to analyze the new clip and extract the following: 1) NEW Environment Elements that were NOT previously listed. These are large and medium appliances, built-in storage structures (e.g., cabinets, drawers), work surfaces (e.g., counters, tables), and fixtures (e.g., sinks, wall-mounted switches). List up to 10 items, describing their location relative to other stationary objects, and key visual traits. Leave this section empty if there are no additional items. 2) NEW Dynamic Objects that were NOT previously listed. These are movable objects that the user interacts with during this clip and can be manipulated to change their location within the environment. List up to 10 items, describing their initial position relative to environment elements or other known objects, and appearance or label. Leave this section empty if there are no additional items. 3) Events and Interactions: Key events and interactions the user performs in this clip, each with a timestamp. List up to 15 relevant events. You may reference IDs from previous Environment Elements and Dynamic Objects where appropriate. 4) Brief summary describing the main actions of the current clip. –-[SCENE GRAPH OUTPUT FORMAT (see Fig. 15)] –-Think step by step, then output only the three lists and the summary as described. 
+
+Fig. 14: Prompt template for processing clips from the second on , using accu-mulated context from all previous clips while managing prompt length through selective inclusion of recent events and older summaries. 26 A. Taluzzi et al. Structured Output Format Specification 
+
+Format your response as shown below: ENVIRONMENT ELEMENTS: [element_id]: [location description] - [visual description] ... DYNAMIC OBJECTS: [object_id]: [initial position description] - [appearance description or label] ... EVENTS: [timestamp]s: [verb] [object] [PREPOSITION secondary_object]* ... SUMMARY: ... –-For ENVIRONMENT ELEMENTS and DYNAMIC OBJECTS identification, assign unique and consistent IDs using underscore notation. In the EVENTS: - When appropriate, include one or more capitalized prepositional phrases (e.g., ON, IN, FROM, TO, WITH) to indicate spatial or instrumental relationships with other DYNAMIC OBJECTS or ENVIRONMENT ELEMENTS involved in the action. - It is acceptable to refer to subcomponents (e.g., button ON boiler) or contents (e.g., milk FROM carton) even if these are not separately listed in the DYNAMIC OBJECTS section, as long as they represent an identifiable part of the interaction. 
+
+Fig. 15: Structured output format specification that ensures consistent formatting across all clip processing stages. Graph it first! 27 Example Scene Graph Output for Tea Preparation Scenario 
+
+ENVIRONMENT ELEMENTS refrigerator_1: along the left wall – tall white appliance with a vertical handle main_counter: along the wall beneath upper_cabinet_1 – light wooden surface with a white tiled backsplash upper_cabinet_1: mounted above main_counter – cream-colored wood with glass panel doors drawer_1: below main_counter – cream-colored front with silver handle kettle_1: on main_counter near sink_1 – silver electric kettle with black base sink_1: at the right end of main_counter – stainless steel with a tall faucet DYNAMIC OBJECTS mug_1: inside upper_cabinet_1 – white ceramic with floral print tea_bag_1: inside drawer_1 – small paper envelope labeled "Green Tea" water_bottle_1: inside refrigerator_1 – transparent plastic with blue cap EVENTS 3s: open upper_cabinet_1 4s: pick_up mug_1 FROM upper_cabinet_1 5s: put_down mug_1 ON main_counter 7s: open drawer_1 8s: pick_up tea_bag_1 FROM drawer_1 10s: put_down tea_bag_1 INTO mug_1 12s: open refrigerator_1 13s: grab water_bottle_1 FROM refrigerator_1 15s: close refrigerator_1 17s: pour water FROM water_bottle_1 INTO kettle_1 20s: turn_on kettle_1 SUMMARY: The user prepares to make tea by placing a mug on the counter, adding a tea bag, and filling a kettle with water from the refrigerator. They then turn the kettle on to heat the water. 
+
+Fig. 16: Example scene graph output included in the first clip prompt tem-plate , provided to the MLLM to indicate the structured format illustrating proper iden-tification of environment elements, dynamic objects, and temporal events with spatial relationships.

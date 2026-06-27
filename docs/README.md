@@ -6,49 +6,35 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-26
-- 运行时间：2026-06-26 22:01:09 UTC
+- 最新运行日期：2026-06-27
+- 运行时间：2026-06-27 21:23:14 UTC
 - 运行状态：成功
-- 本次总论文数：9
-- 精读区：3
-- 速读区：6
+- 本次总论文数：5
+- 精读区：1
+- 速读区：4
 
 ### 今日简报（AI）
-1) 今日精选9篇论文，深度解析长视频流理解与边缘云协作。  
-2) 最值得关注：CoVStream通过边缘云协作突破长视频流理解瓶颈，ProtoKV以摘要状态记忆应对延迟查询挑战。  
-3) 普通读者可优先关注视频理解与高效编解码技术的协同，并留意边缘端大模型推理的多粒度剪枝优化。
-- 详情：[/202606/26/README](/202606/26/README)
+今天精读了一篇用场景图推理长视频的论文，速读涵盖音视频监控、对象中心动态建模和隐式记忆检索三个方向。最值得看《Graph it first!》提出的场景图优先策略，以及《Towards Accurate and Robust Surveillance》的鲁棒音视频推理方法。建议优先精读场景图论文，再对比另两篇来理解视频建模的不同路径。
+- 详情：[/202606/27/README](/202606/27/README)
 
 ### 精读区论文标签
-1. [CoVStream: Edge-Cloud Collaboration for Understanding of Long Video Streams](/202606/26/2606.22804v2-covstream-edge-cloud-collaboration-for-understanding-of-long-video-streams)  
-   标签：评分：10.0/10、query:mec-video
-   evidence：边缘云协作理解长视频流
-2. [ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory](/202606/26/2606.26762v1-protokv-streaming-video-understanding-under-delayed-query-with-summary-state-memory)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：流式视频理解; 摘要状态记忆; 延迟查询
-3. [LiveEdit: Towards Real-Time Diffusion-Based Streaming Video Editing](/202606/26/2606.26740v1-liveedit-towards-real-time-diffusion-based-streaming-video-editing)  
+1. [Graph it first! Enabling Reasoning on Long-form Egocentric Videos through Scene Graphs](/202606/27/2606.25842v1-graph-it-first-enabling-reasoning-on-long-form-egocentric-videos-through-scene-graphs)  
    标签：评分：8.0/10、query:mec-video
-   evidence：实时流式视频编辑
+   evidence：第一人称长视频场景图推理
 
 ### 速读区论文标签
-1. [Boosting Neural Video Codec via Scale-Driven Online Flow Refinement](/202606/26/2606.23023v1-boosting-neural-video-codec-via-scale-driven-online-flow-refinement)  
+1. [Towards Accurate and Robust Surveillance Roadside IVD via Trackletized Audio-Visual Reasoning](/202606/27/2606.22299v1-towards-accurate-and-robust-surveillance-roadside-ivd-via-trackletized-audio-visual-reasoning)  
    标签：评分：7.0/10、query:mec-video
-   evidence：神经视频编码器在线光流细化
-2. [Cascaded Multi-Granularity Pruning for On-Device LLM Inference in Industrial IoT](/202606/26/2606.26861v1-cascaded-multi-granularity-pruning-for-on-device-llm-inference-in-industrial-iot)  
+   evidence：利用视频流进行车辆怠速检测的视听推理
+2. [Rethinking Object-Centric Representations for Video Dynamics Modeling](/202606/27/2606.23436v1-rethinking-object-centric-representations-for-video-dynamics-modeling)  
    标签：评分：7.0/10、query:mec-video
-   evidence：面向边缘设备上大语言模型推理的级联剪枝
-3. [Event-Aware Instructed Assistant for Referring Video Segmentation](/202606/26/2606.26994v1-event-aware-instructed-assistant-for-referring-video-segmentation)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：通过事件感知分解进行复杂视频分析的视频分割
-4. [Evaluating Architectural Trade-offs in CGRAs: The Impact of Scratchpad Memory and Heterogeneity on Compute-Intensive Kernels](/202606/26/2606.27240v1-evaluating-architectural-trade-offs-in-cgras-the-impact-of-scratchpad-memory-and-heterogeneity-on-compute-intensive-kernels)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：聚焦于高吞吐流处理的边缘计算架构
-5. [Sol Video Inference Engine: Agent-Native Full-Stack Acceleration Framework for Efficient Video Generation](/202606/26/2606.23743v2-sol-video-inference-engine-agent-native-full-stack-acceleration-framework-for-efficient-video-generation)  
+   evidence：视频动态建模和面向对象的视频分析表示
+3. [Compression and Retrieval: Implicit Memory Retrieval for Video World Models](/202606/27/2606.23105v1-compression-and-retrieval-implicit-memory-retrieval-for-video-world-models)  
    标签：评分：6.0/10、query:mec-video
-   evidence：面向视频生成的模型/硬件特定加速策略选择
-6. [UniRED: Unified RGB-D Video Frame Interpolation with Event Guidance](/202606/26/2606.24282v1-unired-unified-rgb-d-video-frame-interpolation-with-event-guidance)  
+   evidence：视频世界模型中的记忆检索技术，可用于流式视频分析
+4. [Active Adversarial Perturbation-driven Associative Memory Retrieval for RGB-Event Visual Object Tracking](/202606/27/2606.26455v1-active-adversarial-perturbation-driven-associative-memory-retrieval-for-rgb-event-visual-object-tracking)  
    标签：评分：6.0/10、query:mec-video
-   evidence：用于RGB-D视频的实时帧插值，支持后续分析
+   evidence：视频目标跟踪，与视频分析相关；使用RGB-事件多模态融合
 
 
 <div class="dpr-home-promo-card">
