@@ -1,0 +1,39 @@
+{
+  "label": "2026-06-28",
+  "date": "2026-06-28",
+  "generated_at": "2026-06-28T21:12:34",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202606/28/2606.21861v1-zero-shot-vision-language-models-for-classroom-engagement-recognition-a-benchmark-study-of-prompt-sensitivity-and-cross-dataset-generalization",
+      "section": "deep",
+      "title_en": "Zero-Shot Vision-Language Models for Classroom Engagement Recognition: A Benchmark Study of Prompt Sensitivity and Cross-Dataset Generalization",
+      "authors": "Aman Goyal, Kshama Nitin Shah, Kemmannu Vineet Venkatesh Rao",
+      "date": "2026-06-20",
+      "pdf": "https://arxiv.org/pdf/2606.21861v1",
+      "score": "8.0",
+      "evidence": "通过比较多种视觉语言模型进行课堂参与识别研究，涉及模型选择",
+      "tldr": "零样本视觉语言模型（VLM）在课堂参与度识别中表现不佳。该研究对CLIP、GPT-4o等五种VLM在个体学生和场景图像数据集上进行基准测试。结果显示，个体学生识别近乎随机（kappa<0.10），存在严重类别坍塌和提示敏感性（准确率波动32%），但场景级分类稍好（kappa≈0.60）。研究揭示了VLM在教育监控中的局限性，为系统设计提供关键参考。",
+      "tags": "query:mec-video",
+      "abstract_en": "Automated classroom engagement recognition holds substantial promise for scalable learning analytics, yet the suitability of modern Vision-Language Models (VLMs) for this task under zero-shot conditions remains largely unexplored. We present a systematic benchmark that evaluates five widely-used VLMs: CLIP, BLIP-VQA, GPT-4o, LLaVA-1.5-7B, and Qwen2.5VL-7B-Instruct across two complementary educational datasets: DAiSEE, an individual-student video dataset (300 sampled test clips), and the Student Classroom Behaviour dataset (SCB, 1,168 scene-level images). Each model is probed with three prompt variants spanning minimal, rubric-anchored, and chain-of-thought designs. Our experiments reveal three primary failure modes of zero-shot VLMs for engagement recognition: (1) near-random performance on individual students, with Cohen's kappa never exceeding 0.10 on DAiSEE; (2) severe class collapse, where models assign 85-100% of predictions to a single engagement level regardless of visual content; and (3) extreme prompt sensitivity, with accuracy swings of up to 32 percentage points on identical images depending solely on prompt phrasing. Remarkably, scene-level classification on SCB is substantially more tractable: CLIP and GPT-4o achieve kappa approximately 0.60 when prompted with behaviorally-grounded rubrics. We also document a practical barrier for deployment: GPT-4o's safety filters reject 98% of chain-of-thought requests involving individual student faces. Our findings provide a calibrated baseline and surface critical design considerations for the use of VLMs in educational observation systems.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/28/2606.21947v1-scalepredictor-instance-aware-scale-learning-for-accurate-quantization-of-vision-transformers",
+      "section": "deep",
+      "title_en": "ScalePredictor: Instance-aware Scale Learning for Accurate Quantization of Vision Transformers",
+      "authors": "Changjun Li, Runqing Jiang, Lian Xu, Ye Zhang, Qingyong Hu, Yulan Guo",
+      "date": "2026-06-20",
+      "pdf": "https://arxiv.org/pdf/2606.21947v1",
+      "score": "8.0",
+      "evidence": "面向视觉Transformer的实例感知量化，支持在边缘设备上高效部署",
+      "tldr": "Vision Transformers部署于边缘设备面临高计算需求，现有后训练量化方法采用静态尺度，未考虑实例间激活分布差异导致次优。本文提出ScalePredictor动态量化框架，利用浅层激活范围与深层最优尺度的相关性，通过多项式近似同时生成所有量化尺度，避免即时校准。在ImageNet上该方法显著提升精度，以极小开销实现更优权衡，为ViT高效部署提供新方案。",
+      "tags": "query:mec-video",
+      "abstract_en": "Vision Transformers have achieved remarkable success in many fields, yet their deployment on edge devices remains challenging due to their substantial computational demands. Post-Training Quantization (PTQ) offers an attractive solution by compressing models using a small calibration set with minimal training overhead. However, most existing PTQ works adopt a static quantization paradigm that is uniformly applied to all instances. Given the substantial diversity of natural images, the activation distributions vary significantly across samples, making these methods inherently suboptimal. In this paper, we propose ScalePredictor, a dynamic quantization framework for accurate and efficient quantization scale learning of ViTs. We first reveal a hidden correlation between the distribution range of shallow-layer activations and the optimal scales of deeper layers. Based on this, we develop a scale learning mechanism that integrates an efficient range extraction approach to capture robust range statistics at the shallow stage, which are then fed into a Taylor-motivated polynomial scale projection module to generate all quantization scales simultaneously. With the efficiency of polynomial approximation, ScalePredictor introduces insignificant computational overhead while avoiding costly just-in-time calibration. Extensive experiments on ImageNet demonstrate that ScalePredictor consistently outperforms prior PTQ methods, achieving a more favorable accuracy-efficiency trade-off. Code and additional results are shown in the supplementary materials.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

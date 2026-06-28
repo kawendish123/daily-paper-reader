@@ -1,0 +1,92 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-28T21:10:45.086946+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 0,
+    "quick_skim_target": 11,
+    "quick_selected": 0
+  },
+  "deep_dive": [
+    {
+      "id": "2606.21861v1",
+      "source": "arxiv",
+      "title": "Zero-Shot Vision-Language Models for Classroom Engagement Recognition: A Benchmark Study of Prompt Sensitivity and Cross-Dataset Generalization",
+      "abstract": "Automated classroom engagement recognition holds substantial promise for scalable learning analytics, yet the suitability of modern Vision-Language Models (VLMs) for this task under zero-shot conditions remains largely unexplored. We present a systematic benchmark that evaluates five widely-used VLMs: CLIP, BLIP-VQA, GPT-4o, LLaVA-1.5-7B, and Qwen2.5VL-7B-Instruct across two complementary educational datasets: DAiSEE, an individual-student video dataset (300 sampled test clips), and the Student Classroom Behaviour dataset (SCB, 1,168 scene-level images). Each model is probed with three prompt variants spanning minimal, rubric-anchored, and chain-of-thought designs. Our experiments reveal three primary failure modes of zero-shot VLMs for engagement recognition: (1) near-random performance on individual students, with Cohen's kappa never exceeding 0.10 on DAiSEE; (2) severe class collapse, where models assign 85-100% of predictions to a single engagement level regardless of visual content; and (3) extreme prompt sensitivity, with accuracy swings of up to 32 percentage points on identical images depending solely on prompt phrasing. Remarkably, scene-level classification on SCB is substantially more tractable: CLIP and GPT-4o achieve kappa approximately 0.60 when prompted with behaviorally-grounded rubrics. We also document a practical barrier for deployment: GPT-4o's safety filters reject 98% of chain-of-thought requests involving individual student faces. Our findings provide a calibrated baseline and surface critical design considerations for the use of VLMs in educational observation systems.",
+      "authors": [
+        "Aman Goyal",
+        "Kshama Nitin Shah",
+        "Kemmannu Vineet Venkatesh Rao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-20T03:53:40+00:00",
+      "link": "https://arxiv.org/pdf/2606.21861v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "benchmark of VLMs for classroom engagement recognition, model selection",
+      "llm_evidence_cn": "通过比较多种视觉语言模型进行课堂参与识别研究，涉及模型选择",
+      "llm_evidence": "通过比较多种视觉语言模型进行课堂参与识别研究，涉及模型选择",
+      "canonical_evidence": "通过比较多种视觉语言模型进行课堂参与识别研究，涉及模型选择",
+      "llm_tldr_en": "This paper benchmarks five VLMs for zero-shot classroom engagement recognition, analyzing prompt sensitivity and cross-dataset generalization, providing model selection insights.",
+      "llm_tldr_cn": "本文系统评估了五种视觉语言模型（如CLIP、GPT-4o）在零样本课堂参与识别上的表现，设计了三种提示变体，揭示了提示敏感性和跨数据集泛化能力，为模型选择提供了重要参考。",
+      "llm_tldr": "本文系统评估了五种视觉语言模型（如CLIP、GPT-4o）在零样本课堂参与识别上的表现，设计了三种提示变体，揭示了提示敏感性和跨数据集泛化能力，为模型选择提供了重要参考。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.21947v1",
+      "source": "arxiv",
+      "title": "ScalePredictor: Instance-aware Scale Learning for Accurate Quantization of Vision Transformers",
+      "abstract": "Vision Transformers have achieved remarkable success in many fields, yet their deployment on edge devices remains challenging due to their substantial computational demands. Post-Training Quantization (PTQ) offers an attractive solution by compressing models using a small calibration set with minimal training overhead. However, most existing PTQ works adopt a static quantization paradigm that is uniformly applied to all instances. Given the substantial diversity of natural images, the activation distributions vary significantly across samples, making these methods inherently suboptimal. In this paper, we propose ScalePredictor, a dynamic quantization framework for accurate and efficient quantization scale learning of ViTs. We first reveal a hidden correlation between the distribution range of shallow-layer activations and the optimal scales of deeper layers. Based on this, we develop a scale learning mechanism that integrates an efficient range extraction approach to capture robust range statistics at the shallow stage, which are then fed into a Taylor-motivated polynomial scale projection module to generate all quantization scales simultaneously. With the efficiency of polynomial approximation, ScalePredictor introduces insignificant computational overhead while avoiding costly just-in-time calibration. Extensive experiments on ImageNet demonstrate that ScalePredictor consistently outperforms prior PTQ methods, achieving a more favorable accuracy-efficiency trade-off. Code and additional results are shown in the supplementary materials.",
+      "authors": [
+        "Changjun Li",
+        "Runqing Jiang",
+        "Lian Xu",
+        "Ye Zhang",
+        "Qingyong Hu",
+        "Yulan Guo"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-20T08:33:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.21947v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "instance-aware quantization for vision transformers enabling efficient deployment on edge devices",
+      "llm_evidence_cn": "面向视觉Transformer的实例感知量化，支持在边缘设备上高效部署",
+      "llm_evidence": "面向视觉Transformer的实例感知量化，支持在边缘设备上高效部署",
+      "canonical_evidence": "面向视觉Transformer的实例感知量化，支持在边缘设备上高效部署",
+      "llm_tldr_en": "ScalePredictor dynamically learns quantization scales per instance for vision transformers, significantly reducing computation and memory for edge deployment while maintaining accuracy.",
+      "llm_tldr_cn": "视觉Transformer在边缘设备上部署因计算量大而困难。现有后训练量化采用静态尺度，未考虑样本差异。本文提出ScalePredictor，一种动态量化框架，为每个实例学习最优量化尺度。实验表明在ImageNet分类任务中，在相似压缩率下精度优于静态量化方法。该技术可直接应用于边缘视频分析模型，降低推理延迟。",
+      "llm_tldr": "视觉Transformer在边缘设备上部署因计算量大而困难。现有后训练量化采用静态尺度，未考虑样本差异。本文提出ScalePredictor，一种动态量化框架，为每个实例学习最优量化尺度。实验表明在ImageNet分类任务中，在相似压缩率下精度优于静态量化方法。该技术可直接应用于边缘视频分析模型，降低推理延迟。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": []
+}
