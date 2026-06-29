@@ -1,0 +1,1127 @@
+Title: MLVC: Multi-platform Learned Video Codec for Real-World Deployment
+
+URL Source: https://arxiv.org/pdf/2606.28027v1
+
+Published Time: Mon, 29 Jun 2026 00:54:55 GMT
+
+Number of Pages: 36
+
+Markdown Content:
+# MLVC: A Multi-platform Learned Video Codec for Real-World Deployment 
+
+Tanel Pärnamaa , Martin Lumiste , Ardi Loot , Evgenii Indenbom , Andrei Znobishchev , and Ando Saabas 
+
+Microsoft Corporation 
+
+{taparnam, ardiloot, eindenbom, aznobishchev, ansaaba}@microsoft.com 
+
+Abstract. Neural video codecs have surpassed classical codecs in coding efficiency but remain impractical for deployment due to cross-platform incompatibility and high computational cost. Existing quantization-based solutions fail to produce deterministic results across diverse hardware platforms, leading to catastrophic decoding failures. We introduce MLVC, a hardware-robust neural video codec designed for practical cross-platform inference. The key idea is to explicitly transmit scale parameters through the hyperprior, which guarantees entropy coding consistency across de-vices without requiring bit-exact arithmetic. While this increases bitrate overhead, we recover most of the coding efficiency through architectural improvements (gated memory, ReGLU activation), a long-term refer-ence recovery mechanism, and domain-specific perceptual training. On the VCD video conferencing benchmark, MLVC achieves >70% BD-rate (MOS) improvement over hardware HEVC, the strongest deployable baseline, while reaching subjective quality competitive with DCVC-RT, which cannot operate across diverse platforms. Both the encoder and decoder run at 100 FPS on average on commodity NPUs from Apple, Intel, and Qualcomm. MLVC is the first neural video codec to com-bine competitive compression performance, real-time speed, and cross-platform robustness across diverse consumer devices, making it suitable for widespread deployment. Code will be released. 
+
+Keywords: Neural Video Compression · Cross-Platform Robustness ·
+
+Real-Time Video Processing 
+
+1 Introduction 
+
+Neural video compression has matured to the point where learned codecs con-sistently outperform traditional standards. [17, 24, 34, 38] Recent neural codecs achieve 60-70% bitrate savings over H.265 at equivalent perceptual quality and surpass even the latest ECM standard in rate-distortion performance. [24, 34] However, despite all this research progress, neural codecs remain unused in pro-duction systems like Zoom, Teams or WebRTC. Two critical barriers prevent deployment. The first is computational effi-ciency: most neural codecs are evaluated on high-end datacenter GPUs. For practical impact in applications like video conferencing, neural codecs need to 
+
+> arXiv:2606.28027v1 [eess.IV] 26 Jun 2026
+
+2 T. Pärnamaa et al. Original DCVC-RT HEVC-QSV (58.7 kbps) MLVC (59.8 kbps) 
+
+Fig. 1: Neural codecs fail across diverse platforms. A video is encoded on an Apple M3 NPU and then decoded on another device (Intel Lunar Lake NPU). Existing state-of-the-art neural video codecs (e.g., DCVC-RT [24]) suffer from catastrophic decoding failures due to numerical divergence between platforms, even when using quantization or calibration information [50]. Classical codecs like H.265 and the proposed neural codec MLVC both decode reliably across diverse platforms, while MLVC achieves sig-nificantly higher visual quality at the same bitrate. 
+
+run in real-time on the neural processing units (NPUs) present in commodity consumer devices. The second and more fundamental barrier is cross-platform compatibility. Many applications, such as video conferencing systems, inherently require en-coder and decoder to run on different devices, often with hardware from differ-ent vendors. Figure 1 illustrates the severity of this problem: when we encode a video on an Apple M3 NPU and decode on an Intel NPU, the state-of-the-art neural codec DCVC-RT [24], even in its quantized form, produces completely corrupted output. To address these barriers, we introduce MLVC, a neural video codec built for real world deployment. We specifically focus on model performance on NPUs rather than high-performance GPUs to show the practicality of our approach. Our contributions are as follows: 
+
+– We develop a scale sharing mechanism and transmit scale indices within the hyperprior, enabling reliable inference across diverse hardware platforms without requiring bit-exact arithmetic. 
+
+– We introduce architectural improvements (gated memory for long-term mod-eling, hardware-compatible ReGLU activations), training and inference-time strategies (I-frame dropout, long-term reference recovery) that recover the coding efficiency lost to increased bitrate overhead, achieving >70% BD-rate improvement over HEVC-QSV in subjective quality (MOS) on a video conferencing benchmark (VCD). 
+
+– We demonstrate real-time performance (100+ FPS average for both encod-ing and decoding) on commodity NPUs from Apple, Intel, and Qualcomm, making MLVC the first neural video codec practical for widespread deploy-ment on diverse consumer devices. MLVC: Cross-Platform Neural Video Codec 3
+
+2 Related Work 
+
+2.1 Learned Compression 
+
+The hyperprior architecture introduced by Ballé et al. [11] forms the foundation of modern learned compression [13,19,34]. This is commonly combined with au-toregressive prior [40]. Since fully autoregressive priors are computationally pro-hibitive, recent work explores efficient approximations including checkerboard patterns [20], channel-wise autoregression [41] and hybrid spatial-channel mod-els [32]. In learned video compression, numerous architectures since [36] have advanced the field by improving motion modeling, temporal hierarchy, and en-tropy estimation [8,22,35,44,47,53]. Video models often employ a third temporal 
+
+prior to exploit inter-frame correlation. Li et al. [31] showed that contextual cod-ing outperforms explicit residual coding, with subsequent advances often related to better context modelling [33, 46]. The current state-of-the-art models [24, 34] achieve improved rate-distortion performance over the reference software codec for ECM [2]. 
+
+2.2 Mobile and Low-Latency Codecs 
+
+While most learned compression research prioritizes improving rate-distortion performance, a parallel direction focuses on computational efficiency for edge de-velopment. Codecs based on overfitting such as C3 [26] and Cool-chic video [30] achieve very low decoding complexities, but require costly encoding. Mobile-Codec [29] achieves 720p video decoding on a mobile phone with a neural ac-celerator. MobileNVC [51] extends this to 1080p video. DCVC-RT achieves over an 18 × FPS speed-up compared to DCVC-FM [34] on NVIDIA A100 GPUs, though edge device performance is not reported. These works employ two main strategies for efficiency. First, integer quan-tization to improve inference speed and also provide cross-platform consistency through bit-exact arithmetic. However, cross-platform validation is limited: Mo-bileNVC [51] reports no cross-platform testing, and DCVC-RT [24] validates only across NVIDIA GPUs. Since NVIDIA GPUs allow for low level kernel con-trol, their validation demonstrates only single-vendor and not true cross-platform compatibility. We will argue that these models are unlikely to work across het-erogeneous NPU platforms. Secondly, one of the main performance bottlenecks on edge devices has been the expensive pixel or feature space warping operator. As a result, most mobile methods redesign motion compensation to either use convolutions [24, 29], or simplify the warp operation [51]. 
+
+2.3 Cross-platform Consistency 
+
+The cross-platform consistency problem arises because entropy coding requires encoder and decoder to use identical probability distributions. In the case of DCVC-RT, the scale parameters σ characterize these distributions. Even tiny 4 T. Pärnamaa et al. 
+
+numerical differences, for example those caused by non-deterministic floating-point computations, can cause the entropy decoder to select different lookup-table indices, resulting in incorrect latent values. These errors cascade through temporal prediction, causing catastrophic failures (Fig. 1). We refer readers to Tian et al. [50] for detailed exposition. Prior work addresses this through three main approaches, each with fundamental limitations. 
+
+Network Quantization. The most common approach quantizes entropy model computations to integer arithmetic, aiming for bit-exact results across platforms [10,15,18,24,27,48]. In theory, the subnetwork responsible for produc-ing σ could run in fixed-point integer arithmetic to guarantee cross-platform consistency, as traditional codecs do. In practice, this is difficult to achieve on commodity NPUs. First, many works adopt nonstandard bit-widths such as INT16 [24, 27, 28] and custom quantization scales that the NPU toolchains don’t support – attempting to convert such models typically results in a compiler error, preventing acceleration entirely. Second, even for the relatively standard INT8 convolution with INT32 accumulators, some NPUs (e.g. Apple NE) do not execute true INT8 but simulate it via FP16. 1 Third, across NPUs that do imple-ment true INT8, compiler choices (kernel selection, operator fusion, reduction order), approximations, and rounding modes prevent bit-exact parity. Unlike with traditional video codecs, there is no bit-exact reference specification for NPU vendors and quantized models can diverge more than analogous FP mod-els due to compounding off-by-one errors. For these reasons, we use FP16 for inference, which is broadly supported across NPUs. We present detailed cross-platform divergence measurements for both floating point and integer layers in the Supplementary Material. 
+
+Calibration Information. Tian et al. [50] transmit an additional side stream of calibration information to decrease the likelihood of cross-platform index mismatches. While this reduces mismatch probability, it cannot provide hard guarantees - catastrophic failures remain possible, just less frequent. This probabilistic approach is insufficient for production deployment where reliability is critical. Moreover, their experiments relied only on a single 96-frame video from the UVG dataset, encoded and decoded in FP32 precision. Neural process-ing units typically use FP16 rather than FP32. Since FP16 has a unit roundoff about four orders of magnitude larger, it is far more susceptible to rounding-error drift. In our cross-device experiments (see supplementary material), the method fails in FP16: we observe float-index deviations |δ| > 0.5, a situation where calibration cannot prevent index mismatches. 
+
+Fixed-prior Approaches. More recently, Tian et al. [49] proposed to trans-mit discrete codebook indices, eliminating entropy modelling entirely. This ef-fortlessly avoids catastrophic cross-platform failures. However, their experimen-tal results do not effectively validate competitive compression performance. Most critically, their comparison uses mismatched GOP settings: GOP=32 for their    
+
+> 1Vendor documentation indicates the int8-int8 compute path is only enabled starting from M4, released in 2024. https://apple.github.io/coremltools/docs-guides/ source/opt-overview.html MLVC: Cross-Platform Neural Video Codec 5
+
+model versus GOP=12 for H.264/H.265, giving their method an unfair advantage since classical codecs must encode expensive I-frames more frequently. 
+
+3 Proposed Method 
+
+We use the DCVC-RT [24] floating point model as a starting point, as it shows state-of-the-art compression ratio, while remaining lightweight and fast. An overview of the video coding framework is shown in Fig. 2. While our exper-iments focus on DCVC-RT, the proposed methods rely on components common to most modern video codec. The scale-sending mechanism applies to any codec using adaptive entropy priors (e.g. hyperprior, autoregressive prior, temporal prior), the memory module to any recurrent codec maintaining temporal state, and the LTR mechanism to codecs that use reference features. 
+
+3.1 Avoiding Catastrophic Failures 
+
+Catastrophic decoding failures in existing neural video codecs are caused by mismatches in entropy model parameters between the encoder and decoder, specifically the scale parameters in DCVC-RT. While eliminating all adaptive priors would trivially eliminate catastrophic decoding failures, this significantly degrades BD-rate performance in practice (see row 0-prior in Table 1). The alternative, transmitting all scale parameters explicitly, incurs prohibitive over-head, since there are H 
+
+> 16
+
+× W 
+
+> 16
+
+× Cy scale parameters, comparable in magnitude to the encoded frame itself. However, scale parameters exhibit strong spatial and cross-channel correlation that can be exploited for compression. We reduce the parameter count by a factor s2 · r (typically 128 ×) through structured parame-ter sharing, then entropy-code the remaining parameters within the hyperlatent representation. This achieves entropy coding consistency with acceptable bitrate overhead. 
+
+Scale Sending Mechanism. We derive scale indices I ∈ NCy ×Hy ×Wy 
+
+> 0
+
+from the quantized hyperlatent ˆz ∈ ZCz ×Hz ×Wz through deterministic expansion. Since ˆz
+
+is coded with a fixed factorized entropy model, it is identical on both the encoder and decoder sides, guaranteeing that the resulting scale parameters are also identical and thus avoiding catastrophic decoding failures. This design exploits two observations: (1) neighboring spatial locations often require similar scales, and (2) groups of channels often share statistical properties. Let r ∈ N denote the channel repetition factor and s = Hy /H z the spatial expansion factor. The generation process comprises three steps: 
+
+Ibase = |ˆz1: Cy /r | ∈ NCy /r ×Hz ×Wz 
+
+> 0
+
+(1) 
+
+Ic,h,w = Ibase    
+
+> ⌊c/r ⌋,⌊h/s ⌋,⌊w/s ⌋
+
+(2) 
+
+σc,h,w = lookup( Ic,h,w ) (3) 6 T. Pärnamaa et al. Entropy Model            
+
+> 𝒩 (0, σt)2
+> xtftFt-1Ft-1FtFteFt-1e
+> Encoder Decoder Recon.Net
+> yt
+> σt
+> μtx̂tQAE Entropy Parameter Network State Extractor
+> ŷtŷt
+> Bits AD
+
+Fig. 2: Overview of the video coding framework adopted in this work, following modern learned codecs (e.g., DCVC-RT). The encoder maps the current frame xt and temporal context Ft−1 to the latent representation yt. The Entropy Parameter Network, con-ditioned on yt and the temporal prior context F et−1, produces the mean μt and scale 
+
+σt parameters. The mean is subtracted from yt, and the residual is quantized (Q) and arithmetic encoded (AE) under a zero-mean Gaussian entropy model N (0 , σ 2 
+
+> t
+
+) to ob-tain the bitstream. On the decoder side, arithmetic decoding (AD) recovers ˆyt, and the mean μt is added back. The decoder, further conditioned on temporal context Ft−1,produces the decoded feature ft, from which the reconstruction network (Recon. Net) yields the reconstructed frame ˆxt. Finally, the state extractor derives the updated tem-poral contexts Ft and F et from ft for the next time step. 
+
+where c ∈ [0 , C y ), h ∈ [0 , H y ), w ∈ [0 , W y ). The absolute value ensures non-negative indices, the expansion maps each hyperlatent position to an s × s spa-tial block and replicates each channel r times, and the final lookup retrieves quantized scale values from a fixed codebook. Notably, the same scale param-eters are shared across all groups in the autoregressive prior, so all groups can be arithmetic-decoded in a single pass without interleaving arithmetic decoding and neural network calls. Figure 3 shows the standard entropy model of DCVC-RT, Fig. 4 shows the proposed scale-sending variant, and Fig. 5a details the individual steps. 
+
+3.2 Reducing Divergence 
+
+While our scale-sending approach eliminates catastrophic entropy decoding fail-ures, floating-point differences still cause gradual divergence in the features and reconstructed frames. Since encoder and decoder maintain separate feature buffers that are updated recursively, even small per-frame differences compound over long prediction chains. Without a synchronization mechanism, the diver-gence can grow arbitrarily large. We address this through three strategies: a novel prediction chain control via long-term reference recovery inspired by traditional codecs, hardware-compatible activation functions, and periodic synchronization via I-frames. 
+
+Long-Term Reference Recovery. The most straightforward method for mitigating divergence over long prediction chains is to reduce the chain length by employing a small I-frame period (e.g., 64 frames). Although this approach can effectively MLVC: Cross-Platform Neural Video Codec 7zt ẑ t ẑt         
+
+> Hyper Encoder Hyper Decoder QAE Factorized Entropy Model Bits AD AD
+> Ft-1eyt
+> σt,1 μt,1
+> Prior Fusion Spatial Prior Temporal Prior
+> pthptt
+> ŷt,1
+> ŷt,1
+> σt,2 μt,2
+> AD
+> ŷt,2
+
+Fig. 3: Entropy Parameter Network in modern learned codecs (e.g., DCVC-RT) in-corporating hyper, temporal and spatial prior. The hyper encoder transforms yt into 
+
+zt, which is quantized and arithmetic coded using a factorized entropy model to yield 
+
+ˆzt. The hyper decoder then produces the hyperprior pht . Because the factorized en-tropy model is identical and fixed on both the encoder and decoder sides, coding of ˆzt
+
+does not cause catastrophic decoding failures. The temporal prior maps the temporal context F et−1 to ptt, and the Prior Fusion module merges pht and ptt to produce the entropy parameters (σt, 1, μ t, 1) used to arithmetic code the first latent group ˆyt, 1. The Spatial Prior then conditions autoregressively on the already decoded ˆyt, 1 to produce 
+
+(σt, 2, μ t, 2) for the second group ˆyt, 2. However, the σt,i can diverge between the encod-ing and decoding side, leading to catastrophic decoding failures. 
+
+address divergence, it incurs a substantial cost in terms of rate-distortion per-formance due to the use of expensive intra frames. As an alternative, a less costly mechanism is proposed, inspired by long-term reference (LTR) recovery techniques in traditional codecs. Figure 5b illustrates the core concept of this approach: rather than relying exclusively on I-frames, proactive LTR recovery frames are periodically introduced to manage the prediction chain. This strategy reduces the frequency of expensive I-frames while maintaining the same number of frames in the prediction chain, resulting in an overall improvement in BD-rate. Beyond reducing the prediction chain, proactive LTR recovery also preserves its original advantage of enhancing codec robustness against packet loss by providing periodic recovery frames without explicit requests, as in traditional codecs. It should be noted that, on a single platform with a fixed intra period, the LTR mechanism would strictly regress BD-rate due to the introduction of additional redundancy. However, in cross-platform scenarios, this reduction in prediction chain length can improve compression efficiency, as reference diver-gences may otherwise lead to significant quality degradation in the absence of LTR. 
+
+Hardware-Compatible Activations. Many NPUs implement nonlinear activation functions through piecewise approximations rather than exact computation. Since these approximations are vendor-specific and unstandardized, even small differences compound through the deep network, causing cross-platform diver-gence. Furthermore, complex activations such as WSiLU often lack optimized NPU kernels, resulting in reduced inference speed. We perform a sweep over 8 T. Pärnamaa et al. zt ẑt ẑt         
+
+> Hyper Encoder Hyper Decoder QSlice Abs Expand Lookup AE Factorized Entropy Model Bits AD
+> Ft-1eyt
+> μt,1 μt,2
+> Prior Fusion Spatial Prior Temporal Prior
+> pthpt t
+> ŷt,1
+> σtŷt,1 ŷt,2 AD
+
+Fig. 4: Entropy Parameter Network using the proposed scale-sending mechanism. A slice of the hyper decoder output is passed through Abs, Expand, and Lookup opera-tions (detailed in Fig. 5a) to deterministically obtain the scale parameters σt from the hyperlatent ˆzt. Since ˆzt is coded with a fixed factorized entropy model, σt is identical on both the encoder and decoder sides, avoiding catastrophic decoding failures. The mean parameters μt,i are still modeled autoregressively: Prior Fusion merges the hyper prior pht and temporal prior ptt to produce μt, 1, and the Spatial Prior conditions on the already-decoded ˆyt, 1 to produce μt, 2. A further benefit over the standard approach (Fig. 3) is decoding speed: because σt is available before decoding any latent group, all groups can be arithmetic-decoded in a single AD pass. In contrast, the standard approach requires interleaving arithmetic decoding and neural network calls for each group. 
+
+common activation functions supported by Apple Neural Engine [6] and find that only ReLU and LeakyReLU incur no error compared to the true value, we therefore restrict our architecture to use these. While simpler activations incur a BD-rate penalty, they are necessary for reliable cross-platform operation. 
+
+Regular I-Frame Period. Even with LTR recovery and simple activations, feature buffers still diverge over extended sequences due to fundamental floating-point precision limits. We therefore employ periodic I-frames to fully resynchronize encoder and decoder feature states. While our model is able to handle very long prediction chains on a single platform, regular I-frames are necessary for practical deployment across multiple hardware platforms. This periodic synchronization incurs BD-rate overhead compared to single-platform operation but remains nec-essary for reliable cross-platform decoding. This differs from traditional codecs, which could run cross-platform without periodic I-frames. 
+
+3.3 Unified I-Frame and P-Frame Model 
+
+Most learned video codecs employ separate models for I-frames and P-frames, even though these architectures share substantial structural overlap. Maintaining two distinct models increases both storage requirements and deployment com-plexity. For instance, in DCVC-RT [24], the I-frame and P-frame models require 174 MB and 79 MB respectively in FP32. To reduce this overhead, we simplify to a single unified model by defining I-frames as P-frames with a uniform gray MLVC: Cross-Platform Neural Video Codec 9slice abs expand lookup 
+
+00-1 2001211110000000022221111000000002222111100000000222211110000000022221111000000002222111100000000222211110000000022220.11 0.11 0.11 0.11 0.11 0.11 0.11 0.11 0.24 0.24 0.24 0.24 0.37 0.37 0.37 0.37 
+
+ẑ t|ẑt,:c |       
+
+> scale indices, same shape as ŷtscales
+> (a) Scale sending architecture. Intra period = 12 Intra period = 12, LTR period = 4
+> I0 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 P11 I0 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 P11
+> Prediction chain=12 frames Prediction chain=7 frames (b) LTR prediction structure.
+
+Fig. 5: (a) A visualization of the steps of the scale-sending mechanism described in Sec. 3.1 (b) Comparison of prediction structures with and without long-term reference (LTR) frames. (b, left) Standard encoding with I-frame period of 12 creates prediction chains up to 12 frames long. (b, right) Using LTR period of 4 (starting from frame 1) reduces maximum chain length to 7 frames and improves robustness to packet loss. In practice, LTR period is another inference parameter, similar to intra and reset period. 
+
+reference image (0.5 in YUV colorspace). This eliminates the need for a separate I-frame model while maintaining the ability to encode frames without temporal dependencies. Although this simplification introduces a BD-rate degradation, it reduces engineering and deployment complexity. Given that practical systems prioritize simplicity and maintainability, this trade-off is well justified. 
+
+3.4 Improving Quality 
+
+Memory. While DCVC-RT employs a recurrent architecture with features serv-ing as temporal state, this representation has limited capacity for preserving long-term information, which is important for reconstructing temporarily oc-cluded objects or maintaining consistency across frames. Drawing inspiration from gated recurrent architectures [21], we augment the decoder with an explicit long-term memory state that enables the model to selectively retain and retrieve information over longer temporal horizons. The memory-enhanced decoder operates as follows: 
+
+fin = Decoder ( ˆ yt, Ft−1)[st, gf , go] = Split 3(fin )
+
+mt = σ(gf ) ⊙ mt−1 + (1 − σ(gf )) ⊙ τ (st)
+
+fout = σ(go) ⊙ τ (mt) · qdec 
+
+(4) where Ft−1 is the temporal context, qdec is a learnable decoder quantization step, 
+
+mt is the memory state, σ(·) and τ (·) denote the gate and memory activation functions, and ⊙ denotes element-wise multiplication. The forget gate gf controls information retention from the previous memory state, while the output gate go
+
+modulates the contribution to the output features. Compared to the baseline decoder, the memory variant only triples the output channels of the final 1×1 convolution layer. The activation functions can be 10 T. Pärnamaa et al. 
+
+standard ( σ=sigmoid, τ =tanh) or piecewise-linear approximations using ReLU for hardware-friendly deployment. Concurrent to our work, a recent study also introduced a memory mechanism for neural video compression [17]. In contrast, our design focuses on real-time, multi-platform deployment, emphasizing hardware compatibility and temporal robustness. 
+
+ReGLU. The model performance is highly sensitive to activation function choice. Moreover, optimal activation functions differ across architectures. While cross-platform requirements restrict us to simple functions (ReLU, LeakyReLU), we can improve expressiveness through gating mechanisms that use only cross-platform-compatible operations. Inspired by [45], we find that a channel split gating variant of ReGLU improves performance for the MLVC architecture with-out increasing encoder–decoder divergence: 
+
+ReGLU (x) = x:C/ 2 ⊙ ReLU1 (xC/ 2: ) (5) where x:C/ 2 and xC/ 2: denote the first and second halves of channels, and ReLU1 (·) = min( ReLU (·), 1) caps activations at 1. The capping stabilizes train-ing by preventing large activations from the multiplicative gating. We apply ReGLU in DCVC-RT’s depth-wise convolution blocks, replacing the channel-wise addition with multiplicative gating, while using LeakyReLU elsewhere. 
+
+I-Frame Dropout. To train a single model to handle both standard P-frames and I-frames without requiring a separate intra codec, we introduce I-frame dropout during training: with probability p, the model receives a constant gray frame in place of a true I-frame. We use p = 0 .5 in our experiments. The effectiveness of this approach depends on the I-frame period: shorter periods benefit more, as I-frame conditions are encountered more frequently during inference. 
+
+Perceptual Losses. Cross-platform architectural constraints create a cumulative BD-rate penalty, and even with the above improvements, a gap remains com-pared to unconstrained architectures when measured by PSNR. However, PSNR does not reflect subjective quality. For real-world applications, perceptual opti-mization can matter more than pixel-wise accuracy. Moreover, different appli-cations have different perceptual priorities - video conferencing prioritizes facial detail, while screen sharing prioritizes text clarity. We can narrow the perceptual quality gap by tailoring the codec to specific use cases through perceptual losses and region-of-interest (ROI) weighting. Our subjective evaluation demonstrates that by adapting the codec to video conferencing, we achieve comparable results to reference DCVC-RT checkpoint despite lower PSNR. Specifically, we use a perceptual loss with two components. First, we use the common LPIPS [54] loss to improve texture retention. In addition, inspired by the success of [25, 37] in the CLIC [1] challenge, we use a region of interest (ROI) mask to weight the loss pixels. We use a face-segmentation model [14, 55] MLVC: Cross-Platform Neural Video Codec 11                                                                                                                                            
+
+> Table 1: Ablation study results showing PSNR-based BD-rate (%) in YUV420 col-orspace relative to HEVC-QSV anchor in same- and cross-platform scenarios. Arch IIP RP Act SS Mem I-D LTR Avg (SP) TH (SP) TH (XP) DCVC-RT ✓-1 64 WSiLU ××××-69.6 -∞
+> DCVC-RT ×-1 64 WSiLU ××××-68.6 -∞
+> DCVC-RT ×64 0WSiLU ××××-59.4 -55.9 ∞
+> 0-prior ×-1 64 WSiLU ××××20.5 9.6 718.1 MLVC ×-1 64 WSiLU ✓×××-54.5 -56.1 101.8 MLVC ×-1 64 LReLU ✓×××-49.2 -53.5 6.7 MLVC ×-1 64 LReLU ✓✓××-52.1 -58.4 -21.9 MLVC ×-1 64 ReGLU ✓✓××-56.6 -61.9 -39.8 MLVC ×64 0ReGLU ✓✓××-41.1 -42.7 -41.0 MLVC ×64 0ReGLU ✓✓✓×-46.1 -46.7 -44.9 MLVC ×1024 0ReGLU ✓✓✓✓-52.0 -60.2 -58.7
+> MLVC-S ×1024 0ReGLU ✓✓✓✓-36.5 -48.6 -47.3
+> Legend: I: separate I-frame model, IP: intra period ( −1: single intra frame), RP: reset period ( 0: no reset), SS: scale sending, Mem: memory module, I-D: I-frame dropout, LTR: long-term reference. SP: same-platform, XP: cross-platform, Avg: average BD-rate over HEVC B-E and 720p VCD sequences (NVIDIA GPU), TH: VCD TH subset at 360p (Apple M3), TH (SP): NPU encoder, NPU decoder, TH (XP): NPU encoder, GPU decoder, 0-prior: no adaptive priors, MLVC-S: small variant of MLVC.
+
+to derive the ROI mask during training. We do not explicitly modulate latents with the mask like [37], therefore avoiding dependence on an external model in deployment. We also refrain from using a GAN loss as in [9, 17, 39], since it can lead to temporal flickering and may introduce artifacts that perturb identity. 
+
+4 Experiments 
+
+4.1 Experimental Setup 
+
+Datasets. We employ the same training schedule as DCVC-RT, with Vimeo-90K [52] septuplets used for first stage training, and longer Vimeo sequences up to 64 frames used for fine-tuning the model. To assess the real-world deployability of neural codecs in video conferencing applications, we conduct a subjective test on the Video Conferencing Dataset (VCD) [43]. Objective metric results are also presented on the more common HEVC B-E [16] datasets. 
+
+Training. We use the same variable rate control method as [24] and train the model for the YUV colorspace. When training on long sequences, we use gradient and frame gradient clipping for improved stability. Additionally, we use gradient checkpointing in the fine-tuning stage. Training with sequences of up to 32 frames takes 5 days on 8 NVIDIA Tesla V100s. For perceptual models, we train the first stage using standard PSNR loss, but switch to the perceptual loss in fine-tuning. 12 T. Pärnamaa et al. 
+
+Evaluation Metrics We measure the compression quality using BD-rate [12], computed from the actual encoded bitrate rather than the rate estimate from the entropy model. The distortion metric is PSNR in YUV420 colorspace or mean opinion score (MOS) in the subjective evaluation. Additional metrics are pro-vided in the supplementary material. We primarily target 360p to 720p, as these resolutions are typical in real-time video conferencing. For the HEVC datasets, metrics are reported at native resolution. 
+
+Cross-Platform Evaluation We report results in two settings: same-platform (SP), where encoder and decoder run on the same platform, and cross-platform (XP), where they run on different platforms (e.g., GPU encoder, NPU decoder). When cross-platform mismatch causes catastrophic decoding failure, we denote the BD-rate as ∞.
+
+Anchor. We use Intel Quick Sync Video (HEVC-QSV) [5] as the single anchor for all BD-rate calculations throughout the paper, as it represents a widely deployed hardware codec comparable to what neural codecs must match in practice. More details on the anchor configuration can be found in the supplementary material. While we provide rate-distortion results for the reference implementation HM [4] in the appendix, we omit VTM [7] and ECM [2], as they lack commodity hard-ware implementations. We do compare against DCVC-RT, which outperforms HM, VTM, and ECM in PSNR. 
+
+P.910 Testing. We use the P.910 software package [42] to conduct subjective evaluations, running a 5-point ACR test as defined in ITU-T Recommendation P.910 [23]. We collect 15 votes for each encoded clip in the VCD-TH subset. All videos are displayed at 720p resolution to raters. For lower processing resolutions (360p, 540p), the input is downscaled before encoding and upscaled back to 720p after decoding using ffmpeg’s [3] Lanczos algorithm. 
+
+4.2 Experimental Results 
+
+Ablation Study. Table 1 presents an ablation study of architectural changes from DCVC-RT to MLVC. The original DCVC-RT achieves -69.6% average BD-rate in the same-platform scenario, while running at 102 FPS at 360p resolution (Table 2). Our full model reaches -52% BD-rate at 130 FPS at 360p, a gap of roughly 18 percentage points. This gap is the direct cost of cross-platform con-straints: scale sending, hardware-compatible activations, periodic I-frames, and a unified I/P-frame model each contribute (Tab. 1). Importantly, DCVC-RT pro-duces catastrophic decoding failures on heterogeneous hardware and thus cannot be deployed across diverse platforms (BD-rate = ∞ in the XP column). Among neural codecs that successfully decode across platforms, MLVC achieves the best BD-rate by a large margin ( −45 .2% vs. +15 .0% for [49] on HEVC B, see supple-mentary material for details). LTR frames enable operation at much larger intra periods (IP=1024 vs. IP=64), providing additional BD-rate gains and improv-ing robustness to packet loss. For higher resolutions, MLVC-S achieves 1080p encoding at 30 FPS while still reaching −37 % BD-rate against the anchor. MLVC: Cross-Platform Neural Video Codec 13 50 100 200 500 1k 2k 
+
+> Bitrate (kbps)
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> Mean Opinion Score (MOS)
+> Reference data
+> HEVC-QSV (360p)
+> HEVC-QSV (540p)
+> HEVC-QSV (720p)
+> MLVC (360p)
+> MLVC-S (540p)
+
+(a) Rate–MOS curves. Apple-CPU                        
+
+> Apple-GPU
+> Apple-NPU
+> Intel-GPU
+> Intel-NPU
+> Qualcomm-NPU
+> NVIDIA-GPU
+> Decoder
+> Apple-CPU
+> Apple-GPU
+> Apple-NPU
+> Intel-GPU
+> Intel-NPU
+> Qualcomm-NPU
+> NVIDIA-GPU
+> Encoder
+> -59.4 -58.9 -56.5 -59.0 -59.0 -59.0 -58.8
+> -60.8 -59.0 -60.7 -60.7 -60.7 -60.7
+> -60.2 -58.6 -58.6 -58.4 -58.6
+> -60.7 -60.6 -60.6 -60.6
+> -60.8 -60.7 -60.7
+> -60.8 -60.7
+> -60.8 60
+> 50
+> 40
+> 30
+> 20
+> 10
+> 0
+> BD-rate (%)
+
+(b) Cross-platform BD-rate matrix. 
+
+Fig. 6: (a) Rate-MOS curves on VCD-TH, comparing hardware H.265 with the MLVC models at multiple processing resolutions. MLVC-S is a smaller model tuned for 150 FPS at 540p. (b) Cross-platform BD-rate on VCD-TH 360p relative to HEVC-QSV. Rows indicate encoder platform, columns indicate decoder platform. Diagonal entries are same-platform; off-diagonal entries are cross-platform. Results demonstrate cross-platform compatibility. 
+
+Subjective Test. We conduct a P.910 [42] subjective evaluation on VCD-TH to assess MLVC in a video conferencing setting. All codecs are tested at 360p and 540p processing resolutions, the H.265 hardware codec (HEVC-QSV) addition-ally at native 720p, and displayed at 720p. Results are shown in Fig. 6a and Tab. 2. MLVC fine-tuned with perceptual losses achieves –75.5% BD-rate (MOS) at 360p relative to the hardware HEVC-QSV anchor. The lightweight MLVC-S achieves −65 .4% at 540p while matching HEVC-QSV in encoding speed. Com-bining both via a bitrate ladder (MLVC at 360p for low bitrates, MLVC-S at 540p for high bitrates) yields −71 .8% overall. The reference DCVC-RT is MSE-trained. To obtain a controlled perceptual baseline, we fine-tuned it with the same ROI and perceptual losses used for MLVC and evaluated the model at 360p. Perceptual training improves DCVC-RT from −76 .4% to −81 .9% BD-rate (MOS), placing the cost of cross-platform constraints at roughly 6 percentage points relative to MLVC’s −75 .5% — a modest price given that DCVC-RT cannot decode across platforms. 
+
+Cross-Platform Validation. Figure 6b shows BD-rate for encoder-decoder plat-form pairs across Apple, Intel, Qualcomm, and NVIDIA hardware. Most pairs achieve BD-rate within 2 points, confirming cross-platform compatibility. Im-portantly, all configurations avoid catastrophic failures. 
+
+Latency Evaluation. Table 3 shows compute complexity results across resolu-tions on Apple M3 Pro ANE, Intel Lunar Lake NPU 4 i7/i9 version, and Qual-comm Snapdragon X Elite Hexagon NPU. MLVC achieves real-time encoding and decoding (each >30 FPS) up to 540p on all three platforms. MLVC-S ex-14 T. Pärnamaa et al. 
+
+Table 2: BD-rate (MOS) relative to HEVC-QSV on VCD-TH at different processing resolutions: BD-360 and BD-540 denote BD-rate at 360p and 540p respectively, BD-All combines both via bitrate ladder. FPS indicates encoding speed on Apple M3 Pro NPU for neural codecs and Intel hardware for HEVC-QSV. MOS is always evaluated at 720p. CP denotes cross-platform capability. Codec IP RP BD-360 BD-540 BD-All FPS (360/540) CP HEVC-QSV -1 – 0.0 0.0 0.0 221/170 ✓
+
+DCVC-RT -1 64 –76.4 –80.3 –77.9 102/46 ×
+
+DCVC-RT (perceptual) -1 64 –81.9 – – 102/46 ×
+
+MLVC 64 32 –75.5 –78.8 –77.4 130/66 ✓
+
+MLVC-S 64 32 – –65.4 – 300/152 ✓
+
+MLVC-multi 64 32 –75.5 –65.4 –71.8 130/152 ✓
+
+Table 3: Speed comparison of MLVC models across different platforms and resolutions.                                                                                                                
+
+> Model Res. Apple (FPS) Intel (FPS) Qualcomm Avg (FPS) Params (M) GFLOPs Enc Dec Enc Dec Enc Dec Enc Dec Enc Dec MLVC 360p 129.5 122.9 98.0 98.0 80.0 77.5 103 99 18.3 63.9 66.2 MLVC 540p 65.7 62.3 45.7 45.7 37.0 35.1 49 48 18.3 142.2 147.0 MLVC 720p 33.8 33.1 24.4 26.5 21.4 20.4 27 27 18.3 253.8 262.5 MLVC 1080p 15.6 15.2 10.5 10.7 10.6 9.5 12 12 18.3 567.3 587.1 MLVC-S 360p 300.3 277.8 263.2 270.3 193.4 173.9 252 241 5.4 21.6 23.2 MLVC-S 540p 152.0 137.6 120.5 125.0 89.6 77.9 121 114 5.4 48.0 51.4 MLVC-S 720p 83.8 73.5 62.1 70.4 51.3 44.1 66 63 5.4 85.7 91.9 MLVC-S 1080p 39.5 34.6 24.0 25.8 26.5 19.6 30 27 5.4 191.9 205.7
+
+tends real-time capability to 720p on all platforms and reaches 1080p at 30 FPS on Apple M3 Pro. 
+
+5 Conclusion 
+
+We present MLVC, the first cross-platform neural video codec that achieves ro-bust decoding across diverse consumer NPUs while maintaining competitive per-ceptual quality and real-time performance. Our scale-sending mechanism elim-inates catastrophic cross-platform decoding failures, while the memory mod-ule, ReGLU activations, I-frame dropout, and LTR frames reduce the compres-sion cost of cross-platform constraints. MLVC averages 100 FPS at 360p across three major NPU platforms and achieves perceptual quality on par with original DCVC-RT on the video conferencing benchmark, while being 30% faster. Several directions remain for future work. Power consumption is likely to become the next optimization frontier now that real-time performance has been achieved. Additionally, simultaneous encoding and decoding on a single device at high resolutions (1080p and above) remains challenging for symmetric archi-tectures and warrants further investigation. MLVC: Cross-Platform Neural Video Codec 15 
+
+References 
+
+1. CLIC challenge 2024. https://archive.compression.cc/2024/ 
+
+2. ECM reference software. https://vcgit.hhi.fraunhofer.de/ecm/ECM 
+
+3. FFmpeg. https://ffmpeg.org/ 
+
+4. HM reference software for HEVC. https://vcgit.hhi.fraunhofer.de/jvet/HM 
+
+5. Intel Quick Sync Video. https://en.wikipedia.org/wiki/Intel_Quick_Sync_ Video 
+
+6. Operators supported by the model intermediate language (MIL). https://apple. github.io/coremltools/source/coremltools.converters.mil.mil.ops.defs. html 
+
+7. VTM reference software for VVC. https://vcgit.hhi.fraunhofer.de/jvet/ VVCSoftware_VTM 
+
+8. Agustsson, E., Minnen, D., Johnston, N., Balle, J., Hwang, S.J., Toderici, G.: Scale-space flow for end-to-end optimized video compression. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 8503– 8512 (2020) 9. Agustsson, E., Tschannen, M., Mentzer, F., Timofte, R., Gool, L.V.: Generative adversarial networks for extreme learned image compression. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 221–231 (2019) 10. Ballé, J., Johnston, N., Minnen, D.: Integer networks for data compression with latent-variable models. In: 7th International Conference on Learning Representa-tions, ICLR 2019, New Orleans, LA, USA, May 6-9, 2019. OpenReview.net (2019), 
+
+https://openreview.net/forum?id=S1zz2i0cY7 
+
+11. Ballé, J., Minnen, D., Singh, S., Hwang, S.J., Johnston, N.: Variational image compression with a scale hyperprior. In: International Conference on Learning Representations (2018) 12. Bjontegaard, G.: Calculation of average PSNR differences between RD-curves. ITU-T SG16, Doc. VCEG-M33 (2001) 13. Cheng, Z., Sun, H., Takeuchi, M., Katto, J.: Learned image compression with discretized Gaussian mixture likelihoods and attention modules. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 7939–7948 (2020) 14. Deng, J., Guo, J., Ververas, E., Kotsia, I., Zafeiriou, S.: RetinaFace: Single-shot multi-level face localisation in the wild. In: Proceedings of the IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition. pp. 5203–5212 (2020) 15. Duan, W., Chang, Z., Jia, C., Wang, S., Ma, S., Song, L., Gao, W.: Learned image compression using cross-component attention mechanism. IEEE Transactions on Image Processing 32 , 5478–5493 (2023) 16. Flynn, D., Sharman, K., Rosewarne, C.: Common test conditions and software reference configurations for HEVC range extensions, document JCTVC-N1006 17. Guo, Z., Jia, Z., Li, J., Zhang, X., Li, B., Lu, Y.: Generative latent video compres-sion. arXiv preprint arXiv:2510.09987 (2025) 18. He, D., Yang, Z., Chen, Y., Zhang, Q., Qin, H., Wang, Y.: Post-training quantiza-tion for cross-platform learned image compression. arXiv preprint arXiv:2202.07513 (2022) 19. He, D., Yang, Z., Peng, W., Ma, R., Qin, H., Wang, Y.: ELIC: Efficient learned image compression with unevenly grouped space-channel contextual adaptive cod-ing. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 5718–5727 (2022) 16 T. Pärnamaa et al. 20. He, D., Zheng, Y., Sun, B., Wang, Y., Qin, H.: Checkerboard context model for efficient learned image compression. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 14771–14780 (2021) 21. Hochreiter, S., Schmidhuber, J.: Long short-term memory. Neural computation 
+
+9(8), 1735–1780 (1997) 22. Hu, Z., Lu, G., Xu, D.: FVC: A new framework towards deep video compression in feature space. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 1502–1511 (2021) 23. ITU-T: ITU-T recommendation P.910: Subjective video quality assessment meth-ods for multimedia applications. International Telecommunication Union, Geneva (2021) 24. Jia, Z., Li, B., Li, J., Xie, W., Qi, L., Li, H., Lu, Y.: Towards practical real-time neural video compression. In: IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2025, Nashville, TN, USA, June 11-25, 2024 (2025) 25. Jiang, W., Zhai, Y., Li, H., Wang, R.: TLIC: Learned image compression with ROI-weighted distortion and bit allocation. arXiv preprint arXiv:2401.08154 (2024) 26. Kim, H., Bauer, M., Theis, L., Schwarz, J.R., Dupont, E.: C3: High-performance and low-complexity neural compression from a single image or video. In: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 9347–9358 (2024) 27. Koyuncu, E., Solovyev, T., Alshina, E., Kaup, A.: Device interoperability for learned image compression with weights and activations quantization. In: 2022 Picture Coding Symposium (PCS). pp. 151–155. IEEE (2022) 28. Koyuncu, E., Solovyev, T., Sauer, J., Alshina, E., Kaup, A.: Quantized decoder in learned image compression for deterministic reconstruction. In: ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). pp. 3985–3989. IEEE (2024) 29. Le, H., Zhang, L., Said, A., Sautière, G., Yang, Y., Shrestha, P., Yin, F., Pourreza, R., Wiggers, A.J.: MobileCodec: Neural inter-frame video compression on mobile devices. In: Murray, N., Simon, G., Farias, M.C.Q., Viola, I., Montagud, M. (eds.) MMSys ’22: 13th ACM Multimedia Systems Conference, Athlone, Ireland, June 14 - 17, 2022. pp. 324–330. ACM (2022). https://doi.org/10.1145/3524273. 3532906 , https://doi.org/10.1145/3524273.3532906 
+
+30. Leguay, T., Ladune, T., Philippe, P., Déforges, O.: Cool-Chic video: Learned video coding with 800 parameters. In: 2024 Data Compression Conference (DCC). pp. 23–32. IEEE (2024) 31. Li, J., Li, B., Lu, Y.: Deep contextual video compression. Advances in Neural Information Processing Systems 34 , 18114–18125 (2021) 32. Li, J., Li, B., Lu, Y.: Hybrid spatial-temporal entropy modelling for neural video compression. In: Proceedings of the 30th ACM International Conference on Mul-timedia. pp. 1503–1511 (2022) 33. Li, J., Li, B., Lu, Y.: Neural video compression with diverse contexts. In: Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 22616–22626 (2023) 34. Li, J., Li, B., Lu, Y.: Neural video compression with feature modulation. In: Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion. pp. 26099–26108 (2024) 35. Lin, J., Liu, D., Li, H., Wu, F.: M-LVC: Multiple frames prediction for learned video compression. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 3546–3554 (2020) MLVC: Cross-Platform Neural Video Codec 17 36. Lu, G., Ouyang, W., Xu, D., Zhang, X., Cai, C., Gao, Z.: DVC: An end-to-end deep video compression framework. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 11006–11015 (2019) 37. Ma, Y., Zhai, Y., Yang, C., Yang, J., Wang, R., Zhou, J., Li, K., Chen, Y., Wang, R.: Variable rate ROI image compression optimized for visual quality. In: Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 1936–1940 (2021) 38. Mentzer, F., Agustsson, E., Ballé, J., Minnen, D., Johnston, N., Toderici, G.: Neu-ral video compression using GANs for detail synthesis and propagation. In: Euro-pean Conference on Computer Vision. pp. 562–578. Springer (2022) 39. Mentzer, F., Toderici, G.D., Tschannen, M., Agustsson, E.: High-fidelity generative image compression. Advances in neural information processing systems 33 , 11913– 11924 (2020) 40. Minnen, D., Ballé, J., Toderici, G.D.: Joint autoregressive and hierarchi-cal priors for learned image compression. In: Bengio, S., Wallach, H., Larochelle, H., Grauman, K., Cesa-Bianchi, N., Garnett, R. (eds.) Advances in Neural Information Processing Systems. vol. 31. Curran Associates, Inc. (2018), https : / / proceedings. neurips.cc/ paper_files/ paper/2018/ file/ 53edebc543333dfbf7c5933af792c9c4-Paper.pdf 
+
+41. Minnen, D., Singh, S.: Channel-wise autoregressive entropy models for learned image compression. In: 2020 IEEE International Conference on Image Processing (ICIP). pp. 3339–3343. IEEE (2020) 42. Naderi, B., Cutler, R.: A crowdsourcing approach to video quality assessment (2024) 43. Naderi, B., Cutler, R., Khongbantabam, N.S., Hosseinkashi, Y., Turbell, H., Sadovnikov, A., Zou, Q.: VCD: A video conferencing dataset for video compres-sion. In: ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). pp. 3970–3974. IEEE (2024) 44. Qi, L., Li, J., Li, B., Li, H., Lu, Y.: Motion information propagation for neural video compression. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 6111–6120 (2023) 45. Shazeer, N.: GLU variants improve transformer. arXiv preprint arXiv:2002.05202 (2020) 46. Sheng, X., Li, J., Li, B., Li, L., Liu, D., Lu, Y.: Temporal context mining for learned video compression. IEEE Transactions on Multimedia 25 , 7311–7322 (2022) 47. Shi, Y., Ge, Y., Wang, J., Mao, J.: AlphaVC: High-performance and efficient learned video compression. In: European Conference on Computer Vision. pp. 616– 631. Springer (2022) 48. Sun, H., Yu, L., Katto, J.: Learned image compression with fixed-point arithmetic. In: 2021 Picture Coding Symposium (PCS). pp. 1–5. IEEE (2021) 49. Tian, K., Guan, Y., Xiang, J., Zhang, J., Han, X., Wei, Y.: Effortless cross-platform video codec: A codebook-based method (2024), https://openreview.net/forum? id=mRw9BuNO9i 
+
+50. Tian, K., Guan, Y., Xiang, J., Zhang, J., Han, X., Yang, W.: Towards real-time neural video codec for cross-platform application using calibration information. In: Proceedings of the 31st ACM International Conference on Multimedia. pp. 7961– 7970 (2023) 51. Van Rozendaal, T., Singhal, T., Le, H., Sautiere, G., Said, A., Buska, K., Raha, A., Kalatzis, D., Mehta, H., Mayer, F., et al.: MobileNVC: Real-time 1080p neural video compression on a mobile device. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 4323–4333 (2024) 18 T. Pärnamaa et al. 52. Xue, T., Chen, B., Wu, J., Wei, D., Freeman, W.T.: Video enhancement with task-oriented flow. International Journal of Computer Vision (IJCV) 127 (8), 1106–1125 (2019) 53. Yang, R., Mentzer, F., Gool, L.V., Timofte, R.: Learning for video compression with hierarchical quality and recurrent enhancement. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 6628–6637 (2020) 54. Zhang, R., Isola, P., Efros, A.A., Shechtman, E., Wang, O.: The unreasonable effectiveness of deep features as a perceptual metric. In: CVPR (2018) 55. Zheng, Y., Yang, H., Zhang, T., Bao, J., Chen, D., Huang, Y., Yuan, L., Chen, D., Zeng, M., Wen, F.: General facial representation learning in a visual-linguistic manner. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 18697–18709 (2022) MLVC: Cross-Platform Neural Video Codec 19 
+
+MLVC: Multi-platform Learned Video Codec for Real-World Deployment 
+
+Supplementary Material 
+
+This supplementary material provides additional experimental details (Sec-tion A), extended ablations (Section B), a formalization of our perceptual loss with ROI re-weighting (Section C), and a detailed analysis of cross-platform divergence (Section D). 
+
+A Experimental Setup 
+
+A.1 Metrics and Colorspace 
+
+All our metric calculations are performed in the YUV420 colorspace. Follow-ing [34], PSNR and MS-SSIM are computed for each channel separately and combined as P SN R avg = (6 × P SN R y + P SN R u + P SN R v )/8. Since LPIPS requires RGB inputs, we use BT.709 for conversion. 
+
+A.2 Hardware Encoder Configuration 
+
+We run the hardware encoder on a Lunar Lake processor (Intel(R) Core(TM) Ultra 9 288V) with the following ffmpeg 2 config: 
+
+> ffmpeg -init_hw_device qsv=hw -filter_hw_device hw -f rawvideo -pix_fmt yuv420p -s {width}x{height} -r {fps} -i {in_f} -c:v hevc_qsv -load_plugin hevc_hw -scenario 2 -p_strategy 0 -b_strategy 0 -threads 1 -sc_threshold 0 -preset fast -bf 0 -look_ahead 0 -g 6000 -i_qfactor 1.0 -i_qoffset 0 -b_qfactor 1.0 -b_qoffset 0 -refs 1 -q {qp} {out_path}
+
+This configuration reflects typical settings used in modern real-time video conferencing applications, providing a practical balance between compression efficiency and encoding cost. 20 T. Pärnamaa et al. 
+
+Table 4: BD-rate comparison across HEVC anchors used in prior work on HEVC-B (all frames). Assuming BD-rate transitivity, we convert reported results to the BD-rate relative to our anchor for fair comparison across models (Rep.: reported BD-rate, Impl.: implied BD-rate, IP: intra period).                                                              
+
+> Anchor IP BD Used in Model IP Rep. BD Impl. BD Cross plat.
+> intel_hw_hevc (fast) -1 0.0 MLVC 1024 -45.2 -45.2 ✓
+> ffmpeg (veryfast) 10 39.6 DVC [36] 10 1.4 41.6 ×
+> ffmpeg (fast) -1 7.1 MobileCodec [51] 16 171.6 190.9 ×
+> ffmpeg (fast) -1 7.1 MobileNVC [51] 16 50.8 61.5 ×
+> ffmpeg (medium) 12 21.3 Effortless [49] 32 -5.2 15.0 ✓
+> ffmpeg (veryslow) 10 16.3 DCVC [31] 10 -26.0 -13.9 ×
+> HM (encoder_lowdelay_main10) -1 -41.7 DCVC-RT [24] -1 -43.5 -67.0 ×
+> Additional anchors evaluated
+> intel_hw_hevc (veryslow) -1 -7.5 ffmpeg (veryslow) -1 -3.3 ffmpeg (veryslow, psy-rd off) -1 -17.4 HM (encoder_lowdelay_P_main) -1 -34.4
+
+A.3 HEVC Anchors in Prior Work 
+
+As neural video codecs have evolved, the HEVC anchor configurations used in prior works have also changed. For example, DVC used FFmpeg with preset 
+
+veryfast , while DCVC changed it to veryslow , and DCVC-RT uses the official reference software configuration. Table 4 summarizes the wide array of anchors used in relevant works cited in our paper. The BD column reports BD-rate compared to our hardware HEVC anchor on HEVC-B. The large variations reveal that anchor choices (preset, intra period, psycho-visual settings, and use of reference software) substantially affect reported BD-rates. In particular, the intra period has a strong influence on compression efficiency. While hardware encoders can be deployed with very long intra periods (e.g., IP= −1), many prior works use short intra periods, which make neural codecs appear more favorable in BD-rate comparisons. Changing the Intel hardware encoder’s preset from fast to veryslow has only a marginal impact on BD-rate, highlighting its fixed function nature. With the fast preset, it is slightly better than x265. However, prior work has used the default settings for x265, which enable psycho-visual optimization, diminishing PSNR. When we disable this via psy-rd=0:psy-rdoq=0:aq-mode=0:qcomp=1.0 ,x265 performance increases substantially, as exemplified for the veryslow preset. Finally, reference software HM achieves a significant improvement in BD-rate, while not being practical for deployment. To compare our model with prior work, we make use of the fact that BD-rate is almost always reported on the HEVC-B dataset. By assuming the transitivity of BD-rates, we calculate Implied BD - the estimated BD-rate compared to our anchor. While informative, this is a rough approximation, as differences in metric overlap intervals and interpolation methods (polynomial, piecewise or  
+
+> 2
+
+ffmpeg version 7.1.1-full_build MLVC: Cross-Platform Neural Video Codec 21 
+
+other) mean perfect transitivity does not hold. Moreover, intra periods differ between models. This fact itself often reflects architecture and training schedule improvements. Previous approaches that have focused on mobile deployment [51] or cross-platform compatibility [49] do not improve on our hardware HEVC anchor in BD-rate, making them infeasible for deployment. In contrast, DCVC-RT beats our anchor by a wide margin. MLVC also achieves large gains while additionally being cross-platform capable. 
+
+A.4 Model Size 
+
+We inherit the base configuration from DCVC-RT. The recurrent feature dimen-sionality is reduced from 256 to 128, and the memory size is set to 128. Based on early ablation studies, we use  8× spatial downsampling in the hyperprior and 
+
+2× channel sharing. A more extensive ablation of scale sharing is provided in Section B.4. For MLVC-S, the hyperencoder consists of a single layer that downsamples by  4×. The channel-sharing factor is increased to  4×, the feature extractor is reduced to two layers, the number of channels is decreased from 256 to 192, and the  y, z, feature  channel dimensions are reduced from 128 to 48. 
+
+B Extended Results 
+
+B.1 Additional Metrics 
+
+Tables 5, 6, and 7 extend the ablation study from the main paper (Table 1) by reporting PSNR-, MS-SSIM-, and LPIPS-based BD-rates for each dataset individually. While Table 1 reports the average PSNR-based BD-rate across datasets (Avg column), these tables expand that column into per-dataset results. The conclusions remain consistent across metrics. 
+
+B.2 Additional Benchmarks: UVG and MCL-JCV 
+
+The main paper uses VCD and HEVC test sequences as the primary bench-marks. To further evaluate generalization beyond these main benchmarks, we add two additional high-resolution video compression benchmarks: UVG and MCL-JCV. Both datasets contain 1080p sequences and are evaluated at their native resolution. Table 8 reports PSNR BD-rate in YUV420 relative to the same HEVC-QSV anchor used in the main paper. MLVC maintains large gains over hardware HEVC on both additional 1080p datasets, achieving −51 .7% BD-rate on UVG and −47 .3% on MCL-JCV. The gap to DCVC-RT remains consistent across datasets. This gap reflects the cost of eliminating the same-platform bit-exactness assumption: DCVC-RT provides a same-platform upper bound, while MLVC is designed for reliable deployment across heterogeneous encoder-decoder platforms. 22 T. Pärnamaa et al. 
+
+Table 5: Ablation study showing PSNR-based BD-rate (%) in YUV420 colorspace on VCD and HEVC test sequences. Lower is better. 
+
+Arch I IP RP Act SS Mem I-D LTR TH OB BB M B C D E Avg DCVC-RT ✓ -1 64 WSiLU × × × × -71.7 -73.0 -76.0 -57.7 -66.9 -68.4 -70.5 -72.8 -69.6 DCVC-RT × -1 64 WSiLU × × × × -70.3 -71.4 -75.1 -57.0 -66.0 -67.8 -69.9 -71.5 -68.6 DCVC-RT × 64 0 WSiLU × × × × -59.1 -59.3 -68.4 -51.7 -59.1 -62.6 -64.2 -50.9 -59.4 0-prior × -1 64 WSiLU × × × × 20.3 39.1 35.2 21.0 -10.8 -29.3 -39.6 127.8 20.5 MLVC × -1 64 WSiLU ✓ × × × -57.5 -55.8 -62.5 -46.4 -51.9 -53.2 -56.5 -52.4 -54.5 MLVC × -1 64 LReLU ✓ × × × -54.4 -52.8 -59.4 -39.4 -43.3 -44.9 -48.4 -50.7 -49.2 MLVC × -1 64 LReLU ✓ ✓ × × -58.1 -59.3 -60.6 -39.8 -44.9 -46.7 -47.7 -59.9 -52.1 MLVC × -1 64 ReGLU ✓ ✓ × × -60.5 -60.6 -62.9 -44.0 -52.3 -54.1 -56.5 -62.2 -56.6 MLVC × 64 0 ReGLU ✓ ✓ × × -41.3 -38.6 -53.0 -36.3 -41.0 -46.0 -47.0 -25.8 -41.1 MLVC × 64 0 ReGLU ✓ ✓ ✓ × -46.7 -45.7 -57.5 -39.7 -44.7 -48.3 -49.7 -36.4 -46.1 MLVC × 1024 0 ReGLU ✓ ✓ ✓ ✓ -57.9 -59.4 -58.4 -39.5 -45.2 -48.3 -48.2 -59.3 -52.0 MLVC-S × 1024 0 ReGLU ✓ ✓ ✓ ✓ -43.1 -45.7 -44.2 -17.7 -24.0 -33.0 -34.7 -49.7 -36.5 
+
+Legend: I: separate I-frame model, IP: intra period ( −1=single intra frame), RP: reset period (0=no reset), Act: activation function, SS: scale sending, Mem: memory module, I-D: I-frame dropout, LTR: long-term reference, TH/OB/BB/M: VCD subsets (Talking Head, Opaque Background, Background Blur, Mobile), B-E: HEVC classes B-E, 0-prior: no adaptive priors, MLVC-S: small MLVC variant. 
+
+Table 6: Ablation study showing MS-SSIM-based BD-rate (%) in YUV420 colorspace on VCD and HEVC test sequences. Lower is better. 
+
+Arch I IP RP Act SS Mem I-D LTR TH OB BB M B C D E Avg DCVC-RT ✓ -1 64 WSiLU × × × × -73.4 -73.7 -80.9 -59.1 -69.8 -73.6 -75.8 -73.0 -72.4 DCVC-RT × -1 64 WSiLU × × × × -71.1 -71.2 -79.9 -57.8 -68.0 -72.9 -75.1 -70.9 -70.9 DCVC-RT × 64 0 WSiLU × × × × -56.9 -55.0 -72.7 -50.8 -59.5 -66.9 -69.0 -41.8 -59.1 0-prior × -1 64 WSiLU × × × × 9.6 27.8 1.3 20.4 -17.3 -41.8 -51.4 104.1 6.6 MLVC × -1 64 WSiLU ✓ × × × -60.1 -56.4 -69.9 -48.3 -57.4 -62.9 -66.7 -56.3 -59.7 MLVC × -1 64 LReLU ✓ × × × -57.8 -55.1 -67.2 -43.9 -51.8 -57.7 -61.8 -55.4 -56.3 MLVC × -1 64 LReLU ✓ ✓ × × -60.6 -60.1 -68.2 -44.7 -53.5 -59.0 -62.8 -60.8 -58.7 MLVC × -1 64 ReGLU ✓ ✓ × × -61.9 -60.1 -69.3 -46.5 -57.2 -62.5 -66.0 -61.3 -60.6 MLVC × 64 0 ReGLU ✓ ✓ × × -41.1 -34.7 -59.6 -38.0 -46.0 -54.8 -57.8 -19.3 -43.9 MLVC × 64 0 ReGLU ✓ ✓ ✓ × -48.8 -44.9 -65.8 -42.7 -51.2 -57.3 -60.9 -33.9 -50.7 MLVC × 1024 0 ReGLU ✓ ✓ ✓ ✓ -59.3 -58.4 -65.9 -41.3 -50.2 -56.2 -58.4 -55.1 -55.6 MLVC-S × 1024 0 ReGLU ✓ ✓ ✓ ✓ -45.8 -45.6 -54.3 -19.3 -33.3 -45.7 -51.2 -46.6 -42.7 
+
+Legend: I: separate I-frame model, IP: intra period ( −1=single intra frame), RP: reset period (0=no reset), Act: activation function, SS: scale sending, Mem: memory module, I-D: I-frame dropout, LTR: long-term reference, TH/OB/BB/M: VCD subsets (Talking Head, Opaque Background, Background Blur, Mobile), B-E: HEVC classes B-E, 0-prior: no adaptive priors, MLVC-S: small MLVC variant. 
+
+B.3 Latency Breakdown 
+
+We provide a latency breakdown to isolate the per-frame speed effect of each ar-chitectural change from DCVC-RT to MLVC. Following the architectural columns in Table 1, Table 9 reports encoder and decoder FPS on the Apple M3 Pro NPU at 360p. I-frame dropout and LTR are training/inference-time policies that do not affect per-frame compute, so they are omitted from this breakdown. Scale sending improves decoder speed, increasing decoder FPS from 75 to 97 without changing encoder FPS. Hardware-compatible activations improve both encoder and decoder speed, increasing FPS from 102/97 to 130/123. ReGLU matches the FPS of LReLU, indicating that the gating adds no measurable runtime cost in this setting. The memory row has essentially unchanged FPS by design: we keep the recurrent state size constant by replacing 256 reference-feature channels with 128 reference-feature channels plus 128 memory channels. MLVC: Cross-Platform Neural Video Codec 23 
+
+Table 7: Ablation study showing LPIPS-based BD-rate (%) in YUV420 colorspace on VCD and HEVC test sequences. Lower is better.                                                                                                                                                                                                                              
+
+> Arch IIP RP Act SS Mem I-D LTR TH OB BB MBCDEAvg DCVC-RT ✓-1 64 WSiLU ××××-65.5 -59.1 -64.0 -37.1 -43.8 -62.4 -69.3 -53.7 -56.9 DCVC-RT ×-1 64 WSiLU ××××-63.2 -55.5 -63.7 -34.6 -40.9 -61.9 -68.2 -49.7 -54.7 DCVC-RT ×64 0WSiLU ××××-45.6 -30.8 -54.3 -22.9 -25.3 -53.9 -59.9 -3.4 -37.0 0-prior ×-1 64 WSiLU ××××30.9 61.1 80.6 55.8 34.0 -20.7 -37.5 199.4 50.5 MLVC ×-1 64 WSiLU ✓×××-51.8 -35.7 -55.1 -24.1 -25.9 -47.6 -57.1 -33.4 -41.3 MLVC ×-1 64 LReLU ✓×××-49.6 -34.9 -53.3 -16.7 -11.6 -38.6 -49.5 -34.1 -36.0 MLVC ×-1 64 LReLU ✓✓××-54.5 -45.9 -53.8 -18.8 -15.5 -41.0 -50.8 -40.1 -40.0 MLVC ×-1 64 ReGLU ✓✓××-55.9 -43.7 -54.7 -23.8 -23.6 -48.7 -57.0 -38.2 -43.2 MLVC ×64 0ReGLU ✓✓××-30.6 -6.4 -40.6 -11.8 -4.4 -38.5 -47.2 25.5 -19.3 MLVC ×64 0ReGLU ✓✓✓×-40.9 -20.3 -45.5 -21.1 -16.3 -44.2 -52.9 1.9 -29.9 MLVC ×1024 0ReGLU ✓✓✓✓-54.2 -41.2 -50.2 -17.3 -15.4 -42.4 -49.0 -35.1 -38.1 MLVC-S ×1024 0ReGLU ✓✓✓✓-37.8 -20.7 -36.9 12.8 13.9 -26.1 -36.7 -20.8 -19.0
+
+Legend: I: separate I-frame model, IP: intra period ( −1=single intra frame), RP: reset period (0=no reset), Act: activation function, SS: scale sending, Mem: memory module, I-D: I-frame dropout, LTR: long-term reference, TH/OB/BB/M: VCD subsets (Talking Head, Opaque Background, Background Blur, Mobile), B-E: HEVC classes B-E, 0-prior: no adaptive priors, MLVC-S: small MLVC variant. 
+
+Table 8: Additional PSNR BD-rate (%) results relative to HEVC-QSV. Dataset DCVC-RT MLVC Original average −69 .6 −52 .0
+
+UVG (1080p) −69 .4 −51 .7
+
+MCL-JCV (1080p) −63 .0 −47 .3
+
+Average incl. UVG/MCL-JCV −68 .9 −51 .5
+
+VCD-TH (cross-platform scenario) ∞ (fail) −58 .7
+
+B.4 Scale Sharing Ablation 
+
+We ablate the spatial and channel sharing factors in the scale sharing mechanism. Spatial sharing is increased by adding additional 2x downsampling blocks in the hyperprior. Figure 7 reports the resulting BD-rate, averaged over VCD 720p and HEVC sequences. The experiments in the main paper used three 2x down-sampling blocks in the hyperprior, and a channel sharing factor of two. Further improvements may be achieved by increasing the channel sharing factor. 
+
+B.5 Activation Functions 
+
+We evaluate the impact of different activation functions. Specifically, we com-pare LeakyReLU, WSiLU, SiLU, GELU, HardSwish and ReGLU activations while keeping all other components fixed. For ReGLU, as explained in Sec. 3.4, we only change the activation in the depth-wise convolution block by replac-ing channel addition with multiplicative gating and using ReLU1, while using LeakyReLU elsewhere. For all other activations, we change all activation func-tions throughout the network. The results are shown in Table 10. As discussed in Section D.3, some activations give better BD-rate but are unsuitable for cross-platform deployment due to large numeric divergence between devices. 24 T. Pärnamaa et al. 
+
+Table 9: Latency breakdown on Apple M3 Pro NPU at 360p. Arch Act SS Mem Enc FPS Dec FPS DCVC-RT WSiLU × × 102 75 MLVC WSiLU ✓ × 102 97 MLVC LReLU ✓ × 130 123 MLVC LReLU ✓ ✓ 131 123 MLVC ReGLU ✓ ✓ 130 123 MLVC-S ReGLU ✓ ✓ 300 278 1 2 4 8 16 32 64 
+
+> Channel Sharing Factor
+> 2
+> 4
+> 8
+> Spatial Sharing Factor
+
+-23.5 -30.1 -34.3 -33.0 
+
+-32.4 -35.5 -39.5 -42.5 -42.7 -41.1 -0.8 
+
+-39.9 -43.4 -44.3 -45.6 -42.9 -40.9 -37.5 
+
+Fig. 7: Ablation study on spatial and channel sharing factors in the scale sharing mechanism. BD-rate is averaged over VCD 720p and HEVC sequences. All models are trained on sequences of up to 32 frames. 
+
+B.6 Scaling Laws 
+
+While our main results are presented for MLVC/MLVC-S running at 100-120 FPS, we observe across our experiments significant scaling laws between frame coding time in ms and BD-rate, as shown in Figure 8. This trend indicates that as more powerful NPU hardware becomes available, larger model variants can be deployed within the same latency budget, enabling improved compression performance even without future architectural innovations. 
+
+B.7 Cross-platform LTR Ablation 
+
+To evaluate the effectiveness of the Long-Term Reference (LTR) mechanism in a true cross-platform setting, we measure BD-rate degradation when encoding and decoding are performed on different compute units. Table 11 reports the BD-rate increase (Delta) when moving from the same compute unit (Apple M3 GPU →GPU) to a heterogeneous configuration (Apple M3 GPU →NPU). As illustrated in Fig. 10, this GPU–NPU pair exhibits one of the largest numerical divergences among the tested device combinations. At comparable levels of cross-platform divergence (Delta), the LTR mechanism allows the use of longer intra periods (IP), which improves the BD-rate. MLVC: Cross-Platform Neural Video Codec 25 
+
+Table 10: Activation function ablation study results showing BD-rate (PSNR) in YUV420 colorspace on VCD and HEVC test sequences. Activation TH TH-OB TH-BB TH-M HEVC B HEVC C HEVC D HEVC E Avg WSiLU -61.7 -60.9 -63.7 -46.5 -52.8 -54.6 -56.7 -63.1 -57.5 ReGLU -60.5 -60.6 -62.9 -44.0 -52.3 -54.1 -56.5 -62.2 -56.6 GELU -59.8 -60.0 -62.6 -44.5 -51.4 -53.1 -55.0 -61.8 -56.0 SiLU -59.1 -60.6 -61.9 -41.6 -47.4 -49.7 -51.2 -63.3 -54.3 LReLU -58.1 -59.3 -60.6 -39.8 -44.9 -46.7 -47.7 -59.9 -52.1 HardSwish -57.1 -59.0 -60.3 -40.4 -45.5 -45.4 -47.2 -61.4 -52.0 
+
+Table 11: Cross-platform LTR comparison between same-device (Apple M3 GPU-GPU) and cross-device decoding (Apple M3 GPU-NPU). Delta shows the BD-rate degradation from cross-device decoding. At comparable Delta, LTR enables longer intra periods and thus better BD-rate. 
+
+IP LTR LTR-Period BD-rate Delta  
+
+> GPU-GPU GPU-NPU
+
+32 No 0 -10.2% -9.0% -1.2 64 No 0 -39.9% -37.8% -2.2 128 No 0 -51.7% -47.0% -4.7 64 Yes 32 -34.8% -33.8% -1.0 128 Yes 32 -42.4% -41.4% -1.0 128 Yes 64 -48.4% -46.4% -2.0 256 Yes 32 -45.1% -44.1% -1.0 256 Yes 64 -51.7% -49.8% -1.9 256 Yes 128 -55.5% -50.8% -4.7 
+
+B.8 LTR under Scene Changes 
+
+We evaluate MLVC under scene changes by constructing a scene-change set from MCL-JCV. Specifically, we concatenate 15 video pairs with fixed cuts, using 64 frames before and 64 frames after each cut. This setup tests the behavior of long-term reference (LTR) prediction when the stored reference becomes stale after an abrupt cut. MLVC uses a unified I/P-frame model: an I-frame is encoded as a P-frame whose reference is a gray frame. Therefore, the model is explicitly trained to han-dle large reference/current-frame mismatch. At IP= 64 , explicit I-frame refresh achieves −52 .3% BD-rate, while LTR with period 64 achieves −50 .3% . Thus, using a stale LTR reference incurs a 2.0 percentage-point BD-rate penalty under abrupt scene changes. This penalty can be avoided in deployment by standard scene-cut detection that triggers an I-frame refresh. LTR remains preferable for long continuous prediction chains, as shown in the IP= 1024 setting in Table 1. 26 T. Pärnamaa et al. 10 20 30 40 50  
+
+> Average Encoding/Decoding Time (ms)
+> 55
+> 50
+> 45
+> 40
+> 35
+> 30
+> 25
+> BD-Rate (%) VCD 720p
+> 9.1 ms
+> 109 FPS
+> -24.9%
+> 12.1 ms
+> 83 FPS
+> -35.3%
+> 16.5 ms
+> 60 FPS
+> -41.7%
+> 28.9 ms
+> 35 FPS
+> -48.5% 52.1 ms
+> 19 FPS
+> -53.7%
+
+Fig. 8: Rate-distortion performance improves with additional computational resources. Each point represents a different model configuration with varying computational com-plexity. Annotations show the average encoding/decoding latency (ms), throughput (FPS) and BD-rate (PSNR) relative to the HEVC-QSV on VCD 720p. MLVC benefits directly from hardware advances: as NPUs improve each year, MLVC provides effort-less performance gains for neural video compression without algorithmic changes. 
+
+B.9 Rate-Distortion Curves 
+
+To complement the BD-rate metrics reported in Table 1, we provide full rate-distortion curves in Figure 14 for three key model configurations from our ab-lation study: DCVC-RT (our non-cross-platform starting point), MLVC (our proposed model) and MLVC-S (the lightweight version). 
+
+B.10 Full-frame Visual Comparisons 
+
+Figure 9 provides the full frames from which the crops in the main paper’s Figure 1 were extracted. The full frames show that the quality improvements extend across entire images, not just in the ROI (face) regions. 
+
+B.11 Decoder Divergence in Long Prediction Chains 
+
+As discussed in Sec. 3.2, small platform-dependent numerical differences can ac-cumulate over long prediction chains and lead to gradual divergence between encoder and decoder states. Figure 10 shows an extreme example of this phe-nomenon. MLVC: Cross-Platform Neural Video Codec 27 Original DCVC-RT   
+
+> HEVC-QSV (58.7 kbps) MLVC (59.8 kbps)
+> Fig. 9: Full frames used for the close-up comparison in Figure 1.
+
+C Perceptual losses 
+
+To make use of the benefits of both the perceptual loss [54] and region of interest weighting, we use the following distortion loss formulation: 
+
+L = wm · M ⊗ MSE (x, ˆx) + wl · M ⊗ LPIPS (x, ˆx)
+
+Mi =
+
+(
+
+wROI if i ∈ ROI 
+
+wBG otherwise 
+
+wROI = kp(1 + k) , wBG = 1(1 − p)(1 + k)
+
+where MSE and LPIPS denote their single channel spatial versions, {k, w m, w l}
+
+are hyperparameters, p signifies the training dataset specific probability of a pixel belonging to the ROI, and M is the 2D weight mask with elements according to 
+
+Mi.The weights wROI and wBG are derived to satisfy two constraints: a) we want to keep roughly the same magnitude of total loss, to not affect the rate-distortion trade-off, b) the hyperparameter k should correspond to the relative importance of ROI pixels to background pixels. Formally average spatial error M ⊗ E(x, ˆx) for an image is defined as 28 T. Pärnamaa et al. 
+
+Fig. 10: Decoder divergence in a long prediction chain. While the scale-sending mecha-nism eliminates catastrophic failures, platform-dependent numerical differences lead to accumulating prediction errors. The image illustrates an extreme case, where features from the teddy bear gradually bleed into the face region after a long chain of P-frame predictions from a single I-frame when using a model with WSiLU activation. 
+
+ℓ = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+ei · wi = 1
+
+N
+
+X
+
+> i∈ROI
+
+ei · wROI + 1
+
+N
+
+X
+
+> i∈BG
+
+ei · wBG 
+
+However, N can be redefined to mean all pixels in a dataset, rather than a single image. Then, given the expectation 
+
+E[ℓ] = 1
+
+N · p · N · wROI · E[ei]+ 1
+
+N · (1 − p) · N · wBG · E[ei]
+
+we can enforce ROI pixels to contribute k times more than the background by having 
+
+E[ℓROI ]
+
+E[ℓBG ] = p · wROI 
+
+(1 − p) · wBG 
+
+> !
+
+= k (6) and also enforcing the constraint from a): 
+
+(1 − p) · wBG + p · wROI = 1  (7) MLVC: Cross-Platform Neural Video Codec 29 
+
+Table 12: Standard deviation of output error for INT8-quantized convolution across devices and runtimes. 
+
+CPU GPU NPU FP32 FP16 FP16 FP32 FP16 FP32 ORT CoreML OpenVINO ORT CoreML OpenVINO CoreML CoreML OpenVINO ORT-QNN Device Precision Runtime Vendor Intel Apple Qualcomm Apple Intel Apple Intel Apple Intel Apple Apple Intel Qualcomm CPU FP32 ORT Intel 0.00000 0.00000 0.00000 0.00002 0.00001 0.01980 0.01980 0.00354 0.00001 0.00177 0.00011 0.00919 0.00036 0.00036 0.00914 Apple 0.00000 0.00000 0.00000 0.00002 0.00001 0.01980 0.01980 0.00354 0.00001 0.00177 0.00011 0.00919 0.00036 0.00036 0.00914 Qualcomm 0.00000 0.00000 0.00000 0.00002 0.00001 0.01980 0.01980 0.00354 0.00001 0.00177 0.00011 0.00919 0.00036 0.00036 0.00914 CoreML Apple 0.00002 0.00002 0.00002 0.00000 0.00002 0.01980 0.01980 0.00354 0.00002 0.00177 0.00011 0.00919 0.00036 0.00036 0.00914 OpenVINO Intel 0.00001 0.00001 0.00001 0.00002 0.00000 0.01980 0.01980 0.00354 0.00000 0.00177 0.00011 0.00919 0.00036 0.00036 0.00914 FP16 ORT Apple 0.01980 0.01980 0.01980 0.01980 0.01980 0.00000 0.00000 0.01991 0.01980 0.01990 0.01980 0.02060 0.01979 0.01979 0.02140 Intel 0.01980 0.01980 0.01980 0.01980 0.01980 0.00000 0.00000 0.01991 0.01980 0.01990 0.01980 0.02060 0.01979 0.01979 0.02140 CoreML Apple 0.00354 0.00354 0.00354 0.00354 0.00354 0.01991 0.01991 0.00000 0.00354 0.00348 0.00354 0.00924 0.00354 0.00354 0.00936 OpenVINO Intel 0.00001 0.00001 0.00001 0.00002 0.00000 0.01980 0.01980 0.00354 0.00000 0.00177 0.00011 0.00919 0.00036 0.00036 0.00914 GPU FP16 CoreML Apple 0.00177 0.00177 0.00177 0.00177 0.00177 0.01990 0.01990 0.00348 0.00177 0.00000 0.00177 0.00917 0.00179 0.00179 0.00915 FP32 CoreML Apple 0.00011 0.00011 0.00011 0.00011 0.00011 0.01980 0.01980 0.00354 0.00011 0.00177 0.00000 0.00919 0.00037 0.00037 0.00914 NPU FP16 CoreML Apple 0.00919 0.00919 0.00919 0.00919 0.00919 0.02060 0.02060 0.00924 0.00919 0.00917 0.00919 0.00000 0.00919 0.00919 0.01198 OpenVINO Intel 0.00036 0.00036 0.00036 0.00036 0.00036 0.01979 0.01979 0.00354 0.00036 0.00179 0.00037 0.00919 0.00000 0.00000 0.00914 FP32 OpenVINO Intel 0.00036 0.00036 0.00036 0.00036 0.00036 0.01979 0.01979 0.00354 0.00036 0.00179 0.00037 0.00919 0.00000 0.00000 0.00914 ORT-QNN Qualcomm 0.00914 0.00914 0.00914 0.00914 0.00914 0.02140 0.02140 0.00936 0.00914 0.00915 0.00914 0.01198 0.00914 0.00914 0.00000 
+
+Table 13: Standard deviation of output error for FP16 convolution across devices and runtimes. 
+
+FP16 conv CPU GPU NPU ORT CoreML OpenVINO CoreML OpenVINO CoreML OpenVINO ORT-QNN Device Runtime Vendor Apple Intel Qualcomm Apple Intel Apple Intel Apple Intel Qualcomm CPU ORT Apple 0.00000 0.00000 0.00098 0.00098 0.00000 0.00000 0.00001 0.00012 0.00001 0.00001 Intel 0.00000 0.00000 0.00098 0.00098 0.00000 0.00000 0.00001 0.00012 0.00001 0.00001 Qualcomm 0.00098 0.00098 0.00000 0.00000 0.00098 0.00098 0.00098 0.00098 0.00098 0.00098 CoreML Apple 0.00098 0.00098 0.00000 0.00000 0.00098 0.00098 0.00098 0.00098 0.00098 0.00098 OpenVINO Intel 0.00000 0.00000 0.00098 0.00098 0.00000 0.00000 0.00001 0.00012 0.00001 0.00001 GPU CoreML Apple 0.00000 0.00000 0.00098 0.00098 0.00000 0.00000 0.00001 0.00012 0.00001 0.00001 OpenVINO Intel 0.00001 0.00001 0.00098 0.00098 0.00001 0.00001 0.00000 0.00012 0.00001 0.00000 NPU CoreML Apple 0.00012 0.00012 0.00098 0.00098 0.00012 0.00012 0.00012 0.00000 0.00012 0.00012 OpenVINO Intel 0.00001 0.00001 0.00098 0.00098 0.00001 0.00001 0.00001 0.00012 0.00000 0.00001 ORT-QNN Qualcomm 0.00001 0.00001 0.00098 0.00098 0.00001 0.00001 0.00000 0.00012 0.00001 0.00000 
+
+Solving (6) and (7) for wROI and wBG yields the results. Parametrizing p allows us to keep a similar ROI and background trade-off (given by k) even when using different training datasets or different segmentation masks. 
+
+D Cross-Platform Divergence Analysis 
+
+D.1 Quantized Networks INT8 Quantization INT8 quantization of the model is expected to eliminate cross-device divergence, since integer calculations are generally guaranteed to produce identical results across platforms. To verify this hypothesis, we con-structed a simple PyTorch test model consisting of a pointwise convolution with 128 channels, random weights, and zero bias (the simplest case). The model was quantized to INT8 using the standard static quantization scheme provided by PyTorch with the QNNPACK backend. The resulting INT8-quantized model was exported to Core ML, OpenVINO, and ONNX Runtime (ORT) formats to en-able testing on Apple, Intel, and Qualcomm devices. All models were exported in two precisions: FP16 and FP32. In quantized models, this only affects the data type of the quantization scales and the input/output tensors. Special care 30 T. Pärnamaa et al. 
+
+was taken to ensure that all models used identical static quantization param-eters, weights, and input values, regardless of precision. For all three formats, the exported model shared a similar structure: Quantize → DeQuantize → Conv 
+
+→ Quantize → DeQuantize . This is the standard QDQ (Quantize–DeQuantize) representation used for quantized models. When executed on-device, the model is compiled to use a quantized convolution, resulting in the structure: Quantize 
+
+→ QuantizedConv → DeQuantize .The model was tested on Apple, Intel, and Qualcomm devices using Core ML, OpenVINO, and ORT with both CPU and Qualcomm AI Engine Direct (QNN) execution providers. Random inputs of shape (128 × 256 × 256) drawn from a standard normal distribution were passed through the model across different devices, runtimes, and precisions. The results, shown in Table 12, report the standard deviation of the output error for all combinations of device, runtime, precision, and vendor. Even for such a simple model the results show divergence across most combinations. For the FP32 model on CPU, consistency is highest: outputs from ORT across different platforms align closely; however, both Core ML and OpenVINO already exhibit slight deviations for FP32 on CPU. For the FP16 models on CPU, only Intel OpenVINO matches the FP32 CPU results; all other configurations show significant errors, with ORT being the most divergent. The results for GPU and NPU configurations deviate significantly from those on CPU, and overall, no pair of GPUs or NPUs produces identical outputs. FP16 testing on the Qualcomm device was not possible due to ORT-QNN limitations; however, NPUs typically support only FP16 operations. This is evident from Intel NPU results, which are identical for FP16 and FP32. 
+
+Fake Quantization To better understand the source of divergence, we con-ducted additional tests. The divergence might originate from the quantization of the input or the dequantization of the output. To isolate this effect, we per-formed another set of experiments using a model that contained only a single fake quantization layer. This fake quantization operation can be expressed as: 
+
+Quantized = clip 
+
+
+
+int   round   input scale 
+
+ 
+
+(8) 
+
+Dequantized = scale × Quantized  (9) However, the rounding step can be implemented in different ways, such as round, truncate, or even custom bit-shifting operations. In addition, these cal-culations may occur at different precisions or by using different rounding rules, which further contributes to variability. We tested two rounding functions (round and truncate) under FP16 and FP32 precisions. The results are shown in Table 14. It is evident that on CPU, most inference engines use the standard round function along with FP32 precision. One notable exception is ORT, which ap-pears to use truncate instead of round for FP16 models; this likely explains the large divergence observed in the INT8 quantized convolution results in Table 12. On GPUs, the behavior is close to FP32 round but not an exact match. On MLVC: Cross-Platform Neural Video Codec 31                                                                                           
+
+> Table 14: Output error from fake quantization under different rounding modes and precisions. Fake Quantization Round Truncate Device Precision Runtime Vendor FP16 FP32 FP16 FP32 CPU FP32 ORT Apple 0.00298 0.00000 0.02164 0.02180 ORT Intel 0.00298 0.00000 0.02164 0.02180 ORT Qualcomm 0.00298 0.00000 0.02164 0.02180 CoreML Apple 0.00298 0.00000 0.02164 0.02180 OpenVINO Intel 0.00298 0.00000 0.02164 0.02180 FP16 ORT Apple 0.02179 0.02180 0.00262 0.00000 ORT Intel 0.02179 0.02180 0.00262 0.00000 CoreML Apple 0.00298 0.00000 0.02164 0.02180 OpenVINO Intel 0.00298 0.00000 0.02164 0.02180 GPU FP16 CoreML Apple 0.00299 0.00013 0.02164 0.02180 FP32 CoreML Apple 0.00299 0.00013 0.02164 0.02180 NPU FP16 CoreML Apple 0.00617 0.00612 0.02189 0.02205 OpenVINO Intel 0.00298 0.00000 0.02164 0.02180 FP32 OpenVINO Intel 0.00298 0.00000 0.02164 0.02180 ORT-QNN Qualcomm 0.00894 0.00894 0.01759 0.01778
+
+NPUs, Intel uses FP32 with round for both FP16 and FP32 models, whereas Apple NPU does not match any ground truth in the table, although its behav-ior is closer to round than to truncate. On Qualcomm, the results are incorrect because ORT-QNN seems to optimize away this simple fake quantization layer. 
+
+IEEE 754 Adherence To further investigate the sources of divergence, we con-ducted additional tests on basic algebraic operations and compared the results against IEEE 754 floating-point calculations. In this test, we limited ourselves to FP16 precision. Even within the IEEE 754 standard, discrepancies can occur because the standard defines five rounding modes: to nearest, ties to even (de-fault for binary floats), to nearest, ties away from zero , toward 0, toward +∞,and toward −∞ . The results are shown in Table 15. Most runtime and device combinations fully adhere to IEEE 754 with the default to nearest, ties to even 
+
+rounding mode on CPU and GPU (except Core ML for reciprocal). However, the situation for NPUs is quite different. Apple appears to use to nearest, ties away from zero for addition and subtraction. For multiplication and reciprocal, the results do not strictly follow IEEE 754, although multiplication is close to 
+
+to nearest, ties away from zero . Intel NPU generally follows the standard with the default rounding mode, except for multiplication, which is close but not exact. Qualcomm NPU seems to use different rounding rules for addition and subtraction and a non-default mode for multiplication; reciprocal results are also non-standard. In addition to basic arithmetic operations, we compared the re-32 T. Pärnamaa et al.                                                                                            
+
+> Table 15: Compliance of FP16 arithmetic and rounding operations with IEEE 754 across devices and runtimes. Device Runtime Vendor Add Sub Mul Recip Round Floor Clip CPU ORT Apple ✓✓✓✓✓✓✓
+> ORT Intel ✓✓✓✓✓✓✓
+> ORT Qualcomm ✓✓✓✓✓✓✓
+> CoreML Apple ✓✓✓✗✓✓✓
+> OpenVINO Intel ✓✓✓✓✓✓✓
+> GPU CoreML Apple ✓✓✓✗✗✓✓
+> OpenVINO Intel ✓✓✓✓✓✓✓
+> NPU CoreML Apple ✓✓✗✗✗✓✓
+> OpenVINO Intel ✓✓✗✓✓✓✓
+> ORT-QNN Qualcomm ✓✓✓✗✗✓✓
+
+sults of round, floor, and clip against expected values. While clip and floor are consistently implemented across all devices, runtimes, and vendors, the round operation is inconsistent on GPUs and NPUs. It should be noted that some runtimes allow configuration of rounding modes, but for NPUs these options are limited, especially in Core ML. Given that all NPUs in Table 15 produce different results for multiplication and rounding, this explains the divergence observed in the fake quantization experiment. Although not directly tested, it is highly likely that re-quantization in INT8 convolutions experiences similar inconsistencies, as it relies on multiplication and rounding internally. 
+
+INT8 vs FP16 Although the current state of INT8 quantization cannot achieve identical results across platforms—primarily due to non-standard implementa-tions of rounding and multiplication in quantize/dequantize and re-quantization operations, this is not a fundamental limitation but rather a question of stan-dardization. For example, re-quantization in INT8 convolutions could be im-plemented using integer-only arithmetic, provided that scales are represented as integers, eliminating the need for floating-point calculations. Even when floating-point quantization scales are used, cross-device reproducibility is possible if cal-culations adhere to the IEEE 754 standard, apply the same rounding mode, and maintain a consistent operation order. Such standardization, however, requires commitment from hardware vendors and will take time to achieve. An alternative is to use FP16 convolutions. We performed a similar analysis as for INT8 convolutions to measure divergence across different devices, run-times, and vendors. The results are shown in Table 13. Compared to the INT8 quantized results, FP16 convolutions are implemented consistently across all de-vices, except for CPU calculations on Apple via Core ML and Qualcomm via ORT. Among NPUs, the main outlier is Apple; however, the error values re-main small, especially when compared to INT8 quantized convolutions. Across all other combinations of device, runtime, and vendor, the divergence is minimal. MLVC: Cross-Platform Neural Video Codec 33                                 
+
+> Table 16: Calibration Information experiment using DCVC-RT, similar to Table 2 in [50]. The table shows the number of successfully decoded frames (with maximum absolute error between raw indices on coding first frame) across different platforms. Calibration Information does not resolve index mismatches in FP16. Compressed on CPU 1 (fp32) Compressed on NPU 1 (fp16) CPU 1 CPU 2 CPU 3 NPU 1 GPU 1 CPU 2
+> Test data: 96 frames of VCD 0380a333cb0fef69001fb4260e2a705f video (640 ×360) w/o CIT 96 (0) 65 (4e-5) 71 (6e-5) 96 (0) 0 (4e-1) 0 (6e-1) w CIT ( ϵ= 10 −4)96 (0) 96 (4e-5) 96 (6e-5) 96 (0) 0 (4e-1) 0 (6e-1) w CIT ( ϵ= 10 −1)96 (0) 96 (4e-5) 96 (6e-5) 96 (0) 0 (4e-1) 0 (6e-1) CPU 1: Snapdragon(R) X 12-core X1E80100 CPU 2: Apple M3 Pro CPU CPU 3: Intel(R) Xeon(R) Platinum 8370C NPU 1: Apple M3 Pro Neural Engine GPU 1: Apple M3 Pro GPU
+
+D.2 Calibration Information 
+
+We replicate the experiment in Table 2 from [50], using the DCVC-RT model. The results are shown in Table 16. A single video of 96 frames can be successfully coded across devices by adding a small amount of calibration information. How-ever, this immediately breaks down as soon as we switch to FP16, the format necessary for NPU acceleration. Under the standard model of floating point arithmetic 3, the upper bound of the absolute error from applying n sequential floating point operations (such as a neural network) is bounded by: 
+
+|y − ˆy| ≤ γn|y|, where γn = nu 
+
+1 − nu ≈ nu 
+
+Here u is the unit roundoff and n the number of operations. The measured maximum error between encoder and decoder float scale indices ( ¨I) is indeed approximately four orders of magnitude higher for FP16, as the theoretical model would predict ( uf p 32 = 5 .96 × 10 −8, uf p 16 = 4 .88 × 10 −4).
+
+D.3 Activation Functions 
+
+While some activations give better performance (ablation in Table 10), they in-crease divergence between the encoder and decoder. Figure 13 compares multiple functions on the Apple M3 NPU and CPU. LeakyReLU and ReLU are error-free, while other activations have significant differences. Figure 12 presents a zoomed-in view for SiLU, showing that piece-wise approximation is used when running the activation on the NPU. Figure 11 illustrates how such numerical differences accumulate over time, causing PSNR drift on a VCD-TH test sequence.  
+
+> 3For example presented here
+
+34 T. Pärnamaa et al. 0 50 100 150 200 250 300       
+
+> 25
+> 30
+> 35
+> 40
+> PSNR (dB)
+> ReGLU, IP=-1, RP=64, GPU-GPU
+> ReGLU IP=-1, RP=64, GPU-NPU
+> SiLU, IP=-1, RP=64, GPU-NPU
+> 050 100 150 200 250 300
+> Frame index
+> 25
+> 30
+> 35
+> 40
+> PSNR (dB)
+> ReGLU, IP=64, RP=0, GPU-GPU
+> ReGLU, IP=64, RP=0, GPU-GPU, QP Shift 16
+> ReGLU, IP=64, RP=0, GPU-NPU, QP Shift 16
+
+Fig. 11: Example of cross-platform PSNR drift on a VCD-TH test sequence evaluated on Apple M3. The top row shows that a model using SiLU activations has rapid diver-gence, whereas ReGLU activations maintain stable predictions for substantially longer. To further suppress long-term drift, periodic intra frames are required. In our setting, the same P-frame model is reused for I-frames, which introduces an initial PSNR drop and can produce visible glitches. Increasing the QP of the independent frame reduces these artifacts. 0.6 0.4 0.2 0.0 0.2 0.4 0.6 
+
+Input 
+
+0.3 
+
+0.2 
+
+0.1 
+
+0.0 
+
+0.1 
+
+0.2 
+
+0.3 
+
+> SiLU Activation Output
+
+Torch (CPU) 
+
+CoreML (CPU) 
+
+CoreML (NPU) 
+
+Fig. 12: Numeric differences of SiLU activation function on Apple. A clear piece-wise approximation is apparent for the NPU. MLVC: Cross-Platform Neural Video Codec 35 0
+
+2
+
+4
+
+> relu
+
+Torch (CPU) 
+
+CoreML (CPU) 
+
+CoreML (NPU) 
+
+0.02 
+
+0.01 
+
+0.00 
+
+0.01 
+
+0.02 
+
+> relu error
+
+CoreML (CPU) 
+
+CoreML (NPU) 
+
+0
+
+2
+
+4
+
+> leaky_relu
+
+0.02 
+
+0.01 
+
+0.00 
+
+0.01 
+
+0.02 
+
+> leaky_relu error
+
+0
+
+2
+
+4
+
+> silu
+
+0.02 
+
+0.01 
+
+0.00 
+
+0.01 
+
+0.02 
+
+> silu error
+
+0.0 
+
+0.5 
+
+1.0 
+
+> sigmoid
+
+0.02 
+
+0.01 
+
+0.00 
+
+0.01 
+
+0.02 
+
+> sigmoid error
+
+0
+
+2
+
+4
+
+> x_mul_sigmoid
+
+0.02 
+
+0.01 
+
+0.00 
+
+0.01 
+
+0.02 
+
+> x_mul_sigmoid error
+
+1
+
+0
+
+1
+
+> tanh
+
+0.02 
+
+0.01 
+
+0.00 
+
+0.01 
+
+0.02 
+
+> tanh error
+
+4 2 0 2 4
+
+0
+
+2
+
+4
+
+> gelu_sigmoid_approx
+
+4 2 0 2 4
+
+0.02 
+
+0.01 
+
+0.00 
+
+0.01 
+
+0.02 
+
+> gelu_sigmoid_approx error
+
+Fig. 13: Activation function output divergence between Torch CPU implementation (reference) and CoreML CPU and NPU implementations run on Apple M3. LeakyReLU and ReLU show no error, while other activations show significant divergence. 36 T. Pärnamaa et al. 10 3 10 2 10 1
+
+BPP 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+45 
+
+50 
+
+> PSNR (dB)
+
+VCD-TH 720p 
+
+DCVC-RT (-71.7%) 
+
+MLVC (-57.9%) 
+
+MLVC-S (-43.1%) 
+
+HEVC-QSV 
+
+10 3 10 2 10 1
+
+BPP 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+45 
+
+50 
+
+> PSNR (dB)
+
+VCD-TH-OB 720p 
+
+DCVC-RT (-73.0%) 
+
+MLVC (-59.4%) 
+
+MLVC-S (-45.7%) 
+
+HEVC-QSV 
+
+10 3 10 2 10 1
+
+BPP 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+45 
+
+50 
+
+> PSNR (dB)
+
+VCD-TH-BB 720p 
+
+DCVC-RT (-76.0%) 
+
+MLVC (-58.4%) 
+
+MLVC-S (-44.2%) 
+
+HEVC-QSV 
+
+10 3 10 2 10 1
+
+BPP 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+45 
+
+50 
+
+> PSNR (dB)
+
+VCD-TH-M 720p 
+
+DCVC-RT (-57.7%) 
+
+MLVC (-39.5%) 
+
+MLVC-S (-17.7%) 
+
+HEVC-QSV 
+
+10 3 10 2 10 1
+
+BPP 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+45 
+
+50 
+
+> PSNR (dB)
+
+HEVC B 
+
+DCVC-RT (-66.9%) 
+
+MLVC (-45.2%) 
+
+MLVC-S (-24.0%) 
+
+HEVC-QSV 
+
+10 3 10 2 10 1
+
+BPP 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+45 
+
+50 
+
+> PSNR (dB)
+
+HEVC C 
+
+DCVC-RT (-68.4%) 
+
+MLVC (-48.3%) 
+
+MLVC-S (-33.0%) 
+
+HEVC-QSV 
+
+10 3 10 2 10 1
+
+BPP 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+45 
+
+50 
+
+> PSNR (dB)
+
+HEVC D 
+
+DCVC-RT (-70.5%) 
+
+MLVC (-48.2%) 
+
+MLVC-S (-34.7%) 
+
+HEVC-QSV 
+
+10 3 10 2 10 1
+
+BPP 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+45 
+
+50 
+
+> PSNR (dB)
+
+HEVC E 
+
+DCVC-RT (-72.8%) 
+
+MLVC (-59.3%) 
+
+MLVC-S (-49.7%) 
+
+HEVC-QSV 
+
+Fig. 14: Rate-distortion curves for VCD-720p and HEVC datasets. The curves corre-spond to the first (DCVC-RT) and bottom two rows (MLVC, MLVC-S) in the ablation study Table 1.

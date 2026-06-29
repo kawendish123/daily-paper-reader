@@ -1,0 +1,3202 @@
+Title: Fast Approximate MM-Estimation for Outlier Robust Model Selection
+
+URL Source: https://arxiv.org/pdf/2606.27638v1
+
+Published Time: Mon, 29 Jun 2026 00:20:17 GMT
+
+Number of Pages: 29
+
+Markdown Content:
+# Fast Approximate MM-Estimation for Outlier Robust Model Selection 
+
+Martin Huang a, ∗, Samuel Muller a,b , Garth Tarr a
+
+> aThe University of Sydney, School of Mathematics and Statistics, Sydney, 2006, New South Wales, Australia
+> bMacquarie University, Faculty of Science and Engineering, Sydney, 2109, New South Wales, Australia
+
+Abstract 
+
+Stratified robust model selection reduces the impact of large residuals and overrepresented outliers in bootstrap samples but is computationally intensive when fitting iteratively-solved robust estimators across many candidate models. We propose FAMM, a Fast Approximate MM-estimator, implemented as a weighted least squares fit with weights derived from a full-data MM-estimator, to reduce this computational cost. Using extensive artificial simu-lations and applications to National Basketball Association data, we show that substituting the MM-estimator with FAMM preserves model selection performance while achieving a substantial computational speedup. Furthermore, we demonstrate that FAMM satisfies the required conditions for model selection consistency. 
+
+Keywords: bootstrap model selection, robust model selection, MM-estimation, best subset selection 
+
+1. Introduction 
+
+Model selection is a fundamental task in statistical modelling, where the aim is to choose an appropriate model from a collection of candidates. In many applications, this choice is guided by a balance between in-sample fit, model complexity, and predictive performance. Common criteria for this purpose include Akaike’s Information Criterion (AIC), the Bayesian Information Criterion (BIC), Shao’s Criterion, and Mallows’ Cp (Akaike, 1973; Mallows, 1973; Schwarz, 1978; Shao, 1996). In the presence of outliers, however, classical model selection criteria can perform poorly, as even a small number of atypical observations may distort residual-based measures of fit and lead to incorrect model rankings. This has motivated a substantial literature on robust model selection, where classical estimators are replaced by robust alternatives (Güney et al., 2021; Ronchetti, 1985; Sommer and Huggins, 1996; Thas and Jaspers, 2026). A practical difficulty is that robust procedures often require fitting iterative estimators, such as M- or   
+
+> ∗Corresponding author
+> Email address: martin.huang@sydney.edu.au (Martin Huang)
+> arXiv:2606.27638v1 [stat.ME] 26 Jun 2026
+
+MM-estimators, for every candidate model and for every bootstrapped sample (Koller and Stahel, 2017; Müller and Welsh, 2005; Ronchetti et al., 1997; Smucler and Yohai, 2017). Since these estimators do not have closed-form solutions, the computational burden can be substantial. To retain the robustness required for model selection while achieving the computa-tional speed needed in resampling-based procedures, we introduce Fast Approximate MM-Estimation (FAMM). FAMM computes a single MM-estimator on the full dataset, and uses the constructed weights to fit the much faster weighted least squares (WLS) estimator on each bootstrap sample. As we approximate the MM-estimator via the closed-form WLS esti-mator, FAMM is especially fast, does not sacrifice performance, and can be easily integrated to computationally intensive methods, such as the class of best subset selection. Model selection is typically tied to some resampling-based procedure, as many criteria are approximated through the bootstrap, and predictive measurements are often assessed by repeated train/test splits or cross-validation (Kepplinger and Wei, 2026; Müller and Welsh, 2005; Shao, 1996; Werner, 2023). Classical resampling-based procedures, however, can misrepresent the proportion of outliers, since some samples may contain too many or too few. To address this issue, Müller and Welsh (2005) proposed a stratified bootstrap, in which observations are grouped according to robust regression residuals, and resampled within strata, such that the proportion of outliers can be controlled across bootstrap samples. This stratification stabilises the resampling distribution, and provides a more representative bootstrap sample for robust model selection. Salibian-Barrera and Zamar (2002), and later Salibián-Barrera et al. (2008) introduced the Fast and Robust Bootstrap (FRB) which closely aligns with the goals of FAMM. Instead of refitting the MM-estimator on each bootstrap, it calculates a reweighted representation, whilst computing a linear correction to account for the loss of variability in the bootstrap estimator. This correction is a key factor in constructing bootstrap confidence intervals, and point estimation. When focusing on model selection rather than confidence interval estimation or inference, our empirical simulations in Section 4 do not suggest that this correction is essential. Including the correction steps also increases computational cost while yielding only marginal improvements in model selection performance, in comparison to the slow, gold standard, of MM-estimation. This is particularly the case in best subset selection or other large candidate model spaces. The remainder of the paper is structured as follows. Section 2 introduces the notation and statistical background for robust model selection and best subset selection. Section 3 describes the proposed FAMM methodology along with the conditions required for robust model selection consistency. Section 4 presents the results from an extensive simulation study, including comparisons of FAMM, FRB, and the classical stratified bootstrap, across varying contamination levels, dataset dimensions, with both artificial and real datasets. We also demonstrate FAMM’s applicability to robust best subset selection. Finally, Section 5 concludes the paper. 22. Preliminaries 
+
+In this paper, we focus on linear regression models. Let n be the number of independent observations, let y = ( y1, . . . , y n)⊤ be the response vector, and let X ∈ Rn×p be the design matrix with columns indexed by {1, . . . , p }. For any subset of indices α ⊆ { 1, . . . , p }, we write Xα ∈ Rn×pα for the corresponding submatrix of X, where pα is the number of variables in α, and we write x⊤ 
+
+> αi
+
+for the ith row of Xα. When α contains all indices, we refer to it as the full model and write αf . The true model is denoted as α0, and the set of all candidate models is denoted as A.We specify the linear regression model as yi = x⊤
+
+> αi
+
+βα + σαϵαi , where βα is the unknown 
+
+pα-dimensional vector of regression coefficients, σα is the unknown spread parameter, and 
+
+ϵαi is the error term, assumed to have location 0 and spread 1. Without loss of generality, we assume that the predictor and response variables are centered. 
+
+2.1. MM-Estimation and the Weighted Least Squares Representation 
+
+Our methodology relies on the MM-estimator. For a given model α, the MM-estimator satisfies 
+
+1
+
+n
+
+> n
+
+X
+
+> i=1
+
+ψ yi − x⊤ 
+
+> αi
+
+ˆβα
+
+ˆσα
+
+!
+
+xαi = 0,
+
+where ψ is the derivative of the loss function ρ1 and ˆσα is an S-estimate of scale constructed with model α (Rousseeuw and Yohai, 1984; Yohai, 1987). When ψ is a smooth ψ-function as in Yohai (1987), the MM-estimator can be represented as the weighted least squares normal equation, Pni=1 vαi xαi (yi − x⊤ 
+
+> αi
+
+ˆβα) = 0, where the weights satisfy vαi = V (rαi /ˆσα) with 
+
+V (rαi /ˆσα) = 
+
+(ψ(rαi /ˆσα) 
+
+> rαi /ˆσα
+
+if rαi /ˆσα̸ = 0 ,ψ′(0) if rαi /ˆσα = 0 ,
+
+and residuals rαi = yi − x⊤ 
+
+> αi
+
+ˆβα. The MM-estimator may be written in weighted least squares form as 
+
+ˆβα = ( X⊤ 
+
+> α
+
+VαXα)−1X⊤ 
+
+> α
+
+Vαy, (1) where Vα is a diagonal matrix of robust weights with entries diag (Vα) = ( vα1, . . . , v αn )
+
+(Maronna et al., 2006). Because the weights depend on the residuals which themselves depend on ˆβα, the estimator must be computed iteratively, typically by iteratively reweighted least squares (IRLS) (Yohai, 1987). The IRLS procedure produces both the estimate ˆβα and the converged weights v1, . . . , v n as outputs. A central computational feature of our method, presented in Section 3, is that we compute these weights only once — for a single model αf — and reuse them across all candidate models α ∈ A . When the weights Vαf are held fixed and applied to a different model α, (1) becomes a fixed-weight WLS estimator rather than a true MM-estimator. Since the weight matrix is then common to every candidate model, we drop the subscript and write V := Vαf
+
+and diag (V ) = ( v1, . . . , v n) throughout the remainder of the paper, in which α enters only through the design matrix Xα. The same argument follows for σ := σαf and ˆσ := ˆ σαf .32.2. Robust Model Selection Criterion 
+
+There is no consensus methodology for determining an optimal model from a given set of candidate models. One researcher may prefer models that contain a small set of predictor variables, such that they are easily interpretable and relatively simple. Another may decide to forfeit interpretation to prioritise prediction accuracy. Müller and Welsh (2005) suggest two indicators towards identifying a useful linear regression model; (a) the model should parsimoniously describe the relationship between the sample data y and X and (b) be able to predict independent new observations. Following this philosophy, Müller and Welsh (2005) proposed the model selection criterion: 
+
+M (α) = σ2
+
+n
+
+E
+
+> n
+
+X
+
+> i=1
+
+wiρ
+
+(
+
+yi − x⊤ 
+
+> αi
+
+ˆβα
+
+σ
+
+)
+
++ δ(n)pα + E
+
+
+
+> n
+
+X
+
+> i=1
+
+wiρ
+
+(
+
+zi − x⊤ 
+
+> αi
+
+ˆβα
+
+σ
+
+)
+
+y, X
+
+ .
+
+(2) An optimal model with subset indices α out of a set of candidate models A is then selected as the one that minimises the criterion M (·), denoted by ˆα = argmin α∈A M (α). The criterion in (2) includes a weight parameter wi, typically chosen to be 1, or chosen to match the weights given in a Mallows M-estimator (Müller and Welsh, 2005). The parameter ρ is a loss function, recommended to be a trimming function, or a hard rejection function, such as ρ(z) = min( z2, b 2) with constant b. The parameter σ is the scale of the error distribution of a full model, that is, when α includes all indices in X. The latter expectation captures future prediction error with z = ( z1, . . . , z n)⊤ as a vector of future responses. Finally, the complexity parameter δ(n)pα penalises the number of predictors pα, and the sample size n
+
+through a function δ(n), typically chosen as 2 log( n).The former expectation in (2) is a penalised in-sample term, and can be explicitly computed. The latter expectation is the conditional expected prediction loss, and is es-timated through an m out of n stratified bootstrap. The scale parameter σ is estimated as the median absolute deviation (MAD) of the residuals with the full model MM-estimator 
+
+rαf i = yi − x⊤  
+
+> αfi
+
+ˆβαf (Hampel, 1974). A stratified bootstrap is used to reduce the occurrence of bootstrap samples containing too many or too few outliers. Out of H strata, observations with large residuals are allocated to lower and upper tail strata, whilst the remaining observations are placed between the tails. Sampling m/H observations with replacement from each stratum then preserves a more stable proportion of outliers across bootstrap samples. The bootstrap estimate equivalent of (2) is then written as 
+
+Mn(α) = ˆσ2
+
+n
+
+
+
+> n
+
+X
+
+> i=1
+
+wiρ
+
+(
+
+yi − x⊤ 
+
+> αi
+
+ˆβα
+
+ˆσ
+
+)
+
++ δ(n)pα + E∗
+
+> n
+
+X
+
+> i=1
+
+wiρ
+
+(
+
+yi − x⊤ 
+
+> αi
+
+ˆβ∗
+
+> α
+
+ˆσ
+
+) , (3) where E∗ is the expectation with respect to the empirical bootstrap distribution, and ˆβ∗ is the MM-estimate computed on the bootstrap sample. The model that minimises Mn(α) is then denoted ˆαm,n = argmin α∈A Mn(α).43. Fast Approximate MM-Estimation 
+
+In this section, we introduce FAMM, a computationally efficient approximation to the MM-estimator within the stratified bootstrap model selection procedure. The main idea is to compute a single MM-estimator on the full dataset, extract the associated weights, and then use these fixed weights to fit WLS estimators on each bootstrap sample. In doing so, FAMM preserves the robust weighting structure of the MM-estimator while avoiding the repeated iterative fitting that makes bootstrap MM-estimation computationally expensive. The approximation is motivated by the WLS representation of the MM-estimator in (1), however, it is important to distinguish the MM-estimator’s WLS representation from the estimator used by FAMM. For a given model α, the MM-estimator can be written as a WLS estimator only when the weights are induced by the residuals from that same model. FAMM instead fixes the weights obtained from the full-model MM fit and reuses them for candidate models and bootstrap samples. Consequently, the FAMM estimator for a candidate model is a full-model reweighted WLS estimator, designed to approximate the behaviour of bootstrap MM model selection, rather than the exact MM-estimator under that candidate model. By bootstrapping the weights alongside the data, influential observations in the bootstrap samples are subsequently down-weighted, and each bootstrap estimator can now be obtained through a much faster WLS computation. To control the proportion of outliers across bootstrap samples, FAMM is implemented within the stratified bootstrap scheme described in Section 2. The resulting bootstrap estimators are then used to evaluate the robust model selection criterion in (3). In Algorithm 1, it is shown that the initial full MM-estimator contains the majority of the computational cost in FAMM. Subsequent bootstrap computations are extremely fast, due to the closed-form solution of the WLS. As the weight matrix is fixed during the bootstrap procedure, FAMM under-represents the variance among the bootstrapped estimators, leading to anti-conservative confidence intervals. Salibian-Barrera and Zamar (2002) solves this issue by providing a linear correction to the bootstrap estimator. However, in our simulated analysis in Section 4, this correction does not affect the performance in robust model selection. For model selection, the simpler FAMM provides a balanced compromise between computational speed and model selection performance. Even so, if a practitioner wants to construct confidence intervals or make predictions, they can do post-selection inference on the FAMM-optimal model. 
+
+3.1. Consistency 
+
+We now establish that the FAMM-optimal model is consistent. In particular, we verify that lim n→∞ P{ˆαm,n = α0} = 1 continues to hold when the bootstrap MM-estimator in Müller and Welsh (2005, Theorem 1.) is replaced by FAMM. Model selection consistency in Müller and Welsh (2005, Section 2.) is obtained under six conditions, labelled (A) – (F). Only Condition (C) directly restricts the type of bootstrap estimator. Therefore, it is sufficient to verify Condition (C) holds, by utilising the estimator assumptions in Condition (A) and (B). We restate these three conditions below for the particular case of FAMM. 5Algorithm 1: FAMM 
+
+Input: Xαf , y, B, A, H, m, n, ρ, δ (n), w. Optional : V , rαf .
+
+// Initial MM-estimation Step  
+
+> (1)
+
+if V and rαf not provided then  
+
+> (2)
+
+ˆβαf ← Compute MM-estimation on (Xαf , y); 
+
+> (3)
+
+vi ← Extract weights from IRLS for observations i ∈ { 1, . . . , n }; 
+
+> (4)
+
+V ← diag (v1, . . . , v n); 
+
+> (5)
+
+rαf ← y − Xαf
+
+ˆβαf ; 
+
+> (6)
+
+for α ∈ A do  
+
+> (7)
+
+ˆβα ← (X⊤ 
+
+> α
+
+V X α)−1X⊤ 
+
+> α
+
+V y ;
+
+// Stratification Step  
+
+> (8)
+
+ˆσ ← MAD (rαf ); 
+
+> (9)
+
+Obtain order statistics of rαf : rn, 1 ≤ · · · ≤ rn,n ; 
+
+> (10)
+
+With the number of strata H, fix the percentiles q0 = 0 , q 1, . . . , q H−1, q H = 1 ,where qh − qh−1 = 1 /H ; 
+
+> (11)
+
+for h = 1 to H do  
+
+> (12)
+
+for i = 1 to n do  
+
+> (13)
+
+if rαf i ∈ [rn, [nq h−1]+1 , r n, [nq h]+1 ] then  
+
+> (14)
+
+Input (yi, xi, v i) → Q h; 
+
+> (15)
+
+mh ← m/H ;
+
+// Bootstrapping Step  
+
+> (16)
+
+for α ∈ A do  
+
+> (17)
+
+Lin (α) ← Pni=1 wiρ
+
+yi−x⊤ 
+
+> αi ˆβα
+> ˆσ
+
+
+
+; 
+
+> (18)
+
+Lboot (α) ← 0 
+
+> (19)
+
+for b = 1 to B do  
+
+> (20)
+
+X∗ ← ∅ ; y∗ ← ∅ ; V ∗ ← ∅ ; 
+
+> (21)
+
+for h = 1 to H do  
+
+> (22)
+
+(X∗
+
+> h
+
+, y∗
+
+> h
+
+, V ∗ 
+
+> h
+
+) ← Sample mh rows from Qh with replacement;  
+
+> (23)
+
+Append (X∗
+
+> h
+
+, y∗
+
+> h
+
+, V ∗ 
+
+> h
+
+) to (X∗, y∗, V ∗); 
+
+> (24)
+
+for α ∈ A do  
+
+> (25)
+
+ˆβ∗ 
+
+> α
+
+← (X∗⊤  
+
+> α
+
+V ∗X∗
+
+> α
+
+)−1X∗⊤  
+
+> α
+
+V ∗y∗; 
+
+> (26)
+
+Lboot (α) ← Lboot (α) + Pni=1 wiρ
+
+yi−x⊤ 
+
+> αi ˆβ∗
+> α
+> ˆσ
+
+
+
+; 
+
+> (27)
+
+for α ∈ A do  
+
+> (28)
+
+Mn(α) ← ˆσ2 
+
+> n
+
+(Lin (α) + δ(n)pα + Lboot (α)/B ) 
+
+> (29)
+
+ˆαm,n ← argmin α∈A Mn(α); 
+
+> (30)
+
+return ˆαm,n 6(A) The pα × pα matrix 
+
+Γα = lim  
+
+> n→∞
+
+n−1
+
+> n
+
+X
+
+> i=1
+
+wixαi x⊤
+
+> αi
+
+is of full rank and n−1 Pni=1 |wi|2|xi|4 < ∞.(B) For all models α ∈ A , the MM-estimator ˆβα − βα = Op(n−1/2) and ˆσ − σ = Op(n−1/2)
+
+with σ > 0. For all correct models α ∈ A c,
+
+nV( ˆβα) = ϕ∆−1 
+
+> α
+
+∆α2∆−1 
+
+> α
+
++ op(1) 
+
+for a scalar ϕ, and 
+
+∆α = lim  
+
+> n→∞
+
+n−1
+
+> n
+
+X
+
+> i=1
+
+vαi xαi x⊤
+
+> αi
+
+, ∆α2 = lim  
+
+> n→∞
+
+n−1
+
+> n
+
+X
+
+> i=1
+
+v2
+
+> αi
+
+xαi x⊤
+
+> αi
+
+where ∆α is of full rank and n−1 Pni=1 |vαi |2|xi|4 < ∞. Furthermore, for any two correct models α1, α 2 ∈ A c such that α1 ⊂ α2,trace (∆−1 
+
+> α2
+
+∆α22∆−1 
+
+> α2
+
+Γα2 ) − trace (∆−1 
+
+> α1
+
+∆α12∆−1 
+
+> α1
+
+Γα1 ) > 0.
+
+(C) For all models α ∈ A ,(C.1) The bootstrap FAMM estimator ˆβ∗ 
+
+> α
+
+= βα + op∗ (1) .(C.2) For all incorrect models, E∗ ˆβ∗ 
+
+> α
+
+− ˆβα = op(1) .(C.3) For all correct models α ∈ A c, for some Bα, m (E∗ ˆβ∗ 
+
+> α
+
+− ˆβα) = Bα + op(1) .(C.4) For all correct models α ∈ A c and scalar κ, mV∗( ˆβ∗
+
+> α
+
+) = nκ V( ˆβα) + op(1) .With the addition of stratification indexation, the Conditions (C.1) – (C.2) follow as an intermediate step in Salibian-Barrera and Van Aelst (2008, Proof of Theorem 1.). Con-dition (C.3) is established in Müller and Welsh (2005, Section 3) for the WLS bootstrap estimator, with the special case of wi = 1 , corresponding to ordinary least squares (OLS). More generally, Müller and Welsh (2005), recommend choosing wi to match the weights of a Mallows M-estimator. We extend this idea by taking the weights to be those of the full fit MM-estimator. That is, wi = vi for all i ∈ { 1, . . . , n }. The validation of these conditions is provided in Appendix A. Conditions (D), (E), and (F) do not explicitly restrict the bootstrap estimator, however we briefly discuss them for completeness. In Condition (D), the number of observations per bootstrap sample m and the penalty function δ must satisfy δ(n) = o(n/m ) and m = o(n1/2).In finite samples, this does not require m to be smaller than √n, but rather that m grows asymptotically slower than √n. Conditions (E) and (F) restrict the model selection loss function ρ, and its derivative ψ.73.2. Best Subset Selection 
+
+FAMM requires the specification of the model space A, which may be difficult in practice. Some approaches for constructing A include evaluating models along the LASSO regularisa-tion path or using stability selection (Tibshirani, 1996; Meinshausen and Bühlmann, 2010). When interest lies in selecting an optimal model for each model size k, the class of best subset selection algorithms (BSS) should be considered. Many BSS algorithms are based on a non-robust loss function, such as Furnival and Wilson (1974) or Moka et al. (2024). To make BSS robust, we can replace the loss function with FAMM. As an example, we extend COMBSS, a continuous optimisation method towards best subset selection (Moka et al., 2024). BSS aims to identify the best subset solution path by solving 
+
+min 
+
+> β∈Rp
+
+1
+
+n∥y − Xαf β∥22, s.t. ∥β∥0 = k, 
+
+for a given subset size k. For a binary vector s = ( s1, . . . , s p) ∈ { 0, 1}p, the exact best subset selection problem is 
+
+min 
+
+> s∈{ 0,1}p
+
+1
+
+n∥y − Xs ˆβOLS  
+
+> s
+
+∥22, s.t. |s| = k, (4) where Xs is the subset of Xαf containing only the columns j for which sj = 1 , and ˆβOLS  
+
+> s
+
+is the corresponding OLS estimator. COMBSS extends the best subset solution path by adjusting the binary vector space s ∈ { 0, 1}p to a whole hyper-cube [0 , 1] p for each t ∈ [0 , 1] p. In turn, a well-defined continuous extension of the exact problem in (4) can be expressed as 
+
+min 
+
+> t∈[0 ,1] p
+
+1
+
+n∥y − Xt ˜βt∥22 + λ
+
+> p
+
+X
+
+> j=1
+
+tj . (5) The new design matrix Xt is obtained by multiplying the jth column of Xαf by tj , for 
+
+j = 1 , . . . , p . The regularisation parameter λ controls the sparsity level, and ˜βt is the new coefficient estimator, as defined in Moka et al. (2024, Equation (7)). COMBSS applies a gradient descent algorithm to this objective function and stores the resulting optimisation path in tpath (Moka et al., 2024, Algorithm 1). Each element of t
+
+in tpath , produces at most one model, for each model size k ∈ { 1, . . . , p − 1}. Since the number of models of size k in tpath is equal to the number of iterations l in the optimisation algorithm, there are ≤ l per size k.Normally, the optimal model for each k would be the one that minimises the mean squared error (MSE) (Moka et al., 2024, Algorithm 3 SubsetMapV2). Replacing the MSE with FAMM provides an easy and efficient way to make COMBSS robust to outliers. In addition, scaling the data by the weights of the full MM-estimator, ˜Xαf = V 1/2Xαf and 
+
+˜y = V 1/2y, provides additional robustness. The resulting procedure is summarised in Algorithm 2. 8Algorithm 2: Robust COMBSS 
+
+Input: Xαf , y, B, H, m, n, ρ, δ (n), w, tpath 
+
+// Initialisation and Reweighting Step  
+
+> (1)
+
+ˆβαf ← Compute MM-estimation on (Xαf , y); 
+
+> (2)
+
+vi ← Extract weights from IRLS for observations i ∈ { 1, . . . , n }; 
+
+> (3)
+
+V ← diag (v1, . . . , v n); 
+
+> (4)
+
+rαf ← y − Xαf
+
+ˆβαf ; 
+
+> (5)
+
+˜Xαf ← V 1/2Xαf ; 
+
+> (6)
+
+˜y ← V 1/2y; 
+
+> (7)
+
+q ← min  nrow( ˜Xαf ), ncol( ˜Xαf ) − 1; 
+
+> (8)
+
+Mk ← ∅ ∀ k ∈ { 1, . . . , q };
+
+// Build Candidate Models with COMBSS  
+
+> (9)
+
+for t = ( t1, . . . , t p)⊤ ∈ tpath do  
+
+> (10)
+
+Let tj1 , t j2 , . . . , t jq be the q largest elements of t in decreasing order;  
+
+> (11)
+
+for k = 1 to q do  
+
+> (12)
+
+Let sk ∈ { 0, 1}p with non-zero elements at j1, . . . , j k; 
+
+> (13)
+
+Mk ← M k ∪ { sk};
+
+// Choose Optimal Models via FAMM (Algorithm 1)  
+
+> (14)
+
+for k = 1 to q do  
+
+> (15)
+
+Ak ← unique( Mk); 
+
+> (16)
+
+s∗ 
+
+> k
+
+← Do FAMM (Xαf = ˜Xαf , y = ˜ y, B, Ak, H, m, ρ, δ (n), w, V , rαf ); 
+
+> (17)
+
+return M = {s∗
+
+> 1
+
+, . . . , s∗ 
+
+> q
+
+};94. Simulation Study 
+
+4.1. Numerical Results 
+
+We conducted a simulation study to investigate the characteristics of FAMM over various simulation settings. Furthermore, we used this section to compare and benchmark FAMM with the regular MM-estimator, and the FRB (Salibian-Barrera and Van Aelst, 2008; Yohai, 1987). The code for the FRB and MM-estimator was sourced from the FRBModelSelection and MASS R-packages respectively (R Core Team, 2026; Salibian-Barrera and Van Aelst, 2008; Venables and Ripley, 2002). The code for FAMM can be found in https://github.c om/MartinHuangR/FAMM. The COMBSS simulations were built on the code from Moka et al. (2024); however, we incorporated our own modifications and extensions. The majority of the simulations were computed on a machine with two Intel Xeon Gold 6148 CPUs and 768 GB RAM. We used the empirical probability of selecting the true model as a proxy for method performance. The empirical probability is the proportion of times the true model was selected across all unique datasets. Alongside probability, we also studied the computational speed of the methods. While we tried to keep a fair comparison between methods, it is worth noting that (a) there was no parallelisation used in the bootstrapping steps (only for running simultaneous simulations), and (b) the bulk of the FRB code was written in C, the MM-estimation in R, and FAMM in Rcpp (Eddelbuettel and Balamuta, 2018). Throughout this study, we used the robust model selection criterion, defined in (3). The weights of the criterion was chosen to match the MM-estimator, as supported by Section 3.1. Following Müller and Welsh (2005), the loss function ρ was chosen as ρ(z) = min( z2, b 2)
+
+with b = 2 , and the penalty term δ(n) was 2 log( n).We first benchmarked our method with the simulation setting used by Müller and Welsh (2005), and later Salibian-Barrera and Van Aelst (2008). A total of 1000 unique datasets were generated from yi = 2 + 2 xi1 + 0 xi2 + ϵi, i = 1 , . . . , 64 , where the components of the design matrix X was generated from a uniform distribution U (0 , 1) . There were six different types of error distributions Fϵ considered. (i) N: The standard normal distribution N (0 , 1) 
+
+(ii) 1/8: A normal mixture distribution 7/8N (0 , 1) + 1 /8N (30 − 2 − 2x1, 1) 
+
+(iii) 1/4: A normal mixture distribution 3/4N (0 , 1) + 1 /4N (30 − 2 − 2x1, 1) 
+
+(iv) 3/8: A normal mixture distribution 5/8N (0 , 1) + 3 /8N (30 − 2 − 2x1, 1) 
+
+(v) C: The Cauchy distribution C(0 , 1) 
+
+(vi) S: The slash distribution N (0 , 1) /U (0 , 1) 
+
+Each dataset had B = 100 bootstrap samples of size m = 24 . For both FAMM and MM-estimation, the stratified bootstrap was employed with H = 8 strata. With αf = {1, 2}, the candidate model space A included the true model α0 = {1}, and α1 = ∅, α 2 = {2}, α 3 =
+
+{1, 2}. All candidate models included the intercept term ˆβ0.Figure 1 highlights that FRB, FAMM, and MM methods perform comparably under the standard normal and normal mixture error distributions. However, none exhibits encourag-ing results for the Cauchy and slash distributions. In these cases, the FRB method slightly 10 0.2 0.4 0.6 0.8 1.0        
+
+> N1/8 1/4 3/8 CS
+> Outlier Function
+> True Model Empirical Selection Probability
+> 0.2 0.4 0.6 0.8 1.0
+> 10 100 1000
+> Seconds taken to run 1000 datasets
+> Method
+> FRB
+> FAMM
+> MM
+> Error
+> N
+> 1/8
+> 1/4
+> 3/8
+> C
+> S
+
+Figure 1: True model α0 empirical selection probability for artificial data with settings (i) - (vi). 
+
+underperforms relative to FAMM and MM. Notably, FAMM consistently matches the per-formance of MM, highlighting its suitability as an approximation. Furthermore, FAMM achieves an average speedup of 5 times over FRB and 131 times over MM. We then expanded our simulation to account for larger datasets, both in the number of predictor variables p and sample size n. The rows xi of the design matrix X were generated from N (0 , Σ), where (Σ)ij = 0 .5|i−j| was a covariance matrix with Toeplitz design. The coefficients of signal variables βS were 1, with |βS | denoting the number of signal variables. Furthermore, all noise variables coefficients βN were 0. The response variable was computed with the model yi = x⊤ 
+
+> i
+
+β + ϵi, with β = [ β⊤S , β⊤N ]⊤ and ϵi ∼ N (0 , σ 2). All simulations were also held at a signal-to-noise ratio of 2, that is, ∥Xβ ∥22/nσ 2 = 2 .To investigate the performance of the methods with outliers in the response and rows, we utilised a contamination model following Christidis and Freue (2026) and Maronna (2011). We contaminated ν number of rows, corresponding to a proportion τ = ν/n of the sample, such that rowwise outliers ˜xi replaced the uncontaminated predictors xi with the function 
+
+˜xi = Θi + klev 
+
+√a⊤Σ−1aa, 1 ≤ i ≤ ν, 
+
+where Θi ∼ N (01×p, 0.01 × Ip) and a = ˜ a − (1 /p )˜ a⊤11×p. Here, Ip was a p-dimensional identity matrix, 01×p = (0 , . . . , 0) ⊤ ∈ Rp, and 11×p = (1 , . . . , 1) ∈ Rp. The elements ˜aj in ˜a
+
+followed U (−1, 1) for 1 ≤ j ≤ p. The response variable yi was contaminated by misleading the regression coefficient β by a factor of (1 + kslo ). The contaminated response variable was computed as ˜yi = ˜ x⊤ 
+
+> i
+
+˜β, 1 ≤ i ≤ ν, where the jth entry in ˜β was 
+
+˜βj =
+
+(
+
+βj (1 + kslo ), βj̸ = 0 ,kslo ∥β∥∞, otherwise, 1 ≤ j ≤ p. (6) The two parameters klev and kslo controlled the leverage and slope of the contamination 11 0.97 0.98 0.99 1.00     
+
+> 00.05 0.1 0.15 0.2
+
+(i)     
+
+> 0.97 0.98 0.99 1.00
+> 00.05 0.1 0.15 0.2
+
+(ii)     
+
+> 0.97 0.98 0.99 1.00
+> 10 30 150
+> 0.97 0.98 0.99 1.00
+> 50 100 1000
+> Outlier Proportion
+> Minutes taken to run 1000 datasets
+> True Model Empirical Selection Probability
+> Method
+> FRB
+> FAMM
+> MM
+> Tau
+> 0
+> 0.05
+> 0.1
+> 0.15
+> 0.2
+
+Figure 2: True model α0 empirical selection probability for artificial data with settings (i) n = 500 , p =50 , |βS | = 3 and (ii) n = 1000 , p = 100 , |βS | = 10 .
+
+respectively. Following Christidis and Freue (2026), we set klev = 2 and kslo = 100 . Under this contamination model, we assessed the proportions, τ = {0, 0.05 , 0.1, 0.15 , 0.2}.We present two simulation settings, (i) n = 500 , p = 50 , |βS | = 3 and (ii) n = 1000 , p =100 , |βS | = 10 . For each setting, we generated 1000 unique datasets, H = 8 strata, and bootstrap samples of size m = 250 and 500 respectively. An exhaustive search of the model space was not feasible due to computational limitations. Therefore, we chose the candidate set to include the true model (that is, the indices of the variables with a non-zero coefficient), two underfitted models, and two overfitted models. We defined the least underfitted model as the model that included all signal variables except the one with the smallest absolute coefficient. The second least underfitted model excluded the two signal variables with the smallest absolute coefficients. We also defined an overfitted model as the model that included all signal variables together with the noise variable that had the highest correlation with the response. The second overfitted model included all signal variables and the two noise variables with the highest correlations with the response. Similar to the previous example in Figure 1, the results in Figure 2 further support the claim that the FAMM estimator is an appropriate approximation to the MM-estimator, with nearly identical true model selection probabilities. FAMM exhibits the fastest computation speed out of the three methods, roughly being 2 times faster than FRB and 17 times faster 12 than MM in setting (i), and 2 times faster than FRB and 13 times faster than MM in setting (ii). In further analyses not shown for brevity, we observed that increasing the sample size of the dataset while holding the number of predictors constant allowed the true model selection probability to increase across all contamination levels. Furthermore, increasing the number of predictors while keeping the sample size fixed did not drastically affect performance, but rather led to a substantial increase in computational time. Across all simulation designs, a consistent trend was identified: FRB, FAMM, and MM all had similar model performance, with FAMM being substantially faster. 
+
+4.2. COMBSS 
+
+The output of COMBSS is a single optimal model per model size k ∈ { 1, . . . , p − 1}. To analyse performance, we introduce the definition of a “correct” model. When k < |βS |, a correct model is any subset of the true model. Conversely, if k > |βS |, a correct model is any superset of the true model. When k = |βS |, a correct model must be the true model. We considered two simulated datasets: (i) n = 200 , p = 20 , |βS | = 3 and (ii) n =500 , p = 50 , |βS | = 5 with a fixed SNR of 2, and contamination levels kslo = 100 and 
+
+klev = 2 . For each one of the 1000 unique datasets, we set m = 100 and 250 respectively, with both containing H = 8 strata. Alike the previous example, the coefficients of signal variables were 1, whereas noise variable had coefficients of 0. The criterion also had a weighting structure matching the MM-estimator weights. When the data are uncontaminated in settings (i) and (ii), the model selection proba-bilities are almost perfect in all methods, as shown in Figure 3. In the 10% contamination case, there is a clear drop-off in performance for the non-robust MSE criterion, while the two robust methods remain largely unaffected. It is expected that there is a dip in selection probabilities when the model size equals the true number of signal variables (vertical dashed line), as a correct model can only be the true model. Furthermore, as the model size increases, the probability of selecting the correct model also increases, which explains why MSE gradually improves its correct model selection probabilities as the model size approaches p in the 10% contamination case across both settings (i) and (ii). While FAMM outperforms MSE, it is much slower, as expected. Specifically, FAMM requires 3 and 9 times the computation time of MSE in settings (i) and (ii), respectively. However, the substantial increase in performance justifies the additional computation time. Conversely, FAMM is considerably faster than FRB, being 33 times faster for (i) and 120 
+
+times faster in (ii). 
+
+4.3. Basketball Data 
+
+This section applied FAMM to a real dataset, from the 2024/2025 National Basketball Association (NBA) regular season. Position-based outliers in the NBA typically arise when players exhibit playstyles outside traditional norms, such as three-point scoring centers, or rebounding point guards. While point guards have traditionally led the league in assist percentage, recent years have seen a notable increase in assist rates among forwards and 13 0.1    
+
+> 0
+> 1310 19
+> 0.99 1.00
+> 0.5 0.6 0.7 0.8 0.9 1.0
+
+Model Size 
+
+> Correct Model Empirical Selection Probability
+
+(i)    
+
+> 0.1
+> 0
+> 1525 49
+> 0.99 1.00
+> 0.5 0.6 0.7 0.8 0.9 1.0
+
+Model Size 
+
+(ii)   
+
+> 0.1 110 30
+> FRB FAMM MSE
+
+Method   
+
+> Seconds to run 1 dataset (Log scale)
+> 110 100 1000
+> FRB FAMM MSE
+
+Method 
+
+Method 
+
+> FRB
+> FAMM
+> MSE
+
+Figure 3: Correct model empirical selection probability per model size for artificial data with settings (i) 
+
+n = 200 , p = 20 , |βS | = 3 and (ii) n = 500 , p = 50 , |βS | = 5 for 0% and 10% contamination. The dashed vertical line indicates |βS |, when a correct model is required to be a true model. 
+
+14 ast height_cm ts usg netrtg pts weight age poss efg to_ratio reb min 
+
+> Observations
+> Variables Figure 4: Deviating cells map of NBA data. Red cells indicate positive outliers where observed values exceed predictions, blue cells indicate severe negative outliers below predictions, and purple cells indicate milder outliers with moderate deviations.
+
+centers as well. These patterns are driven by a small subset of taller players with outlying assist percentages relative to the typically low averages for players of a similar height. Recent literature has deemed traditional positional labels ambiguous, suggesting the use of height-based classification, or the redefinition of roles, such as low assist percentage role-playing bigs, or playmaking versatile forwards (Muniz and Flamand, 2022; South, 2025; Wang and Liu, 2023). Accordingly, we utilise the height-based classification approach and focus on players whose heights fall in the top quartile ( ≥ 205.74 cm, 6 ft 9 in). This threshold lies just below one standard deviation of the mean height of the tallest and heaviest performance profile cluster identified by Zhang et al. (2018). We constructed our data using two datasets of size n = 567 , p = 21 and n = 569 , p = 23 ,where each observation was an individual player. The datasets were merged by player names, and variables were removed based on irrelevance and/or multicollinearity issues. We then subset the data to contain players with a height greater than 205 .74 cm, or 6 ft 9 in. As per-game averages can be misrepresented by a small game sample size, we only analysed players who participated in 41 games – half the total number of regular season games. Our final dataset had a size of n = 95 and p = 12 , where the assist percentage was the response variable. Some explanatory variables included height, weight, true shooting and usage rate. The design matrix was scaled such that it had a mean of 0 and standard deviation of 1.We then constructed our candidate models A. As p was small, we were able to conduct an exhaustive search. Assuming all models include an intercept term, we had 212 = 4096 total models. We also set m = 48 and H = 8 . Data availability, metadata, and exploratory data analysis are provided in Appendix B. To visualise the proportion of cell-wise outliers in the dataset, we used the Detect De-viating Cells method (DDC), shown in Figure 4 (Rousseeuw and Bossche, 2018). The cell map highlights estimated cell-wise outliers by comparing their standardised residuals to their expected value. DDC indicates the data has an average of approximately 4% outliers per predictor variable. Around 28% of rows had at least one outlying observation. Points had the highest percentage of outliers at 13%, while reb (rebound percentage) has none. We applied FAMM, FRB and the MM robust bootstrap to the dataset, with parameter settings identical to previous simulations. For a non-robust comparison, we also included the Akaike Information Criterion (AIC) (Akaike, 1973). The optimal model from A was then selected using the robust model selection criterion in (3). Once identified, a 10 repeated 5-fold cross-validation was conducted to estimate the model’s average root mean square error 15 Method RMSE (SD) MAE (SD) Computation Time (s) Model Chosen                 
+
+> FRB 5.85 (1.60) 4.37 (0.88) 94.22 usg, reb FAMM 5.88 (1.57) 4.45 (0.88) 3.64 usg MM 5.88 (1.57) 4.45 (0.88) 4509.70 usg AIC 5.78 (1.33) 4.40 (0.87) 4.01 reb, min, to_ratio, efg, age, pts, ts, height
+> Table 1: 10 repeated 5-fold cross-validation root mean squared error (RMSE), mean absolute error (MAE), standard deviation (SD), and model selection computation time on NBA data for an exhaustive search with 4096 candidate models.
+
+(RMSE) and mean absolute error (MAE). All computations were executed in Rcpp, except for FRB, which was in C. Since the true model is unknown, we cannot compare model selection accuracy. However, the model selected by FAMM in Table 1 is identical to that obtained by MM. Not only does it correctly select the same variable, it achieves an 1240 times increase in computational speed. The usage (usg) variable selected by FAMM and MM in Table 1 display a positive association with the response variable assist percentage. Usage rate (usg) refers to the percentage of team plays used by a player when they are on the floor. This has a direct impact on how many assists a player has. If a player is not involved in a play, they cannot gain an assist. The three highest usage rate players in the 2024/2025 season all exhibited assist percentages in the 95 th percentile. Although FAMM and MM yield marginally higher RMSE and MAE than FRB and AIC selected models, the differences are negligible, and within one standard deviation of each other. The substantially larger model chosen by AIC offer little predictive gain while carrying greater risks of overfitting. The model chosen by FRB is similar to FAMM and MM, differing by only a rebound (reb) variable. The inclusion of rebounds to predict assist percentage is difficult to justify, as a player’s rebounding has little conceptual bearing on their playmaking. This suggests that the variable may be helpful for predictive purposes, but is not a meaningful explanatory factor. While there is a slight advantage in MAE, the FRB was slower than FAMM by 26 times. Overall, the results indicate that FAMM provides an effective surrogate for the MM-estimator, producing equivalent model selection results while delivering a substantial compu-tational speedup. This reduction in computational cost makes FAMM particularly attractive in settings involving large numbers of predictors or candidate models. 
+
+5. Conclusion 
+
+FAMM provides a simple and computationally efficient approximation to the robust stratified bootstrap model selection procedure. Since the observations are down-weighted through a single full-data MM-estimator, the resulting model selection criterion remains robust while being substantially faster to compute. The computational gains are especially pronounced when the number of variables, or the number of candidate models, is large. We also demonstrated that FAMM can be incorporated into more computationally intensive procedures such as COMBSS and best subset selection. Both theoretically and empirically, 16 FAMM performs well. It satisfies the conditions required for model selection consistency, matches the model selection performance of the MM-estimator, and achieves substantial reductions in computation time. FAMM is primarily intended for model selection rather than post-selection inference. Since the bootstrap weights are fixed, it is not designed to provide precise estimates of coefficient uncertainty, and is therefore less suitable for tasks such as the direct construction of confidence intervals. From a model selection perspective, however, this is not restrictive, as the resulting loss of variance does not affect the probability of selecting the true model. In applications where post-selection inference is required, FAMM may be used to efficiently identify the model, after which a full MM-estimator can be refit on the selected model for final coefficient estimation and confidence interval construction. Overall, FAMM provides a practical balance between computational efficiency and ro-bustness in bootstrap model selection. By substantially reducing computation time without sacrificing model selection performance, it offers a clear advantage in large datasets and extensive candidate model searches. 
+
+Acknowledgements 
+
+Samuel Muller and Garth Tarr were supported by the Australian Research Council (DP260100348). 17 References 
+
+Akaike, H. (1973). Information theory and an extension of the maximum likelihood principle. In Proceedings of the Second International Symposium of Information Theory , pages 267– 281. Christidis, A.-A. and Freue, G. C. (2026). Robust multi-model subset selection. Journal of Computational and Graphical Statistics , pages 1–14. Eddelbuettel, D. and Balamuta, J. J. (2018). Extending R with C++: A brief introduction to Rcpp. The American Statistician , 72(1):28–36. Furnival, G. M. and Wilson, R. W. (1974). Regressions by leaps and bounds. Technometrics ,16(4):499–511. Güney, Y., Bozdogan, H., and Arslan, O. (2021). Robust model selection in linear regression models using information complexity. Journal of Computational and Applied Mathematics ,398:113679. Hampel, F. R. (1974). The influence curve and its role in robust estimation. Journal of the American Statistical Association , 69(346):383–393. Kepplinger, D. and Wei, S. (2026). Information sharing for robust and stable cross-validation. 
+
+Technometrics , 68(1):54–64. Koller, M. and Stahel, W. A. (2017). Nonsingular subsampling for regression S estimators with categorical predictors. Computational Statistics , 32:631–646. Mallows, C. L. (1973). Some comments on Cp. Technometrics , 15(4):661–675. Maronna, R. A. (2011). Robust ridge regression for high-dimensional data. Technometrics ,53(1):44–53. Maronna, R. A., Martin, D. R., and Yohai, V. J. (2006). Robust Statistics: Theory and Methods . Wiley. Meinshausen, N. and Bühlmann, P. (2010). Stability selection. Journal of the Royal Statis-tical Society Series B: Statistical Methodology , 72(4):417–473. Moka, S., Liquet, B., Zhu, H., and Muller, S. (2024). COMBSS: best subset selection via continuous optimization. Statistics and Computing , 34:75. Muniz, M. and Flamand, T. (2022). A weighted network clustering approach in the NBA. 
+
+Journal of Sports Analytics , 8:251–275. Müller, S. and Welsh, A. H. (2005). Outlier robust model selection in linear regression. 
+
+Journal of the American Statistical Association , 100(472):1297–1310. 18 R Core Team (2026). R: A Language and Environment for Statistical Computing . R Foun-dation for Statistical Computing, Vienna, Austria. Ronchetti, E. (1985). Robust model selection in regression. Statistics & Probability Letters ,3(1):21–23. Ronchetti, E., Field, C., and Blanchard, W. (1997). Robust linear model selection by cross-validation. Journal of the American Statistical Association , 92(439):1017–1023. Rousseeuw, P. and Yohai, V. (1984). Robust regression by means of S-estimators. Springer Lecture Notes in Statistics , 26:256–272. Rousseeuw, P. J. and Bossche, W. V. D. (2018). Detecting deviating data cells. Technomet-rics , 60(2):135–145. Salibian-Barrera, M. and Van Aelst, S. (2008). Robust model selection using fast and robust bootstrap. Computational Statistics & Data Analysis , 52(12):5121–5135. Salibian-Barrera, M. and Zamar, R. H. (2002). Bootstrapping robust estimates of regression. 
+
+The Annals of Statistics , 30(2):556–582. Salibián-Barrera, M., Van Aelst, S., and Willems, G. (2008). Fast and robust bootstrap. 
+
+Statistical Methods and Applications , 17(1):41–71. Schwarz, G. (1978). Estimating the dimension of a model. The Annals of Statistics , 6(2):461– 464. Shao, J. (1996). Bootstrap model selection. Journal of the American Statistical Association ,91(434):655–665. Smucler, E. and Yohai, V. J. (2017). Robust and sparse estimators for linear regression models. Computational Statistics & Data Analysis , 111:116–130. Sommer, S. and Huggins, R. M. (1996). Variables selection using the Wald test and a robust Cp. Journal of the Royal Statistical Society. Series C (Applied Statistics) , 45(1):15–29. South, C. (2025). A basketball paradox: exploring NBA team defensive efficiency in a positionless game. Journal of Quantitative Analysis in Sports , 21(4):345–359. Thas, O. and Jaspers, S. (2026). The probability of improved prediction as a new concept for model selection in the presence of outliers. Journal of Statistical Computation and Simulation , 96(2):257–279. Tibshirani, R. (1996). Regression shrinkage and selection via the lasso. Journal of the Royal Statistical Society. Series B (Methodological) , 58(1):267–288. Venables, W. N. and Ripley, B. D. (2002). Modern Applied Statistics with S . Springer, New York, fourth edition. 19 Wang, J. and Liu, F. (2023). Will more skills become a burden? The effect of positional ambiguity on player and team performance. Annals of Operations Research , 325(1):467– 493. Werner, T. (2023). Trimming stability selection increases variable selection robustness. 
+
+Machine Learning , 112:4995–5055. Yohai, V. J. (1987). High breakdown-point and high efficiency robust estimates for regres-sion. The Annals of Statistics , 15(2):642–656. Zhang, S., Lorenzo, A., Gómez, M.-A., Mateus, N., Gonçalves, B., and Sampaio, J. (2018). Clustering performances in the NBA according to players’ anthropometric attributes and playing experience. Journal of Sports Sciences , 36(22):2511–2520. 20 Appendix A. Theoretical Results 
+
+This appendix gives additional details into the conditions as outlined in Section 3.1. 
+
+Appendix A.1. Condition (C.1) 
+
+Following the steps in Salibian-Barrera and Van Aelst (2008, Pg. 5132) and rewriting in stratification form, 
+
+ˆβ∗ 
+
+> α
+
+− ˆβα =
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+v∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+ 
+
+> −1H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+v∗
+
+> hi
+
+x∗
+
+> αhi
+
+y∗ 
+
+> hi
+
+− ˆβα
+
+=
+
+ 1
+
+m
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+v∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+ 
+
+> −1
+
+ 1
+
+m
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+ψ y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα
+
+ˆσ
+
+!
+
+x∗⊤ 
+
+> αhi
+
+
+
+=: A∗− 1 
+
+> m
+
+b∗
+
+> m
+
+= op∗ (1) ,
+
+and therefore ˆβ∗ 
+
+> α
+
+= ˆβα + op∗ (1) . From Yohai (1987), ˆβα − βα = op(1) . It follows that 
+
+ˆβ∗ 
+
+> α
+
+− βα = ( ˆβ∗ 
+
+> α
+
+− ˆβα) + ( ˆβα − βα)= op∗ (1) + op(1) = op∗ (1) 
+
+⇒ ˆβ∗ 
+
+> α
+
+= βα + op∗ (1) .
+
+Appendix A.2. Condition (C.2) 
+
+Similar to Condition (C.1), we follow the same steps as Salibian-Barrera and Van Aelst (2008). Assigning the selection criterion weights as the same as the MM-estimator, 
+
+lim  
+
+> n→∞
+
+A∗ 
+
+> m
+
+= 1
+
+m
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤  
+
+> αhi
+
+→p Γ∗ 
+
+> α
+
+> 0.
+
+Then, 
+
+A∗− 1 
+
+> m
+
+b∗ 
+
+> m
+
+= A∗− 1 
+
+> m
+
+b∗ 
+
+> m
+
++ ( Γ∗
+
+> α
+
+)−1b∗ 
+
+> m
+
+− (Γ∗
+
+> α
+
+)−1b∗
+
+> m
+
+= A∗− 1 
+
+> m
+
+− (Γ∗
+
+> α
+
+)−1 b∗ 
+
+> m
+
++ ( Γ∗
+
+> α
+
+)−1b∗
+
+> m
+
+.
+
+Since E∗b∗ 
+
+> m
+
+= 0, A∗ 
+
+> m
+
+and Γ∗ 
+
+> α
+
+are non-singular, and A∗ 
+
+> m
+
+= Γ∗ 
+
+> α
+
++ ( A∗ 
+
+> m
+
+− Γ∗
+
+> α
+
+), we have 
+
+A∗− 1 
+
+> m
+
+= ( Γ∗
+
+> α
+
+)−1 − (Γ∗
+
+> α
+
+)−1(A∗ 
+
+> m
+
+− Γ∗
+
+> α
+
+)( I + ( Γ∗
+
+> α
+
+)−1(A∗ 
+
+> m
+
+− Γ∗
+
+> α
+
+)) −1(Γ∗
+
+> α
+
+)−1.
+
+If A∗ 
+
+> m
+
+− Γ∗ 
+
+> α
+
+= op(1) and A∗− 1 
+
+> m
+
+− (Γ∗
+
+> α
+
+)−1 = op(1) ,
+
+A∗− 1 
+
+> m
+
+b∗ 
+
+> m
+
+= A∗− 1 
+
+> m
+
+− (Γ∗
+
+> α
+
+)−1 b∗ 
+
+> m
+
++ ( Γ∗
+
+> α
+
+)−1b∗
+
+> m
+
+= op(1) + ( Γ∗
+
+> α
+
+)−1b∗
+
+> m
+
+Taking the expectation, E∗[A∗− 1 
+
+> m
+
+b∗
+
+> m
+
+] = op(1) . Since ˆβ∗ 
+
+> α
+
+− ˆβα = A∗− 1 
+
+> m
+
+b∗ 
+
+> m
+
+as defined in Condition (C.1), E∗( ˆβ∗ 
+
+> α
+
+− ˆβα) = E∗[A∗− 1 
+
+> m
+
+b∗
+
+> m
+
+] = op(1) , and therefore E∗ ˆβ∗ 
+
+> α
+
+− ˆβα = op(1) for all models. 21 Appendix A.3. Condition (C.3) 
+
+Recall for the bootstrap estimator, the weights are treated as fixed and do not depend on the model index α. For brevity we suppress the α subscript. From Condition (A), let the pα × pα matrix Γα = lim n→∞ n−1 Pni=1 wixαi x⊤ 
+
+> αi
+
+be full rank, and n−1 Pni=1 |wi|2|xi|4 < ∞. Also, denote 1hi as an indicator function, such that 
+
+1hi = 1(rαn, [nq h−1]+1 ≤ rαi ≤ rαn, [nq h]+1 ). From Müller and Welsh (2005), we know that 
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤  
+
+> αhi
+
+=
+
+> H
+
+X
+
+> h=1
+
+mh
+
+nhnX
+
+> i=1
+
+whi xαi x⊤
+
+> αi
+
+1hi {1 + op(1) }
+
+= mn
+
+> n
+
+X
+
+> i=1
+
+wixαi x⊤
+
+> αi
+
+{1 + op(1) }
+
+= mΓα{1 + op(1) }, where Γα = lim  
+
+> n→∞
+
+n−1
+
+> n
+
+X
+
+> i=1
+
+wixαi x⊤
+
+> αi
+
+.
+
+Here, PHh=1 
+
+Pmh 
+
+> i=1
+
+whi x∗
+
+> αhi
+
+x⊤ 
+
+> αhi
+
+is asymptotically non-singular and Γα is also non-singular and invertible. The bootstrap estimator is 
+
+ˆβ∗ 
+
+> α
+
+=
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+ 
+
+> −1H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+y∗
+
+> hi
+
+.
+
+With y∗ 
+
+> hi
+
+= x∗⊤  
+
+> αhi
+
+ˆβα + y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα,
+
+ˆβ∗ 
+
+> α
+
+=
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+ 
+
+> −1H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+(x∗⊤  
+
+> αhi
+
+ˆβα + y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα)= ˆβα +
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+ 
+
+> −1H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+(y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα)=: ˆ βα + A∗− 1ω∗
+
+where A∗ := 
+
+PHh=1 
+
+Pmh 
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+
+
+and ω∗ := PHh=1 
+
+Pmh 
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+(y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα). Writ-ing A∗− 1 = A∗− 1 + m−1Γ−1 
+
+> α
+
+− m−1Γ−1 
+
+> α
+
+and substituting, 
+
+ˆβ∗ 
+
+> α
+
+= ˆβα + ( A∗− 1 + m−1Γ−1 
+
+> α
+
+− m−1Γ−1 
+
+> α
+
+)ω∗
+
+= ˆβα + m−1Γ−1 
+
+> α
+
+ω∗ − m−1Γ−1
+
+> α
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤  
+
+> αhi
+
+− mΓα
+
+
+
+× m−1Γ−1 
+
+> α
+
+ω∗{1 + op(1) }, (A.1) 22 using the fact that A∗− 1 − m−1Γ−1 
+
+> α
+
+= −m−1Γ−1 
+
+> α
+
+(A∗ − mΓα)A∗− 1.We will now consider the expectation of the bootstrap estimator. Using the fact that 
+
+> 1
+> n
+
+Pni=1 ψ
+
+yi−x⊤ 
+
+> αi ˆβα
+> ˆσ
+
+
+
+xαi = 0 and mn
+
+Pni=1 wixαi (yi − x⊤ 
+
+> αi
+
+ˆβα) = 0 we have that E∗ω∗ = 0 .Taking the expectation of the bootstrap estimator yields 
+
+E∗ ˆβ∗ 
+
+> α
+
+= ˆβα − m−2Γ−1 
+
+> α
+
+E∗
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+Γ−1
+
+> αH
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+(y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα)
+
+ {1 + op(1) }
+
+= ˆβα − m−2Γ−1
+
+> αH
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+E∗
+
+h
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+Γ−1 
+
+> α
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+(y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα)
+
+i
+
+{1 + op(1) }
+
++ m−2Γ−1
+
+> αH
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+> H
+
+X
+
+> h′=1 (h,i )̸=( h′,i ′)
+> mh
+
+X
+
+> i′=1 (h,i )̸=( h′,i ′)
+
+E∗
+
+h
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+i
+
+× E∗
+
+h
+
+w∗ 
+
+> h′i′
+
+x∗ 
+
+> αh ′i′
+
+(y∗ 
+
+> h′i′
+
+− x∗⊤  
+
+> αh ′i′
+
+ˆβα)
+
+i
+
+{1 + op(1) }
+
+The off-diagonal term can be expanded as 
+
+m−2Γ−1
+
+> α
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+E∗
+
+h
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+i HX
+
+> h′=1
+> mh′
+
+X
+
+> i′=1
+
+E∗
+
+h
+
+w∗ 
+
+> h′i′
+
+x∗ 
+
+> αh ′i′
+
+(y∗ 
+
+> h′i′
+
+− x∗⊤  
+
+> αh ′i′
+
+ˆβα)
+
+i
+
+−
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+E∗
+
+h
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+i
+
+E∗
+
+h
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+(y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα)
+
+i {1 + op(1) } (A.2) 
+
+= op(m−1)
+
+It then follows that 
+
+E∗ ˆβ∗ 
+
+> α
+
+= ˆβα − m−2Γ−1
+
+> αH
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+E∗
+
+h
+
+w∗2 
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+Γ−1 
+
+> α
+
+x∗
+
+> αhi
+
+(y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα){1 + op(1) }
+
+i
+
++ op(m−1)= ˆβα − m−1n−1Γ−1
+
+> αn
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵαi {1 + op(1) } + op(m−1).
+
+By the law of large numbers n−1 Pni=1 w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵαi →p E w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵαi 
+
+. Fur-thermore, for all models, ϵα = ϵ + x⊤
+
+> αci
+
+βαc (Müller and Welsh, 2005). Equivalently, ϵαi =
+
+ϵi + x⊤
+
+> αci
+
+βαc ∀i ∈ { 1, . . . , n }. Then 
+
+E
+
+h
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵαi 
+
+i
+
+= E
+
+h
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵi
+
+i
+
++ E
+
+h
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi x⊤
+
+> αci
+
+βαc
+
+i
+
+= E
+
+h
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi x⊤
+
+> αci
+
+βαc
+
+i
+
+23 as E w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵi
+
+ = w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi E [ϵi] = 0 , since xαi , wi, and Γ−1 
+
+> α
+
+are non-random and E[ϵi] is 0. Let the matrix 
+
+Bα = lim  
+
+> n→∞
+
+−n−1Γ−1
+
+> αn
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵαi 
+
+= −Γ−1 
+
+> α
+
+E
+
+h
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi x⊤
+
+> αci
+
+βαc
+
+i
+
+= 0,
+
+since βαc = 0 for correct models. Then, 
+
+E∗ ˆβ∗ 
+
+> α
+
+= ˆβα − m−1n−1Γ−1
+
+> αn
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵαi {1 + op(1) } + op(m−1)
+
+m(E∗ ˆβ∗ 
+
+> α
+
+− ˆβα) = −Γ−1 
+
+> α
+
+n−1
+
+> n
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+Γ−1 
+
+> α
+
+xαi ϵαi {1 + op(1) } + op(1) = Bα + op(1) 
+
+Appendix A.4. Condition (C.4) 
+
+We establish this condition for κ = 1 , which implies that the bootstrap variance and the sampling variance agree up to the factor m/n .Consider the previously computed bootstrap estimator in (A.1). We will first show that the first term m−1Γ−1 
+
+> α
+
+ω∗ dominates the equation. Conditional on the bootstrap sample, the sum are independent across strata and i.i.d within each stratum with E∗ω∗ = 0 . Since ω∗
+
+is a sum of m conditionally independent centered terms with bounded conditional second moments, ω∗ = Op∗ (√m). It follows that 
+
+m−1Γ−1 
+
+> α
+
+ω∗ = Op∗ (m−1/2).
+
+Now we will focus on the second term 
+
+m−1Γ−1
+
+> α
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤  
+
+> αhi
+
+− mΓα
+
+ m−1Γ−1 
+
+> α
+
+ω∗{1 + op(1) }. (A.3) Firstly, 
+
+PHh=1 
+
+Pmh 
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤  
+
+> αhi
+
+− mΓα
+
+
+
+= op(m), using the fact that PHh=1 
+
+Pmh 
+
+> i=1
+
+w∗
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤  
+
+> αhi
+
+=
+
+mΓα{1 + op(1) }. Then (A.3) is a remainder term of order op∗ (m−1/2). Therefore we are left with 
+
+ˆβ∗ 
+
+> α
+
+= ˆβα + m−1Γ−1 
+
+> α
+
+ω∗ + R
+
+where R := op∗ (m−1/2). Taking the variance gives 
+
+V∗( ˆβ∗
+
+> α
+
+) = V∗(m−1Γ−1 
+
+> α
+
+ω∗) + V∗(R) + 2 Cov ∗(m−1Γ−1 
+
+> α
+
+ω∗, R ).
+
+24 The covariance can be evaluated as 
+
+2Cov ∗(m−1Γ−1 
+
+> α
+
+ω∗, R ) = op(m−1).
+
+Therefore, 
+
+V∗( ˆβ∗
+
+> α
+
+) = m−2Γ−1 
+
+> α
+
+V∗ (ω∗) Γ−1 
+
+> α
+
++ op(m−1). (A.4) Let r∗ 
+
+> αhi
+
+= y∗ 
+
+> hi
+
+− x∗⊤  
+
+> αhi
+
+ˆβα. Following the steps in (A.2), 
+
+V∗(ω∗) = E∗
+
+h
+
+ω∗ω∗⊤ 
+
+i
+
+= E∗
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w2∗ 
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+r2∗
+
+> αhi
+
+
+
++
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+> H
+
+X
+
+> h′=1 (h,i )̸=( h′,i ′)
+> mh′
+
+X
+
+> i′=1 (h,i )̸=( h′,i ′)
+
+E∗ [w∗
+
+> hi
+
+x∗
+
+> αhi
+
+r∗
+
+> αhi
+
+] E∗
+
+h
+
+w∗ 
+
+> h′i′
+
+x∗⊤  
+
+> αh ′i′
+
+r∗
+
+> αh ′i′
+
+i
+
+= E∗
+
+
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w2∗ 
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+r2∗
+
+> αhi
+
+ + op(m).
+
+From Condition (C.3) we know that 
+
+> H
+
+X
+
+> h=1
+> mh
+
+X
+
+> i=1
+
+w2∗ 
+
+> hi
+
+x∗
+
+> αhi
+
+x∗⊤ 
+
+> αhi
+
+r2∗ 
+
+> αhi
+
+= mn
+
+> n
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+r2
+
+> αi
+
+{1 + op(1) },
+
+which leads to 
+
+V∗(ω∗) = E∗
+
+mn
+
+> n
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+r2
+
+> αi
+
+{1 + op(1) }
+
+ + op(m)= mn −1
+
+> n
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+r2
+
+> αi
+
+{1 + op(1) }.
+
+Subbing this back to (A.4), we get 
+
+V∗( ˆβ∗
+
+> α
+
+) = m−1n−1Γ−1
+
+> αn
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+r2
+
+> αi
+
+{1 + op(1) }Γ−1 
+
+> α
+
++ op(1) .
+
+From Müller and Welsh (2005), we know that Condition (B) is true for an MM-estimator. Therefore, we can say that nV( ˆβα) = ϕ∆−1 
+
+> α
+
+∆α2∆−1 
+
+> α
+
++op(1) , where ∆α = lim n→∞ n−1 Pni=1 vαi xαi x⊤
+
+> αi
+
+and ∆α2 = lim n→∞ n−1 Pni=1 v2
+
+> αi
+
+xαi x⊤
+
+> αi
+
+. Since we have assumed that the weights of a MM-estimator are to be set as the weights in the model selection criterion, we can see that ∆α
+
+25 is indeed equal to Γα, and their inverse is also equal. Furthermore, we can rewrite ∆α2 as 
+
+∆α2 = lim n→∞ n−1 Pni=1 w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+. Therefore, showing mV∗( ˆβ∗
+
+> α
+
+) = nκ V( ˆβα) + op(1) is true (Condition (C.4)) follows by taking κ = 1 and showing 
+
+mV∗( ˆβ∗
+
+> α
+
+) = ϕ∆−1 
+
+> α
+
+∆α2∆−1 
+
+> α
+
++ op(1) .
+
+Substituting Γα for ∆α,
+
+mV∗( ˆβ∗
+
+> α
+
+) = ∆−1 
+
+> α
+
+n−1
+
+> n
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+r2
+
+> αi
+
+{1 + op(1) }∆−1 
+
+> α
+
++ op(1) .
+
+Since rαi = yi − x⊤
+
+> αi
+
+βα + x⊤
+
+> αi
+
+( ˆβα − βα) = ϵαi + Op(n−1/2), it follows that r2 
+
+> αi
+
+= ϵ2 
+
+> αi
+
++ Op(n−1/2).
+
+Then, 
+
+n−1
+
+> n
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+r2 
+
+> αi
+
+= n−1
+
+> n
+
+X
+
+> i=1
+
+w2 
+
+> i
+
+xαi x⊤
+
+> αi
+
+(ϵ2 
+
+> αi
+
++ Op(n−1/2)) = σ2∆α2 + op(1) .
+
+Therefore, 
+
+mV∗( ˆβ∗
+
+> α
+
+) = ∆−1 
+
+> α
+
+(σ2∆α2 + op(1)) ∆−1 
+
+> α
+
+{1 + op(1) } + op(1) = ϕ∆−1 
+
+> α
+
+∆α2∆−1 
+
+> α
+
++ op(1) , ϕ := σ2.
+
+The right-hand side is precisely nV( ˆβα) + op(1) from Condition (B), so 
+
+mV∗( ˆβ∗
+
+> α
+
+) = nκ V( ˆβα) + op(1) 
+
+when κ = 1 , verifying Condition (C.4). 26 Appendix B. NBA Exploratory Analysis 
+
+This appendix includes additional data information, including a table of metadata (Table B.2), a pairplot (Figure B.5) and a distribution analysis (Figure B.6). The data was obtained from https://www.nba.com/stats/players/bio?Season=2024-25&SeasonType=Regular+S eason and https://www.nba.com/stats/players/advanced?Season=2024-25&SeasonType =Regular+Season. The cleaned dataset can be found in the linked repository. 
+
+Variable Name Description 
+
+age Age ast The percentage of teammate field goals a player assisted on while they were on the floor efg Efficient field goal - measures field goal percentage, adjusting for made 3-point field goals being 1.5 times more valuable than made 2-point field goals gp Number of games played height Height (cm) min Average minutes played netrtg Net rating - a team’s point differential per 100 possessions while the player are on court poss Number of possessions pts Average points reb The percentage of a team’s rebounds that a player has while on the court to_ratio The number of turnovers a player averages per 100 possessions ts True shooting - a shooting percentage that factors in the value of three-point field goals and free throws in addition to conventional two-point field goals usg Usage - the percentage of team plays used by a player when they are on the floor weight Weight (pounds) 
+
+> Table B.2: NBA metadata sourced from https://www.nba.com/stats/help/glossary.
+
+27 Corr: 0.045 
+
+Corr: −0.181. 
+
+Corr: 0.349*** 
+
+Corr: −0.026 
+
+Corr: 0.324** 
+
+Corr: 0.232* 
+
+Corr: 0.901*** 
+
+Corr: 0.079 
+
+Corr: −0.190. 
+
+Corr: 0.060 
+
+Corr: 0.090 
+
+Corr: 0.060 
+
+Corr: −0.038 
+
+Corr: 0.152 
+
+Corr: 0.105 
+
+Corr: 0.068 
+
+Corr: 0.449*** 
+
+Corr: 0.293** 
+
+Corr: 0.247* 
+
+Corr: 0.077 
+
+Corr: 0.353*** 
+
+Corr: 0.885*** 
+
+Corr: 0.031 
+
+Corr: −0.227* 
+
+Corr: −0.030 
+
+Corr: 0.762*** 
+
+Corr: 0.120 
+
+Corr: 0.095 
+
+Corr: 0.218* 
+
+Corr: 0.119 
+
+Corr: −0.236* 
+
+Corr: 0.248* 
+
+Corr: 0.258* 
+
+Corr: 0.109 
+
+Corr: 0.133 
+
+Corr: 0.222* 
+
+Corr: 0.665*** 
+
+Corr: −0.035 
+
+Corr: −0.259* 
+
+Corr: −0.238* 
+
+Corr: 0.517*** 
+
+Corr: 0.054 
+
+Corr: 0.035 
+
+Corr: 0.898*** 
+
+Corr: 0.074 
+
+Corr: 0.073 
+
+Corr: 0.290** 
+
+Corr: 0.194. 
+
+Corr: 0.967*** 
+
+Corr: 0.134 
+
+Corr: 0.146 
+
+Corr: 0.249* 
+
+Corr: 0.103 
+
+Corr: 0.269** 
+
+Corr: −0.094 
+
+Corr: 0.155 
+
+Corr: 0.242* 
+
+Corr: 0.188. 
+
+Corr: 0.268** 
+
+Corr: 0.066 
+
+Corr: −0.034 
+
+Corr: 0.397*** 
+
+Corr: 0.140 
+
+Corr: 0.059 
+
+Corr: 0.053 
+
+Corr: 0.266** 
+
+Corr: 0.409*** 
+
+Corr: 0.102 
+
+Corr: 0.078 
+
+Corr: −0.139 
+
+Corr: 0.321** 
+
+Corr: 0.240* 
+
+Corr: 0.177. 
+
+Corr: 0.538*** 
+
+Corr: 0.128 
+
+Corr: 0.556*** 
+
+Corr: −0.077 
+
+Corr: −0.096 
+
+min reb to_ratio efg poss age weight pts netrtg usg ts height_cm ast 
+
+> min  reb  to_ratio  efg  poss  age  weight  pts  netrtg  usg  ts  height_cm  ast
+
+−2 −1 0 1 −2 −1 0 1 2 0 2 4 −2 −1 0 1 2 −1 0 1 2 −1 0 1 2 3 −2−1 0 1 2 3 −1 0 1 2 3 −2 −1 0 1 2 −2 −1 0 1 2 3 −2 −1 0 1 2 −1 0 1 2 3 10 20 30 40 
+
+0.0 0.1 0.2 0.3 
+
+−2 −1 012
+
+024
+
+−2 −1 012
+
+−1 012
+
+−1 0123
+
+−2 −1 0123
+
+−1 0123
+
+−2 −1 012
+
+−2 −1 0123
+
+−2 −1 012
+
+−1 0123
+
+10 20 30 40 Figure B.5: Pairplot of reduced NBA dataset. 
+
+28 10 20 30 40    
+
+> AST%
+> 0.00 0.02 0.04 0.06
+> 10 20 30 40
+
+AST% 
+
+> Density
+
+277 125 123  
+
+> −10 010 20
+> 10 20
+
+Fitted values 
+
+> Residuals
+
+Figure B.6: Distribution and density of the NBA data response variable assist percentage. 
+
+29

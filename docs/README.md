@@ -6,29 +6,32 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-28
-- 运行时间：2026-06-28 21:12:26 UTC
+- 最新运行日期：2026-06-29
+- 运行时间：2026-06-29 20:57:55 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：2
-- 速读区：0
+- 本次总论文数：4
+- 精读区：3
+- 速读区：1
 
 ### 今日简报（AI）
-今日精读两篇高影响力论文，分别探索零样本视觉语言模型在课堂参与度识别中的提示敏感性与跨数据集泛化，以及视觉Transformer的实例感知量化方法。  
-最值得关注的是零样本VLM在课堂场景中的鲁棒性挑战，以及ScalePredictor如何通过动态尺度学习提升ViT量化精度。  
-非专业读者可关注这两项技术在教育AI和模型压缩领域的应用潜力，未来可进一步验证其在实际部署中的稳定性与效率。
-- 详情：[/202606/28/README](/202606/28/README)
+今日精读两篇9分高水平论文，涉及高速公路交通冲突风险预测与异常值鲁棒模型选择。最值得关注异构交互图注意力网络在安全领域的应用，以及快速近似MM估计的实用价值。建议深入阅读精读原文，思考如何将图注意力网络或鲁棒估计方法迁移至自身研究方向。
+- 详情：[/202606/29/README](/202606/29/README)
 
 ### 精读区论文标签
-1. [Zero-Shot Vision-Language Models for Classroom Engagement Recognition: A Benchmark Study of Prompt Sensitivity and Cross-Dataset Generalization](/202606/28/2606.21861v1-zero-shot-vision-language-models-for-classroom-engagement-recognition-a-benchmark-study-of-prompt-sensitivity-and-cross-dataset-generalization)  
+1. [hia-gat: A Heterogeneous Interaction-Aware Graph Attention Network For Frame-Level Traffic Conflict Risk Prediction On Freeways](/202606/29/2606.27577v1-hia-gat-a-heterogeneous-interaction-aware-graph-attention-network-for-frame-level-traffic-conflict-risk-prediction-on-freeways)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：帧级视频分析用于交通冲突预测
+2. [Fast Approximate MM-Estimation for Outlier Robust Model Selection](/202606/29/2606.27638v1-fast-approximate-mm-estimation-for-outlier-robust-model-selection)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：用于鲁棒模型选择的快速近似MM估计方法
+3. [MLVC: Multi-platform Learned Video Codec for Real-World Deployment](/202606/29/2606.28027v1-mlvc-multi-platform-learned-video-codec-for-real-world-deployment)  
    标签：评分：8.0/10、query:mec-video
-   evidence：通过比较多种视觉语言模型进行课堂参与识别研究，涉及模型选择
-2. [ScalePredictor: Instance-aware Scale Learning for Accurate Quantization of Vision Transformers](/202606/28/2606.21947v1-scalepredictor-instance-aware-scale-learning-for-accurate-quantization-of-vision-transformers)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：面向视觉Transformer的实例感知量化，支持在边缘设备上高效部署
+   evidence：面向跨平台边缘部署的硬件鲁棒神经视频编解码器
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [LocalNav: Distilling Frontier VLMs and Embodied RL for On-Device Object Goal Navigation](/202606/29/2606.27871v1-localnav-distilling-frontier-vlms-and-embodied-rl-for-on-device-object-goal-navigation)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：设备端边缘执行与模型蒸馏
 
 
 <div class="dpr-home-promo-card">

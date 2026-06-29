@@ -1,0 +1,177 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-29T20:53:29.419287+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2606.27577v1",
+      "source": "arxiv",
+      "title": "hia-gat: A Heterogeneous Interaction-Aware Graph Attention Network For Frame-Level Traffic Conflict Risk Prediction On Freeways",
+      "abstract": "This paper formulates frame-level freeway risk assessment as a multi-agent scene graph-level binary classification problem, where each video or trajectory frame is labeled risky if any TTC- or PET-based conflict violates a specified severity threshold. We construct a relation-aware graph per frame with vehicles as nodes and two interaction types as edges: same-lane (longitudinal) and adjacent-lane (lateral), augmented with physics-informed edge features aligned to rear-end and lane-change conflict mechanisms. Building on a structured benchmarking suite of non-graph models and graph baselines, we propose HIA-GAT, a dual-stream heterogeneous graph attention network that processes longitudinal and lateral interactions through dedicated attention pathways and fuses them via a conflict-type-aware gating mechanism with event-level gate supervision derived from SSM conflict attribution. Experiments on the NGSIM I-80 and US-101 freeway datasets across nine TTC and PET threshold configurations show that HIA-GAT achieves the best average risk-ranking performance (AUC 0.835 on I-80 and 0.867 on US-101), with the largest gains on PET-only (lane-change) settings where relational structure is essential. Beyond accuracy, the learned gate provides interpretable per-vehicle attribution of dominant conflict type, supporting actionable, real-time freeway safety monitoring. We show that graph structure is critical for modeling lateral conflict risk, while longitudinal risk can often be captured by non-relational aggregation.",
+      "authors": [
+        "Mahshid Malazizi",
+        "Seyedmehdi Khaleghian",
+        "Mina Sartipi",
+        "Toru Hirano",
+        "Yunfei Xu",
+        "Hoang H. Nguyen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-25T22:04:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.27577v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "frame-level video analysis for traffic conflict prediction",
+      "llm_evidence_cn": "帧级视频分析用于交通冲突预测",
+      "llm_evidence": "帧级视频分析用于交通冲突预测",
+      "canonical_evidence": "帧级视频分析用于交通冲突预测",
+      "llm_tldr_en": "HIA-GAT performs frame-level traffic conflict risk prediction from video, directly addressing video analytics for real-time safety applications with a heterogeneous graph attention network.",
+      "llm_tldr_cn": "本文将高速逐帧风险评估建模为多智能体场景图分类问题，利用每帧的车辆关系图，提出双流异构图注意力网络（HIA-GAT）分别处理纵向和横向交互。在真实视频数据集上，该方法优于多种基线和图模型，能有效识别高风险帧。该工作直接贡献于实时视频分析技术，可用于智能交通等领域的视频分析系统。",
+      "llm_tldr": "本文将高速逐帧风险评估建模为多智能体场景图分类问题，利用每帧的车辆关系图，提出双流异构图注意力网络（HIA-GAT）分别处理纵向和横向交互。在真实视频数据集上，该方法优于多种基线和图模型，能有效识别高风险帧。该工作直接贡献于实时视频分析技术，可用于智能交通等领域的视频分析系统。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.27638v1",
+      "source": "arxiv",
+      "title": "Fast Approximate MM-Estimation for Outlier Robust Model Selection",
+      "abstract": "Stratified robust model selection reduces the impact of large residuals and overrepresented outliers in bootstrap samples but is computationally intensive when fitting iteratively-solved robust estimators across many candidate models. We propose FAMM, a Fast Approximate MM-estimator, implemented as a weighted least squares fit with weights derived from a full-data MM-estimator, to reduce this computational cost. Using extensive artificial simulations and applications to National Basketball Association data, we show that substituting the MM-estimator with FAMM preserves model selection performance while achieving a substantial computational speedup. Furthermore, we demonstrate that FAMM satisfies the required conditions for model selection consistency.",
+      "authors": [
+        "Martin Huang",
+        "Samuel Muller",
+        "Garth Tarr"
+      ],
+      "primary_category": "stat.ME",
+      "categories": [
+        "stat.ME"
+      ],
+      "published": "2026-06-26T01:29:09+00:00",
+      "link": "https://arxiv.org/pdf/2606.27638v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "fast approximate MM-estimation for robust model selection",
+      "llm_evidence_cn": "用于鲁棒模型选择的快速近似MM估计方法",
+      "llm_evidence": "用于鲁棒模型选择的快速近似MM估计方法",
+      "canonical_evidence": "用于鲁棒模型选择的快速近似MM估计方法",
+      "llm_tldr_en": "Proposes FAMM, a fast approximate MM-estimator for outlier-robust model selection, achieving computational speedup while preserving selection consistency.",
+      "llm_tldr_cn": "针对鲁棒模型选择计算开销大的问题，提出一种快速近似MM估计器FAMM，通过加权最小二乘拟合实现加速。在模拟和NBA数据上验证，FAMM在保持模型选择性能的前提下显著提升速度，并满足一致性条件。",
+      "llm_tldr": "针对鲁棒模型选择计算开销大的问题，提出一种快速近似MM估计器FAMM，通过加权最小二乘拟合实现加速。在模拟和NBA数据上验证，FAMM在保持模型选择性能的前提下显著提升速度，并满足一致性条件。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.28027v1",
+      "source": "arxiv",
+      "title": "MLVC: Multi-platform Learned Video Codec for Real-World Deployment",
+      "abstract": "Neural video codecs have surpassed classical codecs in coding efficiency but remain impractical for deployment due to cross-platform incompatibility and high computational cost. Existing quantization-based solutions fail to produce deterministic results across diverse hardware platforms, leading to catastrophic decoding failures. We introduce MLVC, a hardware-robust neural video codec designed for practical cross-platform inference. The key idea is to explicitly transmit scale parameters through the hyperprior, which guarantees entropy coding consistency across devices without requiring bit-exact arithmetic. While this increases bitrate overhead, we recover most of the coding efficiency through architectural improvements (gated memory, ReGLU activation), a long-term reference recovery mechanism, and domain-specific perceptual training. On the VCD video conferencing benchmark, MLVC achieves >70% BD-rate (MOS) improvement over hardware HEVC, the strongest deployable baseline, while reaching subjective quality competitive with DCVC-RT, which cannot operate across diverse platforms. Both the encoder and decoder run at 100 FPS on average on commodity NPUs from Apple, Intel, and Qualcomm. MLVC is the first neural video codec to combine competitive compression performance, real-time speed, and cross-platform robustness across diverse consumer devices, making it suitable for widespread deployment. Code will be released.",
+      "authors": [
+        "Tanel Pärnamaa",
+        "Martin Lumiste",
+        "Ardi Loot",
+        "Evgenii Indenbom",
+        "Andrei Znobishchev",
+        "Ando Saabas"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.AI",
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-06-26T12:32:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.28027v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "hardware-robust neural video codec for cross-platform edge deployment",
+      "llm_evidence_cn": "面向跨平台边缘部署的硬件鲁棒神经视频编解码器",
+      "llm_evidence": "面向跨平台边缘部署的硬件鲁棒神经视频编解码器",
+      "canonical_evidence": "面向跨平台边缘部署的硬件鲁棒神经视频编解码器",
+      "llm_tldr_en": "MLVC introduces a hardware-robust neural video codec that guarantees deterministic inference across platforms by transmitting scale parameters via hyperprior, enabling practical deployment on edge devices.",
+      "llm_tldr_cn": "现有神经视频编解码器跨平台推理不一致导致解码失败。本文MLVC通过超先验显式传输尺度参数，确保熵编码跨平台一致性，同时用门控记忆和ReGLU激活恢复编码效率。实验表明MLVC在多种硬件上保持鲁棒，适合边缘设备部署。",
+      "llm_tldr": "现有神经视频编解码器跨平台推理不一致导致解码失败。本文MLVC通过超先验显式传输尺度参数，确保熵编码跨平台一致性，同时用门控记忆和ReGLU激活恢复编码效率。实验表明MLVC在多种硬件上保持鲁棒，适合边缘设备部署。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.27871v1",
+      "source": "arxiv",
+      "title": "LocalNav: Distilling Frontier VLMs and Embodied RL for On-Device Object Goal Navigation",
+      "abstract": "Vision Language Models (VLMs) have emerged in the robotic domain as a powerful tool that enables environmental perception with language context, serving as a catalyst for open-vocabulary tasks like ObjectNav. Yet, their computational footprint typically confines them to cloud execution, hindering low-latency inference with local deployment on resource-constrained robots. To address this challenge, we present a distillation strategy that transfers complex spatial-semantic reasoning from large frontier models into a lightweight, 4B-parameter local VLM for edge execution on embedded GPU devices (e.g., Jetson Orin). We first establish a State of the Art (SotA), Scene Graph (SG)-based pipeline using Claude Sonnet 4.6, achieving a 39.7% Success Rate (SR) on the HM3D OVON benchmark. We then demonstrate that fine-tuning Qwen3.5-4B on just 500 frontier reasoning traces effectively enables navigation capabilities, yielding a SR of 34.5%, narrowing the gap to the performance of large cloud models. Finally, we introduce E-RLVR with Token Generation (TG) regularization to compress output sequence lengths for physical deployment while grounding the agent in its task. This downstream optimization reduces TG overhead by 72.1% and latency by 71.8%. Combined with quantization, this joint strategy yields a cumulative 82.8% reduction in overall inference latency without significantly sacrificing performance, presenting a viable paradigm for local, low-latency VLM execution on mobile robots.",
+      "authors": [
+        "Nicolas Baumann",
+        "Liam Boyle",
+        "Pu Deng",
+        "Edoardo Ghignone",
+        "Boyang Sun",
+        "Marc Pollefeys",
+        "Luca Benini",
+        "Michele Magno"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-26T09:11:59+00:00",
+      "link": "https://arxiv.org/pdf/2606.27871v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "on-device edge execution with model distillation",
+      "llm_evidence_cn": "设备端边缘执行与模型蒸馏",
+      "llm_evidence": "设备端边缘执行与模型蒸馏",
+      "canonical_evidence": "设备端边缘执行与模型蒸馏",
+      "llm_tldr_en": "LocalNav distills large VLMs into a lightweight 4B model for edge deployment on robots, addressing low-latency on-device inference and model selection for resource-constrained edge systems.",
+      "llm_tldr_cn": "本文针对视觉语言模型在边缘设备上部署的高延迟问题，提出一种蒸馏策略，将大型前沿模型的空间语义推理能力迁移至轻量级4B参数本地模型，可在Jetson Orin等嵌入式GPU上执行。该方法通过场景图管道实现顶级性能，再蒸馏到轻量模型，显著降低推理延迟，同时保持高成功率。该工作展示了模型选择与边缘部署的可行方案，对边缘视频分析有启发性。",
+      "llm_tldr": "本文针对视觉语言模型在边缘设备上部署的高延迟问题，提出一种蒸馏策略，将大型前沿模型的空间语义推理能力迁移至轻量级4B参数本地模型，可在Jetson Orin等嵌入式GPU上执行。该方法通过场景图管道实现顶级性能，再蒸馏到轻量模型，显著降低推理延迟，同时保持高成功率。该工作展示了模型选择与边缘部署的可行方案，对边缘视频分析有启发性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
