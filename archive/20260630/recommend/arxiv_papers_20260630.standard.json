@@ -1,0 +1,302 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-30T21:02:41.793125+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2606.28753v1",
+      "source": "arxiv",
+      "title": "BLUE: A Stale-Pixel Optical-Flow Compositor for Entropy-Efficient Surveillance Video Encoding",
+      "abstract": "Continuous-recording surveillance systems face a storage problem that codec tuning alone cannot fully solve: even at aggressive CRF settings, a static-camera scene spends most of its bits re-encoding a background that has not changed. We present BLUE, a pre-encode compositor that exploits this structure by maintaining a persistent seed frame of the background and substituting background pixels with seed pixels before the encoder runs. The encoder then emits near-free SKIP macroblocks for the frozen background, while live pixels in foreground regions are carried unchanged at full quality. We evaluate BLUE on all 308 annotated short subclips from the VIRAT Ground Surveillance Release 2.0 dataset using a six-point CRF sweep with both x264 and x265. At CRF 28, BLUE reduces file size by a mean of 34.6% (x264) / 39.4% (x265) on 95.8% / 99.4% of clips respectively. Foreground-region PSNR, computed only over VIRAT object-annotation bounding boxes, is preserved or improved on 60.7% of clips (+0.36 dB mean, +5.48 dB maximum). Full-frame perceptual quality (VMAF) drops by a median of 6.75-8.59 points; we quantify and disclose this trade-off explicitly. A lightweight deployment gate measuring the compositor's own VMAF on a 2-second prefix identifies the 40% of clips where even full-frame quality degradation is near-imperceptible (Delta VMAF <= -2.9), enabling a selective-activation strategy that retains both the storage benefit and acceptable perceptual fidelity.",
+      "authors": [
+        "Shubham Baid",
+        "Akash James",
+        "Sahil Chachra",
+        "Nishant Sinha",
+        "Kunal Kislay"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "published": "2026-06-27T06:01:51+00:00",
+      "link": "https://arxiv.org/pdf/2606.28753v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "surveillance video encoding with background substitution for efficient storage",
+      "llm_evidence_cn": "监控视频编码，通过背景替换实现高效存储",
+      "llm_evidence": "监控视频编码，通过背景替换实现高效存储",
+      "canonical_evidence": "监控视频编码，通过背景替换实现高效存储",
+      "llm_tldr_en": "BLUE is a pre-encode compositor that substitutes static background pixels with seed frame pixels, enabling near-free SKIP macroblocks and efficient surveillance video encoding.",
+      "llm_tldr_cn": "该论文针对监控视频长时间连续录制导致的存储冗余问题，提出了一种名为BLUE的预编码合成器。它通过维护一个持久的背景种子帧，在编码前将静止背景像素替换为种子像素，使得编码器能够输出近乎免费的SKIP宏块，而前景区域保持全质量。在VIRAT数据集上的评估表明，BLUE在多个CRF设置下均能显著降低码率。",
+      "llm_tldr": "该论文针对监控视频长时间连续录制导致的存储冗余问题，提出了一种名为BLUE的预编码合成器。它通过维护一个持久的背景种子帧，在编码前将静止背景像素替换为种子像素，使得编码器能够输出近乎免费的SKIP宏块，而前景区域保持全质量。在VIRAT数据集上的评估表明，BLUE在多个CRF设置下均能显著降低码率。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.29518v1",
+      "source": "arxiv",
+      "title": "Harvesting AI Computation at the Edge via Generic Approximation",
+      "abstract": "With the widespread adoption of AI in various IoT scenarios such as smart sensing and processing, AI chips have become a common component at the edge. These chips are typically specialized for structured neural network (NN) processing and are designed to meet peak workload demands. However, they are often underutilized and suffer from considerable computational waste due to temporal or spatial redundancy in processing. Conversely, general-purpose processing engines at the edge may struggle with compute-intensive tasks such as signal processing and complex numerical operations because of stringent resource constraints. To address this imbalance, we propose a framework that harvests unused AI computation resources using general-purpose approximation techniques. The core idea is to automatically convert traditional computing tasks into neural network models via a representative neural architecture search (NAS) method. These approximate versions of general-purpose tasks are then deployed on AI engines during their idle periods. Specifically, we introduce a runtime scheduler that offloads these tasks to AI chips without compromising the performance of primary AI workloads, thereby alleviating the burden on general-purpose processors. Experiments on a representative AIoT processor show that our proposed AI computation harvesting strategy delivers substantial performance improvements across a set of edge processing tasks.",
+      "authors": [
+        "Yihan Wang",
+        "Huiru Yan",
+        "Luxin Zhang",
+        "Long Cheng",
+        "Weiwei Chen",
+        "Ying Wang",
+        "Lei Zhang",
+        "Cheng Liu",
+        "Huawei Li"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR",
+        "cs.LG"
+      ],
+      "published": "2026-06-28T17:27:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.29518v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Framework for harvesting AI computation at edge via approximation",
+      "llm_evidence_cn": "通过近似技术收割边缘AI计算资源的框架",
+      "llm_evidence": "通过近似技术收割边缘AI计算资源的框架",
+      "canonical_evidence": "通过近似技术收割边缘AI计算资源的框架",
+      "llm_tldr_en": "Proposes a framework to harvest underutilized AI computation at the edge using generic approximation techniques to handle compute-intensive tasks.",
+      "llm_tldr_cn": "针对边缘AI芯片利用率低而通用处理器计算资源不足的问题，提出利用通用近似技术收割闲置AI计算资源的框架，提升边缘设备整体计算效率。",
+      "llm_tldr": "针对边缘AI芯片利用率低而通用处理器计算资源不足的问题，提出利用通用近似技术收割闲置AI计算资源的框架，提升边缘设备整体计算效率。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.28398v1",
+      "source": "arxiv",
+      "title": "Semantic-Aware Generative Image Transmission for Resource-Constrained Visual IoT Systems",
+      "abstract": "Resource-constrained visual Internet of Things (IoT) systems, such as edge cameras, unmanned sensing platforms, industrial inspection nodes, and remote monitoring sensors, often need to transmit task-relevant visual evidence over low-rate wireless links to an edge/cloud service. Existing image communication methods usually compress or transmit complete global representations, leaving limited room to exploit receiver-side generative restoration. This paper proposes a semantic-aware generative image transmission framework for edge-assisted visual IoT. The image captured by an IoT visual sensor is encoded into a discrete token grid by a VQ encoder. At the IoT transmitter or nearby gateway, token recoverability, estimated from prediction entropy and local structure complexity, is fused with semantic importance obtained from instance segmentation and category-aware scoring. A spatial dispersal sampler then selects the tokens to be transmitted under a bitrate budget. The transmitter sends only the quantization indices of kept tokens and a binary mask map, while the edge/cloud receiver recovers masked tokens through MaskGIT with Halton sequence scheduling. Experiments on Kodak and VisDrone scenes under AWGN and Rayleigh channels show that the proposed method provides a flexible bitrate-quality tradeoff for narrowband visual IoT links. At 0.074 bpp, it uses 44.6% of the transmitted bits of the 0.167-bpp DeepJSCC/WITT reference while achieving 29.9 dB PSNR. A pseudo-GT downstream detection study on Kodak further shows that semantic-aware masking preserves task-relevant objects better than random masking at both 30% and 50% mask ratios.",
+      "authors": [
+        "Chenyang Zhang",
+        "Changwang Liu",
+        "Jinqi Zhu",
+        "Jiayi Chang",
+        "Yuxuan Wang",
+        "Shuqing He",
+        "Jia Guo"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "eess.IV"
+      ],
+      "published": "2026-06-24T08:18:31+00:00",
+      "link": "https://arxiv.org/pdf/2606.28398v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "edge-assisted visual IoT transmission",
+      "llm_evidence_cn": "边缘辅助视觉物联网传输",
+      "llm_evidence": "边缘辅助视觉物联网传输",
+      "canonical_evidence": "边缘辅助视觉物联网传输",
+      "llm_tldr_en": "Semantic-aware generative transmission framework for resource-constrained visual IoT, using VQ encoding and edge-side generative restoration.",
+      "llm_tldr_cn": "资源受限的视觉物联网设备常需传输任务相关视觉证据。该框架在传感器端用VQ编码图像，在边缘预测令牌可恢复性并决定传输策略，利用生成式修复恢复图像，降低传输开销。",
+      "llm_tldr": "资源受限的视觉物联网设备常需传输任务相关视觉证据。该框架在传感器端用VQ编码图像，在边缘预测令牌可恢复性并决定传输策略，利用生成式修复恢复图像，降低传输开销。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.30557v1",
+      "source": "arxiv",
+      "title": "EcoVideo: Entropy-Orchestrated Video Generation Paradigm in Cloud-Edge Dynamics",
+      "abstract": "DiT video generation is latency-intensive due to iterative full-frame denoising, while prior cloud-edge methods largely rely on static inter-step decoupling and cannot leverage inter-frame similarity or adapt to system dynamics. We propose EcoVideo, an entropy-orchestrated framework for dynamic inter-frame decoupling: early-stage self-attention entropy provides a training-free estimate of frame-wise information density for frame selection; a cloud large model denoises sparse high-entropy keyframes; and an edge lightweight model reconstructs the remaining frames via motion-aware interpolation with refinement for temporal stability. EcoVideo further adapts the keyframe budget and edge refinement depth to real-time bandwidth and compute availability, optimizing end-to-end latency under constraints. Experiments on representative DiT video generators show improved quality--efficiency trade-offs and up to 2.9x end-to-end speedup in low-bandwidth, compute-limited edge settings. Code is available at https://github.com/IF-LAB-PKU/EcoVideo.",
+      "authors": [
+        "Jiayu Chen",
+        "Hengyi Zhang",
+        "Maoliang Li",
+        "Minyu Li",
+        "Zihao Zheng",
+        "Xuanzhe Liu",
+        "Guojie Luo",
+        "Xiang Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-29T16:51:56+00:00",
+      "link": "https://arxiv.org/pdf/2606.30557v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "cloud-edge dynamics for video generation",
+      "llm_evidence_cn": "云边动态视频生成",
+      "llm_evidence": "云边动态视频生成",
+      "canonical_evidence": "云边动态视频生成",
+      "llm_tldr_en": "EcoVideo adaptively decouples video generation between cloud and edge using entropy for frame selection and motion-aware interpolation.",
+      "llm_tldr_cn": "视频生成在云边部署中面临延迟挑战。EcoVideo利用自注意力熵估计帧信息密度，云模型生成稀疏关键帧，边模型通过运动感知插值重建剩余帧，并动态调整预算以适应带宽和计算资源，提升生成效率。",
+      "llm_tldr": "视频生成在云边部署中面临延迟挑战。EcoVideo利用自注意力熵估计帧信息密度，云模型生成稀疏关键帧，边模型通过运动感知插值重建剩余帧，并动态调整预算以适应带宽和计算资源，提升生成效率。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.29179v1",
+      "source": "arxiv",
+      "title": "Performance Analysis of Hardware-Accelerated 10-Bit 4:2:2 Encoding with Split-Frame Encoding for High-Fidelity V-PCC Streaming",
+      "abstract": "Video-based Point Cloud Compression (V-PCC) encodes volumetric data by projecting 3D geometry and texture onto 2D video frames. To prevent spatial distortion and color bleeding during 3D reconstruction, this process requires 10-bit color depth and 4:2:2 chroma subsampling, rather than the standard 8-bit 4:2:0 format. Additionally, capturing high-density dynamic point clouds requires demanding encoding parameters, such as 8K resolution at framerates up to 120 fps. Historically, the lack of 4:2:2 chroma support in older GPU hardware encoders restricted real-time V-PCC to custom Application-Specific Integrated Circuits (ASICs). However, the recent introduction of NVIDIA's Blackwell GPU architecture, featuring on-chip hardware encoders with 10-bit 4:2:2 support, presents an opportunity to shift this workload to general-purpose hardware. This paper investigates the feasibility of such an approach. Using a commercially available Blackwell GPU equipped with four parallel on-die hardware encoders as a testbed, we evaluate the throughput, rate-distortion (RD) performance, and power consumption of 8K 10-bit 4:2:2 HEVC across various Split-Frame Encoding (SFE) configurations. Our results demonstrate that 4-way SFE achieves an encoding throughput of 122 fps, successfully meeting the strict real-time constraints of high-density V-PCC. Although the inability to exploit spatial redundancies across slice boundaries results in a BD-Rate penalty of up to 5%, the measured throughput and power efficiency establish standard, commercial off-the-shelf GPUs as a highly viable baseline for real-time volumetric video streaming.",
+      "authors": [
+        "Kasidis Arunruangsirilert",
+        "Jiro Katto"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.AR",
+        "cs.MM"
+      ],
+      "published": "2026-06-28T03:54:36+00:00",
+      "link": "https://arxiv.org/pdf/2606.29179v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "hardware-accelerated real-time V-PCC streaming",
+      "llm_evidence_cn": "硬件加速的实时V-PCC流媒体编码",
+      "llm_evidence": "硬件加速的实时V-PCC流媒体编码",
+      "canonical_evidence": "硬件加速的实时V-PCC流媒体编码",
+      "llm_tldr_en": "Analyzes performance of hardware-accelerated 10-bit 4:2:2 encoding with split-frame encoding for high-fidelity V-PCC streaming, achieving real-time capability on modern GPUs.",
+      "llm_tldr_cn": "论文分析了使用硬件加速的10位4:2:2编码和分帧编码技术实现高保真V-PCC流媒体的性能。传统上，实时V-PCC受限于专用ASIC，但通过NVIDIA Blackwell GPU架构的4:2:2支持，首次实现了基于GPU的实时编码。实验表明，该方案能在8K分辨率、120fps条件下达到实时性能，显著降低了V-PCC流媒体的部署成本。",
+      "llm_tldr": "论文分析了使用硬件加速的10位4:2:2编码和分帧编码技术实现高保真V-PCC流媒体的性能。传统上，实时V-PCC受限于专用ASIC，但通过NVIDIA Blackwell GPU架构的4:2:2支持，首次实现了基于GPU的实时编码。实验表明，该方案能在8K分辨率、120fps条件下达到实时性能，显著降低了V-PCC流媒体的部署成本。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.29498v1",
+      "source": "arxiv",
+      "title": "Learning Where and When: Patch-Based Spatiotemporal Localization in Weakly Supervised Video Anomaly Detection",
+      "abstract": "Weakly supervised video anomaly detection (WSVAD) has predominantly focused on temporal localization, identifying when anomalies occur while largely neglecting their spatial extent within frames. Yet, spatial localization is essential for interpretability and practical deployment in real-world settings. We introduce a patch-based spatiotemporal framework for weakly supervised anomaly localization that jointly models where and when anomalies occur. Our approach operates on grid-level patch features and learns region-level anomaly scores under a multiple instance learning paradigm. We further propose a Proximity-Aware Top-k spatiotemporal selection strategy that enables the model to generate fine-grained spatial anomaly maps without requiring bounding-box supervision during training. Our method surpasses existing state-of-the-art approaches across multiple benchmarks, yielding substantial gains in spatiotemporal localization accuracy. In addition, we release frame-level bounding-box annotations for the test sets of two widely used datasets, along with our code and pretrained models, providing new resources to facilitate future research in spatially grounded WSVAD.",
+      "authors": [
+        "Hamza Karim",
+        "Nghia Nguyen",
+        "Lokman Bekit",
+        "Yasin Yilmaz"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-28T16:52:29+00:00",
+      "link": "https://arxiv.org/pdf/2606.29498v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video anomaly detection, spatiotemporal localization",
+      "llm_evidence_cn": "视频异常检测，时空定位",
+      "llm_evidence": "视频异常检测，时空定位",
+      "canonical_evidence": "视频异常检测，时空定位",
+      "llm_tldr_en": "This paper presents a patch-based weakly supervised video anomaly detection framework that jointly localizes anomalies in space and time using proximity-aware top-k selection.",
+      "llm_tldr_cn": "本文提出一种基于补丁的弱监督视频异常检测框架，能够同时定位异常发生的空间位置和时间帧。通过网格级补丁特征和多实例学习范式，结合邻近感知的Top-k选择策略，生成细粒度的空间异常图，提升了异常检测的可解释性和实用性，适用于流式视频监控分析。",
+      "llm_tldr": "本文提出一种基于补丁的弱监督视频异常检测框架，能够同时定位异常发生的空间位置和时间帧。通过网格级补丁特征和多实例学习范式，结合邻近感知的Top-k选择策略，生成细粒度的空间异常图，提升了异常检测的可解释性和实用性，适用于流式视频监控分析。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.29575v1",
+      "source": "arxiv",
+      "title": "TF-MoE: Time-Frequency Mixture-of-Experts for Efficient Speech Separation",
+      "abstract": "Recent advances in speech separation (SS) have led to compact front-end models with small parameter sizes, yet their high computational cost remains a major barrier for deployment on edge devices. To address this, we propose TF-MoE, a sparse Mixture-of-Experts (MoE) framework that enhances model capacity with almost no increase in inference cost. Our method introduces dynamic expert specialization in time and frequency dimensions through alternating time-wise and frequency-wise MoE modules, each dynamically selecting experts per frame or mel band. Built upon a mel-band-splitting Conformer backbone, TF-MoE achieves strong performance on SS tasks under low-compute settings. Experimental results demonstrate that TF-MoE consistently improves separation performance under computation cost constraints, outperforming BSRNN by +3.8 dB SDR on Libri2Mix with comparable 4.1 GMACs/s inference cost. This positions TF-MoE as a promising candidate for edge-device deployment.",
+      "authors": [
+        "Qinzhe Hu",
+        "Chenda Li",
+        "Wangyou Zhang",
+        "Shujie Liu",
+        "Yan Lu",
+        "Yanmin Qian"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.AI"
+      ],
+      "published": "2026-06-28T19:37:32+00:00",
+      "link": "https://arxiv.org/pdf/2606.29575v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "sparse Mixture-of-Experts for efficient inference on edge devices; model selection via dynamic expert selection",
+      "llm_evidence_cn": "稀疏混合专家框架实现边缘设备高效推理，通过动态专家选择进行模型选择",
+      "llm_evidence": "稀疏混合专家框架实现边缘设备高效推理，通过动态专家选择进行模型选择",
+      "canonical_evidence": "稀疏混合专家框架实现边缘设备高效推理，通过动态专家选择进行模型选择",
+      "llm_tldr_en": "TF-MoE introduces a sparse Mixture-of-Experts framework for speech separation, dynamically selecting experts per frame to enhance capacity without increasing inference cost, enabling deployment on edge devices.",
+      "llm_tldr_cn": "语音分离模型虽然参数量小但计算量大，难以部署在边缘设备。本文提出TF-MoE，在时频维度引入稀疏混合专家，每帧动态选择专家，几乎不增加推理成本却提升模型容量。实验表明在低计算条件下性能持续提升，其动态选择机制可推广至视频分析中的模型选择问题。",
+      "llm_tldr": "语音分离模型虽然参数量小但计算量大，难以部署在边缘设备。本文提出TF-MoE，在时频维度引入稀疏混合专家，每帧动态选择专家，几乎不增加推理成本却提升模型容量。实验表明在低计算条件下性能持续提升，其动态选择机制可推广至视频分析中的模型选择问题。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

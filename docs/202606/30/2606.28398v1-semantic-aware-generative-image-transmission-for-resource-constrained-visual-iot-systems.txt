@@ -1,0 +1,360 @@
+Title: Semantic-Aware Generative Image Transmission for Resource-Constrained Visual IoT Systems
+
+URL Source: https://arxiv.org/pdf/2606.28398v1
+
+Published Time: Tue, 30 Jun 2026 00:03:22 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+> IEEE INTERNET OF THINGS JOURNAL 1
+
+# Semantic-Aware Generative Image Transmission for Resource-Constrained Visual IoT Systems 
+
+Chenyang Zhang, Changwang Liu Member, IEEE , Jinqi Zhu, Jiayi Chang, Yuxuan Wang, Shuqing He and Jia Guo* Member, IEEE 
+
+Abstract —Resource-constrained visual Internet of Things (IoT) systems, such as edge cameras, unmanned sensing platforms, industrial inspection nodes, and remote monitoring sensors, often need to transmit task-relevant visual evidence over low-rate wireless links to an edge/cloud service. Existing image communication methods usually compress or transmit complete global representations, leaving limited room to exploit receiver-side generative restoration. This paper proposes a semantic-aware generative image transmission framework for edge-assisted visual IoT. The image captured by an IoT visual sensor is encoded into a discrete token grid by a VQ encoder. At the IoT transmitter or nearby gateway, token recoverability, estimated from prediction entropy and local structure complexity, is fused with semantic importance obtained from instance segmentation and category-aware scoring. A spatial dispersal sampler then selects the tokens to be transmitted under a bitrate budget. The transmitter sends only the quantization indices of kept tokens and a binary mask map, while the edge/cloud receiver recovers masked tokens through MaskGIT with Halton sequence scheduling. Experiments on Kodak and VisDrone scenes under AWGN and Rayleigh channels show that the proposed method provides a flexible bitrate–quality tradeoff for narrowband visual IoT links. At 0.074 bpp, it uses 44.6% of the transmitted bits of the 0.167-bpp DeepJSCC/WITT reference while achieving 29.9 dB PSNR. A pseudo-GT downstream detection study on Kodak further shows that semantic-aware masking preserves task-relevant objects better than random masking at both 30% and 50% mask ratios. 
+
+Index Terms —visual IoT; semantic communication; generative image transmission; MaskGIT; VQGAN; semantic-aware mask; token selection; edge intelligence; object detection. 
+
+I. I NTRODUCTION 
+
+Visual data—images and video—are becoming a dominant sensing modality in the Internet of Things (IoT), driven by smart cameras, unmanned aerial platforms, industrial in-spection nodes, remote environmental monitoring, and edge visual analytics. A typical visual IoT service consists of a sensing node, a bandwidth- and energy-constrained wireless uplink, and an edge gateway or cloud service that performs       
+
+> This research work was substantially supported by the National Natural Science Foundation of China under Grant No. 62002263, Tianjin Science and Technology Program Projects: 24YDTPJC00630. C. Zhang, C. Liu, J. Zhu J. Chang, Y. Wang and J. Guo,are with the School of Computer and Information Engineering, Tianjin Normal University, Tian-jin, China (e-mail: 2411090038@stu.tjnu.edu.cn, 004967@tjnu.edu.cn, jsjzhu-jinqi@tjnu.edu.cn,2511090041@stu.tjnu.edu.cn, 2511090047@stu.tjnu.edu.cn and c04s316@bupt.cn). S. He is School of Information Science and Engineering, Linyi University, Linyi 276000, China (email:heshuqing@lyu.edu.cn) *Corresponding Author: Jia Guo Our code is available at link: https://github.com/zzzccy1/ Semantic-Aware-Generative-Image-Transmission-for-Resource-Constrained-Visual-IoT-Systems. git
+
+monitoring, inspection, or decision support. In such systems, the receiver often cares about object identity, scene semantics, and task-relevant evidence rather than pixel-perfect reconstruc-tion. Conventional communication systems follow Shannon’s separation principle [1] and aim to minimize bit errors under channel capacity constraints. However, faithfully transmitting complete visual representations can carry substantial redun-dancy for IoT perception tasks and makes it difficult to jointly satisfy low latency, low bandwidth, and communication-side energy constraints. The central challenge is therefore: how can a visual IoT device reduce unnecessary visual payload while preserving the receiver’s ability to interpret critical semantic information? Semantic communication addresses this challenge by shift-ing the objective from bit accuracy to semantic fidelity. In-stead of transmitting every bit faithfully, it prioritizes task-relevant information and reduces redundant overhead, which is especially attractive for battery-powered or low-rate visual IoT links. For visual IoT image transmission, the key question becomes: which parts of an image carry essential semantics for downstream monitoring or decision making, and which parts can be omitted or coarsely described? In complex natural scenes, foreground objects such as persons, vehicles, animals, and industrial targets often carry disproportionate semantic weight relative to background textures. A visual IoT trans-mitter that performs fine-grained semantic screening—coupled with an edge/cloud receiver that restores missing content—can reduce wireless payload without sacrificing semantic fidelity. Image semantic communication for visual IoT is therefore a joint optimization of information selection and semantic preservation : maximizing the semantic value delivered to the edge receiver per unit of wireless bandwidth. Generative models [2] offer a concrete mechanism for realizing this vision in edge-assisted visual IoT. Discrete visual representations—VQ-VAE [3], VQGAN [4]—encode images as compact token sequences, making visual content amenable to token-level manipulation. MaskGIT [5], a masked token prediction model, recovers masked tokens through parallel decoding, offering faster inference than autoregressive alter-natives while maintaining high reconstruction quality. This suggests a natural IoT-edge architecture: an IoT visual sensor or nearby gateway selectively transmits a subset of tokens, and the edge/cloud receiver reconstructs the missing ones using MaskGIT. The approach overcomes a fundamental limitation of conventional image transmission—that all information must be explicitly sent over the wireless link. However, MaskGIT was designed for image generation, where masks are applied randomly and uniformly to train the  
+
+> arXiv:2606.28398v1 [cs.CV] 24 Jun 2026 IEEE INTERNET OF THINGS JOURNAL 2
+
+model’s generative capability. This random masking strategy is ill-suited for visual IoT communication for three reasons. First, it ignores recovery difficulty: tokens in textured, high-frequency regions are harder to reconstruct than those in smooth areas, yet random masking treats them identically. Second, it offers no semantic protection: foreground objects relevant to surveillance, inspection, or monitoring can be masked as readily as background, risking the loss of critical IoT sensing content. Third, it neglects spatial distribution: clustered masks destroy local context, degrading reconstruc-tion stability at the edge/cloud receiver. The core problem is that MaskGIT’s masking mechanism answers how to generate ,not which tokens deserve scarce IoT transmission bandwidth .Meanwhile, reconstruction metrics such as PSNR alone are in-sufficient to evaluate visual IoT communication quality, since an image that appears visually faithful may still suffer semantic distortion in foreground regions. An intelligent token selection mechanism that combines generative reconstruction capability with semantic resource allocation principles is needed. We propose a semantic-aware generative image transmis-sion method for resource-constrained visual IoT systems. The method operates on discrete token grids produced by a VQ encoder and jointly models two complementary signals: 
+
+token recoverability , estimated via prediction entropy and local structure complexity, and semantic importance , derived from instance segmentation and category-aware scoring. These two signals are fused and combined with a spatial disper-sal sampling procedure to produce the final mask. The IoT transmitter or edge gateway then sends only the content of kept tokens and a binary mask map; the edge/cloud receiver recovers masked tokens using MaskGIT with Halton sequence scheduling. By protecting semantically important and hard-to-recover tokens while offloading redundant, easily-predicted content to the edge/cloud-side generative model, the method achieves a favorable trade-off between wireless bandwidth consumption and semantic reconstruction quality. The main contributions of this paper are as follows: 1) A semantic-aware token selection method for visual IoT transmission. We jointly model token recovery difficulty (via prediction entropy and local structure complexity) and semantic importance (via instance seg-mentation and category-aware scoring), converting the conventional random masking strategy into an intelligent token selection mechanism for bandwidth-constrained IoT links. Score fusion and spatial dispersal sampling allocate scarce transmission bandwidth preferentially to semantically critical and hard-to-recover regions, while redundant, easily-predicted content is completed by the edge/cloud generative model. 2) An edge-assisted generative image communication framework for resource-constrained visual IoT. 
+
+Through a “key tokens transmitted, non-key tokens generated” paradigm, the IoT transmitter sends only the quantization indices of kept tokens and a binary mask map; the edge/cloud receiver recovers the full image via MaskGIT with Halton sequence scheduling. This decoupled architecture separates what to transmit 
+
+(semantic token selection at the IoT side or gateway) from how to reconstruct (generative restoration at the edge/cloud side), supporting flexible adaptation to SNR conditions, mask ratios, and visual IoT scene categories. 3) A communication-aware evaluation protocol for vi-sual IoT links. We include mask-map overhead in the transmitted payload, evaluate AWGN and Rayleigh fading channels, report communication-side delay and RF-energy proxies, and further measure downstream ob-ject detection accuracy. These experiments are intended to assess not only pixel fidelity but also task-relevant semantic preservation under constrained IoT bandwidth. II. R ELATED WORK 
+
+A. Semantic Communication for Visual IoT 
+
+Semantic communication shifts the objective from bit-level accuracy to semantic fidelity, prioritizing task-relevant information under limited channel resources [6], [7]. It is particularly relevant to visual IoT, where cameras and in-spection sensors must deliver semantic evidence over low-rate or energy-constrained links [8], [9]. Recent visual semantic communication frameworks jointly optimize encoding, chan-nel transmission, and edge/cloud reconstruction or downstream tasks [10], using CNN/Transformer encoders, channel-adaptive modulation, or task-oriented losses. However, most existing methods emphasize global fea-ture compression and still transmit complete feature rep-resentations, leaving limited ability to exploit edge/cloud-side generative restoration. Although GAN- and diffusion-assisted schemes [11]–[13] show that generative priors can compensate for missing content, token-level semantic selec-tion for resource-constrained visual IoT remains insufficiently explored. 
+
+B. Joint Source-Channel Coding 
+
+Joint Source-Channel Coding (JSCC) directly maps image pixels to channel symbols without explicit source and channel codecs. DeepJSCC [14] introduced CNN-based wireless image transmission, while WITT [15], SwinJSCC [16], Mamba-based coding [17], and cooperative relay schemes [18] fur-ther improved learned transmission. Learned compression and JSCC surveys also show rapid progress in this direction [19], [20]. Nevertheless, JSCC methods usually send a complete set of channel symbols and do not explicitly allocate bandwidth according to spatial semantic importance, motivating hybrid selective-transmission and generative-restoration designs. 
+
+C. Generative Visual Reconstruction 
+
+Discrete visual representations bridge image generation and efficient transmission. VQ-VAE [3] and VQGAN [4] quantize images into compact codebook indices, and recent tokenizers [21]–[23] further improve discrete representation learning. Such token grids (e.g., 24 × 24 for a 384 × 384 
+
+input) naturally support token-level manipulation and selective transmission [24]. MaskGIT [5] recovers masked tokens through parallel bidi-rectional Transformer decoding [25]. Unlike autoregressive IEEE INTERNET OF THINGS JOURNAL 3 
+
+> Fig. 1. Overall architecture of the proposed semantic-aware generative image transmission framework for resource-constrained visual IoT systems.
+
+models, it updates masked positions in parallel and can restore a partially transmitted token grid within a fixed number of decoding steps, making it attractive for edge/cloud-side reconstruction. However, MaskGIT was designed with random masks for generation. In visual IoT communication, masks also deter-mine link resource allocation: textured or contour regions are harder to recover, and foreground objects carry more task-relevant information than background. Therefore, the commu-nication setting requires mask design that jointly considers recoverability, semantic importance, and spatial coverage. III. P ROPOSED FRAMEWORK 
+
+The proposed method targets an edge-assisted visual IoT scenario in which a sensing node or a nearby gateway captures an image, transmits selected visual tokens over a constrained wireless uplink, and relies on an edge/cloud receiver for gen-erative restoration. This deployment model is consistent with practical visual IoT systems: the battery-powered camera may perform only lightweight acquisition and token packaging, while a gateway or edge server can execute heavier semantic analysis and reconstruction when available. The communi-cation payload, however, is always counted on the wireless IoT link between the sensing side and the receiver side. The framework operates in three stages. First, the input image is encoded into a discrete token grid via a VQ encoder. Second, at the IoT transmitter or edge gateway, base editability estima-tion, semantic importance protection, score fusion, and spatial dispersal sampling collaboratively produce a binary mask map, and the transmitter sends only the quantization indices of kept tokens together with the mask map. Third, the edge/cloud receiver recovers masked tokens via MaskGIT with Halton sequence scheduling and reconstructs the image through the VQ decoder. Fig. 1 illustrates the overall architecture. Let the input image be 
+
+X ∈ RH×W ×3 (1) The VQ encoder first maps the image to a discrete token grid: 
+
+Z = VQEncoder( X), Z ∈ ZHt×Wt (2) where Ht and Wt denote the height and width of the token grid, respectively. The system sequentially performs base editability estimation, semantic importance protection, score fusion, and spatial dispersal sampling at the IoT trans-mitter or edge gateway to obtain the final mask set. For kept tokens, their content indices are transmitted; for masked tokens, the binary mask map indicates their positions without sending their token values. The edge/cloud receiver constructs a masked token grid from the received information, feeds it into the MaskGIT model to predict the missing tokens, and finally recovers the image through the decoder. 
+
+A. Image Encoding and Discrete Token Representation 
+
+In conventional image transmission, directly treating pix-els as communication objects often incurs substantial data redundancy, which is unfavorable for efficient transmission in resource-constrained scenarios. To this end, this paper first converts the input image into a discrete token representation, mapping the image content from the continuous pixel space to a compact semantic representation space. Specifically, the input image passes through an encoder to obtain continuous latent variables, which are then discretized IEEE INTERNET OF THINGS JOURNAL 4
+
+via a codebook. For position (i, j ) in the token grid, the corresponding discrete token can be expressed as 
+
+zi,j = arg min   
+
+> ek∈C
+
+∥E(X)i,j − ek∥22 (3) where C = {ek}Kk=1 denotes the codebook, K is the codebook size, and E(X)i,j represents the continuous feature output by the encoder at position (i, j ). Through this process, the entire image is represented as a two-dimensional grid of discrete tokens: 
+
+Z = {zi,j | 1 ≤ i ≤ Ht, 1 ≤ j ≤ Wt} (4) This representation offers two advantages. First, the token grid significantly reduces the image representation dimen-sionality, transforming the transmission object from pixel-level data to more compact semantic units. Second, discrete tokens are naturally compatible with generative models such as MaskGIT, enabling the receiver to complete missing in-formation in the token space. Therefore, all subsequent mask decisions and transmission operations in this paper are per-formed on the token grid Z.
+
+B. Semantic-Aware Mask Generation 
+
+1) Base Editability Estimation. In visual IoT semantic communication scenarios, not all tokens are equally suitable for masking. For tokens with clear contextual relationships and simple local structures, even if the IoT transmitter does not send their specific content, the edge/cloud receiver can usually recover them fairly accurately using the generative model. In contrast, for edge details, texturally complex regions, or object contour areas, direct masking can easily cause cumulative recovery errors. Therefore, before generating the final mask, it is necessary to evaluate the base recoverability of each token. This paper refers to this process as base editability esti-mation. The module characterizes the recovery difficulty of a token from two aspects: MaskGIT’s prediction uncertainty for that token, and the structural complexity of the local region where the token resides. Combining both, the base editability score for the token at position (i, j ) is defined as 
+
+Sbase (i, j ) = αH (i, j ) + βC (i, j ) (5) where H(i, j ) denotes the prediction entropy, C(i, j ) de-notes the local structure complexity, and α and β are weighting coefficients. Prediction entropy quantifies the uncertainty of MaskGIT’s prediction for a token at a given position under contextual con-ditions. If the prediction distribution at a position is relatively concentrated, it indicates that the token can be more easily recovered from neighborhood information; conversely, if the prediction distribution is dispersed, the recovery risk is higher. Correspondingly, the prediction entropy can be written as 
+
+H(i, j ) = −
+
+> K
+
+X
+
+> k=1
+
+p(k|N i,j ) log p(k|N i,j ) (6) where Ni,j denotes the contextual neighborhood of position 
+
+(i, j ), and p(k|N i,j ) is the predicted probability of codebook index k at position (i, j ) given Ni,j .Beyond prediction uncertainty, local structure complexity also affects restoration quality. For smooth background re-gions, even if a token is masked, the model can relatively easily complete it using surrounding context; however, at locations with edges, textures, and pronounced local structural variations, the absence of a single token tends to have a greater impact on visual continuity. Therefore, this paper further characterizes local complexity using token differences within the neighborhood: 
+
+C(i, j ) = 1
+
+|N i,j |
+
+X
+
+> (u,v )∈N i,j
+
+d(zi,j , z u,v ) (7) where d(·, ·) denotes a difference metric between tokens. Overall, a larger base editability score Sbase (i, j ) indicates that the token is more difficult to recover from context and is thus more suitable for direct transmission as a keep token; conversely, a smaller score suggests it is more suitable as a masked token to be left for edge/cloud-side prediction. It should be noted that this module primarily reflects “recovery risk” and does not yet explicitly consider semantic-level im-portance; therefore, a semantic protection mechanism needs to be further introduced. 
+
+2) Semantic Importance Protection. The goal of semantic communication is not merely to minimize reconstruction error, but more importantly to ensure that the key foreground objects, core targets, and primary scene information in the image are not corrupted. If only base editability estimation is relied upon, the system may focus excessively on “which regions are easier or harder to recover” while neglecting “which regions are semantically more important.” Therefore, this paper further designs a semantic importance protection mechanism to pref-erentially preserve critical object regions in the image. First, instance segmentation is performed on the input image, yielding a set of objects 
+
+O = {on}Nn=1 (8) where N is the number of detected instances in the image. For each instance, this paper integrates four factors—area, cen-trality, detection confidence, and category prior—to construct its instance importance score: 
+
+In = η1An + η2Qn + η3Dn + η4Pn (9) where An denotes the area score, Qn denotes the centrality score, Dn denotes the detection confidence, Pn denotes the category prior, and η1 = η2 = η3 = η4 = 1 (equal weights; the four factors are normalized and summed with a uniform prior). The area score reflects the proportion of the instance in the image, the centrality score reflects whether its position is close to the visual center, the detection confidence measures the re-liability of the object recognition result, and the category prior reflects the relative importance of different semantic classes in the communication task. For instance, in most natural images, foreground objects such as persons and vehicles are assigned higher category prior weight than background regions. To enable this semantic information to participate in token-level mask decisions, the instance importance must be further IEEE INTERNET OF THINGS JOURNAL 5
+
+mapped onto the token grid. Accordingly, the semantic pro-tection score at position (i, j ) is defined as 
+
+R(i, j ) = 
+
+> N
+
+X
+
+> n=1
+
+In · I (i, j ) ∈ on
+
+ (10) where I(·) is the indicator function. When a token lies within a high-importance instance region, its R(i, j ) value is large, indicating that this position should be avoided from masking whenever possible. Through this mechanism, the transmitter no longer treats all tokens equivalently but can consciously protect critical semantic regions in the image. Consequently, the subsequent mask generation considers not only recovery difficulty but also the fundamental principle of semantic communication: “prioritizing the preservation of important information.” 
+
+3) Score Fusion and Spatial Dispersal Sampling. After obtaining the base editability score and the semantic protection score, this paper further fuses them to determine the final mask positions. The core idea of the fusion is that tokens with high recovery difficulty should tend to be directly transmitted, and tokens with high semantic importance should also avoid being masked. Therefore, the keep-priority score for a token is defined as 
+
+Skeep (i, j ) = Sbase (i, j ) + γR (i, j ) (11) where γ is the semantic protection weight. This formulation indicates that when a position has high recovery difficulty or high semantic importance, its keep priority increases, making it less likely to be selected as a masked token. To balance the trade-off between token recoverability and semantic im-portance, the weight parameter γ is introduced. When γ is small, token selection favors editability; when γ is large, the model tends to protect semantically critical regions. In the experiments, γ = 0 .5 is used. Given a mask ratio ρ, and with a total number of tokens 
+
+M = HtWt, the number of masked tokens to be selected is 
+
+Mm = ⌊ρM ⌋ (12) The most straightforward approach is to sort tokens by their keep-priority scores and mask the lowest-priority tokens. However, this can lead to a problem: the selected tokens may be overly concentrated spatially, resulting in large missing regions locally and making it difficult for the receiver to recover stable contextual relationships. To address this, the paper further introduces a spatial dispersal sampling strategy. Specifically, when selecting masked tokens, not only is the composite score considered but also the spatial distance between candidate positions and already-selected mask posi-tions. Positions too close to existing masked tokens have their priority reduced, while more uniformly distributed positions are preferentially retained. Accordingly, a spatial penalty term is defined as: 
+
+D(i, j ) = X
+
+> (u,v )∈Ω(t)
+> m
+
+exp 
+
+
+
+− ∥pi,j − pu,v ∥22
+
+σ2
+
+
+
+(13) where Ω(t) 
+
+> m
+
+denotes the set of currently selected masked tokens, pi,j denotes the spatial coordinates of position (i, j ),and σ is a parameter controlling the neighborhood influence range. After incorporating the spatial constraint, the iterative mask utility becomes 
+
+U (i, j ) = −Skeep (i, j ) − μD (i, j ) (14) where μ is the dispersal weight. At each iteration, the can-didate with the largest U (i, j ) is selected as a masked token. Through this strategy, masked tokens can be more uniformly distributed across the entire image, avoiding extensive local context loss and thereby improving the reconstruction stability at the receiver. 
+
+C. Semantic Communication over the Visual IoT Link 
+
+Based on the final mask map M ∈ { 0, 1}Ht×Wt obtained from the score fusion and spatial dispersal sampling described in Section III-B, the token grid is partitioned into keep tokens (Mi = 0 ) and masked tokens ( Mi = 1 ). For keep tokens, the IoT transmitter or gateway directly transmits their discrete content over the wireless link; for masked tokens, the mask map carries their positions without sending the specific token values. The IoT-side masked token grid is thus constructed as: 
+
+Zm(i, j ) = 
+
+(
+
+zi,j , (i, j ) ∈ Ωk
+
+[MASK ], (i, j ) ∈ Ωm
+
+(15) where Ωk denotes the set of keep tokens, Ωm denotes the set of masked tokens, satisfying Ωk ∪Ωm = Ω and Ωk ∩Ωm =
+
+∅. The information actually output by the transmitter can be expressed as: 
+
+T = {Z keep , Pmask } (16) where Zkeep is the content set of kept tokens and Pmask is represented by the binary mask map. Specifically, the visual IoT payload consists of the following two parts. 
+
+(1) Quantization Indices of Kept Tokens (Content Infor-mation). For the Nkeep kept tokens with Mi = 0 , the trans-mitter directly transmits their VQ quantization indices. Each token index is drawn from a codebook of size K = 16384 ,with a quantization precision of 14 bits ( ⌈log 2 16384 ⌉ = 14 ). Considering that practical IoT links require additional channel coding redundancy to ensure reliable transmission, this paper conservatively estimates an equivalent overhead of 20 bits per token: 
+
+Bcontent = Nkeep × 20 (bit) (17) 
+
+(2) Binary Mask Map (Positional Information). The edge/cloud receiver must know which of the 576 tokens are masked and which are kept in order to perform targeted recovery of missing tokens. For this purpose, the transmitter additionally sends a 576-bit binary mask map, with each token occupying 1 bit ( 0 = keep , 1 = mask): 
+
+Bmask = 576 (bit) (18) It is worth noting that if the mask pattern exhibits spatial sparsity, the binary mask map can be further compressed via lossless compression (e.g., arithmetic coding) to approximately 300–450 bits. To maintain conservatism and simplicity in estimation, all calculations below adopt the full 576-bit mask map as the mask transmission overhead. IEEE INTERNET OF THINGS JOURNAL 6
+
+In summary, the total number of bits actually transmitted over the visual IoT link is: 
+
+Btotal = Bcontent + Bmask = Nkeep × 20 + 576 (bit) (19) where Nkeep = 576 ×(1 −ρ), with ρ being the mask ratio and the result rounded up. Normalizing the total bits to per-pixel yields the bits per pixel (bpp): bpp = Btotal 
+
+H × W = Nkeep × 20 + 576 147456 (20) where H = W = 384 is the image resolution, and H ×W =147456 pixels. For the evaluated mask ratios ρ ∈{5% , 10% , 20% , 30% , 50% , 70% }, Eq. (20) gives a visual IoT payload range from 0.027 bpp to 0.078 bpp. The 50% and 70% mask configurations operate below 0.05 bpp, which is desirable for narrowband visual IoT links. By transmitting content only for semantically critical and hard-to-recover tokens, and leaving recoverable tokens to the edge/cloud generative model, the proposed method reduces link overhead while preserving key semantic information. 
+
+D. Receiver-Side Reconstruction 
+
+Upon receiving Zkeep and Pmask , the edge/cloud receiver first reconstructs the masked token grid based on the kept token content and mask position information, and feeds it as input to the MaskGIT model. Specifically, the receiver assigns known values to keep token positions and retains mask markers at masked token positions, thereby forming a discrete token grid to be restored. Subsequently, the receiver employs MaskGIT to predict the masked tokens, yielding a complete token grid: 
+
+ˆZ = MaskGIT( Zm) (21) where ˆZ denotes the complete token representation after edge/cloud-side restoration. Finally, the recovered token grid is mapped back to image space via the decoder, producing the reconstructed image: 
+
+ˆX = VQDecoder( ˆZ) (22) In this process, keep tokens provide authentic semantic anchors for the edge/cloud receiver, enabling the model to maintain strong constraints in critical regions; meanwhile, masked tokens are completed by the generative model based on spatial context and semantic associations. Since the IoT transmitter or gateway has already preferentially preserved tokens that are semantically important and difficult to recover, the receiver mainly restores regions that are relatively easy to predict, which contributes to improved overall reconstruction quality and semantic consistency. Thus, the proposed method forms a collaborative mech-anism of “intelligent selection at the IoT side, generative restoration at the edge/cloud side” at the system level, position-ing MaskGIT not merely as a conventional image generation model but as a key reconstruction module within the visual IoT semantic communication framework. IV. E XPERIMENTAL RESULTS AND ANALYSIS 
+
+A. Experimental Setup 1) Dataset and Preprocessing: Kodak is used as the main test set, covering 24 diverse images commonly used in image compression and communication. VisDrone2019-DET test-dev is additionally used to evaluate cross-domain reconstruction on drone-captured IoT scenes. All images are resized to 384 ×384 
+
+and quantized into 24 × 24 = 576 tokens from a codebook of size K = 16384 . No training or fine-tuning is performed on Kodak or VisDrone. 
+
+2) Channel Model and SNR Settings: The channel model adopts AWGN with QPSK modulation (2 bits per channel symbol), representing a controlled abstraction of a narrowband visual IoT uplink. The test SNR is set to 
+
+SNR ∈ { 1, 4, 7, 10 , 13 , 15 } dB , (23) with 13 dB as the baseline. A Rayleigh block-fading channel 
+
+y = hx + n is also tested, where h ∼ CN (0 , 1) is constant within each coherence block and MMSE equalization is ap-plied. All comparison and ablation experiments use identical channel settings. 
+
+3) Mask Ratios and Bitrate Configurations: 
+
+This paper evaluates six mask ratios, ρ ∈{5% , 10% , 20% , 30% , 50% , 70% }, corresponding via Eq. (20) to approximately 0.027–0.078 bpp. The channel robustness experiments additionally include the unmasked 0% configuration at approximately 0.082 bpp for equal-bitrate comparison with JSCC baselines, while the rate-distortion experiments vary ρ to obtain multiple bitrate points. 
+
+4) Implementation Details: Inference is performed on a single NVIDIA RTX 4090 to emulate gateway/edge-assisted deployment. The VQ encoder uses a pre-trained VQGAN with a 24 × 24 token grid and codebook size 16384. Semantic masks combine entropy/structure-based editability with Detic-based semantic heatmaps; Detic is used only for mask gen-eration. Downstream detection uses a separate Mask R-CNN evaluator to avoid evaluator leakage. MaskGIT uses Halton scheduling [26], [27], 32 sampling steps, and classifier-free guidance weight w = 2 .0. Energy and latency tables report communication-side costs only. 
+
+5) Evaluation Metrics: The evaluation uses:  
+
+> •
+
+Image quality : PSNR, SSIM, and LPIPS [28].  
+
+> •
+
+Bitrate : bits per pixel (bpp), computed via Eq. (20).  
+
+> •
+
+Communication efficiency metrics : Communication de-lay Tcomm (ms) and communication-side relative energy consumption Ecomm (%), defined respectively as 
+
+Tcomm = Btotal 
+
+Rbw 
+
+, Ecomm = Btotal 
+
+Bref 
+
+× 100% , (24) where Rbw = 100 kbps and Bref = 24576 bits is the 0.167-bpp DeepJSCC/WITT reference payload. These metrics exclude computation latency and energy.  
+
+> •
+
+Bandwidth efficiency : PSNR/bpp (dB/bpp). 
+
+6) Comparison Methods: To comprehensively evaluate the rate-distortion performance and channel robustness of the pro-posed method, six representative comparison baselines span-ning traditional source coding and recent JSCC architectures are selected: IEEE INTERNET OF THINGS JOURNAL 7 
+
+> •
+
+BPG (Better Portable Graphics) : An image com-pression standard employing HEVC intra-frame coding. Different bitrate points are obtained by adjusting the quantization parameter (QP ∈ [44 , 51] ), covering the low-bitrate range of bpp ∈ [0 .06 , 0.20] . As a pure source coding method, BPG’s PSNR is measured under noiseless channel conditions as a source-coding reference; under Rayleigh fading, BPG is cascaded with LDPC channel coding as a practical separation baseline.  
+
+> •
+
+DeepJSCC (Deep Joint Source-Channel Coding) [14]: A CNN-based end-to-end analog transmission scheme, in which the encoder directly maps images to complex-valued channel symbols, and the decoder reconstructs images after transmission through the channel. Channel usage rates of cpp ∈ { 1/24 , 1/12 , 1/6, 1/4} are selected, with equivalent bitrates under QPSK modulation com-puted as bpp eq = cpp × 2 ∈ { 0.083 , 0.167 , 0.333 , 0.500 }. 
+
+> •
+
+WITT (Wireless Image Transmission Trans-former) [15]: A Transformer-based JSCC scheme that leverages self-attention mechanisms to enhance the expressive power of channel symbols. Channel bandwidth ratios of CBR ∈ {0.0625 , 0.0833 },corresponding to C ∈ {96 , 128 }, are selected, with equivalent bitrates under QPSK modulation computed as bpp eq = CBR × 2 ∈ { 0.125 , 0.167 }. 
+
+> •
+
+SwinJSCC [16]: A Swin Transformer-based JSCC scheme that employs hierarchical self-attention with shifted windows to efficiently capture long-range spatial dependencies in channel symbol mapping.  
+
+> •
+
+MambaJSCC [29]: A state-space model (Mamba)-based JSCC scheme that leverages linear-time sequence model-ing for efficient channel symbol encoding and decoding.  
+
+> •
+
+DF-JSCC [30]: A diffusion-aided JSCC scheme that leverages generative diffusion priors to enhance percep-tual reconstruction quality, providing enhanced robustness under varying channel conditions. To enable comparison of transmission schemes with differ-ent coding mechanisms on a unified coordinate system, for analog transmission schemes, this paper uniformly converts their channel usage rates to equivalent bpp based on QPSK modulation (2 bits per channel symbol). This conversion approach is a widely adopted bandwidth normalization method in the semantic communication field. The bpp of the proposed method and BPG is directly computed from the actual number of discrete bits generated, and the proposed bpp includes the 576-bit mask-map overhead. All methods are evaluated under 
+
+384 × 384 resolution and AWGN channel (SNR = 13 dB baseline) conditions unless otherwise specified. For a fair inter-pretation, BPG is treated as a source-coding reference, JSCC schemes are treated as channel-aware learned transmission baselines, and the proposed method is evaluated as an edge-assisted semantic transmission scheme whose receiver uses a generative prior. The comparisons are therefore not intended to claim dominance over every possible implementation of each baseline; rather, they quantify the gain of selective token transmission under a consistent resolution, SNR, channel model, and bitrate accounting protocol. 
+
+B. Results and Analysis 
+
+1) Rate-Distortion Performance. Fig. 2 presents the rate-distortion curves of all methods in the low bitrate region (bpp 
+
+∈ [0 .02 , 0.20] ), with bpp on the horizontal axis and PSNR on the vertical axis. All data are measured under SNR = 13 dB, AWGN channel, and QPSK modulation conditions, except that BPG is shown as a noiseless source-coding reference.  
+
+> Fig. 2. Rate-distortion performance comparison across methods (SNR = 13 dB, AWGN, QPSK).
+
+The following conclusions can be drawn from the RD curves: 
+
+a) PSNR advantage at low bitrate. At bpp ≈ 0.082 ,the proposed method (0% mask) forms a near-equal-bitrate comparison point with DeepJSCC (cpp = 1/24, bpp = 0.083) and SwinJSCC (CBR = 1/24, bpp = 0.083). The proposed method achieves the highest PSNR among the JSCC-based methods at this bitrate in Fig. 2, indicating that the transmitted token anchors and receiver-side generative prior are effective in this low-bitrate setting. BPG is included as a noiseless source-coding reference rather than as a channel-impaired learned transmission method. 
+
+b) Operation below the tested JSCC bitrate range. 
+
+DeepJSCC’s minimum channel usage rate in the evaluated configuration (cpp = 1/24) corresponds to bpp = 0.083. The proposed method, by increasing the mask ratio, can reduce the bitrate to 0.027 bpp (70% mask)—approximately one-third of this tested DeepJSCC point—while still producing recogniz-able reconstructions. This regime is relevant to narrowband visual IoT links where transmitting a complete learned feature representation may be costly. 
+
+c) Bandwidth efficiency. Across the evaluated bpp range, the proposed method obtains a higher PSNR/bpp ratio than the compared baselines in Table I. This reflects the benefit of spending the wireless payload on selected semantic an-chors while reconstructing more predictable content at the edge/cloud receiver. 
+
+2) Channel Robustness. 
+
+To evaluate the robustness of the proposed method under different channel conditions, this section compares the recon-struction PSNR of each method over the SNR range of [1 , 15] 
+
+dB at a fixed bitrate (bpp ≈ 0.082, 0% mask for the proposed method). Two representative channel models are considered: IEEE INTERNET OF THINGS JOURNAL 8
+
+(1) AWGN channel with QPSK modulation, and (2) Rayleigh fading channel with MMSE equalization. 
+
+AWGN Channel. 
+
+Fig. 3 shows the PSNR versus SNR curves under the AWGN channel. BPG, as a noiseless source coding method, has a PSNR that does not vary with SNR and is shown as a dashed reference line. The proposed method achieves higher PSNR than DeepJSCC and SwinJSCC across the tested SNR range. At moderate-to-high SNR, its reconstruction PSNR can exceed the BPG reference at a similar displayed bitrate, which is attributable to the use of a receiver-side generative prior rather than to lossless preservation of all source details.   
+
+> Fig. 3. PSNR versus SNR curves under AWGN channel at equal bitrate (bpp
+> ≈0.082, QPSK).
+
+Rayleigh Fading Channel. 
+
+Fig. 4 shows the PSNR versus SNR curves under Rayleigh fading with MMSE equalization. The proposed method (10% mask, bpp = 0.074) operates at a lower bitrate than the compared 0.167-bpp configurations, yet achieves competitive reconstruction quality. At low-to-moderate SNR, the proposed method matches or exceeds several JSCC schemes despite consuming 44.6% of their link bandwidth. DF-JSCC, benefit-ing from its diffusion-based generative prior, achieves slightly higher PSNR at moderate-to-high SNR, but at 2.25 × the bitrate of the proposed method. The consistent SNR-PSNR trend across both AWGN and Rayleigh channels indicates that the discrete token transmission and generative recovery framework can be applied to multiple channel models without architectural modification. From Figures 3 and 4, the following conclusions can be drawn: 
+
+a) PSNR behavior across both channels. The proposed method demonstrates competitive reconstruction quality under both AWGN and Rayleigh fading channels. Under AWGN, the proposed method obtains higher PSNR than DeepJSCC and SwinJSCC across the tested SNR range. Under Rayleigh fading, the proposed method, operating at a lower bitrate than the compared JSCC configurations, achieves comparable or better PSNR than several JSCC schemes in the low-to-moderate SNR regime. 
+
+b) Performance preservation at low SNR. Under severe channel conditions, the proposed method maintains recogniz-   
+
+> Fig. 4. PSNR versus SNR curves under Rayleigh fading channel (QPSK, MMSE equalization). Proposed method at bpp ≈0.074; comparison methods at bpp = 0.167.
+
+able reconstructions under both channels. The performance gap relative to several comparison methods is preserved at lower SNR values, indicating that token-level selective trans-mission can improve robustness when the receiver has enough reliable token anchors. 
+
+c) Cross-channel robustness. The proposed method’s SNR-PSNR trajectory follows a similar trend under both AWGN and Rayleigh channels, with a consistent offset reflecting the addi-tional fading penalty. This demonstrates that the discrete token transmission and generative recovery framework generalizes across channel models without architectural modification. 
+
+3) Transmission Efficiency. 
+
+Beyond reconstruction quality, visual IoT deployment also depends on link occupancy and RF-side transmission cost. Table I reports communication-side delay and energy proxy at SNR = 13 dB and QPSK. These values measure only the wireless payload reduction; computation latency and energy are excluded from the table and discussed after it. At bpp ≈ 0.074 (10% mask), the proposed method uses 44.6% of the 0.167-bpp DeepJSCC/WITT payload while achieving higher PSNR in this experiment. The 70% mask configuration further reduces the RF-energy proxy to 16.4% of the same reference. These values reflect communication-side savings only; Detic analysis and 32-step MaskGIT recon-struction introduce separate inference cost, making the method most suitable for gateway- or edge-server-assisted visual IoT links. 
+
+4) Ablation Study on Mask Generation. 
+
+We evaluate the semantic-aware mask at SNR = 13 dB without changing bitrate. With all tokens retained, VQ re-construction reaches 32.47 dB PSNR, 0.951 SSIM, and 0.075 LPIPS. At 30% mask (0.059 bpp), the proposed mask achieves 28.30 dB / 0.900 / 0.118, outperforming random masking by 0.85 dB / 0.015 / 0.009. At 50% mask (0.043 bpp), the gain increases to 1.30 dB / 0.017 / 0.014, showing that semantic selection becomes more important as the link budget decreases. At 30% mask, the full mask generator achieves 28.30 dB PSNR, 0.900 SSIM, and 0.118 LPIPS, improving over IEEE INTERNET OF THINGS JOURNAL 9                                                       
+
+> TABLE I COMMUNICATION -SIDE EFFICIENCY COMPARISON (SNR = 13 DB, QPSK). C OMPUTATIONAL LATENCY AND GPU ENERGY ARE EXCLUDED .Method bpp Btotal (bit) Tcomm (ms) Ecomm (%) PSNR (dB) PSNR/bpp Ours (70% mask) 0.027 4,036 40.4 16.4 22.5 833.3 Ours (50% mask) 0.043 6,336 63.4 25.8 25.3 588.4 Ours (30% mask) 0.059 8,656 86.6 35.2 28.3 479.7 Ours (10% mask) 0.074 10,956 109.6 44.6 29.9 404.1 DeepJSCC (cpp=1/12) 0.167 24,576 245.8 100.0 28.8 172.5 WITT (C=128) 0.167 24,576 245.8 100.0 29.4 176.0 BPG (noiseless) 0.167 24,576 ——31.3 187.4
+
+Editability Only by 0.73 dB / 0.011 / 0.008 and over Semantic Only by 0.92 dB / 0.010 / 0.006. This confirms that recovery difficulty and semantic importance provide complementary cues. 
+
+5) Downstream Object Detection. 
+
+Pixel-level metrics do not directly measure whether task-relevant objects survive the communication pipeline, so we evaluate object detection as a downstream semantic proxy. 
+
+Setup. Mask R-CNN with ResNet-50-FPN, pretrained on MS-COCO, is used as an independent evaluator distinct from Detic. For each Kodak image, Mask R-CNN detections on the original image are used as pseudo-GT; detections on reconstructed images are then evaluated at mAP@0.5 with confidence threshold 0.3 under 30% and 50% masks at SNR = 13 dB. 
+
+Results. Table II reports mAP@0.5 for both masking strate-gies.               
+
+> TABLE II DOWNSTREAM OBJECT DETECTION M AP@0.5 ON RECONSTRUCTED IMAGES . P SEUDO -GT DENOTES REFERENCE DETECTIONS OBTAINED FROM THE ORIGINAL (UNCOMPRESSED )IMAGE .
+> Ratio Type mAP@0.5
+> 30% Random 0.5856 30% Semantic 0.6742
+> 50% Random 0.3962 50% Semantic 0.4142
+
+At identical bitrate, the semantic-aware mask improves mAP@0.5 over random masking at both mask ratios, with a larger gain at 30% masking. This supports downstream machine perception as a useful evaluation dimension beyond pixel fidelity. 
+
+6) Cross-Domain Evaluation on VisDrone IoT Scenes. 
+
+We further evaluate cross-domain reconstruction on the VisDrone2019-DET test-dev dataset, which contains 1,000 drone-captured aerial images. This experiment focuses on reconstruction robustness rather than annotated detection mAP. Fig. 5 shows AWGN results for 0%, 10%, 30%, and 50% masks over {1, 4, 7, 10 , 13 , 15 } dB. PSNR increases with SNR for all mask ratios, and lower mask ratios retain higher reconstruction quality. Fig. 6 reports the corresponding Rayleigh-fading results with MMSE equalization. Although fading causes a PSNR penalty relative to AWGN, the SNR trend and ordering among mask ratios remain consistent, indicating stable reconstruction behavior without VisDrone-specific fine-tuning. 
+
+7) Practical Deployment and Scope of Claims. 
+
+> Fig. 5. PSNR versus SNR curves on the VisDrone2019 dataset under AWGN channel at different mask ratios.
+> Fig. 6. PSNR versus SNR curves on the VisDrone2019 dataset under Rayleigh fading channel (MMSE equalization) at different mask ratios.
+
+The evaluation isolates the communication benefit of se-mantic token selection under an edge-assisted visual IoT architecture. Thus, delay and RF-energy values quantify wire-less payload reduction rather than total device energy. VQ encoding, semantic analysis, and MaskGIT reconstruction may be placed on the camera, gateway, or cloud depending on hardware capability; the most suitable setting is gateway- or edge-server-assisted visual IoT. Since Kodak has no object annotations, pseudo-GT detections are used only as a semantic consistency reference, and the VisDrone experiment does not claim annotated detection mAP. IEEE INTERNET OF THINGS JOURNAL 10 
+
+V. C ONCLUSION 
+
+This paper investigates, from the perspective of resource-constrained visual IoT, how to select and organize visual se-mantic information for transmission over constrained wireless links. Unlike existing work that primarily focuses on encoder architecture design or channel modeling, this paper addresses the explicit modeling and scheduling of semantic information at the token-level spatial dimension, and proposes a semantic-aware mask generation method based on MaskGIT along with an edge-assisted generative image transmission framework. The proposed method performs joint modeling through two complementary dimensions—base editability estimation and semantic importance protection—and generates a semantic-aware mask via score fusion and spatial dispersal sampling, enabling the IoT transmitter or gateway to protect critical semantic regions and hard-to-recover structures while leaving relatively redundant and recoverable content to be completed by the edge/cloud-side MaskGIT model. The IoT transmitter sends only the quantization indices of kept tokens and a binary mask map, and the edge/cloud receiver employs parallel iterative sampling with Halton sequence scheduling to recover missing tokens. Experimental results demonstrate that: (1) under the eval-uated equal-bitrate settings, the proposed method achieves higher reconstruction quality than the tested DeepJSCC and WITT configurations, with improved PSNR/bpp efficiency; (2) by increasing the mask ratio, the method can flexibly trade reconstruction quality for reductions in communication-link delay and RF transmission energy, although neural inference cost remains a separate deployment consideration; (3) the semantic-aware mask strategy outperforms random masking in the tested reconstruction and pseudo-GT downstream detection settings, validating the effectiveness of token-level seman-tic selection within the evaluated protocol. Taken together, the proposed method achieves a favorable balance between communication efficiency and semantic fidelity through the collaborative mechanism of “intelligent selection at the IoT side, generative restoration at the edge/cloud side.” Future work will further explore temporally consistent mask modeling for visual IoT video streams, end-to-end optimiza-tion incorporating downstream visual task accuracy (e.g., ob-ject detection mAP, semantic segmentation mIoU), lightweight IoT-side semantic extraction, annotated task evaluation on larger IoT datasets, and more efficient channel coding schemes to further reduce the actual IoT link overhead. REFERENCES [1] C. E. Shannon, “A mathematical theory of communication,” Bell Syst. Tech. J. , vol. 27, no. 3, pp. 379–423, 1948. [2] N. V. Huynh, J. Wang, H. Du, D. T. Hoang, D. Niyato, D. N. Nguyen, D. I. Kim, and K. B. Letaief, “Generative AI for physical layer communications: A survey,” IEEE Trans. Cogn. Commun. Netw. , vol. 10, no. 3, pp. 706–728, 2024. [3] A. van den Oord, O. Vinyals, and K. Kavukcuoglu, “Neural discrete rep-resentation learning,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) ,2017, pp. 6306–6315. [4] P. Esser, R. Rombach, and B. Ommer, “Taming transformers for high-resolution image synthesis,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , 2021, pp. 12 873–12 883. [5] H. Chang, H. Zhang, L. Jiang, C. Liu, and W. T. Freeman, “MaskGIT: Masked generative image transformer,” in Proc. IEEE/CVF Conf. Com-put. Vis. Pattern Recognit. (CVPR) , 2022, pp. 11 315–11 325. [6] T. M. Getu, G. Kaddoum, and M. Bennis, “Semantic communication: A survey on research landscape, challenges, and future directions,” Proc. IEEE , vol. 112, no. 11, pp. 1–30, 2024. [7] L. X. Nguyen, A. D. Raha, P. S. Aung, D. Niyato, Z. Han, and C. S. Hong, “A contemporary survey on semantic communications: Theory of mind, generative AI, and deep joint source-channel coding,” IEEE Commun. Surveys Tuts. , 2025. [8] Y. Wang, H. Han, Y. Feng, J. Zheng, and B. Zhang, “Semantic communication empowered 6G networks: Techniques, applications, and challenges,” IEEE Access , vol. 13, 2025. [9] R. Zhong, X. Mu, M. Jaber, and Y. Liu, “Enabling distributed generative AI in 6G: Mobile edge generation,” IEEE Internet Things J. , vol. 12, no. 6, pp. 6607–6620, 2025. [10] C. Zhao, H. Du, D. Niyato, J. Kang, Z. Xiong, D. I. Kim, X. Shen, and K. B. Letaief, “Generative AI for secure physical layer communications: A survey,” IEEE Trans. Cogn. Commun. Netw. , vol. 11, no. 1, pp. 3–26, 2025. [11] C. Liang, H. Du, Y. Sun, D. Niyato, J. Kang, D. Zhao, and M. A. Imran, “Generative AI-driven semantic communication networks: Architecture, technologies and applications,” IEEE Trans. Cogn. Commun. Netw. ,vol. 10, no. 5, pp. 1911–1931, 2024. [12] J. Chen, S. F. Yilmaz, D. You, P. L. Dragotti, and D. G¨ und¨ uz, “SING: Semantic image communications using null-space and INN-guided dif-fusion models,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2025. [13] X. Yuan, J. Ren, Y. Wang, Z. Wang, X. Feng, H. Kim, and C. Wu, “Generative semantic communication for joint image transmission and segmentation,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2025. [14] E. Bourtsoulatze, D. B. Kurka, and D. G¨ und¨ uz, “Deep joint source-channel coding for wireless image transmission,” IEEE Trans. Cogn. Commun. Netw. , vol. 5, no. 3, pp. 567–579, 2019. [15] M. Yang, C. Bian, and H.-S. Kim, “WITT: A wireless image transmis-sion transformer for semantic communications,” in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP) , 2023, pp. 1–5. [16] K. Yang, S. Wang, J. Dai, X. Qin, K. Niu, and P. Zhang, “SwinJSCC: Taming Swin transformer for deep joint source-channel coding,” IEEE Trans. Cogn. Commun. Netw. , vol. 11, no. 1, pp. 90–104, 2024. [17] C. Wang, C. Li, Y. Liao, C. Ding, and Z. Ye, “MNTSCC: A VMamba-based nonlinear joint source-channel coding for semantic communica-tions,” Comput. Mater. Continua , vol. 85, no. 2, 2025. [18] C. Bian, Y. Shao, H. Wu, E. Ozfatura, and D. G¨ und¨ uz, “Process-and-forward: Deep joint source-channel coding over cooperative relay networks,” IEEE J. Sel. Areas Commun. , 2024. [19] C.-H. Huang and J.-L. Wu, “Unveiling the future of human and machine coding: A survey of end-to-end learned image compression,” Entropy ,vol. 26, no. 5, p. 357, 2024. [20] D. G¨ und¨ uz, M. A. Wigger, T. M. Getu et al. , “Joint source-channel coding: Fundamentals and recent progress in practical designs,” arXiv preprint arXiv:2409.17557 , 2024. [21] L. Qu, S. Liu, H. Zhang, X. Chen, X. Wang, and Y. Jiang, “TokenFlow: Unified image tokenizer for multimodal understanding and generation,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR) , 2025. [22] M. Chen, S. Liu, J. Wang et al. , “UniTok: A unified tokenizer for visual generation and understanding,” arXiv preprint arXiv:2502.20321 , 2025. [23] M. Weber, L. Yu, Q. Yu, X. Deng, X. Shen, D. Cremers, and L.-C. Chen, “MaskBit: Embedding-free image generation via bit tokens,” in 
+
+Proc. Int. Conf. Learn. Represent. (ICLR) , 2025. [24] J. Li, X. Wang, Y. Zhang et al. , “Discrete visual tokenization: A comprehensive survey of vector quantization for image generation,” 
+
+arXiv preprint arXiv:2504.14807 , 2025. [25] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin, “Attention is all you need,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) , 2017, pp. 5998–6008. [26] J. H. Halton, “On the efficiency of certain quasi-random sequences of points in evaluating multi-dimensional integrals,” Numer. Math. , vol. 2, no. 1, pp. 84–90, 1960. [27] V. Besnier, M. Chen, D. Hurych, E. Valle, and M. Cord, “Halton scheduler for masked generative image transformer,” in Proc. Int. Conf. Learn. Represent. (ICLR) , 2025. [28] P. Hern´ andez-C´ amara, J. Vila-Tom´ as, V. Laparra, and J. Malo, “Dis-secting the effectiveness of deep features as metric of perceptual image quality,” Neural Netw. , vol. 185, p. 107189, 2025. [29] T. Wu, Z. Chen, M. Tao, Y. Sun, X. Xu, W. Zhang, and P. Zhang, “MambaJSCC: Adaptive deep joint source-channel coding with gen-IEEE INTERNET OF THINGS JOURNAL 11 
+
+eralized state space model,” in Proc. IEEE Global Commun. Conf. (GLOBECOM) , 2024. [30] S. F. Yilmaz, C. Karakus, and D. G¨ und¨ uz, “Diffusion-aided joint source channel coding for high realism wireless image transmission,” in Proc. IEEE Int. Conf. Commun. (ICC) , 2024.
