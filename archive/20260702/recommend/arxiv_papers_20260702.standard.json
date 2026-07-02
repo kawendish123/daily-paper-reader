@@ -1,0 +1,224 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-02T21:35:06.150247+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2607.00124v1",
+      "source": "arxiv",
+      "title": "Segmenting, Fast and Slow: Real-Time Open-Vocabulary Video Instance Segmentation with Dual-Path Processing",
+      "abstract": "Object-centric models inspired by DETR have become the dominant paradigm for open-vocabulary video instance segmentation (OV-VIS). While recent efforts have reduced the computational cost of pixel decoding, textual modality fusion, and object decoding to make these architectures more suitable for mobile devices, real-time on-device inference at high frame rates remains an open challenge. In this paper, we introduce SegFS, a dual-stream fast-slow framework that significantly improves efficiency without sacrificing accuracy. On sparse keyframes, an open-vocabulary object-based model predicts instance-level representations. These representations are then projected back into the backbone feature space to condition a lightweight fast network, which efficiently relocalizes and segments the instances in subsequent frames. By shifting instance propagation from object decoding to feature-space conditioning, our approach decouples multimodal semantic understanding from dense mask prediction and enables efficient temporal propagation. The proposed fast branch achieves up to 14x lower latency than the mobile-oriented MOBIUS model, while maintaining competitive segmentation performance on standard OV-VIS benchmarks.",
+      "authors": [
+        "Luca Barsellotti",
+        "Martin Sundermeyer",
+        "Mattia Segu",
+        "Nikita Araslanov",
+        "Muhammad Ferjad Naeem",
+        "Marcella Cornia",
+        "Yongqin Xian",
+        "Maxim Berman"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-30T19:59:19+00:00",
+      "link": "https://arxiv.org/pdf/2607.00124v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "real-time open-vocabulary video instance segmentation on mobile devices with dual-path processing",
+      "llm_evidence_cn": "面向移动设备的实时开放词汇视频实例分割，双路径处理",
+      "llm_evidence": "面向移动设备的实时开放词汇视频实例分割，双路径处理",
+      "canonical_evidence": "面向移动设备的实时开放词汇视频实例分割，双路径处理",
+      "llm_tldr_en": "SegFS proposes a dual-stream fast-slow framework for real-time open-vocabulary video instance segmentation on mobile devices, achieving high frame rates without accuracy loss.",
+      "llm_tldr_cn": "该论文针对移动设备上实时开放词汇视频实例分割的挑战，提出了双路径快慢框架SegFS。在关键帧上使用开放词汇目标模型预测实例表征，然后投影回特征空间以指导轻量级分割器，大幅提高了效率。实验表明在保持高精度的同时实现了实时帧率，适用于边缘部署。",
+      "llm_tldr": "该论文针对移动设备上实时开放词汇视频实例分割的挑战，提出了双路径快慢框架SegFS。在关键帧上使用开放词汇目标模型预测实例表征，然后投影回特征空间以指导轻量级分割器，大幅提高了效率。实验表明在保持高精度的同时实现了实时帧率，适用于边缘部署。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.00446v1",
+      "source": "arxiv",
+      "title": "VideoSearch-R1: Iterative Video Retrieval and Reasoning via Soft Query Refinement",
+      "abstract": "As video corpora continue to expand in both scale and task complexity, there is increasing demand for approaches that retrieve relevant videos from large-scale corpora (inter-video reasoning) and subsequently perform fine-grained, query-conditioned tasks (intra-video reasoning) within the retrieved content, such as temporal grounding. However, existing approaches typically treat retrieval as a preprocessing step, and consequently, when the initial retrieval fails, there is no mechanism to refine the search, leading to the failure of subsequent fine-grained intra-video reasoning. Moreover, while recent agentic frameworks have advanced video understanding, they typically assume that the query-relevant video is already given, focusing exclusively on intra-video reasoning tasks. To address these limitations, we propose VideoSearch-R1, an agentic framework for iterative video retrieval and reasoning through multi-turn interaction with a video search engine. Specifically, we introduce Soft Query Refinement (SQR) to refine search query tokens in a continuous latent space rather than rewriting queries in the discrete text space, enabling more efficient and fine-grained adjustments. SQR and its reasoning process are trained using Group Relative Policy Optimization (GRPO), guided by task-level reward signals derived from retrieval and downstream tasks. Building upon this, VideoSearch-R1 achieves state-of-the-art performance across three datasets on Video Corpus Moment Retrieval (VCMR), iteratively retrieving videos from large-scale corpora, refining search queries, and performing precise query-conditioned temporal grounding within the retrieved content. Our analyses show that SQR effectively refines the original query, requiring significantly fewer generated tokens than explicit text-level query refinement. Code and model checkpoints are publicly available at mlvlab.github.io/VideoSearch-R1.",
+      "authors": [
+        "Seohyun Lee",
+        "Seoung Choi",
+        "Dohwan Ko",
+        "Jongha Kim",
+        "Hyunwoo J. Kim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-01T04:59:24+00:00",
+      "link": "https://arxiv.org/pdf/2607.00446v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "iterative video retrieval and reasoning",
+      "llm_evidence_cn": "迭代视频检索与推理",
+      "llm_evidence": "迭代视频检索与推理",
+      "canonical_evidence": "迭代视频检索与推理",
+      "llm_tldr_en": "Proposes VideoSearch-R1 for iterative video retrieval and reasoning with soft query refinement, addressing retrieval failures in large-scale corpora.",
+      "llm_tldr_cn": "该论文针对视频检索任务中初始检索失败后无法细化的问题，提出VideoSearch-R1框架，通过软查询细化机制实现迭代式视频检索和推理。方法将检索与细粒度时序定位结合，在多个基准上显著提升性能，展示了迭代策略在视频理解中的有效性。",
+      "llm_tldr": "该论文针对视频检索任务中初始检索失败后无法细化的问题，提出VideoSearch-R1框架，通过软查询细化机制实现迭代式视频检索和推理。方法将检索与细粒度时序定位结合，在多个基准上显著提升性能，展示了迭代策略在视频理解中的有效性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.00983v1",
+      "source": "arxiv",
+      "title": "QCA: Query- and Content-Aware Keyframe Selection for Long Video Understanding",
+      "abstract": "Video understanding is often plagued by severe temporal redundancy, where processing dense frame sequences is both semantically inefficient and computationally expensive. This challenge is further amplified when only a small subset of frames is truly relevant to the given query. In this paper, we propose a Query- and Content-Aware (QCA) keyframe selection framework that can select a compact yet information-rich set of frames from long videos. QCA first partitions the video into temporal segments and estimates the information contribution of each segment by jointly modeling query relevance and content deviation, and dynamically allocates keyframe budget to each segment. Within each segment, QCA anchors on the most query-relevant frame and iteratively incorporates additional frames to maximize diversity while maintaining high semantic relevance to the query. Crucially, our method requires no additional training and can be seamlessly integrated into existing Video-LLMs. Extensive experiments across multiple long video understanding benchmarks demonstrate that our proposed approach achieves state-of-the-art performance and has strong generalization ability. For instance, QCA achieves 67.8\\% on LongVideoBench using 128 frames, while GPT-4o achieves 66.7\\% using 256 frames. Our codes are available in \\href{https://github.com/hktk07/QCA}{GitHub}.",
+      "authors": [
+        "Jun Peng",
+        "Baiyang Song",
+        "Jie Li",
+        "Hui Li",
+        "Yiyi Zhou",
+        "Rongrong Ji",
+        "Yonghong Tian"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-01T14:19:24+00:00",
+      "link": "https://arxiv.org/pdf/2607.00983v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "keyframe selection for video understanding",
+      "llm_evidence_cn": "视频理解的关键帧选择",
+      "llm_evidence": "视频理解的关键帧选择",
+      "canonical_evidence": "视频理解的关键帧选择",
+      "llm_tldr_en": "Proposes QCA, a query- and content-aware keyframe selection framework for long video understanding, reducing temporal redundancy.",
+      "llm_tldr_cn": "针对长视频理解中的时间冗余问题，提出查询与内容感知的关键帧选择框架QCA，通过分段估计信息贡献并动态分配关键帧预算，在保持信息丰富度的同时显著降低计算成本。",
+      "llm_tldr": "针对长视频理解中的时间冗余问题，提出查询与内容感知的关键帧选择框架QCA，通过分段估计信息贡献并动态分配关键帧预算，在保持信息丰富度的同时显著降低计算成本。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-01-25-701581-v3",
+      "source": "biorxiv",
+      "title": "Sample size dependence of Occam's razor in human decision-making",
+      "abstract": "To make sense of a noisy world, living beings constantly face decisions between competing interpretations for ambiguous sensory data. This process parallels statistical model selection, where most frameworks, like the Akaike Information Criterion (AIC) and the Bayesian Information Criterion (BIC), are based on a trade-off between a model's goodness-of-fit and its complexity and prescribe a bias towards simpler models (explanations). We previously studied how this same bias towards simplicity is reflected in human behavior for a simple perceptual task. However, a core tenet of normative frameworks is that the trade-off should depend on the sample size (N): as more data becomes available, the goodness-of-fit grows faster than the \"cost\" of complex models, weakening the overall bias towards simplicity. It is unknown whether humans also conform to an analogous scaling principle, and if so, whether this behavior arises from an internal computation similar to that leading to the normative solution or from a simpler heuristic. Here, we investigate these questions using a preregistered visual task where subjects inferred the number of latent Gaussian sources generating clusters of data-points, and where the number of points (N) presented on each trial is varied systematically. We consider three kinds of descriptions for participant behavior: one arising from a linear scaling of the weight of sensory evidence in N (as in BIC and AIC), one with no scaling, and one with sublinear scaling inspired by known biases in numerosity perception. Our results demonstrate that the normative, linear scaling description provides the worst account of human behavior. Instead, we find strong evidence for a sublinear scaling of effective sample size. By inferring the shape of this scaling with Gaussian Processes, we reveal two distinct scaling regimes for different ranges of N, consistent with numerosity perception biases. Our findings suggest that, when selecting between competing explanations for sensory data, humans employ an efficient heuristic that repurposes lower-level perceptual mechanisms to dynamically weight evidence against model complexity.",
+      "authors": [
+        "Rinaldi, F. G.",
+        "Piasini, E."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-07-02T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.01.25.701581v3.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "study of model selection principles in human decision-making",
+      "llm_evidence_cn": "人类决策中模型选择原理的研究",
+      "llm_evidence": "人类决策中模型选择原理的研究",
+      "canonical_evidence": "人类决策中模型选择原理的研究",
+      "llm_tldr_en": "Investigates sample size dependence of Occam's razor in human perceptual decision-making, paralleling statistical model selection.",
+      "llm_tldr_cn": "人类在面对噪声数据时需要在不同解释之间进行模型选择，类似于统计模型选择中的奥卡姆剃刀原则。本文通过感知实验研究样本大小对简单性偏好的影响，发现数据量越多，对复杂模型的容忍度越高，与AIC/BIC等准则一致。该工作揭示了生物决策中的模型选择机制，为机器学习中的模型选择提供了认知启发。",
+      "llm_tldr": "人类在面对噪声数据时需要在不同解释之间进行模型选择，类似于统计模型选择中的奥卡姆剃刀原则。本文通过感知实验研究样本大小对简单性偏好的影响，发现数据量越多，对复杂模型的容忍度越高，与AIC/BIC等准则一致。该工作揭示了生物决策中的模型选择机制，为机器学习中的模型选择提供了认知启发。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-04-30-721950-v2",
+      "source": "biorxiv",
+      "title": "Automated behavioral segmentation and markerless pose tracking of mice during spaceflight",
+      "abstract": "The NASA Rodent Habitat aboard the International Space Station enabled long-duration studies of behavioral responses to spaceflight, but video-based behavioral analysis has relied on laborious manual annotation. No study has tested whether deep learning tools can automate this analysis under the demanding imaging conditions of orbital vivaria. We applied pose estimation (SLEAP) and behavioral segmentation (DeepEthogram) to archival footage from the Rodent Research-1 mission. Nine labelers annotated 3,249 pose labels across 2,063 frames, and three behaviorists labeled 411,194 frames across 66 videos. Pose tracking accuracy approximated human inter-annotator variability despite progressive lens soiling, grid occlusions, and spherical aberration. Behavioral classification across eight categories achieved accuracy of 0.86-0.90 and suggests progressive behavioral adaptations to microgravity. Kinematic reconstruction of circling estimated centripetal accelerations periodically approaching 1g. This is the first application of deep learning-based pose estimation and behavioral segmentation to rodents in spaceflight, establishing benchmarks for future monitoring systems.",
+      "authors": [
+        "Kiffer, F. C.",
+        "Scott, R. T.",
+        "Martens, M. T.",
+        "Mayo, A.",
+        "Li, Y.",
+        "Mendoza, M.",
+        "Gautam, S.",
+        "Huang, J.",
+        "Bathwal, M.",
+        "Jaikumar, S.",
+        "Mahajan, A.",
+        "Sanders, L. M.",
+        "Eisch, A. J.",
+        "Pereira, T. D."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-07-01T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.04.30.721950v2.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "automated video behavioral analysis",
+      "llm_evidence_cn": "自动视频行为分析",
+      "llm_evidence": "自动视频行为分析",
+      "canonical_evidence": "自动视频行为分析",
+      "llm_tldr_en": "Applies SLEAP and DeepEthogram to spaceflight mouse video, achieving human-level accuracy in automated behavioral analysis.",
+      "llm_tldr_cn": "将深度学习姿态估计和行为分割工具应用于国际空间站小鼠视频，自动化分析太空飞行中的行为，在复杂成像条件下达到近似人类标注者的精度。",
+      "llm_tldr": "将深度学习姿态估计和行为分割工具应用于国际空间站小鼠视频，自动化分析太空飞行中的行为，在复杂成像条件下达到近似人类标注者的精度。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
