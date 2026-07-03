@@ -1,0 +1,275 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-03T20:15:25.699393+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2607.00672v1",
+      "source": "arxiv",
+      "title": "DART: Difficulty-Adaptive Routing for Zero-Shot Video Temporal Grounding",
+      "abstract": "Zero-shot video temporal grounding (VTG) localizes events in untrimmed videos from natural language queries without task-specific training. Existing methods rely on frame-query feature matching, which suffices for simple events but struggles with complex multi-stage queries that require understanding temporal ordering and causal structure -- a disparity we call the reasoning gap. We propose DART (Difficulty-Adaptive Routing for Temporal Grounding), which bridges this gap by coupling difficulty-aware routing with structured reasoning in large vision-language models. A query-conditioned Determinantal Point Process (DPP) serves a dual role: selecting diverse, query-relevant keyframes as temporal evidence, and providing spectral entropy as a difficulty indicator. Simple queries are routed to a Fast path for direct prediction, while complex queries follow a Slow path with Temporal Markup Prompting, which decomposes localization into global event analysis, per-frame temporal role annotation, and boundary extraction. On Charades-STA and ActivityNet Captions, DART achieves state-of-the-art zero-shot performance across both identically distributed and multiple out-of-distribution settings, improving mIoU by up to 3.5 points over the strongest baseline while using over 7 times fewer frames. The project homepage is available at https://dart-vtg.github.io/.",
+      "authors": [
+        "Zhengbo Zhang",
+        "Mark He Huang",
+        "Zhigang Tu",
+        "Ming-Hsuan Yang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-01T09:18:59+00:00",
+      "link": "https://arxiv.org/pdf/2607.00672v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "zero-shot video temporal grounding with difficulty-adaptive routing",
+      "llm_evidence_cn": "零样本视频时间定位与难度自适应路由",
+      "llm_evidence": "零样本视频时间定位与难度自适应路由",
+      "canonical_evidence": "零样本视频时间定位与难度自适应路由",
+      "llm_tldr_en": "Proposes DART for zero-shot video temporal grounding using a query-conditioned DPP for diverse keyframe selection and difficulty estimation coupled with structured reasoning in vision-language models.",
+      "llm_tldr_cn": "针对零样本视频时间定位中复杂多步查询难以理解时序因果关系的问题，提出DART框架。该方法通过查询条件的行列式点过程选取多样且相关的关键帧，并利用谱熵作为难度指标，实现难度自适应路由到大型视觉语言模型的结构化推理。实验证明DART在多个数据集上显著提升了复杂查询的定位精度。",
+      "llm_tldr": "针对零样本视频时间定位中复杂多步查询难以理解时序因果关系的问题，提出DART框架。该方法通过查询条件的行列式点过程选取多样且相关的关键帧，并利用谱熵作为难度指标，实现难度自适应路由到大型视觉语言模型的结构化推理。实验证明DART在多个数据集上显著提升了复杂查询的定位精度。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.28421v1",
+      "source": "arxiv",
+      "title": "JuZhou 1.0 Technical Report: The First Edge-Native Text-to-Image Foundation Model Trained Entirely on China-Developed AI Accelerators",
+      "abstract": "Text-to-image (T2I) diffusion models typically require substantial computational resources and cloud infrastructure, posing significant challenges for edge deployment in terms of latency, cost, and user privacy. We present JuZhou 1.0, an ultra-lightweight T2I foundation model designed for fully offline, on-device execution. JuZhou 1.0 achieves its efficiency through four key designs: (1) a compact image-generation backbone consisting of a 0.385B-parameter denoising U-Net and a 1.90M-parameter distilled decoder, totaling approximately 0.387B parameters; (2) Rectified Flow training combined with DMD2 distillation, reducing inference to 4 sampling steps; (3) Chinese semantic alignment trained on 9M curated image-text pairs, enabling direct Chinese prompting without external translation at inference time; and (4) a training and distillation pipeline completed on domestically developed Sugon K100 AI accelerators without relying on NVIDIA GPUs for training or distillation. Despite its compact scale, the 28-step base model of JuZhou 1.0 achieves an overall GenEval score of 0.69, outperforming published baselines including SDXL (2.6B, 0.55), SD3-Medium (2B, 0.62), and IF-XL (4.3B, 0.61). We further validate the full poetry-to-image pipeline on Android and the core CLIP-U-Net-VAE generation branch on iOS. On a smartphone powered by the Snapdragon 8 Elite Gen 5 Mobile Platform, the 4-step U-Net denoising branch runs in approximately 1.6 seconds, while the full Android poetry-to-image pipeline takes 4.5 seconds with on-device prompt refinement on Xiaomi 17 Pro Max. These results position JuZhou 1.0 as a practical approach to mobile text-to-image generation and provide a concrete reference for Chinese-native generation, domestic-compute training, and fully offline on-device deployment after one-time installation.",
+      "authors": [
+        "Ce Chen",
+        "Congrui Wang",
+        "Yonglin Li",
+        "Zhenchen Wan",
+        "Mingyang Geng",
+        "Junhao Xiao",
+        "Zhengpeng Xing",
+        "Yaqing Hu",
+        "Yao Wu",
+        "Zhaoyang Qu",
+        "Long Lan",
+        "Xinwang Liu",
+        "Yingqi Peng",
+        "Shijia Li",
+        "Zufeng Zhang",
+        "Chen Ma",
+        "Jingjing Zhou",
+        "Xingyu Wang",
+        "Qilin Lu",
+        "Bin Jiang",
+        "Qilin Sun",
+        "Shanzhi Gu",
+        "Yaoguang Jin",
+        "Tongliang Liu",
+        "Kede Ma",
+        "Yifan Peng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-06-25T17:14:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.28421v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "edge-native ultra-lightweight T2I model for on-device execution",
+      "llm_evidence_cn": "端侧原生超轻量文本到图像模型，支持设备端执行",
+      "llm_evidence": "端侧原生超轻量文本到图像模型，支持设备端执行",
+      "canonical_evidence": "端侧原生超轻量文本到图像模型，支持设备端执行",
+      "llm_tldr_en": "JuZhou 1.0 is an edge-native text-to-image diffusion model with only 387M parameters, enabling fully offline on-device generation with 4-step inference.",
+      "llm_tldr_cn": "高计算需求阻碍了文本到图像模型在边缘设备的部署。JuZhou 1.0通过紧凑的骨干网络、整流流训练和DMD2蒸馏，实现仅0.387B参数和4步推理的端侧模型。实验证明其在国产AI加速器上高效运行，兼顾隐私和实时性，为边缘AI奠定了基础。",
+      "llm_tldr": "高计算需求阻碍了文本到图像模型在边缘设备的部署。JuZhou 1.0通过紧凑的骨干网络、整流流训练和DMD2蒸馏，实现仅0.387B参数和4步推理的端侧模型。实验证明其在国产AI加速器上高效运行，兼顾隐私和实时性，为边缘AI奠定了基础。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.01798v1",
+      "source": "arxiv",
+      "title": "Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference",
+      "abstract": "Vision Transformers have reshaped computer vision by using self-attention to capture global context across image regions. This makes them attractive for edge visual inspection and monitoring in applications such as renewable-energy infrastructure, industrial quality control, medical imaging, and autonomous-system sensing. However, deploying ViTs on small FPGAs remains challenging because the softmax stage in self-attention requires exponential evaluation and normalization, which are costly in hardware. Existing implementations often rely on CORDIC pipelines or BRAM-based look-up tables, increasing area and power consumption. This paper presents a BRAM-free approximate attention-weighting unit for FPGA-based ViT inference. The proposed design approximates the natural exponential in softmax using a 16-segment piecewise-linear function implemented entirely with distributed LUT fabric. Unlike base-2 approximations, the natural-exponential formulation preserves the pre-trained attention temperature and avoids model-specific recalibration. Implemented on a Xilinx Zynq-7020, the complete attention-row core uses 1444 LUTs, 77 DSPs, and no BRAM, while hardware-accurate emulation shows accuracy within a \\(0.20\\%\\) absolute top-1 difference from the exact-softmax reference on ViT-family models. These results demonstrate the potential of the proposed core for energy-efficient ViT inference on resource-constrained edge-AI platforms.",
+      "authors": [
+        "Muhammad Usman",
+        "Shujaat Khan",
+        "Dorit Merhof"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-07-02T07:15:08+00:00",
+      "link": "https://arxiv.org/pdf/2607.01798v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "efficient ViT inference on FPGA for edge video analytics",
+      "llm_evidence_cn": "边缘视频分析中FPGA上高效ViT推理",
+      "llm_evidence": "边缘视频分析中FPGA上高效ViT推理",
+      "canonical_evidence": "边缘视频分析中FPGA上高效ViT推理",
+      "llm_tldr_en": "Approximate attention weighting unit for FPGA-based ViT inference, enabling sustainable edge video monitoring.",
+      "llm_tldr_cn": "该论文针对视觉Transformer在边缘FPGA上部署时softmax硬件开销大的问题，提出无BRAM的近似注意力权重计算单元。通过避免指数运算和查找表，显著降低面积和功耗，适用于可再生能源、工业质检等边缘视频监控场景。实验表明在保持精度的同时资源效率大幅提升。",
+      "llm_tldr": "该论文针对视觉Transformer在边缘FPGA上部署时softmax硬件开销大的问题，提出无BRAM的近似注意力权重计算单元。通过避免指数运算和查找表，显著降低面积和功耗，适用于可再生能源、工业质检等边缘视频监控场景。实验表明在保持精度的同时资源效率大幅提升。",
+      "llm_tags": [
+        "query:mec-video:composite"
+      ],
+      "matched_query_tag": "query:mec-video:composite",
+      "matched_query_text": "Papers central to 请帮我查找流式视频分析、模型选择和移动边缘计算相关的论文, especially work that connects or combines: streaming video analysis; model selection; mobile edge computing; video analytics; edge computing; real-time video processing; streaming video analysis techniques; model selection for edge computing; mobile edge computing applications in video analytics.",
+      "matched_requirement_id": "req-composite-mec-video",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.02465v1",
+      "source": "arxiv",
+      "title": "Probabilistic Memory for Trustworthy Edge Intelligence",
+      "abstract": "Probabilistic computation plays an important role in trustworthy edge intelligence to quantify uncertainty, enhance robustness, reconstruct data, and protect privacy, but its adoption is limited by the orders-of-magnitude data throughput gap between Gaussian random number generation (GRNG) and computation, as well as instruction overhead. This paper introduces probabilistic memory (p-MEM), a unified memory primitive that stores distribution parameters, such as mean and standard deviation, and samples directly at the native memory bandwidth, where deterministic data becomes the zero-variance special case. Using a layout-validated p-MEM simulator, we comprehensively explore device choices, memory specifications, and technology nodes, showing that p-MEM can achieve more than 1000 GSa/s/mm^2 GRNG throughput, including memory-array access. Integrated into CPU/GPU systems, p-MEM reduces instruction count by up to 2.19x/4.37x, sampling latency by 562x/3.45x, and energy by 295.5x/3.53x for Bayesian neural network workloads, providing a scalable hardware substrate for trustworthy probabilistic AI.",
+      "authors": [
+        "Likai Pei",
+        "Jiahao Zheng",
+        "Xueji Zhao",
+        "Emilie Ye",
+        "Jianbo Liu",
+        "Hanqing Tao",
+        "Ming-Yen Lee",
+        "Ruiyang Qin",
+        "Yiyu Shi",
+        "Shimeng Yu",
+        "X. Sharon Hu",
+        "Ningyuan Cao"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-07-02T17:31:17+00:00",
+      "link": "https://arxiv.org/pdf/2607.02465v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "probabilistic memory for edge intelligence",
+      "llm_evidence_cn": "概率存储器用于边缘智能",
+      "llm_evidence": "概率存储器用于边缘智能",
+      "canonical_evidence": "概率存储器用于边缘智能",
+      "llm_tldr_en": "Introduces probabilistic memory (p-MEM) that stores distribution parameters and samples at memory bandwidth enabling efficient uncertainty quantification for trustworthy edge intelligence.",
+      "llm_tldr_cn": "针对边缘智能中概率计算受限于高斯随机数生成带宽的问题，提出概率存储器p-MEM，该原语直接存储分布参数并以内存带宽采样，将确定性数据视为零方差特例。通过模拟验证，p-MEM在多种设备和技术节点下都能显著提升数据吞吐量，使概率计算在边缘端变得实用，从而增强可信赖性。",
+      "llm_tldr": "针对边缘智能中概率计算受限于高斯随机数生成带宽的问题，提出概率存储器p-MEM，该原语直接存储分布参数并以内存带宽采样，将确定性数据视为零方差特例。通过模拟验证，p-MEM在多种设备和技术节点下都能显著提升数据吞吐量，使概率计算在边缘端变得实用，从而增强可信赖性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.29004v1",
+      "source": "arxiv",
+      "title": "SciFlow: Semantic Cross Interference for Self-Supervised Optical Flow Domain Generalization",
+      "abstract": "Motions of objects and scenes carry essential intelligence in video understanding, offering rich cues for interpreting dynamic settings and interactions. Due to the cost and scarcity of high-quality annotation or ground truth of pixel-wise optical flow, however, motion estimation models are typically trained in synthetic domains while deployed in real-world domains. Addressing synthetic-to-real domain generalization challenges has been crucial for developing practical solutions in diverse open-world use cases.   This paper introduces SciFlow, a simple yet effective, network-agnostic, training-based approach that leverages self-supervised learning to generalize motion estimation across synthetic and open-world domains. Specifically, SciFlow imposes semantic interference from open-world images onto synthetic images during training, blending indomain features with cross-domain interference, which enables the network to adapt to the real-world domains. Additionally, SciFlow utilizes geometric consistency to ensure validity of the self-supervision. Our experiment results show that SciFlow not only significantly enhances model robustness amidst domain variations, but also remarkably enables synthetic-to-real domain generalization without requiring any ground truth in the open world.",
+      "authors": [
+        "Jamie Menjay Lin",
+        "Jisoo Jeong",
+        "Hong Cai",
+        "Kai Wang",
+        "Fatih Porikli"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-27T16:37:51+00:00",
+      "link": "https://arxiv.org/pdf/2606.29004v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "self-supervised optical flow for motion estimation in video understanding",
+      "llm_evidence_cn": "利用自监督光流进行视频运动理解",
+      "llm_evidence": "利用自监督光流进行视频运动理解",
+      "canonical_evidence": "利用自监督光流进行视频运动理解",
+      "llm_tldr_en": "SciFlow improves optical flow domain generalization via semantic cross interference, enabling robust motion estimation from synthetic to real-world videos.",
+      "llm_tldr_cn": "光流估计模型因标注昂贵通常仅在合成域训练，导致真实域泛化困难。本文提出SciFlow，一种自监督方法，通过语义交叉干扰机制提升光流跨域泛化能力。在视频运动理解任务上，该方法有效弥合了合成与真实域差距。",
+      "llm_tldr": "光流估计模型因标注昂贵通常仅在合成域训练，导致真实域泛化困难。本文提出SciFlow，一种自监督方法，通过语义交叉干扰机制提升光流跨域泛化能力。在视频运动理解任务上，该方法有效弥合了合成与真实域差距。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.01737v1",
+      "source": "arxiv",
+      "title": "ReQuest: Rethinking-based Question-Aware Frame Selection for Long-Form Video QA",
+      "abstract": "Recent multimodal large language models (MLLMs) have substantially advanced video understanding, yet long-form video QA remains challenging under fixed input token budgets, where uniform sampling can be inefficient for evidence localization. We propose ReQuest , an uncertainty-driven, question-adaptive keyframe selection pipeline that aligns question intent with relevant video content through selective computation. ReQuest integrates (i) a lightweight question-aware selector distilled from MLLM-generated supervision, (ii) Re-thinking Routing that triggers additional inference only when the model is uncertain with a length-adaptive criterion, and (iii) uncertainty-guided adaptive non-maximum suppression that selects temporally diverse frames while adjusting spacing based on question difficulty. As a plug-andplay method, ReQuest improves long-video QA without modifying or fine-tuning the underlying MLLM. Experiments on Video-MME, MLVU, and LongVideoBench demonstrate consistent accuracy gains with competitive computational cost, with particularly strong improvements in medium and long video regimes.",
+      "authors": [
+        "Minkuk Kim",
+        "Suyong Yun",
+        "Young Tae Kim",
+        "Jinyoung Moon",
+        "Jinwoo Choi",
+        "Seong Tae Kim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-02T05:46:42+00:00",
+      "link": "https://arxiv.org/pdf/2607.01737v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "question-adaptive keyframe selection for efficient video QA",
+      "llm_evidence_cn": "面向长视频问答的问题自适应关键帧选择",
+      "llm_evidence": "面向长视频问答的问题自适应关键帧选择",
+      "canonical_evidence": "面向长视频问答的问题自适应关键帧选择",
+      "llm_tldr_en": "ReQuest uses uncertainty-driven frame selection to efficiently answer long-form video questions, reducing token budget while maintaining accuracy.",
+      "llm_tldr_cn": "长视频问答受限于固定输入预算，均匀采样效率低。本文提出ReQuest，一种不确定性驱动的问题自适应关键帧选择流水线，通过轻量级选择器、再思考路由和自适应非极大抑制，显著降低计算开销同时保持问答性能。",
+      "llm_tldr": "长视频问答受限于固定输入预算，均匀采样效率低。本文提出ReQuest，一种不确定性驱动的问题自适应关键帧选择流水线，通过轻量级选择器、再思考路由和自适应非极大抑制，显著降低计算开销同时保持问答性能。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

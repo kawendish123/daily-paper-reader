@@ -1,0 +1,120 @@
+Title: SciFlow: Semantic Cross Interference for Self-Supervised Optical Flow Domain Generalization
+
+URL Source: https://arxiv.org/pdf/2606.29004v1
+
+Published Time: Tue, 30 Jun 2026 00:45:07 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# SciFlow: Semantic Cross Interference for Self-Supervised Optical Flow Domain Generalization 
+
+## Jamie Menjay Lin 1 Jisoo Jeong 2 Hong Cai 2 Kai Wang 1 Fatih Porikli 21Qualcomm Technologies, Inc. 2Qualcomm AI Research †
+
+{jmlin, jisojeon, hongcai, kwang, fporikli }@qti.qualcomm.com 
+
+## Abstract 
+
+Motions of objects and scenes carry essential intelli-gence in video understanding, offering rich cues for inter-preting dynamic settings and interactions. Due to the cost and scarcity of high-quality annotation or ground truth of pixel-wise optical flow, however, motion estimation models are typically trained in synthetic domains while deployed in real-world domains. Addressing synthetic-to-real domain generalization challenges has been crucial for developing practical solutions in diverse open-world use cases. This paper introduces SciFlow, a simple yet effective, network-agnostic, training-based approach that leverages self-supervised learning to generalize motion estimation across synthetic and open-world domains. Specifically, Sci-Flow imposes semantic interference from open-world im-ages onto synthetic images during training, blending in-domain features with cross-domain interference, which en-ables the network to adapt to the real-world domains. Ad-ditionally, SciFlow utilizes geometric consistency to en-sure validity of the self-supervision. Our experiment results show that SciFlow not only significantly enhances model robustness amidst domain variations, but also remarkably enables synthetic-to-real domain generalization without re-quiring any ground truth in the open world. 
+
+## 1. Introduction 
+
+Motion (optical flow) estimation plays a crucial role in video understanding and underpins numerous vision tasks, including object tracking, frame interpolation [11], and video compression [15]. Recent advancement has been driven by deep learning, encompassing convolutional net-works [2, 7, 22, 25]. optimization-inspired models [26], transformers [6], and diffusion models [16, 23]. Despite such progress, acquiring dense motion ground truth for real-world scenes remains a challenge, limiting the effec-tiveness of supervised learning. Consequently, synthetic  
+
+> †Qualcomm AI Research is an initiative of Qualcomm Technologies, Inc.
+
+(a) (b) (c) 
+
+(d) (e) 
+
+Figure 1. Domain shifts in terms of motions, lighting, and fo-cus (sharpness) across synthetic and open-world datasets, and across driving-specific and general-activity datasets. (a)-(c) Samples in the synthetic FlyingChairs [2], FlyingThings3D [17], and Sintel [1] datasets that often present rich contrasts in color intensity and object motions. (d) A sample in the real-world KITTI [3, 19, 20] dataset consisting of driving scenes of rigid (non-deformable) vehicle shapes, simple vehicle edges, and steady vehicle and global (ego) motions. (e) Sample in the open-world SlowFlow [8] dataset containing diversity in outdoor and indoor activities, and scenes under various image qualities and conditions (e.g., lighting and sharpness). 
+
+datasets [1, 2, 17] have become the primary training source for optical flow models. Semi- and self-supervised learning methods [5, 9–11] have been actively explored to overcome the limitations of relying solely on labeled synthetic data for optical flow esti-mation. These approaches aim to leverage unlabeled target-domain data and small amounts of labeled real-world data to improve generalization. Among recent efforts, RAFT-OCTC [9] introduces transformation consistency as a regu-larization strategy for semi-supervised training. Distract-Flow [10] enforces consistency between flow predictions from original and strongly augmented image pairs to im-prove robustness. RealFlow [5] and OCAI [11] gener-ate augmented, unlabeled image pairs to support semi-supervised learning pipelines. ADFactory [14] takes a dif-ferent route by reconstructing static scenes via neural ren-dering and augmenting them with dynamic objects to syn-thesize optical flow data in open-world settings. While 1  
+
+> arXiv:2606.29004v1 [cs.CV] 27 Jun 2026 Figure 2. Our proposed SciFlow for self-supervised domain generation. SciFlow leverages semantic cross-domain interference and incorporates additional techniques, including Exponential Moving Average (EMA) and confidence masking, in a unified self-supervised framework. The teacher is initialized with the student weights and takes continuous EMA updates from the student during self-supervised learning. While the teacher takes (clean) samples in previously trained domains, the student takes samples with semantic cross-domain interference and its predictions are compared against the self-supervised labels predicted by the teacher to create the self-supervised loss.
+
+these methods have shown promise, they often struggle to generalize to unseen domains or require computationally expensive data augmentation and rendering pipelines. In this paper, we propose SciFlow, a Semantic Cross-Domain Interference method for self-supervised optical flow generalization. SciFlow is a simple yet effective ap-proach to synthetic-to-real domain adaptation that avoids the need for real or pseudo optical flow labels, as well as complex reconstruction or rendering pipelines. During self-supervised training, SciFlow augments im-age pairs by compositing open-world images onto synthetic scenes, enabling the network to adapt to real-world statistics while mitigating domain shift. When combined with exist-ing techniques, SciFlow improves performance on standard benchmarks like KITTI [3] and delivers robust, accurate flow estimation on diverse, in-the-wild samples. Our main contributions are as follows: • We introduce SciFlow, a network-agnostic method that leverages semantic cross-domain interference in self-supervised learning to improve optical flow domain gen-eralization. • SciFlow achieves strong cross-domain performance with-out requiring real-world ground truth, addressing both do-main shift and label scarcity in open-world scenarios. 
+
+## 2. Preliminaries 
+
+In this section, we introduce the in-domain distraction tech-nique from DistractFlow [10] and draw inspiration from it to develop a new cross-domain semantic interference strat-egy in SciFlow. 
+
+Notations: Given two consecutive video frames, I1 and 
+
+I2, we denote the (forward) optical flow as V1→2, which maps each pixel in I1 to its corresponding location in I2.The optical flow model is denoted as f .Given a training image pair, DistractFlow [10] intro-duces a third image from the same domain or dataset and mixes it with one or both images in the original pair. This augmentation is used in a semi-supervised setting, where the optical flow prediction from the augmented pair is en-couraged to match the prediction from the original pair. More formally, the self-supervision loss and total loss are defined as: 
+
+Lself = || [Mconf ≥ τ ]( f (I1, I 2) − f (I1, D λ(I2, I d))) || 1,Ltotal = Lsup + wself · Lself , (1) where ( I1, D λ(I2, I d)) is the augmented image pair, Dλ is the distraction function that mixes two images with ratio 
+
+λ, Mconf is a forward-backward consistency-based confi-dence mask against a threshold τ , and wself is a weighting hyperparameter. See [10] for further details. Training with such augmented samples improves model robustness to semantic variations, though only within the same domain. 
+
+## 3. Method 
+
+In this section, we present the method of SciFlow. We start with an overview of the proposed self-supervised learning strategy. Then we discuss the specific design in SciFlow that enables synthetic-to-real domain generalization. 
+
+3.1. Overall Training Procedure 
+
+Consider two dataset groups: a synthetic dataset DGT with ground truth labels, and a real-world dataset DN GT without ground truth. We begin by applying supervised curriculum learning [4, 24] on DGT , starting with samples exhibiting simpler motion and scene complexity, and gradually pro-gressing to more challenging examples. After leveraging 
+
+DGT across varying complexity levels, we transition to the next training phase. In this second phase, the goal is to adapt the optical flow model to real-world domains. To this end, 2Arbitrary Open-World Test Sample Pre SciFlow (Baseline) Post SciFlow (Ours) Difference between Predictions 
+
+Figure 3. Qualitative results without and with SciFlow (in 2nd and 3rd columns, respectively) of generalizing MobileFlow from synthetic domain to unseen, open-world domain. Notably, SciFlow enables robust, accurate estimation on diverse samples in the wild. 
+
+we introduce SciFlow, which performs self-supervised fine-tuning on the unlabeled real-world dataset DN GT .
+
+3.2. Self-Supervised Learning with SciFlow 
+
+In this self-supervised phase, we adopt a teacher-student learning framework, where both networks share the same architecture, denoted as fT (teacher) and fS (student). This setup has proven effective for training optical flow mod-els [11]. Given two consecutive video frames I1 and I2 with ground truth from DGT , and a third image Id from a differ-ent domain in DN GT (without ground truth), we now con-struct two image pairs: the original pair ( I1, I2), and the cross-domain pair ( I1, Dλ(I2, I d)). The latter is generated via semantic cross-domain interference, as our SciFlow pa-per title suggests, where Dλ(I2, I d) = λ · I2 + (1 − λ) · Id
+
+blends the second frame with Id using a mixing ratio λ sam-pled from a beta distribution [29, 30]. The teacher fT processes the original pair, while the stu-dent fS is trained on the more challenging cross-interfered pair. To align the student’s prediction with the teacher’s, we define the self-supervision loss as: 
+
+Lself = [ Mconf ≥ τ ]|| fS (I1, D λ(I2, I d)) − fT (I1, I 2)|| 1
+
+(2) where the confidence mask Mconf and threshold τ follow the definition in Section 2. No ground truth from the target domain is required. Unlike DistractFlow [10], which uses only in-domain augmentation, our semantic cross-domain interference en-ables training with both original synthetic pairs from DGT 
+
+and new pairs incorporating features from the target domain 
+
+DN GT . This helps the model adapt to real-world charac-teristics without introducing instability from abrupt domain shifts. Finally, we update the student fS using the self-supervised loss Lself , and apply Exponential Moving Aver-age (EMA) to update the teacher fT , promoting stable and consistent training. 3Table 1. Quantitative evaluation of self-supervision methods on KITTI benchmarks. More descriptions on used datasets can be found in Section 4.1. Training options of Exponential Mov-ing Average (EMA), confidence-base loss masking, and semantic cross-domain interference are denoted as E, C, and I, and entries of the proposed SciFlow setting are highlighted in grey. Brackets [] indicate a small number (200) of KITTI train samples are in-cluded in the DGT dataset before SciFlow self supervision on the large WSVD dataset.                                             
+
+> Network (GMACs) Method ECIUnlabeled KITTI 15 Dataset (Fl-epe) (Fl-all) RAFT [26] (808.9) Supervised 5.04 17.4 DistractFlow ✓Sintel+KM 3.01 11.7 SciFlow (ours) KM Diverged
+> ✓KM 2.85 10.1
+> ✓✓KM 2.81 9.7
+> ✓✓✓KM 2.27 8.4 MobileFlow [13] (78.8) Supervised 8.20 22.6 SciFlow (ours) KM Diverged
+> ✓✓KM 3.24 9.7
+> ✓✓✓KM 2.78 8.95
+> ✓✓✓WSVD [1.65] [6.24]
+
+## 4. Experiments 
+
+4.1. Datasets, Networks, and Training Setups 
+
+Datasets: We use FlyingChairs [2], FlyingThings3D [17], Sintel [1], HD1K [12], KITTI [3, 19, 20], TartanAir [28], and Spring [18] as the DGT datasets for supervised learning. Besides, we use Web Stereo Video Dataset (WSVD) [27], which contains 689 videos of totally 1.5 million frames, as our open-world DGT dataset for self-supervised learning without ground truth. We use DAVIS (2017) [21] and SlowFlow [8] for visual evaluation. 
+
+Networks: We use two distinct network architectures, RAFT [26] as a full-capacity model and MobileFlow [13] as a light-weight mobile-friendly model. The former serves as a reference for quantitative model accuracy. The latter is our target model serving both quantitative and qualitative evaluation for domain generalization. 
+
+Training #1: We first train the models on FlyingChairs and FlyingThings3D in the supervised learning phase. Then we fine tune the model with SciFlow for domain general-ization on Sintel and/or KITTI Multiview as the unlabeled datasets without using any ground truth or pseudo labels. 
+
+Training #2: For further synthetic-to-real domain gen-eralization, besides DGT datasets including FlyingChairs, FlyingThings, TartanAir, Sintel, KITTI (multiview) and Spring, our DN GT set starts to include a larger WSVD dataset, which serves as the large open-world datasets to represent in-the-wild samples arbitrarily captured without ground truth. This experiment is intended for full general-ization into the in-the-wild domains, as the WSVD dataset contains various scenes, including those in indoor and out-door, simulating diverse activities in everyday mobile (im-perfect) conditions. 
+
+Figure 4. Effectiveness of SciFlow using WSVD as the real-world self-supervision dataset and using KITTI as the proxy dataset for validation. 
+
+4.2. Results 
+
+Table 1 summarizes our quantitative evaluation of the base-line and SciFlow on the KITTI benchmarks. Two net-work architectures, RAFT and MobileFlow, are shown in the top and bottom halves, respectively. The supervised-learning baselines for each architecture is provided for reference. First, our SciFlow method trained with EMA (E), Confident-based loss masking (C), and semantic cross-domain interference (I) achieves significant gains over corresponding baselines. Secondly, for the light-weight MobileFlow at much smaller model complexity, SciFlow enables even higher accuracy over the large open-world WSVD dataset without needing any ground truth during the self-supervised learning. In Fig 4, we demonstrate the effectiveness of domain generalization through validation on KITTI, which serves as the proxy dataset, when using SciFlow to finetune a lightweight MobileFlow [13] model from synthetic (plus 200 samples in KITTI) to open-world WSVD [27] domains. (Left) Validation EPE on the proxy KITTI dataset over training steps. (Right) Validation Fl-all error on the proxy KITTI dataset over training steps. Fig 3 visualizes qualitative results over arbitrary samples from open-world datasets DAVIS [21] and SlowFlow [8] using the light-weight MobileFlow supervised on synthetic datasets and self-supervised on WSVD. The results demon-strate effectiveness of SciFlow, over the baseline, for do-main generalization into unseen open-world domains under conditions such as low light, motion blur, and high noise. 
+
+## 5. Conclusion 
+
+SciFlow offers a simple yet effective solution to the chal-lenge of synthetic-to-real domain generalization in motion estimation. By introducing semantic cross-domain interfer-ence during self-supervised learning, SciFlow enables mod-els to effectively adapt to real-world scenarios without re-quiring any ground truth from the target domain. Its sim-plicity and architecture-agnostic nature make it broadly ap-plicable across models and use cases, providing a practical path toward more robust and accurate motion estimation for video understanding in complex, dynamic environments. 4References 
+
+[1] Daniel J Butler, Jonas Wulff, Garrett B Stanley, and Michael J Black. A naturalistic open source movie for optical flow evaluation. In Proceedings of the European Conference on Computer Vision , pages 611–625. Springer, 2012. 1, 4 [2] Alexey Dosovitskiy, Philipp Fischer, Eddy Ilg, Philip Hausser, Caner Hazirbas, Vladimir Golkov, Patrick Van Der Smagt, Daniel Cremers, and Thomas Brox. Flownet: Learning optical flow with convolutional networks. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 2758–2766, 2015. 1, 4 [3] Andreas Geiger, Philip Lenz, Christoph Stiller, and Raquel Urtasun. Vision meets robotics: The kitti dataset. The Inter-national Journal of Robotics Research , 32(11):1231–1237, 2013. 1, 2, 4 [4] Guy Hacohen and Daphna Weinshall. On the power of cur-riculum learning in training deep networks. In Proceedings of the 36th International Conference on Machine Learning, ICML 2019, 9-15 June 2019, Long Beach, California, USA ,pages 2535–2544. PMLR, 2019. 2 [5] Yunhui Han, Kunming Luo, Ao Luo, Jiangyu Liu, Haoqiang Fan, Guiming Luo, and Shuaicheng Liu. Realflow: Em-based realistic optical flow dataset generation from videos. 
+
+arXiv preprint arXiv:2207.11075 , 2022. 1 [6] Zhaoyang Huang, Xiaoyu Shi, Chao Zhang, Qiang Wang, Ka Chun Cheung, Hongwei Qin, Jifeng Dai, and Hongsheng Li. Flowformer: A transformer architecture for optical flow. In Proceedings of the European Conference on Computer Vi-sion , 2022. 1 [7] Eddy Ilg, Nikolaus Mayer, Tonmoy Saikia, Margret Keuper, Alexey Dosovitskiy, and Thomas Brox. Flownet 2.0: Evolu-tion of optical flow estimation with deep networks. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 2462–2470, 2017. 1 [8] Joel Janai, Fatma G¨ uney, Jonas Wulff, Michael Black, and Andreas Geiger. Slow flow: Exploiting high-speed cameras for accurate and diverse optical flow reference data. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2017. 1, 4 [9] Jisoo Jeong, Jamie Menjay Lin, Fatih Porikli, and Nojun Kwak. Imposing consistency for optical flow estimation. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition , pages 3181–3191, 2022. 1 [10] Jisoo Jeong, Hong Cai, Risheek Garrepalli, and Fatih Porikli. Distractflow: Improving optical flow estimation via real-istic distractions and pseudo-labeling. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 13691–13700, 2023. 1, 2, 3 [11] Jisoo Jeong, Hong Cai, Risheek Garrepalli, Jamie Menjay Lin, Munawar Hayat, and Fatih Porikli. Ocai: Improving optical flow estimation by occlusion and consistency aware interpolation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 19352– 19362, 2024. 1, 3 [12] Daniel Kondermann, Rahul Nair, Katrin Honauer, Karsten Krispin, Jonas Andrulis, Alexander Brock, Burkhard Gusse-feld, Mohsen Rahimimoghaddam, Sabine Hofmann, Claus Brenner, et al. The hci benchmark suite: Stereo and flow ground truth with uncertainties for urban autonomous driv-ing. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition Workshops , pages 19– 28, 2016. 4 [13] Jamie Menjay Lin, Jisoo Jeong, Hong Cai, Risheek Gar-repalli, Kai Wang, and Fatih Porikli. Sciflow: Empowering lightweight optical flow models with self-cleaning iterations. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops , pages 2162–2171, 2024. 4 [14] Han Ling, Quansen Sun, Yinghui Sun, Xian Xu, and Xinfeng Li. Adfactory: An effective framework for generalizing opti-cal flow with nerf. In Proceedings of the IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition (CVPR) ,pages 20591–20600, 2024. 1 [15] Guo Lu, Wanli Ouyang, Dong Xu, Xiaoyun Zhang, Chunlei Cai, and Zhiyong Gao. Dvc: An end-to-end deep video com-pression framework. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition , pages 11006–11015, 2019. 1 [16] Ao Luo, Xin Li, Fan Yang, Jiangyu Liu, Haoqiang Fan, and Shuaicheng Liu. Flowdiffuser: Advancing optical flow estimation with diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 19167–19176, 2024. 1 [17] Nikolaus Mayer, Eddy Ilg, Philip Hausser, Philipp Fischer, Daniel Cremers, Alexey Dosovitskiy, and Thomas Brox. A large dataset to train convolutional networks for disparity, optical flow, and scene flow estimation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 4040–4048, 2016. 1, 4 [18] Lukas Mehl, Jenny Schmalfuss, Azin Jahedi, Yaroslava Nali-vayko, and Andr´ es Bruhn. Spring: A high-resolution high-detail dataset and benchmark for scene flow, optical flow and stereo. In Proc. IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2023. 4 [19] Moritz Menze and Andreas Geiger. Object scene flow for autonomous vehicles. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition , pages 3061–3070, 2015. 1, 4 [20] Moritz Menze, Christian Heipke, and Andreas Geiger. Joint 3d estimation of vehicles and scene flow. In ISPRS Workshop on Image Sequence Analysis (ISA) , 2015. 1, 4 [21] Jordi Pont-Tuset, Federico Perazzi, Sergi Caelles, Pablo Ar-bel´ aez, Alexander Sorkine-Hornung, and Luc Van Gool. The 2017 davis challenge on video object segmentation. 
+
+arXiv:1704.00675 , 2017. 4 [22] Anurag Ranjan and Michael J Black. Optical flow estima-tion using a spatial pyramid network. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 4161–4170, 2017. 1 [23] Saurabh Saxena, Charles Herrmann, Junhwa Hur, Abhishek Kar, Mohammad Norouzi, Deqing Sun, and David J Fleet. The surprising effectiveness of diffusion models for optical flow and monocular depth estimation. Advances in Neural Information Processing Systems , 36:39443–39469, 2023. 1 
+
+5[24] Nicoleta Sebe, Radu Tudor Ionescu, and Petru Soviany. Cur-riculum learning: A survey. International Journal of Com-puter Vision , 2022. 2 [25] Deqing Sun, Xiaodong Yang, Ming-Yu Liu, and Jan Kautz. Pwc-net: Cnns for optical flow using pyramid, warping, and cost volume. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 8934– 8943, 2018. 1 [26] Zachary Teed and Jia Deng. Raft: Recurrent all-pairs field transforms for optical flow. In Proceedings of the European Conference on Computer Vision , pages 402–419. Springer, 2020. 1, 4 [27] Chaoyang Wang, Simon Lucey, Federico Perazzi, and Oliver Wang. Web stereo video supervision for depth prediction from dynamic scenes. In 2019 International Conference on 3D Vision (3DV) , pages 348–357. IEEE, 2019. 4 [28] Wenshan Wang, Delong Zhu, Xiangwei Wang, Yaoyu Hu, Yuheng Qiu, Chen Wang, Yafei Hu, Ashish Kapoor, and Se-bastian Scherer. Tartanair: A dataset to push the limits of visual slam. 2020. 4 [29] Sangdoo Yun, Dongyoon Han, Seong Joon Oh, Sanghyuk Chun, Junsuk Choe, and Youngjoon Yoo. Cutmix: Regular-ization strategy to train strong classifiers with localizable fea-tures. In Proceedings of the IEEE/CVF International Con-ference on Computer Vision , pages 6023–6032, 2019. 3 [30] Hongyi Zhang, Moustapha Ciss´ e, Yann N. Dauphin, and David Lopez-Paz. mixup: Beyond empirical risk minimiza-tion. In 6th International Conference on Learning Represen-tations, ICLR 2018, Vancouver, BC, Canada, April 30 - May 3, 2018, Conference Track Proceedings . OpenReview.net, 2018. 3 
+
+6
