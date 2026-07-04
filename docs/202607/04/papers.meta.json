@@ -1,0 +1,39 @@
+{
+  "label": "2026-07-04",
+  "date": "2026-07-04",
+  "generated_at": "2026-07-04T21:21:34",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202607/04/2607.01677v1-icdepth-taming-video-diffusion-models-for-video-depth-estimation-via-in-context-conditioning",
+      "section": "quick",
+      "title_en": "ICDepth: Taming Video Diffusion Models for Video Depth Estimation via In-Context Conditioning",
+      "authors": "Xuanhua He, Jiaxin Xie, Mingzhe Zheng, Qifeng Chen",
+      "date": "2026-07-02",
+      "pdf": "https://arxiv.org/pdf/2607.01677v1",
+      "score": "7.0",
+      "evidence": "利用视频扩散模型进行深度估计，增强视频理解能力",
+      "tldr": "单目视频深度估计面临时间一致性、几何精度和泛化性的挑战。现有判别模型易漂移，生成方法需海量数据且精度不足。本文提出ICDepth，通过上下文条件化（ICC）适配预训练文本到视频扩散变压器，利用其时空先验。提出SAND-Attention实现精确时空对齐并防止噪声污染，SRFM注入DINOv2语义和分辨率先验提升几何精度。在多个基准上以仅0.8M帧（比生成方法少6-13倍）训练取得SOTA，并展示强零样本泛化能力，证明了高效利用预训练扩散模型的潜力。",
+      "tags": "query:mec-video",
+      "abstract_en": "Monocular video depth estimation requires temporal consistency, geometric accuracy, and generalization across diverse scenarios, yet existing methods struggle to achieve all three simultaneously. Discriminative models excel at per-frame accuracy but suffer from temporal drift due to limited context windows, while generative methods improve consistency and generalization at the cost of extensive training data (10M+ samples) and lack of geometric precision. In response to these issues, we introduce \\textbf{ICDepth}, a framework that adapts pre-trained text-to-video diffusion transformers for video depth estimation via In-Context Conditioning (ICC), leveraging their rich spatial-temporal priors. To address key challenges in transferring ICC from generation to dense prediction, we propose: (1)~\\textbf{SAND-Attention}, which ensures precise spatial-temporal alignment via shared RoPE and enforces unidirectional attention to prevent noise contamination; (2)~\\textbf{SRFM}, which injects DINOv2 semantic and resolution priors to enhance geometric precision. ICDepth achieves state-of-the-art results on multiple benchmarks with remarkable data efficiency, trained on only 0.8M frames ($6$--$13\\times$ less than competing generative methods), while demonstrating strong zero-shot generalization to diverse domains.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/04/2607.01798v1-approximate-attention-weighting-for-sustainable-fpga-based-vision-transformer-inference",
+      "section": "quick",
+      "title_en": "Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference",
+      "authors": "Muhammad Usman, Shujaat Khan, Dorit Merhof",
+      "date": "2026-07-02",
+      "pdf": "https://arxiv.org/pdf/2607.01798v1",
+      "score": "7.0",
+      "evidence": "基于FPGA的边缘视觉Transformer推理",
+      "tldr": "Vision Transformer在边缘FPGA部署面临softmax硬件成本高的挑战。本文提出一种无BRAM的近似注意力加权单元，采用16段分段线性函数近似自然指数，并使用分布式LUT实现，保留了预训练注意力温度而无需重校准。在Xilinx Zynq-7020上，该核心仅消耗1444 LUT和77 DSP，无BRAM，top-1精度相比精确softmax仅下降0.20%。该方法为资源受限边缘AI平台上的能效ViT推理提供了可行方案。",
+      "tags": "query:mec-video",
+      "abstract_en": "Vision Transformers have reshaped computer vision by using self-attention to capture global context across image regions. This makes them attractive for edge visual inspection and monitoring in applications such as renewable-energy infrastructure, industrial quality control, medical imaging, and autonomous-system sensing. However, deploying ViTs on small FPGAs remains challenging because the softmax stage in self-attention requires exponential evaluation and normalization, which are costly in hardware. Existing implementations often rely on CORDIC pipelines or BRAM-based look-up tables, increasing area and power consumption. This paper presents a BRAM-free approximate attention-weighting unit for FPGA-based ViT inference. The proposed design approximates the natural exponential in softmax using a 16-segment piecewise-linear function implemented entirely with distributed LUT fabric. Unlike base-2 approximations, the natural-exponential formulation preserves the pre-trained attention temperature and avoids model-specific recalibration. Implemented on a Xilinx Zynq-7020, the complete attention-row core uses 1444 LUTs, 77 DSPs, and no BRAM, while hardware-accurate emulation shows accuracy within a \\(0.20\\%\\) absolute top-1 difference from the exact-softmax reference on ViT-family models. These results demonstrate the potential of the proposed core for energy-efficient ViT inference on resource-constrained edge-AI platforms.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

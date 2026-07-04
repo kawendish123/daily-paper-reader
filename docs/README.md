@@ -6,38 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-03
-- 运行时间：2026-07-03 20:18:51 UTC
+- 最新运行日期：2026-07-04
+- 运行时间：2026-07-04 21:21:27 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：4
+- 本次总论文数：2
+- 精读区：0
 - 速读区：2
 
 ### 今日简报（AI）
-今日推荐6篇论文，精读4篇速读2篇，聚焦零样本视频定位与国产AI芯片生态。最值得关注的是DART（零样本视频时序定位的难度自适应路由）和JuZhou 1.0（首个国产AI加速器训练的端侧文生图模型）。建议普通读者关注零样本视频理解与国产硬件原生模型的发展趋势。
-- 详情：[/202607/03/README](/202607/03/README)
+今日速读两篇论文，分别探索视频扩散模型用于深度估计及FPGA上Transformer的高效推理。
+值得关注的方向：基于上下文条件的视频深度估计，以及近似注意力权重实现可持续硬件推理。
+建议进一步了解视频扩散模型在三维视觉的应用潜力，并关注边缘端Transformer加速方案。
+- 详情：[/202607/04/README](/202607/04/README)
 
 ### 精读区论文标签
-1. [DART: Difficulty-Adaptive Routing for Zero-Shot Video Temporal Grounding](/202607/03/2607.00672v1-dart-difficulty-adaptive-routing-for-zero-shot-video-temporal-grounding)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：零样本视频时间定位与难度自适应路由
-2. [JuZhou 1.0 Technical Report: The First Edge-Native Text-to-Image Foundation Model Trained Entirely on China-Developed AI Accelerators](/202607/03/2606.28421v1-juzhou-10-technical-report-the-first-edge-native-text-to-image-foundation-model-trained-entirely-on-china-developed-ai-accelerators)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：端侧原生超轻量文本到图像模型，支持设备端执行
-3. [Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference](/202607/03/2607.01798v1-approximate-attention-weighting-for-sustainable-fpga-based-vision-transformer-inference)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：边缘视频分析中FPGA上高效ViT推理
-4. [Probabilistic Memory for Trustworthy Edge Intelligence](/202607/03/2607.02465v1-probabilistic-memory-for-trustworthy-edge-intelligence)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：概率存储器用于边缘智能
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [SciFlow: Semantic Cross Interference for Self-Supervised Optical Flow Domain Generalization](/202607/03/2606.29004v1-sciflow-semantic-cross-interference-for-self-supervised-optical-flow-domain-generalization)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：利用自监督光流进行视频运动理解
-2. [ReQuest: Rethinking-based Question-Aware Frame Selection for Long-Form Video QA](/202607/03/2607.01737v1-request-rethinking-based-question-aware-frame-selection-for-long-form-video-qa)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：面向长视频问答的问题自适应关键帧选择
+1. [ICDepth: Taming Video Diffusion Models for Video Depth Estimation via In-Context Conditioning](/202607/04/2607.01677v1-icdepth-taming-video-diffusion-models-for-video-depth-estimation-via-in-context-conditioning)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：利用视频扩散模型进行深度估计，增强视频理解能力
+2. [Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference](/202607/04/2607.01798v1-approximate-attention-weighting-for-sustainable-fpga-based-vision-transformer-inference)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：基于FPGA的边缘视觉Transformer推理
 
 
 <div class="dpr-home-promo-card">
