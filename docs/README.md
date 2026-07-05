@@ -6,29 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-04
-- 运行时间：2026-07-04 21:21:27 UTC
+- 最新运行日期：2026-07-05
+- 运行时间：2026-07-05 20:19:17 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：0
+- 本次总论文数：3
+- 精读区：1
 - 速读区：2
 
 ### 今日简报（AI）
-今日速读两篇论文，分别探索视频扩散模型用于深度估计及FPGA上Transformer的高效推理。
-值得关注的方向：基于上下文条件的视频深度估计，以及近似注意力权重实现可持续硬件推理。
-建议进一步了解视频扩散模型在三维视觉的应用潜力，并关注边缘端Transformer加速方案。
-- 详情：[/202607/04/README](/202607/04/README)
+1) 今日精读高评价论文《Zero-Shot Quantization for Object Detectors using Off-the-Shelf Generative Models》（8.0分），速读两篇分别聚焦低延迟图像传输与视频世界模型。  
+2) 最值得关注：利用现成生成模型无需微调即可压缩目标检测器；低延迟任务导向传输结合机会频谱接入可提升实时通信效率。  
+3) 建议读者探索生成模型在模型压缩中的潜力，并关注任务导向通信与视频学习的交叉应用。
+- 详情：[/202607/05/README](/202607/05/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Zero-Shot Quantization for Object Detectors using Off-the-Shelf Generative Models](/202607/05/2606.31456v1-zero-shot-quantization-for-object-detectors-using-off-the-shelf-generative-models)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：边缘目标检测器的零样本量化
 
 ### 速读区论文标签
-1. [ICDepth: Taming Video Diffusion Models for Video Depth Estimation via In-Context Conditioning](/202607/04/2607.01677v1-icdepth-taming-video-diffusion-models-for-video-depth-estimation-via-in-context-conditioning)  
+1. [Low-Latency Task-Oriented Image Transmission with Opportunistic Spectrum Access](/202607/05/2607.01921v1-low-latency-task-oriented-image-transmission-with-opportunistic-spectrum-access)  
    标签：评分：7.0/10、query:mec-video
-   evidence：利用视频扩散模型进行深度估计，增强视频理解能力
-2. [Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference](/202607/04/2607.01798v1-approximate-attention-weighting-for-sustainable-fpga-based-vision-transformer-inference)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：基于FPGA的边缘视觉Transformer推理
+   evidence：低延迟任务导向传输，适用于移动边缘视频分析
+2. [MemLearner: Learning to Query Context memory for Video World Models](/202607/05/2606.31734v1-memlearner-learning-to-query-context-memory-for-video-world-models)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：视频世界模型的上下文查询学习
 
 
 <div class="dpr-home-promo-card">

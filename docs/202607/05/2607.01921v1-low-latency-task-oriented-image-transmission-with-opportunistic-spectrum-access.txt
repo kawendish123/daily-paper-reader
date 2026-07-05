@@ -1,0 +1,281 @@
+Title: Low-Latency Task-Oriented Image Transmission with Opportunistic Spectrum Access
+
+URL Source: https://arxiv.org/pdf/2607.01921v1
+
+Published Time: Fri, 03 Jul 2026 01:01:01 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Low-Latency Task-Oriented Image Transmission with Opportunistic Spectrum Access 
+
+João Henrique Inacio de Souza ∗, Mattia Merluzzi †, Mateus P. Mota †, Beatriz Soret ‡∗ , Petar Popovski ∗∗Department of Electronic Systems , Aalborg University , Aalborg, Denmark. E-mail: {jhids,petarp}@es.aau.dk 
+
+†CEA-Leti , Université Grenoble Alpes , F-38000 Grenoble, France. E-mail: {mattia.merluzzi,mateus.pontesmota}@cea.fr 
+
+‡Telecommunications Research Institute , Universidad de Málaga , Málaga, Spain. E-mail: bsa@uma.es 
+
+Abstract —Communication systems designed for reliable data reconstruction, rather than task-oriented communication, typi-cally rely on separate source and channel coding and incur high latency under limited spectrum availability and fading channels. To address this, we propose a transmission framework with opportunistic spectrum access, in which the transmitter sends discrete latent representations learned via a vector-quantized variational autoencoder (VQ-VAE) over idle licensed channels using standard digital modulation. The AI-powered receiver is still able to reconstruct task-related information from the heavily compressed data. We develop a cross-layer latency model that accounts for compression, block errors, retransmissions, and stochastic channel access. Results on latency-accuracy trade-offs show that the proposed scheme achieves at least 79- and 3.3-fold latency reductions with only 5.7% and 2.4% drops in classi-fication accuracy compared to benchmarks using conventional source and channel coding. The framework enables low-latency communication and reliable task execution even under limited spectrum availability and challenging channel conditions. 
+
+Index Terms —Task-oriented communication, cognitive radio, remote inference, variational inference, vector quantization. 
+
+I. I NTRODUCTION 
+
+The convergence of wireless communications and artificial intelligence (AI) has led to the paradigm of task-oriented communication, where the objective is to efficiently support downstream tasks rather than to reliably reconstruct transmit-ted data [1]. In this context, performance is measured through metrics that jointly capture task accuracy and communication efficiency, which is particularly relevant for computer vision applications such as image classification, object detection, and scene understanding. For many emerging applications, communication must sup-port latency-sensitive tasks, where end-to-end delay is the primary performance metric. Achieving low latency requires reducing the communication payload while preserving task-relevant information, which challenges conventional transmis-sion schemes employing separate source and channel coding. Recent works on joint source channel coding (JSCC) have shown that learned representations can provide compact and robust data compression tailored to downstream tasks [2]–[4]. In particular, vector-quantized variational autoencoder (VQ-VAE) [5] enables compression into a discrete latent space, 
+
+This work was supported by the SNS JU project 6G-GOALS under the EU’s Horizon Europe program under Grant Agreement No 101139232. The work by J. H. Inacio de Souza and P. Popovski was also supported by the Villum Investigator Grant “WATER” from the Velux Foundation, Denmark. 
+
+Figure 1. System model for low-latency image transmission with opportunis-tic spectrum access for AI-based remote inference. 
+
+allowing the resulting representations to be transmitted using standard digital modulation schemes and integrated into link adaptation frameworks. Moreover, such representations have been shown to preserve task-relevant features, enabling com-petitive classification performance even under compression and channel-induced distortions [2]. Most existing studies assume dedicated or continuously available communication resources. However, in cognitive ra-dio systems, transmission occurs through opportunistic access to licensed channels, where availability depends on primary user activity [6], [7]. This introduces an additional source of randomness, as communication opportunities are intermittent. Consequently, the communication latency depends not only on compression and transmission reliability, but also on channel availability, making its characterization more involved. In this work, we consider a pair of cognitive users that exchange images for remote inference under opportunistic spectrum access. System performance is evaluated in terms of task accuracy and communication latency, defined as the time required to deliver a batch of images for processing. To enable low-latency communication, we adopt a VQ-VAE-based transmission framework that generates discrete latent representations, reducing the number of transmitted bits while remaining compatible with digital communication pipelines. Our main contribution is a statistical analysis of the commu-nication latency for task-oriented data transmission with op-portunistic spectrum access. The analysis captures the impact of compression, block errors, retransmissions, and stochastic channel access, and applies to both the proposed framework and standard benchmarks. It enables the evaluation of latency-accuracy trade-offs in scenarios with limited and unreliable spectrum access. Applying this analysis, we show that the 
+
+> arXiv:2607.01921v1 [cs.IT] 2 Jul 2026
+
+proposed framework achieves communication latency gains of at least 79 × and 3.3× with marginal task-accuracy drops of 5.7% and 2.4% compared to standard schemes using lossless and lossy source compression, respectively. The rest of the paper is organized as follows. Section II presents the system model. Sections III and IV describe the proposed framework and the analysis of the communication latency, respectively. Numerical results are discussed in Sec-tion V, and Section VI concludes the paper. II. S YSTEM MODEL 
+
+We consider the scenario in Fig. 1, where a cognitive transmitter (CTx) sends a batch of data samples for remote inference to a cognitive receiver (CRx). Both CTx and CRx have a single antenna and use slotted communication over 𝐶 
+
+licensed channels of total bandwidth 𝐵 , with frame duration 𝑇 0.Licensed users (LUs) are willing to share part of their radio resources with cognitive users. The CTx performs spectrum sensing to detect LU activity on each channel and access idle ones. This is performed at the start of every frame, leaving 
+
+𝑇 < 𝑇 0 for data transmission. To model spectrum availability accounting for the LU activity and sensing performance, we define the channel non-access probability for the CTx. 
+
+Definition 1 (Channel non-access probability) . We denote by 
+
+𝑝 𝑐 the probability that the CTx does not send data over channel 𝑐 in a given frame due to the detection of LU activity. Regardless of the spectrum sensing method, this probability depends on the method’s true and false positive rates, as well as on the distribution of LU activity. For simplicity, we assume stationary processes and that LU activity is i.i.d. across frames, so that 𝑝 𝑐 remains constant over time. 
+
+Each data sample is an RGB image 𝑺 ∈ R𝐻 ×𝑊 ×3, where 
+
+𝐻 and 𝑊 are the image height and width in pixels, and 3 is the number of color components. An uncompressed communication batch is denoted by 𝚺 ∈ R𝑆 ×𝐻 ×𝑊 ×3 with 
+
+𝑆 samples, and it represents the minimum data unit for the CRx to start inference. The batch contains 𝑏 0 bits, compressed to 𝑏 < 𝑏 0 bits after source compression, giving a compression ratio of 𝑏 0/𝑏 . The CTx splits the 𝑏 -bit batch into 𝑛 -bit data blocks, each carrying 𝑘 ≤ 𝑛 information bits; 𝑘 = 𝑛 if uncoded, while 𝑘 < 𝑛 when channel coding is used. Before transmission over physical channels, the data blocks are mapped to symbols of a 𝑀 -ary pulse amplitude modulation (𝑀 -PAM) constellation. We assume block-fading channels with a dominant line-of-sight component and perfect power control. Therefore, the channels are equivalent additive white Gaussian noise channels with signal-to-noise ratio (SNR) 𝛾 ,where bit error rate (BER) is approximated by [8] 
+
+𝑃 𝑏 ≈ 2(𝑀 − 1)
+
+𝑀 log 2 𝑀 𝑄  √︂ 6
+
+𝑀 2 − 1 𝛾 
+
+!
+
+, (1) and 𝑄 denotes the Gaussian Q-function. For uncoded transmissions, the block error rate (BLER) for 
+
+𝑛 -bit blocks is approximated as 
+
+𝜖 0 ≈ 1 − ( 1 − 𝑃 𝑏 )𝑛 , (2) assuming independent bit errors. With channel coding, the BLER 𝜖 depends on 𝑘 , 𝑛 , and the coding scheme, and is typically lower than 𝜖 0. To trade communication latency for reliability, the CTx can enable or disable retransmissions of erroneously received data blocks and the corresponding feed-back signaling. When enabled, we assume that the CRx can perfectly detect block errors and send instantaneous, error-free, per-block requests that result in immediate retransmissions. In what follows, we introduce the proposed framework for low-latency image transmission based on VQ-VAE. III. L OW -L ATENCY IMAGE TRANSMISSION VIA VQ-VAE In this section, we introduce the proposed transmission framework as shown in Fig. 2. To enable low-latency com-munication, the framework relies on compressed image repre-sentations obtained by a VQ-VAE trained offline. The learned encoder and decoder networks are deployed in the CTx and CRx, respectively, while the learned latent space functions as a codebook shared between the cognitive users. To transmit data, the CTx passes an image through the VQ-VAE encoder and quantizer, obtaining a discrete representation based on latent vectors in the codebook. The indices of the latent vectors, which are scalars in the domain [1, 𝐾 ], are then binary-encoded as sequences of log 2 𝐾 bits, and the resulting bitstream is mapped to 𝑀 -PAM symbols. Finally, the symbols are sent over the idle channels detected during spectrum  
+
+> Figure 2. Proposed framework for task-oriented, low-latency image transmission with opportunistic spectrum access, leveraging low-dimensional latent representations learned via a VQ-VAE.
+
+sensing. Subsequently, to receive the data, the CRx applies the inverse operations to the received symbols, recovering the discrete representation and feeding it to the VQ-VAE decoder to obtain the reconstructed image. This operation is performed for all samples in the communication batch, and the reconstructed images are forwarded to the downstream task. 
+
+A. Vector-Quantized Variational Autoencoder 
+
+Now, we present the VQ-VAE model used to obtain the compressed image representations. Importantly, during offline training, the model is trained in the absence of the wire-less communication pipeline. Evaluations of communication latency and task accuracy will show later that this approach leads to stable learning and competitive performance during system operation. Given an input image 𝑺 , the encoder network maps it into a continuous latent representation as: 
+
+𝒁 𝑒 = 𝑓 𝜃 (𝑺 ), 𝒁 𝑒 ∈ R𝐻 ′ ×𝑊 ′ ×Δ, (3) where 𝑓 𝜃 denotes the encoder parameterized by 𝜃 , 𝐻 ′ × 𝑊 ′ is the spatial dimension of the latent representation, and Δ is the dimensionality of the latent space. Each spatial location (𝑖, 𝑗 )
+
+of the tensor 𝒁 𝑒 is then quantized using a learned discrete latent space E = {𝒆 𝑙 ∈ RΔ }𝐾 𝑙 =1, resulting in a discrete latent representation 𝒁 𝑞 ∈ R𝐻 ′ ×𝑊 ′ ×Δ:
+
+𝒁 (𝑖, 𝑗 ) 
+
+> 𝑞
+
+= arg min  
+
+> 𝒆 𝑙 ∈ E
+
+∥ 𝒁 (𝑖, 𝑗 ) 
+
+> 𝑒
+
+− 𝒆 𝑙 ∥2. (4) Naturally, the quantized feature map 𝒁 𝑞 can be equivalently represented by a matrix of indices: 
+
+𝑰 (𝑖, 𝑗 ) = arg min  
+
+> 𝑙 ∈ { 1,...,𝐾 }
+
+∥ 𝒁 (𝑖, 𝑗 ) 
+
+> 𝑒
+
+− 𝒆 𝑙 ∥2, (5) which, during system operation, can be transmitted more efficiently than the full latent vectors. Hence, since each sample is compressed to 𝐻 ′𝑊 ′ indices, each encoded using 
+
+log 2 𝐾 bits, the resulting compressed communication batch has 
+
+𝑏 = 𝐻 ′𝑊 ′ log 2 𝐾 bits. To reconstruct the compressed image, the indices are mapped back to their corresponding latent vectors using E,yielding the latent discrete representation: 
+
+ˆ𝒁 (𝑖, 𝑗 ) 
+
+> 𝑞
+
+= 𝒆 ˆ𝑰 (𝑖, 𝑗 ) , (6) where ˆ𝒁 𝑞 and ˆ𝑰 are used to emphasize that during system operation, reconstruction may rely on partially erroneous re-ceived data. Finally, the decoder network 𝑔 𝜙 , parameterized by 𝜙 , produces the reconstructed image as ˆ𝑺 = 𝑔 𝜙 ( ˆ𝒁 𝑒 ).The loss function of VQ-VAE consists of three terms and is defined as follows [5], where sg {·} denotes the stop-gradient operator: 
+
+L = − log Pr (𝑺 |𝒁 𝑞 ) + ∑︁  
+
+> (𝑖, 𝑗 )
+
+∥sg {𝒁 (𝑖, 𝑗 ) 
+
+> 𝑒
+
+} − 𝒆 𝑰 (𝑖, 𝑗 ) ∥22 + (7) 
+
++ 𝛽 ∑︁  
+
+> (𝑖, 𝑗 )
+
+∥ 𝒁 (𝑖, 𝑗 ) 
+
+> 𝑒
+
+− sg {𝒆 𝑰 (𝑖, 𝑗 ) }∥ 22,
+
+where (𝑖, 𝑗 ) ∈ 𝐻 ′ × 𝑊 ′. The first term is the variational lower bound with constant terms omitted, which reduces to the mean-squared error between 𝑺 and ˆ𝑺 [5]. The second term is the vector quantization loss, which moves the latent space vectors toward the encoder outputs. Meanwhile, the third term is the commitment loss weighted by 𝛽 , which encourages the encoder to generate outputs that are close to the latent space vectors. By minimizing this loss during offline, unsupervised training, we obtain the discrete latent space and the encoder and decoder networks used for low-latency image transmission. IV. C OMMUNICATION LATENCY ANALYSIS 
+
+In this section, we statistically characterize the commu-nication latency of the investigated system for opportunistic wireless transmission over licensed channels. The characteri-zation considers the general setup and is applicable to analyze the latency of the proposed framework, as well as other transmission schemes that employ, e.g. , separate source and channel coding, with retransmissions enabled or disabled. To model the communication latency, we first derive the number of block transmissions required to send a batch of samples, including retransmissions due to block errors. We then derive the number of channel accesses required to deliver these blocks, accounting for the spectrum availability constrained by LU activity. Hence, given the compressed batch of 𝑏 bits and the block structure with 𝑘 information bits, the resulting number of blocks is 𝐷 𝑡 = ⌈𝑏 /𝑘 ⌉.During reception, each data block is subject to a BLER 𝜖 .In this context, when retransmissions are enabled, erroneously received blocks are detected and retransmitted, thereby in-creasing the communication latency. In this case, the number of retransmissions follows a negative binomial distribution of the form NB (𝐷 𝑡 , 1 − 𝜖 ). Consequently, depending on whether retransmissions are enabled or disabled, the number of retransmitted blocks is modeled as 
+
+(
+
+𝐷 𝑟 ∼ NB (𝐷 𝑡 , 1 − 𝜖 ), if retransmissions are enabled 
+
+𝐷 𝑟 = 0, if retransmissions are disabled . (8) This gives a total of 𝐷 𝑡 + 𝐷 𝑟 block transmissions per batch. Accordingly, as each block comprises 𝑛 bits, the CTx must send (𝐷 𝑡 + 𝐷 𝑟 )𝑛 bits over the idle channels in order to deliver an entire batch of samples. Since communication is carried out over time-constrained frames, a batch transmission might span across multiple frames. Hence, given that each channel access supports the transmission of 𝐵𝑇𝐶 −1 log 2 𝑀 bits, the number of accesses required to complete a batch transmission is given by 
+
+𝐹 𝑎 =
+
+ (𝐷 𝑡 + 𝐷 𝑟 )𝑛 𝐵𝑇𝐶 −1 log 2 𝑀 
+
+
+
+. (9) The number of idle channels detected per frame depends on the LU activity and the spectrum sensing performance, meaning that the CTx might achieve fewer than 𝐶 channel access decisions per frame interval. Given that, let 𝐹 𝑛 denote the number of channel non-access decisions made by the CTx before making 𝐹 𝑎 access decisions. 𝐹 𝑛 depends on 
+
+𝐹 𝑎 , 𝐶 , and the channel non-access probabilities {𝑝 𝑐 }𝐶 𝑐 =1 as in Definition 1. In particular, assuming identical non-access probabilities across channels, i.e. , 𝑝 1 = · · · = 𝑝 𝐶 = 𝑝 , 𝐹 𝑛 can be defined such that 𝐹 𝑛 ∼ NB (𝐹 𝑎 , 1 − 𝑝 ). Then, given that the system has 𝐶 channels and each frame has a duration 𝑇 0, the latency to transmit an entire batch is given by 
+
+𝐿 =
+
+ 𝐹 𝑎 + 𝐹 𝑛 
+
+𝐶 
+
+
+
+𝑇 0. (10) As noted earlier, this latency analysis applies either to a system with separate source and channel coding or to the proposed transmission framework. In the case of the proposed framework, we set 𝑛 = 𝑘 = log 2 𝐾 and retransmissions are disabled, resulting in 𝐷 𝑟 = 0. In the next section, we use the model in (10) to evaluate the latency of the proposed framework and the benchmarks. V. N UMERICAL RESULTS 
+
+In this section, we present numerical results to evaluate the latency and task performance of the proposed framework and to compare it with benchmark transmission schemes. 1
+
+In the simulations, we assume image transmissions from the 160 px version of the Imagenette 2 dataset, with 9469 images in the training split and 3925 in the test split, all centrally cropped to 128 × 128 pixels. All models are implemented in PyTorch 2.10.0 and optimized with the Adam [9] algorithm. For the VQ-VAE, the training batch size, learning rate, and commitment loss weight are set to 128, 3 × 10 −4, and 0.25, respectively. Moreover, two codebook sizes are considered so that 𝐾 ∈ { 8, 512 }, while the latent dimension is kept constant at Δ = 64 . The VQ-VAE encodes each 128 × 128 pixel image with an 8-bit color depth into 32 × 32 latent vectors, achieving a compression ratio of 𝑏 0/𝑏 = 384 /log 2 𝐾 .Regarding the communication parameters, we assume bi-nary phase shift keying modulation ( 𝑀 = 2), a bandwidth of 
+
+𝐵 = 10 MHz, and frames of 𝑇 0 = 10 ms, of which 𝑇 = 9 ms are used for data transmission and the rest for spectrum sensing. 
+
+> 1The source code used to generate these results is publicly available at https://github.com/joaohis/SemCR
+> 2https://github.com/fastai/imagenette
+
+Each communication batch contains 100 images, while the number of channels, SNR, and channel non-access probability are swept such that 𝐶 ∈ [1, 10 ], 𝛾 ∈ [− 6, 15 ] dB, and 
+
+𝑝 ∈ [ 0, 0.99 ].As benchmarks, we consider transmission schemes that employ low-density parity-check (LDPC) channel coding with 
+
+(𝑛, 𝑘 ) = (100 , 90 ) combined with lossless or lossy com-pression, or without source coding. Portable network graph-ics (PNG) is adopted for lossless compression, achieving a compression ratio of 1.7 in the considered dataset. For lossy compression, joint photographic experts group (JPEG) is considered with the quality parameter set per image to achieve a compression ratio of 40. Lastly, for the case without source coding, we assume the transmission of raw RGB image data. Retransmissions are enabled only for the methods that employ PNG or JPEG. We start by discussing the latency results. 
+
+A. Latency Evaluation 
+
+Figs. 3a, 3b, and 3c depict the communication latency as a function of the SNR, the channel non-access probability, and the number of channels, respectively. These results reveal that the proposed framework achieves substantial latency gains compared to all the considered benchmarks. The gains are more pronounced with a smaller codebook, as fewer bits are required to represent the indices of the latent vectors. The latency benefits of the proposed scheme remain consistent with different spectrum availability, as shown in Figs. 3b and 3c. In Fig. 3a, we observe that the latency of the benchmarks that employ PNG and JPEG increases rapidly as SNR drops below 7 dB, driven by a surge in retransmissions due to block errors. This does not occur in the proposed framework or the raw-RGB benchmark, where latency is independent of SNR because retransmissions are disabled. As shown later, this latency benefit comes at the cost of increased distortion and degraded task accuracy. Furthermore, for SNR above 7 dB, the latency of the JPEG benchmark approaches that of VQ-VAE(512), due to their similar compression ratios of 40 and 42.66, respectively. Despite this, none of the considered bench-marks outperforms the low latency of the proposed framework with a codebook size of 8, which achieves a compression ratio of 128. Especially, Fig. 3a reveals that VQ-VAE(8) achieves                                                                   
+
+> Proposed: VQ-VAE(512) Proposed: VQ-VAE(8) PNG+LDPC(100,90) JPEG+LDPC(100,90) Raw RGB+LDPC(100,90)
+> 012345678910
+> 10 −1
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> SNR, 𝛾 (dB)
+> Latency,  𝐿  (s)
+> (a) 𝐶 =5,𝑝 =0.9
+> 00.20.40.60.81
+> 10 −2
+> 10 −1
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Channel non-access probability, 𝑝
+> Latency,  𝐿  (s)
+> (b) 𝐶 =5,𝛾 =6dB
+> 12345678910
+> 10 −1
+> 10 0
+> 10 1
+> 10 2
+> Number of channels, 𝐶
+> Latency,  𝐿  (s)
+> (c) 𝑝 =0.9,𝛾 =6dB Figure 3. Latency as a function of (a) SNR, (b) channel non-access probability, and (c) the number of channels. Curves denote the median, while shaded regions represent the 1st and 99th percentiles. −6−4−20246810 12 14
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> SNR, 𝛾 (dB)
+> Task accuracy
+> Proposed: VQ-VAE(512)
+> Proposed: VQ-VAE(8)
+> PNG+LDPC(100,90)
+> JPEG+LDPC(100,90)
+> Raw RGB+LDPC(100,90)
+> Figure 4. Task accuracy as a function of SNR. For the benchmarks that employ PNG and JPEG, the number of retransmissions is limited to 2.
+
+latency gains of at least 134 ×, 79 ×, and 3.3× compared to the raw-RGB, PNG, and JPEG benchmarks, respectively. 
+
+B. Task Performance Evaluation 
+
+We now evaluate the task accuracy achieved by the CRx for the proposed framework and benchmarks. For the downstream task, we consider image classification by a MobileNetV3-Large model [10]. In the implementation, we adopt a transfer learning approach by initializing the model with weights pre-trained on a large-scale dataset and, for each scenario, fine-tuning the model on the received images of the target dataset. Fine-tuning is performed with a training batch size of 64 and a learning rate of 10 −3. The performance metric captures both the receiver’s ability to decode images, even with distortion, and the resulting classification accuracy. Thus, the task accuracy is zero when an image cannot be decoded and equals the classification accuracy otherwise. Fig. 4 shows the task accuracy as a function of SNR, while Fig. 5 depicts the peak signal-to-noise ratio (PSNR) of the successfully decoded images as a function of SNR. To limit latency in this evaluation, we set the maximum number of retransmissions per block to 2 for the PNG and JPEG bench-marks. Under this constraint, these schemes cannot decode the images when SNR is below 6 dB, resulting in a zero task accuracy. 3 This does not occur in the proposed framework or in the raw-RGB benchmark, where task performance and distortion degrade gracefully as SNR decreases, allowing task execution even under channel fading. When SNR is above 6 dB, the proposed framework with a codebook size of 512 achieves task accuracy comparable to standard separate source and channel coding schemes, with a marginal drop of up to 2% relative to the PNG benchmark, and a gain of up to 1.7% over that with JPEG. Moreover, for SNR below 2 dB, the pro-posed framework achieves higher task accuracy with a smaller codebook, thanks to the lower BLER obtained with shorter blocks. Lastly, Fig. 5 highlights that the proposed framework also exhibits reasonable image reconstruction performance, indicating its potential for other computer vision tasks. Considering the latency and task accuracy results jointly, we note that the proposed framework achieves low-latency com-             
+
+> 3In practice, link adaptation may restore communication by selecting a lower coding rate ( 𝑘 /𝑏 ), at the cost of additional latency due to feedback exchange and the transmission of additional parity bits.
+> −6−4−20246810 12 14
+> 10
+> 15
+> 20
+> 25
+> 30
+> 35
+> 40
+> SNR, 𝛾 (dB)
+> PSNR (dB)
+> Proposed: VQ-VAE(512)
+> Proposed: VQ-VAE(8)
+> JPEG+LDPC(100,90)
+> Raw RGB+LDPC(100,90)
+> Figure 5. PSNR of the successfully decoded images as a function of SNR.
+
+munication that scales well under limited spectrum availability. At the same time, it maintains competitive task accuracy, out-performing conventional source coding schemes by enabling task execution even under challenging channel conditions. VI. C ONCLUSION 
+
+In this paper, we proposed a framework for task-oriented, low-latency image transmission with opportunistic spectrum access. By leveraging discrete, low-dimensional latent rep-resentations learned via a VQ-VAE, the framework reduces the number of transmitted bits while remaining compatible with conventional digital communication pipelines. Numerical results demonstrate a favorable latency-accuracy trade-off, with substantial latency reductions and only marginal accuracy degradation compared to standard benchmarks. Overall, the proposed framework enables efficient operation under limited spectrum availability by reducing the number of transmitted bits and avoiding retransmissions, while supporting uninter-rupted task execution even under adverse channel conditions. APPENDIX AENCODER AND DECODER MODEL ARCHITECTURES 
+
+The implemented encoder and decoder architectures are listed from input to output in Table I. In the table, “Conv2d” denotes a two-dimensional convolutional layer, whereas “Con-vTranspose2d” denotes its transposed counterpart. “Residu-alStack” denotes a stack of residual blocks following the ResNet architecture. All layers use the rectified linear unit as the activation function, denoted as “ReLU”. Further details on the hyperparameters can be found in the PyTorch 2.10.0 documentation and the source code provided with this work. APPENDIX BQUALITATIVE EVALUATION 
+
+To illustrate the impact of compression and communica-tion errors on image quality, Fig. 6 presents examples of compressed and received images obtained with the proposed framework and the benchmark transmission schemes. The label “Decoding failed” indicates cases where the received JPEG and PNG streams could not be decoded due to bitstream corruption, assuming a maximum of 2 retransmissions per block. The examples show that images compressed by VQ-VAE exhibit smoother edges and a loss of fine detail, both of Table I ENCODER AND DECODER MODEL ARCHITECTURES 
+
+Model Layer type Hyperparameters Activation Output channels 
+
+Encoder Conv2d kernel_size=4 , stride=2 , padding=1 ReLU 64 Conv2d kernel_size=4 , stride=2 , padding=1 ReLU 128 Conv2d kernel_size=3 , stride=1 , padding=1 ReLU 128 ResidualStack 
+
+num_blocks=2 , mid_channels=32 
+
+ReLU 128 Layer 1: kernel_size=3 , stride=1 , padding=1 
+
+Layer 2: kernel_size=1 , stride=1 , padding=0 
+
+Conv2d kernel_size=1 , stride=1 , padding=0 ReLU Δ
+
+Decoder ConvTranspose2d kernel_size=4 , stride=2 , padding=1 ReLU 128 ResidualStack 
+
+num_blocks=2 , mid_channels=32 
+
+ReLU 128 Layer 1: kernel_size=3 , stride=1 , padding=1 
+
+Layer 2: kernel_size=1 , stride=1 , padding=0 
+
+ConvTranspose2d kernel_size=4 , stride=2 , padding=1 ReLU 64 ConvTranspose2d kernel_size=4 , stride=2 , padding=1 ReLU 3
+
+Figure 6. Examples of compressed images by the CTx and received images by the CRx considering the proposed framework and the benchmark transmission schemes. For the benchmarks that employ PNG and JPEG, the number of retransmissions is limited to 2. 
+
+which become more pronounced as the codebook size de-creases. Nevertheless, VQ-VAE largely preserves the shapes, edges, and colors of the original image and avoids the block-boundary artifacts observed with JPEG compression. Addi-tionally, consistent with the trend in Fig. 5, received images using VQ-VAE and raw RGB exhibit increasing distortion as the SNR decreases due to erroneously received blocks. For VQ-VAE specifically, reception errors produce distinct degradation patterns across images. For instance, at an SNR of 
+
+−2 dB, the brass-player image compressed with VQ-VAE(512) is severely degraded by grain-like artifacts, whereas the truck image largely retains its original shape. At the same SNR, VQ-VAE(8) demonstrates greater robustness, as the dog, church, and truck images preserve their shapes and edges, exhibiting mainly color distortions. REFERENCES [1] E. C. Strinati et al. , “Goal-oriented and semantic communication in 6G AI-native networks: The 6G-GOALS approach,” in 2024 Joint European Conference on Networks and Communications & 6G Summit (EuCNC/6G Summit) , 3-6 June 2024. [2] A. Zhang and S. Guo, “Learning multi-rate task-oriented communica-tions over symmetric discrete memoryless channels,” IEEE Commun. Lett. , vol. 28, no. 10, pp. 2303–2307, Oct. 2024. [3] S. Xie et al. , “Robust information bottleneck for task-oriented commu-nication with digital modulation,” IEEE J. Sel. Areas Commun. , vol. 41, no. 8, pp. 2577–2591, Aug. 2023. [4] Q. Hu et al. , “Robust semantic communications with masked VQ-VAE enabled codebook,” IEEE Trans. Wireless Commun. , vol. 22, no. 12, pp. 8707–8722, Dec. 2023. [5] A. van den Oord, O. Vinyals, and K. Kavukcuoglu, “Neural discrete representation learning,” in Proceedings of the 31st International Con-ference on Neural Information Processing Systems , 2017, p. 6309–6318. [6] J. Mitola and G. Maguire, “Cognitive radio: making software radios more personal,” IEEE Personal Communications , vol. 6, no. 4, pp. 13– 18, Aug. 1999. [7] S. Haykin, “Cognitive radio: brain-empowered wireless communica-tions,” IEEE J. Sel. Areas Commun. , vol. 23, no. 2, pp. 201–220, Feb. 2005. [8] J. G. Proakis and M. Salehi, Digital Communications , 5th ed. New York, NY, USA: McGraw-Hill, 2008. [9] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in 3rd International Conference on Learning Representations, ICLR 2015 , May 7-9 2015. [10] A. Howard et al. , “Searching for MobileNetV3,” in 2019 IEEE/CVF International Conference on Computer Vision (ICCV) , 27 Oct.-2 Nov. 2019, pp. 1314–1324.

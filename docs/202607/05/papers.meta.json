@@ -1,0 +1,54 @@
+{
+  "label": "2026-07-05",
+  "date": "2026-07-05",
+  "generated_at": "2026-07-05T20:19:24",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/05/2606.31456v1-zero-shot-quantization-for-object-detectors-using-off-the-shelf-generative-models",
+      "section": "deep",
+      "title_en": "Zero-Shot Quantization for Object Detectors using Off-the-Shelf Generative Models",
+      "authors": "Hyunho Lee, Kyomin Hwang, Hyeonjin Kim, Suyoung Kim, Sunghyun Wee, Nojun Kwak",
+      "date": "2026-06-30",
+      "pdf": "https://arxiv.org/pdf/2606.31456v1",
+      "score": "8.0",
+      "evidence": "边缘目标检测器的零样本量化",
+      "tldr": "针对目标检测器零样本量化（ZSQ）中训练数据不可用的问题，现有噪声优化方法在低比特（如W4A4、W3A3）下性能不佳。本文提出GoodQ，利用现成生成模型构建训练集，通过信息密集提示生成多实例图像，结合固有分布感知选择匹配类别分布，并采用教师引导自适应降噪减少伪标签噪声。在低比特量化中取得SOTA结果，并扩展至极端比特宽度。",
+      "tags": "query:mec-video",
+      "abstract_en": "With an increasing number of Object Detection (OD) models being deployed on edge devices, Zero-Shot Quantization for OD (ZSQ-OD) aims to quantize these models when access to the original training data is prohibited. Existing research on Zero-Shot Quantization-Aware Training (QAT) for OD synthesizes training sets through noise optimization. However, this approach struggles to maintain performance in low-bit regions. In this paper, we introduce GoodQ (Generative off-the-shelf models for object detector Quantization), a QAT pipeline that utilizes off-the-shelf generative models to construct a training set. We first identify three challenges that arise when introducing a generative model to the ZSQ-OD task: 1) each image contains dense information with multiple instances, 2) the class-wise distribution in the original dataset is imbalanced, and 3) the pseudo-labels assigned to the generated images can potentially act as noisy signals during QAT. GoodQ addresses these challenges by 1) introducing an Information-Dense Prompting strategy to generate multi-instance images, 2) applying Intrinsic Distribution-Aware Selection to match the pretrained class distribution, and 3) employing Teacher-guided Adaptive Noise Reduction to mitigate noise arising from the QAT process. Our framework achieves state-of-the-art performance in low-bit ZSQ (W4A4) and extends quantization to extreme bit-widths (W3A3). Furthermore, we conduct an extensive analysis to uncover the underlying factors contributing to the efficacy of GoodQ.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/05/2607.01921v1-low-latency-task-oriented-image-transmission-with-opportunistic-spectrum-access",
+      "section": "quick",
+      "title_en": "Low-Latency Task-Oriented Image Transmission with Opportunistic Spectrum Access",
+      "authors": "João Henrique Inacio de Souza, Mattia Merluzzi, Mateus P. Mota, Beatriz Soret, Petar Popovski",
+      "date": "2026-07-02",
+      "pdf": "https://arxiv.org/pdf/2607.01921v1",
+      "score": "7.0",
+      "evidence": "低延迟任务导向传输，适用于移动边缘视频分析",
+      "tldr": "传统通信系统追求数据重建，在有限频谱和衰落信道下延迟高。为此，提出基于机会频谱接入的任务导向传输框架，发射端用VQ-VAE将图像编码为离散潜在表示，通过空闲授权信道数字传输。AI接收端能直接恢复任务相关信息。跨层延迟模型显示，相比基准方案，延迟降低79倍和3.3倍，分类精度仅下降5.7%和2.4%，实现了低延迟可靠任务执行。",
+      "tags": "query:mec-video",
+      "abstract_en": "Communication systems designed for reliable data reconstruction, rather than task-oriented communication, typically rely on separate source and channel coding and incur high latency under limited spectrum availability and fading channels. To address this, we propose a transmission framework with opportunistic spectrum access, in which the transmitter sends discrete latent representations learned via a vector-quantized variational autoencoder (VQ-VAE) over idle licensed channels using standard digital modulation. The AI-powered receiver is still able to reconstruct task-related information from the heavily compressed data. We develop a cross-layer latency model that accounts for compression, block errors, retransmissions, and stochastic channel access. Results on latency-accuracy trade-offs show that the proposed scheme achieves at least 79- and 3.3-fold latency reductions with only 5.7% and 2.4% drops in classification accuracy compared to benchmarks using conventional source and channel coding. The framework enables low-latency communication and reliable task execution even under limited spectrum availability and challenging channel conditions.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/05/2606.31734v1-memlearner-learning-to-query-context-memory-for-video-world-models",
+      "section": "quick",
+      "title_en": "MemLearner: Learning to Query Context memory for Video World Models",
+      "authors": "Jiwen Yu, Jianxiong Gao, Jianhong Bai, Yiran Qin, Kaiyi Huang, Quande Liu, Xintao Wang, Pengfei Wan, Kun Gai, Xihui Liu",
+      "date": "2026-06-30",
+      "pdf": "https://arxiv.org/pdf/2606.31734v1",
+      "score": "6.0",
+      "evidence": "视频世界模型的上下文查询学习",
+      "tldr": "视频世界模型因缺乏长期记忆，导致生成场景随时间推移出现不一致。现有的基于规则的上下文检索方法在遮挡和动态物体场景中泛化性差。MemLearner提出一种基于学习的自适应查询方法，利用查询令牌让视频生成模型自身从历史帧中检索相关上下文，无需额外训练模块。通过多数据集训练策略，模型在复杂动态场景下显著提升了场景一致性和记忆能力。",
+      "tags": "query:mec-video",
+      "abstract_en": "Video World Models are interactive video generation models that predict future world states based on user actions and history video frames. A critical challenge in video world models is the lack of memory, causing inconsistent generated scenes over extended durations. Previous methods explored rule-based context frame retrieval as memory, but they fail to generalize in scenarios with scene occlusions and dynamic objects. We propose MemLearner, a learning-based adaptive context query method using query tokens to bridge context and predicted tokens. By leveraging the video generation model itself for context querying, MemLearner exploits pre-trained visual priors without training additional modules from scratch, and incorporates efficient strategies for training and inference. We collect a dataset of long videos with scene occlusions and dynamic objects, paired with camera pose annotations, and propose a multi-dataset training strategy leveraging both annotated rendered and unannotated real-world videos. Extensive experiments demonstrate that MemLearner significantly outperforms prior video world models in terms of scene consistency and memory, particularly under challenging occlusion and dynamic scenarios.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

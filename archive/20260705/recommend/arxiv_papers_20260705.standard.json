@@ -1,0 +1,141 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-05T20:16:32.640057+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2606.31456v1",
+      "source": "arxiv",
+      "title": "Zero-Shot Quantization for Object Detectors using Off-the-Shelf Generative Models",
+      "abstract": "With an increasing number of Object Detection (OD) models being deployed on edge devices, Zero-Shot Quantization for OD (ZSQ-OD) aims to quantize these models when access to the original training data is prohibited. Existing research on Zero-Shot Quantization-Aware Training (QAT) for OD synthesizes training sets through noise optimization. However, this approach struggles to maintain performance in low-bit regions. In this paper, we introduce GoodQ (Generative off-the-shelf models for object detector Quantization), a QAT pipeline that utilizes off-the-shelf generative models to construct a training set. We first identify three challenges that arise when introducing a generative model to the ZSQ-OD task: 1) each image contains dense information with multiple instances, 2) the class-wise distribution in the original dataset is imbalanced, and 3) the pseudo-labels assigned to the generated images can potentially act as noisy signals during QAT. GoodQ addresses these challenges by 1) introducing an Information-Dense Prompting strategy to generate multi-instance images, 2) applying Intrinsic Distribution-Aware Selection to match the pretrained class distribution, and 3) employing Teacher-guided Adaptive Noise Reduction to mitigate noise arising from the QAT process. Our framework achieves state-of-the-art performance in low-bit ZSQ (W4A4) and extends quantization to extreme bit-widths (W3A3). Furthermore, we conduct an extensive analysis to uncover the underlying factors contributing to the efficacy of GoodQ.",
+      "authors": [
+        "Hyunho Lee",
+        "Kyomin Hwang",
+        "Hyeonjin Kim",
+        "Suyoung Kim",
+        "Sunghyun Wee",
+        "Nojun Kwak"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-30T10:29:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.31456v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "zero-shot quantization for object detectors on edge",
+      "llm_evidence_cn": "边缘目标检测器的零样本量化",
+      "llm_evidence": "边缘目标检测器的零样本量化",
+      "canonical_evidence": "边缘目标检测器的零样本量化",
+      "llm_tldr_en": "GoodQ uses off-the-shelf generative models to create training data for zero-shot quantization of object detectors, enabling efficient deployment on edge devices.",
+      "llm_tldr_cn": "目标检测模型在边缘设备部署时面临数据隐私问题，零样本量化无需原始训练数据。本文提出GoodQ，利用现成生成模型构建训练集，解决低比特量化性能下降问题。通过识别并克服生成模型引入的三个挑战，GoodQ在低比特区域保持高精度，为边缘视频分析中的实时目标检测提供了可行方案。",
+      "llm_tldr": "目标检测模型在边缘设备部署时面临数据隐私问题，零样本量化无需原始训练数据。本文提出GoodQ，利用现成生成模型构建训练集，解决低比特量化性能下降问题。通过识别并克服生成模型引入的三个挑战，GoodQ在低比特区域保持高精度，为边缘视频分析中的实时目标检测提供了可行方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.01921v1",
+      "source": "arxiv",
+      "title": "Low-Latency Task-Oriented Image Transmission with Opportunistic Spectrum Access",
+      "abstract": "Communication systems designed for reliable data reconstruction, rather than task-oriented communication, typically rely on separate source and channel coding and incur high latency under limited spectrum availability and fading channels. To address this, we propose a transmission framework with opportunistic spectrum access, in which the transmitter sends discrete latent representations learned via a vector-quantized variational autoencoder (VQ-VAE) over idle licensed channels using standard digital modulation. The AI-powered receiver is still able to reconstruct task-related information from the heavily compressed data. We develop a cross-layer latency model that accounts for compression, block errors, retransmissions, and stochastic channel access. Results on latency-accuracy trade-offs show that the proposed scheme achieves at least 79- and 3.3-fold latency reductions with only 5.7% and 2.4% drops in classification accuracy compared to benchmarks using conventional source and channel coding. The framework enables low-latency communication and reliable task execution even under limited spectrum availability and challenging channel conditions.",
+      "authors": [
+        "João Henrique Inacio de Souza",
+        "Mattia Merluzzi",
+        "Mateus P. Mota",
+        "Beatriz Soret",
+        "Petar Popovski"
+      ],
+      "primary_category": "cs.IT",
+      "categories": [
+        "cs.IT",
+        "cs.AI"
+      ],
+      "published": "2026-07-02T09:18:24+00:00",
+      "link": "https://arxiv.org/pdf/2607.01921v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Low-latency task-oriented transmission for edge video analytics",
+      "llm_evidence_cn": "低延迟任务导向传输，适用于移动边缘视频分析",
+      "llm_evidence": "低延迟任务导向传输，适用于移动边缘视频分析",
+      "canonical_evidence": "低延迟任务导向传输，适用于移动边缘视频分析",
+      "llm_tldr_en": "Proposes a low-latency task-oriented image transmission framework with opportunistic spectrum access using VQ-VAE compression, tailored for edge environments with limited spectrum.",
+      "llm_tldr_cn": "在有限频谱和衰落信道下，传统通信系统为可靠数据重建设计，时延高。本文提出基于机会频谱接入的任务导向传输框架，发射端用VQ-VAE将图像压缩为离散潜在表示，通过空闲授权信道传输，接收端AI仍能恢复任务相关信息。建立了跨层时延模型，实验表明在低信噪比下仍能保持低时延和任务精度，适用于移动边缘计算中的视频分析应用。",
+      "llm_tldr": "在有限频谱和衰落信道下，传统通信系统为可靠数据重建设计，时延高。本文提出基于机会频谱接入的任务导向传输框架，发射端用VQ-VAE将图像压缩为离散潜在表示，通过空闲授权信道传输，接收端AI仍能恢复任务相关信息。建立了跨层时延模型，实验表明在低信噪比下仍能保持低时延和任务精度，适用于移动边缘计算中的视频分析应用。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.31734v1",
+      "source": "arxiv",
+      "title": "MemLearner: Learning to Query Context memory for Video World Models",
+      "abstract": "Video World Models are interactive video generation models that predict future world states based on user actions and history video frames. A critical challenge in video world models is the lack of memory, causing inconsistent generated scenes over extended durations. Previous methods explored rule-based context frame retrieval as memory, but they fail to generalize in scenarios with scene occlusions and dynamic objects. We propose MemLearner, a learning-based adaptive context query method using query tokens to bridge context and predicted tokens. By leveraging the video generation model itself for context querying, MemLearner exploits pre-trained visual priors without training additional modules from scratch, and incorporates efficient strategies for training and inference. We collect a dataset of long videos with scene occlusions and dynamic objects, paired with camera pose annotations, and propose a multi-dataset training strategy leveraging both annotated rendered and unannotated real-world videos. Extensive experiments demonstrate that MemLearner significantly outperforms prior video world models in terms of scene consistency and memory, particularly under challenging occlusion and dynamic scenarios.",
+      "authors": [
+        "Jiwen Yu",
+        "Jianxiong Gao",
+        "Jianhong Bai",
+        "Yiran Qin",
+        "Kaiyi Huang",
+        "Quande Liu",
+        "Xintao Wang",
+        "Pengfei Wan",
+        "Kun Gai",
+        "Xihui Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-30T14:31:32+00:00",
+      "link": "https://arxiv.org/pdf/2606.31734v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "learning to query context memory for video world models",
+      "llm_evidence_cn": "视频世界模型的上下文查询学习",
+      "llm_evidence": "视频世界模型的上下文查询学习",
+      "canonical_evidence": "视频世界模型的上下文查询学习",
+      "llm_tldr_en": "MemLearner proposes a learning-based adaptive context query method for video world models, improving long-term consistency by leveraging pre-trained visual priors.",
+      "llm_tldr_cn": "视频世界模型在长时间生成中因缺乏记忆导致场景不一致。现有基于规则的检索方法在遮挡和动态场景下泛化不足。MemLearner提出基于学习的自适应上下文查询方法，利用查询令牌桥接上下文与预测令牌，无需从头训练额外模块。实验表明，该方法显著提升视频生成的时序一致性，适用于流式视频分析等需要长期记忆的场景。",
+      "llm_tldr": "视频世界模型在长时间生成中因缺乏记忆导致场景不一致。现有基于规则的检索方法在遮挡和动态场景下泛化不足。MemLearner提出基于学习的自适应上下文查询方法，利用查询令牌桥接上下文与预测令牌，无需从头训练额外模块。实验表明，该方法显著提升视频生成的时序一致性，适用于流式视频分析等需要长期记忆的场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
