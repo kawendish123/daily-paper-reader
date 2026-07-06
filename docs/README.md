@@ -6,31 +6,36 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-05
-- 运行时间：2026-07-05 20:19:17 UTC
+- 最新运行日期：2026-07-06
+- 运行时间：2026-07-06 20:57:54 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：1
-- 速读区：2
+- 本次总论文数：5
+- 精读区：0
+- 速读区：5
 
 ### 今日简报（AI）
-1) 今日精读高评价论文《Zero-Shot Quantization for Object Detectors using Off-the-Shelf Generative Models》（8.0分），速读两篇分别聚焦低延迟图像传输与视频世界模型。  
-2) 最值得关注：利用现成生成模型无需微调即可压缩目标检测器；低延迟任务导向传输结合机会频谱接入可提升实时通信效率。  
-3) 建议读者探索生成模型在模型压缩中的潜力，并关注任务导向通信与视频学习的交叉应用。
-- 详情：[/202607/05/README](/202607/05/README)
+今日速览5篇论文，聚焦视频质量理解、RGB-事件检测及主动异常分析。重点推荐《LongVQUBench》长视频质量理解基准（7.0分）与《Learning to Watch》主动视频异常理解框架（6.0分）。建议优先精读这两篇，把握长视频评估与交互式异常分析的前沿思路。
+- 详情：[/202607/06/README](/202607/06/README)
 
 ### 精读区论文标签
-1. [Zero-Shot Quantization for Object Detectors using Off-the-Shelf Generative Models](/202607/05/2606.31456v1-zero-shot-quantization-for-object-detectors-using-off-the-shelf-generative-models)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：边缘目标检测器的零样本量化
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Low-Latency Task-Oriented Image Transmission with Opportunistic Spectrum Access](/202607/05/2607.01921v1-low-latency-task-oriented-image-transmission-with-opportunistic-spectrum-access)  
+1. [LongVQUBench: Benchmarking Long-Term Video Quality Understanding of Vision-Language Models](/202607/06/2607.01086v1-longvqubench-benchmarking-long-term-video-quality-understanding-of-vision-language-models)  
    标签：评分：7.0/10、query:mec-video
-   evidence：低延迟任务导向传输，适用于移动边缘视频分析
-2. [MemLearner: Learning to Query Context memory for Video World Models](/202607/05/2606.31734v1-memlearner-learning-to-query-context-memory-for-video-world-models)  
+   evidence：面向长时间视频质量理解的基准，涵盖监控流式场景
+2. [CMTFormer: Marrying Transformer with Hierarchical Information Interaction for RGB-Event Object Detection](/202607/06/2606.29136v1-cmtformer-marrying-transformer-with-hierarchical-information-interaction-for-rgb-event-object-detection)  
    标签：评分：6.0/10、query:mec-video
-   evidence：视频世界模型的上下文查询学习
+   evidence：面向视频分析的RGB-事件目标检测
+3. [Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization](/202607/06/2607.00622v1-learning-to-watch-active-video-anomaly-understanding-via-interleaved-policy-optimization)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：视频异常理解，主动决策
+4. [Towards Memory-Efficient Autoregressive Video Generation via Instance-Specific Parametric Absorption](/202607/06/2607.00712v1-towards-memory-efficient-autoregressive-video-generation-via-instance-specific-parametric-absorption)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：面向实时流式记忆高效的自回归视频生成
+5. [Deep-Pose-Tracker: an automated behavioural analysis framework for Caenorhabditis elegans](/202607/06/biorxiv-10-1101-2025-11-23-689997-v3-deep-pose-tracker-an-automated-behavioural-analysis-framework-for-caenorhabditis-elegans)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：动物行为自动化视频分析
 
 
 <div class="dpr-home-promo-card">

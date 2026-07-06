@@ -1,0 +1,1553 @@
+Title: Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization
+
+URL Source: https://arxiv.org/pdf/2607.00622v1
+
+Published Time: Thu, 02 Jul 2026 00:54:36 GMT
+
+Number of Pages: 25
+
+Markdown Content:
+# Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+Mengjingcheng Mo 1 Jiaxu Leng 1 2 Xinbo Gao 1
+
+Abstract 
+
+Video anomaly understanding (VAU) relies on sparse, context-dependent cues. However, exist-ing passive paradigms suffer from observational aliasing, where static sampling fails to disam-biguate semantically distinct events. To overcome this, we propose Anom -π, a closed-loop frame-work that reconceptualizes video understanding as an active sequential decision-making process within a dynamic environment. Inspired by hu-man video-reviewing behavior, this framework unifies internal cognitive reasoning and strategic evidence acquisition into an interleaved policy, utilizing temporal atomic operators such as lo-cal backtracking, temporal expansion, and fine-grained sampling to endow the model with per-ceptual proactivity. To learn such complex inter-action strategies under video-level weak super-vision, we design Interactive Direct Preference Optimization (iDPO) to achieve trajectory-level policy alignment, guided by an Active Evidence Inquiry (AEI) utility that balances task success, informative evidence acquisition, and interaction cost. This approach enables the agent to learn to actively disambiguate hypotheses while suppress-ing redundant exploration. Extensive experiments demonstrate that our framework, with only 2B parameters, achieves highly competitive perfor-mance, significantly outperforming state-of-the-art large-scale VAU models in complex scenarios. 
+
+1. Introduction 
+
+Video anomaly understanding (VAU) aims to build a gen-eral anomaly recognition capability for open-world diver-
+
+> 1
+
+School of Computer Science and Technology, Chongqing University of Posts and Telecommunications, Chongqing, China 
+
+> 2
+
+Chongqing College of Artificial Intelligence, Chongqing, China. Correspondence to: Xinbo Gao <gaoxb@cqupt.edu.cn >.
+
+Proceedings of the 43 rd International Conference on Machine Learning , Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). Existing VAU 
+
+> Methods
+
+(a) Passive Understanding in Verbal Space 
+
+(b) Active Exploration in Visual Space                                 
+
+> Anom -𝝅 (Ours)
+> 𝑎 %~𝜋 (78 B|𝑠 %
+> ‘normal ’
+> abnormal!
+> static sampling (may miss sparse anomaly evidence)
+> Visual
+> Thought
+> Video Env . ( 𝑉 ){𝜐 }%"#~𝑂𝑏𝑠 𝑉 𝑎 %,𝑠 %
+> Verbal
+> Thought
+> 𝜋 6-'
+> 𝑉 ={𝑣 !,𝑣 ",⋯,𝑣 #}
+> 𝑉 ={𝑣 !,𝑣 ",⋯,𝑣 #}
+> Atomic Actions
+> Input
+> {𝜐 }!~𝑂𝑏𝑠 (𝑉 )
+> Input
+> {𝜐 }~𝑃𝑟𝑒 (𝑉 )
+> 𝜋 %9$
+> unsampled sampled abnormal video frame sequence
+
+(a) Passive Understanding in Verbal Space Existing VAU 
+
+> Methods
+
+(a) Passive Understanding in Verbal Space 
+
+(b) Active Exploration in Visual Space                                 
+
+> Anom -𝝅 (Ours)
+> 𝑎 %~𝜋 (78 B|𝑠 %
+> ‘normal ’
+> abnormal!
+> static sampling (may miss sparse anomaly evidence)
+> Visual
+> Thought
+> Video Env . ( 𝑉 ){𝜐 }%"#~𝑂𝑏𝑠 𝑉 𝑎 %,𝑠 %
+> Verbal
+> Thought
+> 𝜋 6-'
+> 𝑉 ={𝑣 !,𝑣 ",⋯,𝑣 #}
+> 𝑉 ={𝑣 !,𝑣 ",⋯,𝑣 #}
+> Atomic Actions
+> Input
+> {𝜐 }!~𝑂𝑏𝑠 (𝑉 )
+> Input
+> {𝜐 }~𝑃𝑟𝑒 (𝑉 )
+> 𝜋 %9$
+> unsampled sampled abnormal video frame sequence
+
+(b) Active Exploration in Visual Space 
+
+Figure 1. Comparison of passive and active evidence acquisition for video anomaly understanding. (a) Existing VAU methods use static sampling in the verbal space, which may miss sparse anomaly evidence. (b) Anom-π actively explores the video in the visual space to gather informative observations and detect anomalies. 
+
+sity. The task requires localizing anomalous events in com-plex video streams and producing verifiable evidence. Dis-criminative cues for anomalies are typically sparse, making ambiguous cases rely on temporal context for disambigua-tion. However, incorporating broader context introduces substantial redundant background that can drown out the few critical cues (Chen et al., 2025). General-purpose large language models (LLMs) may then fail to reliably aggregate evidence into verifiable decision chains, yielding suboptimal decisions. This highlights a bottleneck beyond reasoning, namely how evidence is selected and coupled with the rea-soning process. This bottleneck is particularly acute under weak supervi-sion (Wu et al., 2020; Sultani et al., 2018), a practical regime where training provides only video-level labels while eval-uation requires frame-level detection. In this setting, a key challenge is how to shape LLM-based anomaly decision behavior using only coarse supervision. Existing LLM-1
+
+> arXiv:2607.00622v1 [cs.CV] 1 Jul 2026 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization
+
+based methods can be broadly categorized into three routes. Training-free approaches (Zanella et al., 2024; Li et al., 2026a; Yang et al., 2026) rely on prompt-based reason-ing without data-driven optimization, using frozen LLM pipelines to score anomalies. In contrast, supervision-intensive approaches (Du et al., 2024; Zhang et al., 2025; Huang et al., 2026) construct anomaly-focused instruction data and fine-tune large multimodal models for detection and explanation. Alternatively, some methods (Tang et al., 2024; Huang et al., 2025) train specialized anomaly detec-tors for detection and use LLMs mainly for interpretation or caption generation. These methods remain passive and open-loop, with evidence fixed before inference, as illustrated in Fig. 1a. Even with multi-step reasoning, the pipeline is one-way from percep-tion to cognition, without feedback to refine evidence acqui-sition under uncertainty. One approach (Zhang et al., 2025; Chen et al., 2025) is to improve evidence selection with auxiliary scorers or lightweight models that estimate impor-tance or anomaly likelihood. Yet evidence acquisition is still decoupled from the final decision, and these proxy scores can break under domain shift. More fundamentally, the open-loop setting prevents learning an understanding-driven evidence-accumulation strategy, leaving the model unable to acquire more evidence under uncertainty or terminate rationally once sufficient, which reflects limited perceptual autonomy. To address this mismatch, we propose Anom-π, which re-frames anomaly understanding from static classification into an active, closed-loop hypothesis-verification process (Fig. 1b). We cast anomaly understanding as sequential decision-making and treat T HINK , I NTERACT , and F INAL 
+
+as peer discrete actions, yielding an interleaved policy π.Specifically, I NTERACT allows the agent to actively gather evidence through operations such as local backtracking, tem-poral expansion, and fine-grained sampling. Driven by the gathered information, F INAL then serves as an evidence-sufficiency-based termination action rather than a post-hoc rule driven by external thresholds. The policy can invoke re-producible atomic observation operators to probe ambiguity and terminate once evidence is sufficient, thereby closing the perception loop and reducing high-confidence errors induced by open-loop pipelines. To learn π without fine-grained action or state supervision, we adopt preference-based policy learning. For each video, we sample multiple trajectories and construct chosen/re-jected preference pairs under video-level weak-label con-straints, turning interaction choices and termination timing into scalable training signals. We define preferences by the value of information, favoring interactions that increase hy-pothesis separability while suppressing ineffective or redun-dant observations. Concretely, we instantiate this principle with an Active Evidence Inquiry (AEI) utility that combines task success, intrinsic inquiry incentives, and interaction cost. We then optimize an Interactive Direct Preference Optimization (iDPO) objective to achieve trajectory-level alignment, bypassing explicit reward modeling and the in-herent instabilities of on-policy policy gradients. Impor-tantly, rejected trajectories provide a contrastive signal that suppresses near-miss behaviors, where outcomes appear correct but evidence acquisition or stopping decisions are flawed, improving cross-scenario generalization. Our main contributions are as follows. (1) We propose Anom-π, which reformulates video anomaly understanding as a closed-loop sequential decision-making process with active interaction. (2) We design a set of reproducible and composable atomic observation operators, and implement a controllable interact interface via tool calls. (3) We propose Interactive Direct Preference Optimization (iDPO), guided by an Active Evidence Inquiry (AEI) utility, to align the in-terleaved policy π at the trajectory level. (4) We validate the effectiveness and generalization of the learned interleaved policy on multiple benchmarks, and show that active evi-dence acquisition improves evidence discovery and decision reliability. 
+
+2. Related Work 
+
+Video Anomaly Detection. The task is challenging due to sparse anomalies, costly temporal annotations, and open-set semantics (Sultani et al., 2018; Wu et al., 2020; Acsintoae et al., 2022). Most practical pipelines are weakly super-vised and learn clip-level anomaly scores from video-level labels under the multi-instance learning paradigm (Tian et al., 2021), using uncertainty regulation (Zhou et al., 2023), self-distillation (Ristea et al., 2024), or multimodal aggre-gation (Majhi et al., 2025). Recent work further incorpo-rates semantic priors by leveraging clip-level semantics (Wu et al., 2024; Chen et al., 2024a; Wang & Chen, 2025) or vision-language representations (Huang et al., 2025; Li et al., 2025b; 2023; 2025a), improving discriminability and in-terpretability under coarse supervision. Overall, existing methods typically follow a fixed observation protocol with predefined sampling and single-pass inference, which may degrade when anomalies are sparse or evidence is highly contextual. 
+
+Video Anomaly Understanding. Recent studies move be-yond scoring and localization toward video anomaly un-derstanding, producing anomaly categories (Huang et al., 2025) and natural language rationales via vision-language and language models (Zanella et al., 2024). Training-free paradigms (Shao et al., 2025; Li et al., 2026a; Yang et al., 2026) can reason over temporal cues with frozen models (Liu et al., 2024; Chen et al., 2024b), but their reliability is limited by expert-guided orchestration 2Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 𝑅 !"# 
+
+Trajectory Generation 
+
+𝛼 $
+
+𝛼 %
+
+𝛼 &
+
+𝛼 '
+
+Anom -𝝅 
+
+(Policy 𝜋 !)
+
+𝑛 rollouts 
+
+𝑟 (!!
+
+𝑟 )*+ 
+
+𝐶 ,)) 
+
+𝑜 $
+
+> +-$
+
+𝑜 %
+
+> +-$
+
+𝑜 &
+
+> +-$
+
+𝑜 '
+
+> +-$
+
+𝜏 $
+
+𝜏 %
+
+𝜏 &
+
+𝜏 '     
+
+> rIntrinsic Signals rrrTask Signals
+
+𝜏 "            
+
+> Elif >:
+> cache max pred
+> If <-:
+> Else :
+> r
+> r
+> =0
+> =−1
+> r(. -)-
+> =
+
+𝜏 #
+
+Preference 
+
+Data 𝐷 $%&' 
+
+Scoring, Ranking & Pairing Video as an Environment 
+
+Interaction Loop 
+
+> ··· ···
+
+𝑝𝑟𝑜𝑚𝑝𝑡  
+
+> Trajectory
+> Buffer 𝜏
+
++ 𝑥 
+
+Preference Construction    
+
+> fine -grained sampling
+> temporal expansion
+> local backtracking
+> Action Set 𝐴 :𝜋 !"#
+> Think Action: 𝜋 $%&
+> <|thought|>
+
+Optimize 𝜋 ! on Preference Pairs 𝑥 , 𝜏 ", 𝜏 #        
+
+> 𝒴 =̂𝒸 ,̂𝓏 ':!
+> Efficiency Signal ( 𝑪 𝒆𝒇𝒇 )
+> If satisfied: = 1
+> Else:
+> r
+> r= 0
+> If same: = 1
+> Else:
+> r
+> r= 0 Pred Label
+
+v.s.                                      
+
+> Interaction Scoring
+> video -level anno.
+> Decision Accuracy ( 𝒓 𝒂𝒄𝒄 )
+> <think>...</think>
+> <action>...</action>
+> <answer>...</answer>
+> update update
+> History Set
+> 𝒜 $-.
+> Information Gain ( 𝑟 /01 )Hypothesis Evolution ( 𝑟 %2# )
+> unknown tentative confident
+> ℋ!"# ℋ$%" ℋ&'"
+> stagnation
+> +0.5+0.5
+> −0.5⟹
+> prediction 𝐶 #change ⟹+0.5
+> Novelty Filter
+> hypothesis state check
+> 𝐼𝑓 ℋ($)$ ∈𝑢𝑛𝑘 ,𝑡𝑒𝑛
+> 𝑟 /01 *
+> !"#
+> $
+> =𝜈 𝑎 $+𝕀 𝑎 $,𝑝 $∉𝒜 $-.*
+> !"#
+> $
+> 𝑟 %2# =𝛿 H&,𝐶 &
+> 𝑎 $,𝑝 $
+> ⟹
+> +0.5
+> 𝜏 &
+> Format Validity (𝒓 𝒇𝒎𝒕 )Curiosity Signal ( 𝑹 𝒄𝒖𝒓 )
+> FINAL: 𝜋 70'
+> perceive
+> reason
+> plan
+> Exploratory Cues
+> <|hypothesis|>
+> <|next -action|>
+
+Figure 2. Overview of Anom-π. Left: closed-loop active inquiry that alternates deliberation (T HINK ) with evidence acquisition (B ACKTRACK /E XPAND /S AMPLE ) before terminating with F INAL to output clip-level hypotheses. Right: trajectory-level preference construction and optimization via iDPO from ranked rollouts. 
+
+pipelines. Complementary approaches improve sensitiv-ity to sparse anomalies through lightweight supervision, including prompt learning (Yang et al., 2024; Ye et al., 2025), lightweight adapters (Zhang et al., 2025), and token-level selection (Tang et al., 2024) or alignment (Chen et al., 2025) that steers model attention toward anomaly evidence. Recent works also explore reinforcement-style reasoning optimization for VAU and related anomaly-understanding tasks (Huang et al., 2026; Zhu et al., 2025; Mo et al., 2026; Yu et al., 2026; Li et al., 2026b; Kang et al., 2026). Orthog-onal to these reasoning-optimization efforts, we focus on making evidence acquisition itself learnable by reformulat-ing VAU as an interaction policy that dynamically adapts its observation strategy based on evolving anomaly hypothe-ses, synergistically coupling active perception with iterative reasoning. 
+
+3. Method 
+
+3.1. Problem Formulation 
+
+We view video anomaly understanding as active inquiry 
+
+in a dynamic video environment. Given an untrimmed video V = {xt}Tt=1 , we form overlapping clips with a sliding window of length L and stride ∆: ci = {xt}ti+L−1 
+
+> t=ti
+
+,where ti = 1 + ( i − 1)∆ . Each clip ci defines an episode where the agent navigates an information space via a uni-fied action space A = Ainq ∪ { THINK , FINAL }, with 
+
+Ainq = {BACKTRACK , EXPAND , SAMPLE }. At step n, the agent conditions on the trajectory τn = ( o1, a 1, e 1, . . . , o n),where on encapsulates the current belief (including a struc-tured hypothesis state hyp n) and en is the evidence returned by investigative actions. The episode terminates when an =
+
+FINAL , yielding up to M hypotheses (ˆ yi,m , ˆbi,m , ˆpi,m ),where ˆyi,m ∈ Y is the category, ˆbi,m = (ˆ tst 
+
+> i,m
+
+, ˆted 
+
+> i,m
+
+) is the temporal range (within the clip), and ˆpi,m ∈ [0 , 1] is the confidence. We define the clip-level anomaly confidence as ˆzi = max m ˆpi,m . For frame-level scoring, each clip episode produces a local score vector over its L frames. If the episode predicts normal or has no valid anomalous range, all local scores are 0; otherwise, frames inside the predicted anomalous range(s) receive score 1, and the re-maining frames in the same clip receive score 0.5. The final score of a video frame is obtained by averaging the scores from all overlapping clips covering that frame. 
+
+3.2. Closed-Loop Interactive Inference 
+
+Unlike one-shot, open-loop mappings, Anom-π performs 
+
+closed-loop inference by alternating epistemic deliberation 
+
+and evidence queries (Fig. 2, left). This mechanism enables hypothesis revision conditioned on newly acquired evidence and allows the agent to defer decisions when information is insufficient. At each step n, the agent selects an action an ∈ A . Investiga-tive actions Ainq acquire new evidence en by changing the observation view. These actions are designed to mimic hu-man video-reviewing behaviors ( learning to watch ), rather than being arbitrary tool calls: B ACKTRACK focuses on 3Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+a subset of frames within the current clip to zoom in on potentially informative cues; E XPAND queries extended temporal context beyond the current clip to disambiguate; SAMPLE densely probes around suspicious moments for higher-resolution cues. The epistemic action T HINK does not interact with the environment; it updates the structured hypothesis state hyp n by integrating newly acquired ev-idence. The termination action F INAL ends the episode and outputs up to M hypotheses (ˆ yi,m , ˆbi,m , ˆpi,m ) with a one-sentence explanation. Closed-loop interaction follows the iterative pattern THINK → ainq ∈ A inq → THINK . In each round, the current hypothesis hyp n guides which information is miss-ing, an investigative action is chosen accordingly, and the returned evidence en is used to recalibrate the hypothesis. The stopping decision an = FINAL is part of the learned policy πθ rather than an external threshold. In practice, the agent tends to stop when its hypothesis becomes confi-dent and additional queries yield diminishing information value. We provide a value-of-information (VoI) analysis in Section 4. 
+
+3.3. Incentivizing Active Evidence Inquiry 
+
+To guide the policy πθ to navigate efficiently in the unified action space, we design an Active Evidence Inquiry (AEI) utility that combines task-driven rewards, intrinsic inquiry incentives, and interaction costs. For a trajectory τ , we define 
+
+U (τ ) = Rtask (τ ) + λ R aei (τ ) − η C (τ ), (1) where Rtask encourages task success, Raei incentivizes in-formative evidence acquisition, C(τ ) penalizes excessive interaction, and λ and η are balancing coefficients. 
+
+Task-driven rewards ( Rtask ). We use external rewards to ensure the final decision is both accurate and well-formed. In practice, Rtask is a weighted combination of two binary signals: decision accuracy (racc ; matching clip-level supervi-sion) and format validity (rfmt ; conforming to the prescribed structured output template). 
+
+Active inquiry incentives ( Raei ). To prevent premature guessing under insufficient evidence, we introduce an epis-temic drive with two components. We define the intrinsic acquisition return as 
+
+Raei (τ ) = 
+
+> N
+
+X
+
+> t=1
+
+rcur (τt), r cur (τt) = rinf (τt) + rhyp (τt), (2) where t indexes interaction steps (actions) and N is the trajectory length. (i) Information gain (rinf ): following the novelty filter in Fig. 2, let (at, p t) denote the step-t
+
+investigative action and its queried location (e.g., temporal position), and let At−1 be the set of previously queried action-location pairs. We define 
+
+rinf (τt) = v(at) I(at, p t) /∈ A t−1
+
+, (3) where v(at) optionally weights actions by their informa-tiveness. (ii) Belief refinement (rhyp ): we reward mean-ingful hypothesis evolution in the structured belief state 
+
+hyp t. Concretely, we grant a bonus when (i) the hypothesis state advances (e.g., unknown →tentative →confident ) or (ii) newly acquired evidence triggers a revision of the predicted category. A simple instantiation is 
+
+rhyp (τt) = α I[Ht ≻ H t−1] + γ I[ˆ yt̸ = ˆ yt−1], (4) where Ht denotes the discrete hypothesis status at step t and 
+
+≻ is an ordering from less to more confident. In our imple-mentation, we assign a reward bonus of 0.5 for successful refinement. 
+
+Efficiency and rational termination ( C(τ )). We assign interaction costs to reflect the overall computational bud-get, including the dominant cost of model deliberation. To encourage exploration (i.e., to let the agent query evidence before being penalized) while still accounting for compute, we use an accumulated step-cost with a free “buffer” of 
+
+Nbuf steps: 
+
+C(τ ) = 
+
+> N
+
+X
+
+> t=1
+
+ct, c t = It > N buf 
+
+, (5) where N is the number of interaction steps and Nbuf speci-fies how many initial steps are not penalized. This removes the explicit weighting hyperparameters (e.g., c0, κ ) while still keeping a small exploration buffer. As characterized in Theorem 4.4, the policy learns to execute F INAL when the expected value of information (VoI) from any further inter-action falls below its corresponding cost, yielding rational stopping without an explicit heuristic threshold. 
+
+3.4. Policy Optimization via Interactive DPO (iDPO) 
+
+Conventional supervised fine-tuning (SFT) maximizes like-lihood on a single “best” trajectory, which can be brittle in a large interactive space and may lead to overconfident, poorly calibrated stopping decisions. To learn robust decision-making under varying evidence quality, we adopt interac-tive Direct Preference Optimization (iDPO), building on Di-rect Preference Optimization (DPO) (Rafailov et al., 2023), which injects contrastive signals directly in the space of closed-loop trajectories. For each clip episode ci, we perform n independent roll-outs under the current policy πθ to obtain a set of candidate interaction trajectories {τ1, . . . , τ n}. Due to stochastic sam-pling, these trajectories differ in their evidence-query paths, 4Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+deliberation depth, and termination time. We score each tra-jectory with the AEI utility U (τ ) (Eq. (1) ), which integrates task success (e.g., decision accuracy racc and format validity 
+
+rfmt ), intrinsic inquiry benefits (e.g., information gain rinf 
+
+and belief refinement rhyp ), and interaction efficiency via the cost term C(τ ). We then rank the rollouts by U (τ ) and ex-tract preference pairs (τ +, τ −) such that U (τ +) > U (τ −).Let π0 denote a fixed reference policy (e.g., the SFT ini-tialization). Rather than training an explicit reward model, iDPO directly optimizes the trajectory likelihood ratio via the DPO loss 
+
+LiDPO (θ) = −E(τ +,τ −)
+
+h
+
+log σ β (sθ (τ +) − sθ (τ −)) i
+
+,
+
+(6) where sθ (τ ) = log πθ (τ )  
+
+> π0(τ)
+
+, σ(·) is the logistic sigmoid, and 
+
+β controls the preference sharpness. For an interaction trajectory τ , the policy likelihood decomposes as πθ (τ ) = 
+
+QNt=1 πθ (at | τt), so minimizing Eq. (6) directly updates the per-step query/stop decisions. The resulting push-pull signals reinforce trajectories that acquire discriminative evidence with fewer queries and ter-minate rationally, while suppressing redundant queries and premature stopping. The ratio to π0 acts as an implicit KL regularizer, anchoring updates and mitigating distributional shift from the reference policy. By contrasting τ + and τ −,iDPO increases the separability between preferred and dis-preferred interaction trajectories, echoing the theoretical results in Section 4. 
+
+4. Theoretical Analysis 
+
+This section provides theoretical justification for closed-loop video anomaly understanding: (i) open-loop observation admits an irreducible ambiguity; (ii) interaction can accu-mulate discriminability across rounds; and (iii) termination follows a value-of-information (VoI) tradeoff. Additional discussion and derivations are deferred to Appendix A. 
+
+Setup. Let the latent explanation be θ ∈ Θ and the video process be X ∼ pθ . At round t, the agent selects an action 
+
+at ∈ A and receives an observation ot, updating the history as ht = ht−1 ⊕ (at, o t). The termination action FINAL (ˆ y)
+
+ends the episode. Open-loop methods fix an observation operator g and per-form inference only from Y = g(X). We denote the in-duced distribution of Y under X ∼ pθ by pgθ .
+
+Theorem 4.1 (Open-loop Barrier) . If there exist θ̸ = θ′
+
+such that DTV 
+
+ pgθ , p gθ′
+
+ ≤ ε, then for any estimator 
+
+ˆθ(Y ) depending only on Y , the worst-case error obeys 
+
+inf ˆθ sup ϑ∈{ θ,θ ′} Pr ϑ
+
+ ˆθ(Y )̸ = ϑ ≥ 12 (1 − ε).Proof sketch. By Le Cam’s two-point method. This theo-rem implies an irreducible error whenever discriminative cues are not present in the fixed view Y .In closed-loop interaction, future actions depend on inter-mediate history. Let τ = ( a1: H , o 1: H ) be the interaction trajectory under policy π, with induced distribution P πθ .Here H denotes the number of interaction rounds, and ot
+
+represents the returned evidence/observation at round t.
+
+Assumption 4.2 (Per-round Discriminability Gain) . Let 
+
+∆t(ht−1, a ) = DKL 
+
+ pθ (· | a, h t−1) ∥ pθ′ (· | a, h t−1).There exist a policy π and c > 0 such that 
+
+Eht−1,a t∼P πθ [∆ t(ht−1, a t)] ≥ c for each round t. This is an existential assumption: the gain is maintained by an in-formative policy that selects high-information actions in ambiguous histories, rather than by arbitrary interaction. Intuitively, if a policy assigns at least probability ρ to in-formative actions with conditional KL gap at least δ, the expected per-round gain is at least ρδ ; AEI/iDPO serve as empirical proxies that encourage such action selection, rather than a formal guarantee (Appendix A.3). 
+
+Theorem 4.3 (Exponential Error Decay) . Under Assump-tion 4.2, DKL 
+
+ P πθ ∥ P πθ′
+
+ ≥ cH , which implies that the Bayes discrimination error decays exponentially in H (up to constants in the exponent). Proof sketch. Factorize P πθ (τ ) = QHt=1 π(at | ht−1)
+
+pθ (ot | at, h t−1) and note that policy terms cancel in the log-likelihood ratio. A KL chain rule decomposes the tra-jectory KL into a sum of per-round conditional KL terms, each lower bounded by c. A standard KL-to-testing bound yields exponential decay. Let Lstop (h) = min ˆy E[ℓ(ˆ y) | h] be the minimal expected loss of stopping now, where ℓ is a task loss, and let c(a)
+
+be the interaction cost. Define VoI( h, a ) = Lstop (h) −
+
+E[Lstop (h ⊕ (a, o )) | h, a ].
+
+Theorem 4.4 (VoI-Cost Tradeoff) . The optimal pol-icy terminates if and only if max a∈A inq VoI( h, a ) ≤
+
+min a∈A inq c(a).Proof sketch. View termination as an optimal stopping prob-lem and compare stopping now versus one-step lookahead interaction via Bellman optimality. The intrinsic curiosity drive in our AEI reward can be viewed as a proxy for VoI, encouraging evidence acqui-sition in histories where the expected information value is high, thus aligning exploration with rational termination. Complete proofs are provided in Appendix B. 
+
+5. Experiments 
+
+5.1. Experimental Setup Datasets and evaluation. We evaluate Anom-π on four benchmarks covering multi-scenario anomaly detection (XD-Violence (Wu et al., 2020), UCF-Crime (Sultani et al., 2018)), open-set generalization (UBnormal (Acsin-5Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+Table 1. Frame-level performance (AUC/AP) on UCF-Crime, XD-Violence, UBnormal, and CSAD. Expl. indicates whether the method outputs an explanation. Reas. indicates whether explicit reasoning traces are used. Lrn. indicates whether a learned policy is used. Obs. indicates the evidence acquisition setting. An asterisk ( ∗) indicates a closed-source commercial model.                                                                                                                                                                  
+
+> Methods #Params Expl. Reas. Lrn. Obs. Multi-Scenario Open-Set Complex Scenario UCF (AUC%) XD (AP%) UB (AUC%) CSAD (AUC%)
+> Passive Specialized Learning
+> UR-DMU (Zhou et al., 2023) (AAAI’23) -✗✗-✗86.97 81.66 59.91 -AED-MAD (Ristea et al., 2024) (CVPR’24) -✗✗-✗--58.50 -VadCLIP (Wu et al., 2024) (AAAI’24) -✗✗-✗88.02 84.51 --Ex-VAD (Huang et al., 2025) (ICML’24) -✓✗-✗88.29 86.52 --
+> π-VAD (Majhi et al., 2025) (CVPR’25) -✗✗-✗90.33 85.37 --
+> Passive General Understanding
+> ZS CLIP (Radford et al., 2021) (ICML’21) 0.3B ✓✗✗Fixed 53.16 17.83 46.20 32.45 LLaVA-1.5 (Liu et al., 2024) (CVPR’24) 13B ✓✗✗Fixed 72.84 50.26 53.71 47.78 LAVAD (Zanella et al., 2024) (CVPR’24) 13B ✓✗✗Fixed 80.28 62.01 64.23 57.26 AnomalyRuler (Yang et al., 2024) (ECCV’24) 17B ∗✓✗✓Fixed --71.90 -VERA (Ye et al., 2025) (CVPR’25) 8B ✓✗✓Fixed 86.55 70.11 --URF (Lin et al., 2026) (NeurIPS’25) 7B ✓✗✗Fixed 84.28 68.07 69.02 -EventVAD (Shao et al., 2025) (ACM MM’25) 7B ✓✗✗Dyn. 82.03 64.04 --VADTree (Li et al., 2026a) (NeurIPS’25) 8B ✓✗✗Dyn. 84.74 68.85 --PANDA (Yang et al., 2026) (NeurIPS’25) 72B ∗✓✓✗Dyn. 84.89 70.16 75.78 73.12
+> Active Exploratory Reasoning
+> Anom-π(ours) 2B ✓✓✓OnD. 84.46 72.29 78.75 79.18
+
+toae et al., 2022)), and complex scenarios (CSAD (Yang et al., 2026)). We report frame-level ROC-AUC (%) on UCF-Crime/UBnormal/CSAD and frame-level AP(%) on XD-Violence. For each clip episode, Anom-π outputs the predicted anomaly category, temporal range, and confidence. For frame-level scoring, clips predicted as normal assign score 0 to all frames; clips predicted as anomalous assign score 1 inside the predicted anomalous range(s) and score 
+
+0.5 to the remaining frames in the same clip. When multiple clips overlap on the same video frame, we use the mean of their local scores as the final frame-level anomaly score. 
+
+Implementation details. Following prior work (Zanella et al., 2024; Ye et al., 2025), we uniformly subsample the raw video by taking one frame every 16 frames. We then form overlapping clips on the subsampled frame sequence with clip length L=16 and stride ∆=8 , both measured in subsampled frames, corresponding to a 50% overlap be-tween adjacent clips. At inference time, Anom-π starts from 16 frames and can request at most 16 additional frames on demand. During deliberation (T HINK ), the model main-tains up to three hypotheses (ˆ yi,m , ˆbi,m ) (anomaly category and temporal range within the clip). We use Qwen3-VL-Instruct-2B (Yang et al., 2025) as the backbone. Our agent operates over a unified action space that interleaves delib-
+
+Table 2. Efficiency and paradigm comparison (Vid./Frm.: video-/frame-level on XD-Violence).                      
+
+> Method #Params Data Context XD-V/AP(%) Vid. Frm.
+> Holmes-VAU 2B 70k 16 87.68 –VERA 8B ∼3.5k 300 –70.11
+> Anom-π(ours) 2B ∼3.5k 16–32 91.31 72.29
+
+eration (T HINK ) with on-demand evidence inquiry actions (B ACKTRACK , E XPAND , S AMPLE ), followed by termina-tion (F INAL ). Unless otherwise stated, we use the same backbone across all ablations and only vary the available action set, whether iterative evidence update is allowed, and the policy learning objective. (Sec. 5.4) All experiments are conducted on two NVIDIA H800 GPUs using PyTorch. 
+
+5.2. Main Results 
+
+Table 1 summarizes frame-level performance on four bench-marks. On XD-Violence, Anom-π achieves 72.29% AP and outperforms PANDA (Yang et al., 2026) by 2.13% while using a much smaller backbone. On UBnormal, which em-phasizes open-set generalization, Anom-π reaches 78.75% AUC and improves over UR-DMU (Zhou et al., 2023) by 18.84% and PANDA (Yang et al., 2026) by 2.97%. On CSAD, a complex-scenario benchmark, Anom-π attains 79.18% AUC and exceeds PANDA (Yang et al., 2026) by 6.06%. These results show that active on-demand evi-dence acquisition can compensate for smaller model scale, improve robustness under distribution shift, and support complex-scenario anomaly understanding. These gains support our view of video anomaly understand-ing as closed-loop hypothesis verification. With only video-level labels, iDPO learns when to query, revise, and stop, improving evidence localization without dense temporal su-pervision. On UCF-Crime, Anom-π remains competitive with 84.46% AUC, although the smaller gain may reflect domain-specific scene patterns that are underrepresented in our training rollouts. The class-wise results in Appendix D.4 further show that interaction is most helpful for localized and subtle categories, where decisive cues are easy to miss 6Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+under a fixed initial view. 
+
+5.3. Efficiency and Paradigm Comparison 
+
+We summarize efficiency and paradigm differences in mod-el/data scale and inference-time context, and relate them to localization performance. We compare against recent LLM-based baselines (e.g., Holmes-VAU (Zhang et al., 2025) and VERA (Ye et al., 2025)) in terms of backbone scale, weakly-supervised training data, and inference-time context budget. Holmes-VAU relies on a newly curated anomaly-understanding instruction dataset with roughly 70k anno-tated training samples. In contrast, like VERA, Anom-π
+
+is trained directly on existing benchmarks using only their standard video-level labels (i.e., without extra manual anno-tation). Table 2 shows that VERA uses 300 frames, while Anom-π uses only 16-32 frames. Despite the much smaller context, Anom-π improves frame-level AP on XD-Violence from 70.11% (VERA) to 72.29%, and also achieves higher video-level AP (91.31% vs. 87.68% of Holmes-VAU). 
+
+5.4. Ablation Studies 
+
+In this section, we conduct extensive ablation studies to verify the effectiveness of our active policy design and the necessity of each component in Anom-π. All results are reported on the XD-Violence (Wu et al., 2020) benchmark. 
+
+Table 3. Ablation on interaction for closed-loop vs. one-shot pipeline.           
+
+> Method / Setting AP(%) ↑AUC(%) ↑
+> One-shot pipeline (random sampling) 52.54 78.87 One-shot pipeline (uniform sampling) 65.99 89.48 Active Interaction (Anom-π)72.29 93.16
+
+Effectiveness of active interaction. To test whether the gain comes from closed-loop evidence acquisition rather than simply observing more frames, we compare Anom-π
+
+with two One-shot Pipeline baselines that use either ran-dom or uniform frame sampling. Both baselines receive the initial 16 frames and 16 additional frames selected before reasoning starts, so they have a comparable frame budget but no intermediate hypothesis update. Random sampling reaches only 52.54 AP(%), indicating that sparse abnormal moments are easily missed when extra frames are not tar-geted. Uniform sampling improves coverage and reaches 65.99 AP(%), but it still trails Anom-π at 72.29 AP(%) because the model cannot revise a hypothesis and query the uncertain temporal region. The comparison therefore isolates the value of the learned interaction policy, which decides where to query, when to revise, and when to stop under the same anomaly-understanding task. 
+
+Policy learning objective. Under the same backbone and action space, policy learning must decide not only which 
+
+Table 4. Ablation on the policy learning objective.                  
+
+> Method Interaction Rate AP(%) ↑AUC(%) ↑
+> ZERO-SHOT 05.38% 34.92 56.98 SFT (positive-only) 40.10% 56.86 78.84 DPO (w/o curiosity) 36.50% 66.57 91.14 iDPO (ours) 11.74% 72.29 93.16
+
+Table 5. Ablation on the action space (T: T HINK , B: B ACKTRACK ,E: E XPAND , S: S AMPLE ).                                             
+
+> Variant TBESAP(%) ↑AUC(%) ↑
+> w/o T HINK ✗✓ ✓ ✓65.54 (-6.75) 89.66 (-3.50)
+> w/o B ACKTRACK ✓✗✓✓70.49 (-1.80) 92.74 (-0.42)
+> w/o E XPAND ✓✓✗✓71.48 (-0.81) 92.04 (-1.12)
+> w/o S AMPLE ✓✓ ✓ ✗67.83 (-4.46) 91.93 (-1.23)
+> FULL (Anom-π)✓ ✓ ✓ ✓ 72.29 (-0.00) 93.16 (-0.00)
+
+anomaly label to predict, but also when additional evidence is worth acquiring and when the model should stop. As shown in Table 4, iDPO improves XD-Violence AP(%) from 66.57 to 72.29 over vanilla DPO (Rafailov et al., 2023) without AEI, indicating that trajectory preference alignment alone is insufficient for this interleaved decision process. The gain comes from AEI explicitly valuing informative, non-redundant evidence acquisition while penalizing unnec-essary interaction, which encourages the policy to query under uncertainty and terminate once evidence is sufficient. A finer trajectory-construction ablation further shows why this cost-aware ranking is necessary. Scoring trajectories only by the final prediction drops AP by 5.42 points, while removing the interaction cost still loses 2.25 points rela-tive to full iDPO (Appendix D.3). Detailed hyperparameter analyses are provided in Appendix D.2. 
+
+Trajectory-level iDPO vs. GRPO. GRPO (Guo et al., 2025) is a strong and complementary optimization family, and recent anomaly reasoning works further demonstrate the value of reinforcement-style reasoning optimization (Huang et al., 2026; Zhu et al., 2025; Mo et al., 2026; Li et al., 2026b; Yu et al., 2026; Kang et al., 2026). The key difference lies in the supervision interface. In weakly supervised VAU, two interleaved trajectories can reach the same final video-level label while differing in evidence quality, redundancy, hypothesis verification, and stopping. iDPO directly aligns AEI-ranked chosen/rejected trajectories, thus optimizing the behavior we care about, namely well-justified evidence acquisition and rational termination, rather than only the final label. Applying GRPO to these long rollouts would require converting trajectory-level scores into scalar rewards and group-relative advantages, which is feasible but more sensitive to reward noise and credit assignment. It is also more expensive in our setting. On the same H800 setup, a GRPO-style rollout optimization requires about 140 GB peak VRAM and over 34 hours per epoch, compared with 7Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization The first frame is black with text, likely a title or menu . Frames 2-                                                                                                                                                                                                         
+
+> 15 show anight scene with awhite car parked in alot, then
+> suddenly at frame 14 ,there is abright flash and smoke explosion
+> near the white car .Frame 16 shows adifferent scene with a
+> driving view, suggesting the clip may be from different segments .
+> The explosion in frame 14 is the most anomalous event .Confirm
+> the explosion event and its span .
+> G[1 3,14 ]F[1 4,14 ]A[0, 0 ]
+> The fine -grained frames [C 14 -F1]to [C 14 -F4]show asudden
+> burst of smoke and debris at frame 14 ,consistent with an
+> explosion .The white car remains stationary, and the surrounding
+> area is engulfed in smoke .This is aclear violent anomaly .The
+> event is an explosion, occurring at frame 14 .Output final answer .
+> Asudden explosion occurs, producing abright flash and thick
+> smoke near awhite car, indicating aviolent anomaly .The
+> surrounding frames show no such event, confirming the explosion
+> is isolated to frame 14 .
+> fine grained sampling
+> [C14 -F1] [C14 -F2][C14 -F3][C14 -F4]
+> [C14] [C15][C16][C13][C12][C11][C10][C0 9]
+> [C0 6][C0 7][C0 8][C0 5][C0 4][C0 3][C0 2][C01 ]
+> 𝝅 𝒕 𝒉𝒌
+> 𝝅 𝒕 𝒉𝒌
+> 𝝅 𝒆𝒙𝒑
+> 𝝅 𝒂𝒏𝒔
+> HYPOTHESIS
+> FINAL
+> ACTIO NPARA
+> G: explosion [ 13, 14 ]
+> 14
+> Video Env. ( 𝑉 )
+> [C14] [C15][C16][C13][C12][C11][C10][C0 9]
+> [C0 6][C0 7][C0 8][C0 5][C0 4][C0 3][C0 2][C01 ]
+> The frames show asevere car accident with debris scattered
+> across the road, smoke and dust rising from the wreckage, and
+> multiple damaged vehicles .Alarge truck is visible on the left side
+> of the road, indicating ahigh -impact collision .The scene is
+> consistent with amajor traffic accident .
+> 𝝅 𝒂𝒏𝒔 FINAL F: car accident [1, 16]
+
+Figure 3. Instantaneous anomaly case. Anom-π refines temporal boundaries by probing around a suspected moment and then termi-nates early. 
+
+about 54 GB and 2 hours for iDPO. We therefore view GRPO as complementary rather than inferior, and leave GRPO training with richer rewards as future work. 
+
+Action space analysis. We evaluate the contribution of different actions by removing them from the action space 
+
+A. Without B ACKTRACK , performance degrades on short, bursty anomalies, since the model cannot refine temporal boundaries once the observation window moves forward. Without E XPAND /S AMPLE , restricting the model to a fixed temporal resolution limits its ability to disambiguate fine-grained events (e.g., distinguishing “explosion” from “car accident”), leading to a noticeable drop in detection per-formance. Overall, these results highlight that a unified, interleaved action space is vital for handling the diverse nature of video anomalies. 
+
+Behavioral diagnostics. Beyond final accuracy, we exam-ine whether the policy interacts for the right reason rather than simply requesting more frames. We use Evidence Re-finement Rate (ERR) to capture additional evidence seeking, Hypothesis Revision Rate (HRR) to capture belief updates after observation, and premature finalization rate to capture early stopping errors. The diagnostics in Fig. 5 show that iDPO attains the strongest HRR and substantially reduces premature finalization, while not maximizing ERR. This 
+
+Table 6. Amortized interaction overhead of Anom-π at inference time. Avg. Steps counts evidence-acquisition actions beyond the initial observation; Extra Frames denotes additionally queried frames per clip. 
+
+Dataset Avg. Steps Extra Frames Latency (s) 
+
+XD-Violence 0.265 1.915 2.503 UCF-Crime 0.246 1.489 2.077 UBnormal 0.180 1.011 1.492 CSAD 0.397 3.826 3.877 
+
+Table 7. Backbone generalization on XD-Violence. Base denotes the corresponding backbone without the learned Anom-π interac-tion policy. 
+
+Backbone Base Anom-π (Ours) AP(%) AUC(%) AP(%) AUC(%) 
+
+Qwen3-VL-8B-Instruct 58.83 82.35 74.46 (+15.63) 93.47 (+11.12) 
+
+InternVL3.5-2B-Instruct 44.78 72.34 66.18 (+21.40) 89.24 (+16.90) 
+
+pattern suggests more targeted refinement: the policy tends to interact when new evidence is likely to change the hy-pothesis, instead of following a fixed exploration budget. Appendix D.1 provides complementary action-distribution and revision statistics, further showing that interaction is concentrated on ambiguous clips. 
+
+Interaction overhead analysis. Table 6 quantifies the amor-tized inference overhead introduced by selective interac-tion. On XD-Violence, Anom-π requests 0.265 evidence-acquisition steps and 1.915 extra frames per clip on average, resulting in 2.503s latency. Across datasets, the average number of interaction steps remains below 0.4, indicating that most clips are resolved after the initial observation. This latency is lower than VERA at 2.882s and LAVAD at 3.912s on XD-Violence, even though Anom-π performs closed-loop reasoning. These results show that Anom-π improves localization while keeping inference overhead controlled. We do not claim hard real-time deployment. Appendix D.1 provides the full dataset-level overhead breakdown and la-tency comparison details. 
+
+Backbone generalization analysis. To examine whether the learned interaction policy is tied to the default 2B Qwen backbone, we evaluate it with two additional VLMs. With Qwen3-VL-8B-Instruct (Yang et al., 2025) and InternVL3.5-2B-Instruct (Wang et al., 2025), Anom-π raises XD-Violence AP(%) from 58.83 to 74.46 and from 44.78 to 66.18, respectively (Table 7). These consistent improve-ments indicate that the policy is not merely exploiting id-iosyncrasies of the default backbone. The larger gain on InternVL3.5 further suggests that active evidence acquisi-tion is especially helpful when the base model is weaker, whereas the improvement with Qwen3-VL-8B shows that the same interaction mechanism remains beneficial at a larger model scale. 8Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+(a) Sports Broadcast (b) Movie Scene (c) Dashcam Driving 
+
+Figure 4. Temporal anomaly score curves. We compare Anom-π with VadCLIP, LAVAD, and VERA on three scenarios. Yellow indicates the ground-truth anomalous interval and blue indicates predicted anomalous spans after thresholding the anomaly score at 0.5.ERR HRR Premature Rate  
+
+> 020 40 60
+> Percentage (%)
+> 5.4% 4.2% 52.1% 40.1% 12.5% 41.2% 36.5% 18.3% 35.8% 15.9% 21.2% 27.7%
+> ZERO-SHOT SFT (pos-only) DPO (w/o curiosity) iDPO (Ours)
+
+Figure 5. Behavioral diagnostics. Evidence Refinement Rate (ERR), Hypothesis Revision Rate (HRR), and premature finaliza-tion rate under different training objectives. 
+
+5.5. Visualization Analysis Active interaction verifies subtle anomalies. The example in Fig. 3 is difficult because the anomaly is almost instan-taneous: the first frame is a black title-like frame, frames 2-13 show a stationary white car at night, and only frame 14 contains a brief flash with smoke near the car. Under the coarse 16-frame view, this cue can be diluted by neighboring normal frames or confused with a traffic accident. Anom-π
+
+therefore narrows the hypothesis to the suspected times-tamp and invokes fine-grained sampling around frame 14. The returned subframes reveal smoke and debris while the car remains stationary, supporting an Explosion rather than a road-accident interpretation. Since frame 16 has already switched to a different driving scene, the model also uses the queried evidence to bound the event tightly and terminates with F INAL instead of continuing redundant exploration. 
+
+Temporal anomaly score curves compared with prior methods. The examples in Fig. 4 show how Anom-π han-dles different temporal structures and visual distractors. In the sports broadcast clip, logos, commentator shots, player close-ups, normal skating, and hockey fights appear in rapid alternation. VadCLIP (Wu et al., 2024) and VERA (Ye et al., 2025) respond to broad visually related regions, while LAVAD (Zanella et al., 2024) stays nearly flat, but Anom-π
+
+produces separated peaks around the annotated fight inter-vals and suppresses most broadcast cutaways. In the movie clip, close-up combat scenes form several long abnormal spans separated by quieter transitions, where Anom-π pre-serves the normal gap more clearly than baselines that sat-urate or fragment the timeline. In the dashcam clip, short accident-related cues are embedded in long normal driving views such as open roads, passing cars, and a blue truck. Anom-π recovers more localized peaks around these sparse intervals, suggesting that closed-loop evidence acquisition helps distinguish brief abnormal evidence from visually similar background. 
+
+5.6. Limitations 
+
+The above results show the benefit of moving beyond a fixed observation pipeline, as Anom-π can request evidence and stop adaptively as its hypothesis evolves. Its remaining limitations mainly arise when the returned evidence is still intrinsically ambiguous. Low-quality scenes may induce redundant exploration, and overly local inspection may lead to premature stopping. We discuss representative cases in Appendix E. Future policies could better calibrate uncer-tainty before F INAL and estimate evidence value under poor visibility or motion blur. 
+
+6. Conclusion 
+
+We introduced Anom-π, a video anomaly understanding framework that formulates inference as active hypothe-sis verification with interleaved reasoning and observation. Starting from a short context, Anom-π alternates T HINK 
+
+with adaptive observation and learns when to stop with F I-
+
+> NAL
+
+. To train this policy under weak supervision, iDPO di-rectly optimizes AEI-induced trajectory preferences. Across benchmarks, Anom-π achieves strong frame-level perfor-mance with compact inference-time context, while ablations confirm the importance of interaction and iDPO for localiz-ing short and subtle anomalies. Overall, Anom-π shows that jointly optimizing reasoning and observation provides an effective active paradigm for video anomaly understanding. 9Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+Acknowledgements 
+
+This work was supported in part by the New Generation Artificial Intelligence-National Science and Technology Ma-jor Project under Grant No. 2025ZD0123601, in part by the National Natural Science Foundation of China under Grants No. 62472060 and 62221005, in part by the Sci-ence and Technology Innovation Key R&D Program of Chongqing under Grant No. CSTB2023TIAD-STX0016, in part by the Natural Science Foundation of Chongqing under Grants No. CSTB2024NSCQ-QCXMX0060, in part by the China Postdoctoral Science Foundation under Grant No. 2025MD774186, in part by the Chongqing Special Postdoctoral Research Funding under Grant No. 2024CQB-SHTB2002, in part by the Chongqing University of Posts and Telecommunications Ph.D. Innovative Talents Project under Grant No. BYJS202404. 
+
+Impact Statement 
+
+This work advances video anomaly understanding by shift-ing from passive inference to active, evidence-driven in-quiry. A key positive impact is improved interpretability and reliability in safety monitoring. By generating natu-ral language explanations and grounding predictions in the evidence-acquisition process, the model can provide human operators with more context for its decisions. In addition, the rational termination mechanism can improve computa-tional efficiency by reducing redundant processing in sim-ple scenarios. Potential risks include privacy infringement and biased detection in diverse environments. To mitigate these risks, we advocate deployment with human-in-the-loop verification, rigorous oversight of the model outputs, and privacy-preserving data handling. 
+
+References 
+
+Acsintoae, A., Florescu, A., Georgescu, M.-I., Mare, T., Sumedrea, P., Ionescu, R. T., Khan, F. S., and Shah, M. Ubnormal: New benchmark for supervised open-set video anomaly detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 20143–20153, 2022. Chen, J., Li, L., Su, L., Zha, Z.-j., and Huang, Q. Prompt-enhanced multiple instance learning for weakly super-vised video anomaly detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 18319–18329, 2024a. Chen, Y., Liu, J., Fan, R., Li, Y., Chang, C., Zhao, S., Fok, W. W., Qi, X., and Wu, Y.-C. Aligning effective tokens with video anomaly in large language models. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , pp. 22695–22706, 2025. Chen, Z., Wu, J., Wang, W., Su, W., Chen, G., Xing, S., Zhong, M., Zhang, Q., Zhu, X., Lu, L., et al. Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 24185–24198, 2024b. Du, H., Zhang, S., Xie, B., Nan, G., Zhang, J., Xu, J., Liu, H., Leng, S., Liu, J., Fan, H., et al. Uncovering what why and how: A comprehensive benchmark for causation understanding of video anomaly. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 18793–18803, 2024. Guo, D., Yang, D., Zhang, H., Song, J., Wang, P., Zhu, Q., Xu, R., Zhang, R., Ma, S., Bi, X., et al. Deepseek-r1 incentivizes reasoning in llms through reinforcement learning. Nature , 645(8081):633–638, 2025. Huang, C., Shi, Y., Wen, J., Wang, W., Xu, Y., and Cao, X. Ex-VAD: Explainable fine-grained video anomaly detec-tion based on visual-language models. In Proceedings of the 42nd International Conference on Machine Learn-ing , volume 267 of Proceedings of Machine Learning Research , pp. 25750–25761. PMLR, 2025. Huang, C., Wang, B., Wang, W., Wen, J., Liu, C., Shen, L., and Cao, X. Vad-r1: Towards video anomaly reasoning via perception-to-cognition chain-of-thought. Advances in neural information processing systems , 38:118486– 118518, 2026. Kang, H., Lee, W., Kim, J., and Park, H. Judo: A juxta-posed domain-oriented multimodal reasoner for industrial anomaly qa. In Proceedings of the Fourteenth Interna-tional Conference on Learning Representations , 2026. Li, S., Li, F., Li, J., Li, H., Zhang, B., Tao, D., and Gao, X. Logical relation inference and multiview information interaction for domain adaptation person re-identification. 
+
+IEEE Transactions on Neural Networks and Learning Systems , 35(10):14770–14782, 2023. Li, S., Leng, J., Gan, J., Mo, M., and Gao, X. Shape-centered representation learning for visible-infrared per-son re-identification. Pattern Recognition , pp. 111756, 2025a. Li, S., Leng, J., Kuang, C., Tan, M., and Gao, X. Video-level language-driven video-based visible-infrared per-son re-identification. IEEE Transactions on Information Forensics and Security , 2025b. Li, W., Xu, Y., Rao, Y., Wang, Z., and Deng, S. Vadtree: Explainable training-free video anomaly detection via hierarchical granularity-aware tree. Advances in Neu-ral Information Processing Systems , 38:148372–148404, 2026a. 10 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+Li, Y., Cao, Y., Liu, C., Xiong, Y., Dong, X., and Huang, C. Iad-r1: Reinforcing consistent reasoning in industrial anomaly detection. In Proceedings of the AAAI Confer-ence on Artificial Intelligence , volume 40, pp. 6583–6591, 2026b. Lin, D., Qu, M., Han, K., Jiao, J., Jin, X., and Wei, Y. A unified reasoning framework for holistic zero-shot video anomaly analysis. Advances in Neural Information Pro-cessing Systems , 38:29713–29744, 2026. Liu, H., Li, C., Li, Y., and Lee, Y. J. Improved baselines with visual instruction tuning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 26296–26306, 2024. Majhi, S., D’Amicantonio, G., Dantcheva, A., Kong, Q., Garattoni, L., Francesca, G., Bondarev, E., and Br ´emond, F. Just dance with pi! a poly-modal inductor for weakly-supervised video anomaly detection. In Proceedings of the Computer Vision and Pattern Recognition Conference ,pp. 24265–24274, 2025. Mo, M., Tong, X., Tan, M., Leng, J., Zheng, J., Liu, Y., Chen, H., Gan, J., Li, W., and Gao, X. A2seek: Towards reasoning-centric benchmark for aerial anomaly under-standing. Advances in Neural Information Processing Systems , 38, 2026. Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In International conference on machine learning , pp. 8748–8763. PmLR, 2021. Rafailov, R., Sharma, A., Mitchell, E., Manning, C. D., Ermon, S., and Finn, C. Direct preference optimiza-tion: Your language model is secretly a reward model. 
+
+Advances in neural information processing systems , 36: 53728–53741, 2023. Ristea, N.-C., Croitoru, F.-A., Ionescu, R. T., Popescu, M., Khan, F. S., Shah, M., et al. Self-distilled masked auto-encoders are efficient video anomaly detectors. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 15984–15995, 2024. Shao, Y., He, H., Li, S., Chen, S., Long, X., Zeng, F., Fan, Y., Zhang, M., Yan, Z., Ma, A., et al. Eventvad: Training-free event-aware video anomaly detection. In Proceedings of the 33rd ACM International Conference on Multimedia ,pp. 2586–2595, 2025. Sultani, W., Chen, C., and Shah, M. Real-world anomaly de-tection in surveillance videos. In Proceedings of the IEEE conference on computer vision and pattern recognition ,pp. 6479–6488, 2018. Tang, J., Lu, H., Wu, R., Xu, X., Ma, K., Fang, C., Guo, B., Lu, J., Chen, Q., and Chen, Y. Hawk: Learning to understand open-world video anomalies. Advances in Neural Information Processing Systems , 37:139751– 139785, 2024. Tian, Y., Pang, G., Chen, Y., Singh, R., Verjans, J. W., and Carneiro, G. Weakly-supervised video anomaly detec-tion with robust temporal feature magnitude learning. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , pp. 4975–4986, 2021. Wang, W., Gao, Z., Gu, L., Pu, H., Cui, L., Wei, X., Liu, Z., Jing, L., Ye, S., Shao, J., et al. Internvl3. 5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265 , 2025. Wang, Y. and Chen, S. Learning event completeness for weakly supervised video anomaly detection. In Proceed-ings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learn-ing Research , pp. 62505–62517. PMLR, 2025. Wu, P., Liu, J., Shi, Y., Sun, Y., Shao, F., Wu, Z., and Yang, Z. Not only look, but also listen: Learning multimodal violence detection under weak supervision. In European conference on computer vision , pp. 322–339. Springer, 2020. Wu, P., Zhou, X., Pang, G., Zhou, L., Yan, Q., Wang, P., and Zhang, Y. Vadclip: Adapting vision-language models for weakly supervised video anomaly detection. In Proceed-ings of the AAAI Conference on Artificial Intelligence ,volume 38, pp. 6074–6082, 2024. Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Gao, C., Huang, C., Lv, C., et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388 , 2025. Yang, Z., Gao, C., and Shou, M. Z. Panda: Towards gen-eralist video anomaly detection via agentic ai engineer. 
+
+Advances in Neural Information Processing Systems , 38: 83182–83211, 2026. Yang et al., Y. Follow the rules: Reasoning for video anomaly detection with large language models. In Proc. Eur. Conf. Comput. Vis. (ECCV) , pp. 304–322, 2024. Ye, M., Liu, W., and He, P. Vera: Explainable video anomaly detection via verbalized learning of vision-language mod-els. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , pp. 8679–8688, 2025. Yu, Y., Cao, C., Wang, Z., Meng, W., Li, J., Li, Y., Wei, Z., Shen, Z., and Zhang, J. Cuebench: Advancing uni-fied understanding of context-aware video anomalies in real-world. In Proceedings of the AAAI Conference on Ar-tificial Intelligence , volume 40, pp. 12187–12195, 2026. 11 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+Zanella, L., Menapace, W., Mancini, M., Wang, Y., and Ricci, E. Harnessing large language models for training-free video anomaly detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 18527–18536, 2024. Zhang, H., Xu, X., Wang, X., Zuo, J., Huang, X., Gao, C., Zhang, S., Yu, L., and Sang, N. Holmes-vau: Towards long-term video anomaly understanding at any granular-ity. In Proceedings of the computer vision and pattern recognition conference , pp. 13843–13853, 2025. Zhou, H., Yu, J., and Yang, W. Dual memory units with un-certainty regulation for weakly supervised video anomaly detection. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 37, pp. 3769–3777, 2023. Zhu, L., Chen, Q., Shen, X., and Cun, X. Vau-r1: Ad-vancing video anomaly understanding via reinforcement fine-tuning. arXiv preprint arXiv:2505.23504 , 2025. 12 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+This appendix provides additional setup and derivations omitted from the main text. We organize the appendix as follows: (1) App. A: additional theoretical setup and formalization. (2) App. B: proofs for the theoretical analysis. (3) App. C: interaction tool design. (4) App. D: additional experimental statistics and robustness checks. (5) App. E: additional qualitative comparison visualizations. 
+
+A. Additional Theoretical Analysis Details 
+
+A.1. Theoretical setup and paradigm shift 
+
+We interpret curiosity as an intrinsic drive that allocates interaction to evidence-deficient states, encouraging the agent to acquire information when its current explanation is insufficient. 
+
+Remark. From a physics and control perspective, curiosity corresponds to maximizing expected information value; equivalently, it reduces a free-energy-like objective under an interaction cost, yielding principled interaction and termination behavior. We analyze a paradigm shift. Traditional video anomaly understanding follows open-loop observation followed by cognition-only reasoning. In contrast, Anom-π follows closed-loop interleaved inference, where reasoning and interaction are interwoven. 
+
+A.2. Interleaved inference with termination (formalization) 
+
+Let θ ∈ Θ denote the latent anomaly explanation and let X ∼ pθ be the underlying video process. The agent interacts for at most T rounds. At round t, it chooses an action at ∈ A , where A includes interaction actions and a termination action FINAL (ˆ y). If at is an interaction action, the environment returns an observation ot and the history is updated. If 
+
+at = FINAL (ˆ y), the episode terminates and outputs ˆy:
+
+at ∼ π(· | ht−1),ot ∼ pθ (· | at, h t−1),ht = ht−1 ⊕ (at, o t),
+
+(7) where ⊕ denotes concatenation. Termination is therefore modeled as a decision of the policy, rather than an external thresholding rule. 
+
+A.3. Sufficient condition for effective closed-loop policies 
+
+Assumption 4.2 in the main text is existential and is not a property guaranteed by arbitrary interaction. One concrete sufficient condition for the assumption is the following. Define the per-action conditional KL gap at round t as 
+
+∆t(ht−1, a ) = DKL 
+
+ pθ (· | a, h t−1) ∥ pθ′ (· | a, h t−1). (8) Suppose that for each round t and for P πθ -almost every history ht−1, there exists an informative action set Ainfo (ht−1) ⊆ A 
+
+such that 
+
+∆t(ht−1, a ) ≥ δ ∀a ∈ A info (ht−1), π Ainfo (ht−1) | ht−1
+
+ ≥ ρ, (9) for constants ρ > 0 and δ > 0. Since ∆t(ht−1, a ) ≥ 0, the expected per-round discriminability gain is lower bounded as 
+
+Eht−1,a t∼P πθ [∆ t(ht−1, a t)] 
+
+≥ δ Eht−1∼P πθ
+
+π Ainfo (ht−1) | ht−1
+
+ ≥ ρδ. (10) Thus Assumption 4.2 holds with c = ρδ under this sufficient condition. In practice, AEI does not explicitly estimate ∆t, ρ, or δ, and iDPO does not formally enforce the above condition. Instead, 
+
+rinf rewards non-redundant evidence queries, rhyp rewards hypothesis refinement, and the cost term discourages redundant probing; iDPO then prefers trajectories with higher AEI utility. These signals are empirical proxies aligned with effective evidence acquisition, not a formal guarantee that every learned policy satisfies Assumption 4.2. 13 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+B. Proofs for Theoretical Analysis 
+
+This appendix (Appendix B) collects complete proofs for the theoretical statements in Sec. 4. 
+
+B.1. Proof of Theorem 4.3 
+
+Fix θ̸ = θ′ and a closed-loop policy π. Let P πθ denote the trajectory distribution of τ = ( a1: T , o 1: T ) induced by π and the environment conditionals pθ (ot | at, h t−1). Because the policy is fixed, the action conditionals π(at | ht−1) are shared under both θ and θ′. Thus we can factor the trajectory distributions as 
+
+P πθ (τ ) = 
+
+> T
+
+Y
+
+> t=1
+
+π(at | ht−1) pθ (ot | at, h t−1), P πθ′ (τ ) = 
+
+> T
+
+Y
+
+> t=1
+
+π(at | ht−1) pθ′ (ot | at, h t−1). (11) 
+
+KL chain rule along the interaction. Using the above factorization, we expand the log-likelihood ratio as 
+
+log P πθ (τ )
+
+P πθ′ (τ ) =
+
+> T
+
+X
+
+> t=1
+
+log pθ (ot | at, h t−1)
+
+pθ′ (ot | at, h t−1) , (12) since the policy terms cancel. Taking expectation under τ ∼ P πθ yields 
+
+DKL 
+
+ P πθ ∥ P πθ′
+
+ = Eτ ∼P πθ
+
+
+
+log P πθ (τ )
+
+P πθ′ (τ )
+
+
+
+=
+
+> T
+
+X
+
+> t=1
+
+Eτ ∼P πθ
+
+
+
+log pθ (ot | at, h t−1)
+
+pθ′ (ot | at, h t−1)
+
+
+
+=
+
+> T
+
+X
+
+> t=1
+
+Eht−1,a t∼P πθ
+
+DKL 
+
+ pθ (· | at, h t−1) ∥ pθ′ (· | at, h t−1) .
+
+(13) By Assumption (Per-round discriminability gain), each summand is lower bounded by c, hence 
+
+DKL 
+
+ P πθ ∥ P πθ′
+
+ ≥ cT. (14) 
+
+From KL separability to exponential testing error. For binary testing between P πθ and P πθ′ with equal priors, let P πe (T )
+
+denote the minimal (Bayes) error probability. A standard inequality (Bretagnolle-Huber) gives 
+
+P πe (T ) ≤ 12 exp 
+
+
+
+− 12 DKL 
+
+ P πθ ∥ P πθ′
+
+
+
+. (15) Combining with DKL (P πθ ∥ P πθ′ ) ≥ cT yields 
+
+P πe (T ) ≤ 12 exp 
+
+
+
+− c 
+
+> 2
+
+T
+
+
+
+, (16) which establishes an exponential decay in T (up to constant factors in the exponent). 
+
+B.2. Proof of Theorem 4.1 
+
+Fix θ̸ = θ′ satisfying DTV (pgθ , p gθ′ ) ≤ ε. Consider testing H0 : ϑ = θ versus H1 : ϑ = θ′ based on Y ∼ pgϑ. By Le Cam’s two-point method, for any estimator ˆθ(Y ),
+
+inf 
+
+> ˆθ
+
+sup 
+
+> ϑ∈{ θ,θ ′}
+
+Pr 
+
+> ϑ
+
+ ˆθ(Y )̸ = ϑ ≥ 12
+
+ 1 − DTV (pgθ , p gθ′ ) ≥ 12 (1 − ε), (17) which proves the claim. 
+
+B.3. Proof of Theorem 4.4 
+
+At history h, stopping incurs cost Lstop (h). Taking one additional interaction a incurs the immediate interaction cost (as defined in the theorem) plus the expected post-interaction stopping cost E[Lstop (h ⊕ (a, o )) | h, a ]. Define 
+
+Lask (h, a ) := interaction-cost (h, a ) + ELstop (h ⊕ (a, o )) | h, a . (18) The optimal one-step decision is to terminate iff Lstop (h) ≤ min a∈A Lask (h, a ), which is exactly the value-of-information stopping criterion. 14 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+C. Interaction Tools: Design and Interfaces 
+
+C.1. Tool taxonomy and design principles 
+
+We design tools as a minimal set of atomic evidence query operators that correspond to common human video reviewing behaviors, while keeping the interface simple and reproducible. Our tool set decomposes into (i) a deliberation action (T HINK ) with no environment side effects; (ii) investigative actions (B ACKTRACK , E XPAND , S AMPLE ) that change the observation view and return new evidence; and (iii) a termination action (F INAL ) that outputs the final structured prediction. Each tool follows the same schema constrained calling convention, which standardizes invocation and error handling. We impose lightweight constraints on parameters (e.g., bounded indices and limited return sizes) to control latency and prevent runaway interaction, and we normalize tool outputs into a unified return structure ( status , new image paths ,
+
+followup query ) so that downstream reasoning can remain tool agnostic. 
+
+C.2. Tool specifications 
+
+We use the OpenAI H ERMES tool-calling format, and specify each tool interface as a compact, machine-readable schema (JSON Schema / function-calling schema), accompanied by a short natural-language contract. In the main paper we summarize the tool set at a high level; here we provide the full schema for reproducibility. 
+
+Tool: T HINK (think ). Purpose: record private analysis/planning to decide the next action; no side effects . I/O: input is a JSON object satisfying the schema below; output returns next action and a followup query string.                                                                                       
+
+> {"type": "function", "function": {"name": "think", "description": "Record private analysis/planning before the next action. Include the reason for choosing the next tool inside ‘thought‘.", "parameters": {"type": "object", "properties": {"thought": {"type": "string", "description": "Internal analysis +decision, keep brief. Format: ’OBS: ...; DECIDE: ...; PLAN: ...’." }, "hyp": {"type": "object", "description": "Current candidate hypotheses before taking the next action.", "properties": {"status": {"type": "string", "enum": ["unknown", "tentative", "confident"]}, "cands": {"type": "array", "minItems": 0, "maxItems": 3, "description": "Up to 3candidates ordered by confidence (highest first).", "items": {"type": "object", "properties": {"c": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"type": "string"}, "description": "Single category code. Use [’A’] for Normal." }, "anom": {"type": "array", "minItems": 2, "maxItems": 2,
+
+15 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+"items": {"type": "integer", "minimum": 0, "maximum": 16}, "description": "Anomaly span within the 16-frame input, 1-based inclusive (1..16). Use [0,0] for Normal." }}, "required": ["c", "anom"], "additionalProperties": false }}}, "required": ["status", "cands"], "additionalProperties": false }, "next_action": {"type": "string", "description": "Next tool to call.", "enum": ["think", "get_segment_context", "select_frames", "fine_grained_sampling ", "final_answer"] }}, "required": ["thought", "hyp", "next_action"], "additionalProperties": false }}}
+
+Minimal example call. 
+
+{"thought":"OBS: ...; DECIDE: sample frames; PLAN: ...", "hyp":{"status":"tentative","cands":[{"c":["B"],"anom":[5,10]}]}, "next_action":"select_frames"} 
+
+Tool: B ACKTRACK (select frames ). Purpose: select a small set of keyframes for local, fine-grained inspection when anomalies are temporally sparse. I/O: input specifies up to 4 indices within the 16-frame clip; output provides the selected frame paths and sets next action=think .
+
+{"type": "function", "function": {"name": "select_frames", "description": "Selects keyframes with potential abnormal activities. Useful when anomalies are temporally sparse or occur in short bursts. Maximum 4 frames allowed.", "parameters": {"type": "object", "properties": {"target_frames": {"type": "array", "description": "The target frame indices to select from the given frames.", "items": {"type": "integer", "description": "Frame index from 1 to 16.", "minimum": 1, "maximum": 16 }, "maxItems": 4}}, "required": ["target_frames"], "additionalProperties": false }
+
+16 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+}}
+
+Minimal example call. 
+
+{"target_frames":[2,5,10,15]} 
+
+Tool: E XPAND (get segment context ). Purpose: retrieve a small number of context frames immediately be-fore/after the current segment. I/O: input specifies the side ( prev or next ); output returns new image paths and sets 
+
+next action=think .
+
+{"type": "function", "function": {"name": "get_segment_context", "description": "Get context frames outside the provided segment (prev: before the provided segment; next: after the provided segment).", "parameters": {"type": "object", "properties": {"side": {"type": "string", "enum": ["prev", "next"]} }, "required": ["side"], "additionalProperties": false }}}
+
+Minimal example call. 
+
+{"side":"prev"} 
+
+Tool: S AMPLE (fine grained sampling ). Purpose: sample additional frames around a selected coarse frame to capture subtle / transient anomalies. I/O: input specifies a target frame (1–16) within the current 16-frame clip; output returns up to 4 fine-grained frames around that coarse frame. 
+
+{"type": "function", "function": {"name": "fine_grained_sampling", "description": "Perform fine-grained frame sampling around a chosen target frame (1-16) to capture subtle and transient anomalies that may be missed by coarse sampling. Returns up to 4 fine-grained frames around the target.", "parameters": {"type": "object", "properties": {"target_frame": {"type": "integer", "description": "Target frame index (1 to 16)", "minimum": 1, "maximum": 16 }}, "required": ["target_frame"], "additionalProperties": false }}}
+
+17 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+Minimal example call. 
+
+> {"target_frame":5}
+
+Tool: F INAL (final answer ). Purpose: return the final prediction as a category code, anomaly span within the 16-frame input (1-based), and a brief explanation. I/O: input is null ; output returns c, anom , and exp as the final structured prediction.                                                                      
+
+> {"type": "function", "function": {"name": "final_answer", "description": "Return category code, anomaly span within the 16-frame input (1-based ), and abrief explanation.", "parameters": {"type": "object", "properties": {"c": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"type": "string"}, "description": "Single category code. Use ’A’ for Normal." }, "anom": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 0, "maximum": 16}, "description": "Anomaly span within the 16-frame input, 1-based inclusive (1..16). Use [0,0] for Normal." }, "exp": {"type": "string", "description": "Brief explanation (1-2 sentences) with key visual cues." }}, "required": ["c", "anom", "exp"], "additionalProperties": false }}}
+
+Minimal example call.     
+
+> {"c":["A"],"anom":[0,0],"exp":"No anomalous activity is observed."}
+
+Discussion: unified tool/action format. Our tool interfaces adopt a single, unified structured format across all actions (T HINK , B ACKTRACK , E XPAND , S AMPLE , and F INAL ). This design makes the interaction protocol easy to learn and imitate during alignment: the model always emits a tool call with an explicit name and a schema constrained argument object, which significantly reduces format errors (e.g., malformed JSON, missing fields, or mixed templates) compared to ad hoc prompting. More importantly, the unified format places all model decisions (deliberation, evidence acquisition, and termination) into the same discrete action space A. This allows us to optimize a single interleaved policy π over heterogeneous behaviors, enables direct preference comparisons between trajectories that differ in both what evidence is acquired and when to stop, and supports principled cost/utility tradeoffs for rational interaction. 18 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+D. Additional Experimental Analyses 
+
+This section provides supporting experimental statistics that complement the main-text results without adding extra figures to the main paper. The emphasis is on whether the learned policy actually behaves like an adaptive reviewer: it should request extra evidence only when useful, revise hypotheses when newly acquired evidence changes the current belief, and remain stable under reasonable choices of preference-construction and evaluation hyperparameters.                           
+
+> Table 8. Dataset-level amortized interaction overhead of Anom-π. Each clip starts from 16 frames and can request up to 16 additional frames; Avg. Observed Frames is computed as 16 plus the average additionally queried frames.
+> Dataset Initial Frames Avg. Steps Extra Frames Avg. Observed Frames Latency (s)
+> XD-Violence 16 0.265 1.915 17.915 2.503 UCF-Crime 16 0.246 1.489 17.489 2.077 UBnormal 16 0.180 1.011 17.011 1.492 CSAD 16 0.397 3.826 19.826 3.877
+
+D.1. Efficiency and Interaction Statistics 
+
+To make the overhead concrete, Table 8 reports amortized interaction costs across datasets. Starting from 16 initial frames, Anom-π only requests 1.011-3.826 additional frames on average, so the actually observed context remains close to the initial view: 17.011 frames on UBnormal, 17.489 on UCF-Crime, 17.915 on XD-Violence, and 19.826 on CSAD. The average number of evidence-acquisition steps is also below one on all datasets (0.180-0.397), indicating that the policy does not spend a fixed multi-step budget on every clip. Instead, the overhead increases with apparent ambiguity: UBnormal has the lowest cost (0.180 steps, 1.011 extra frames, 1.492s), whereas CSAD requires the most additional evidence (0.397 steps, 3.826 extra frames, 3.877s).                 
+
+> Table 9. Per-clip latency comparison on XD-Violence. Lower latency is better; ∆reports the absolute latency gap relative to Anom-π.
+> Method Inference Context Latency (s) ∆vs. Anom-π
+> LAVAD –3.912 +1.409 VERA 300 frames 2.882 +0.379 Anom-π16 initial + 1.915 queried frames (avg.) 2.503 0.000
+
+On XD-Violence, selective interaction also keeps latency competitive (Table 9). Although Anom-π performs closed-loop reasoning, its 2.503s per-clip latency is lower than VERA (2.882s) and LAVAD (3.912s), because most clips are handled after the initial observation and only ambiguous clips invoke additional tools. This result should be interpreted as an amortized efficiency claim rather than a hard real-time guarantee.                                     
+
+> Table 10. Action distribution and amortized interaction statistics across datasets. Avg. Steps counts evidence-acquisition actions beyond the initial observation, and Extra Frames denotes additionally queried frames per clip.
+> Dataset Backtrack (%) Expand (%) Sample (%) Avg. Steps Distinct Locs Extra Frames Latency (s)
+> XD-Violence 10.33 14.22 75.46 0.265 1.857 1.915 2.503 UCF-Crime 41.71 12.44 45.85 0.246 1.334 1.489 2.077 UBnormal 25.92 21.14 52.94 0.180 0.852 1.011 1.492 CSAD 15.77 20.49 63.73 0.397 3.426 3.826 3.877
+
+Beyond aggregate cost, Tables 10 and 11 separate action choices from hypothesis revisions. The action distribution is dataset-dependent: S AMPLE dominates XD-Violence, UBnormal, and CSAD (75.46%, 52.94%, and 63.73%), consistent with the need to verify transient local cues, while UCF-Crime uses much more B ACKTRACK (41.71%), matching its longer surveillance-style videos where preceding context is often informative. Hypothesis revision is similarly concentrated on the subset of clips that actually trigger interaction. For example, only 2.49% of all XD-Violence clips revise their hypothesis, but 21.20% of the interacted clips do; on CSAD, the corresponding rates are 11.72% overall and 31.31% within interacted clips. Thus, revision is not a ubiquitous artifact of the tool format, but mainly appears when the policy has decided that extra evidence is worth acquiring. 19 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+Table 11. Hypothesis revision behavior across datasets. Inter. denotes clips with evidence acquisition beyond the initial observation; Rev. Overall reports the revision rate over all clips, and Rev. Within Inter. reports the revision rate among interacted clips. 
+
+Dataset Inter. (%) Rev. Overall (%) Rev. Within Inter. (%) 
+
+XD-Violence 11.74 2.49 21.20 UCF-Crime 16.52 3.32 20.10 UBnormal 12.10 0.69 5.72 CSAD 37.43 11.72 31.31 
+
+Table 12. Hyperparameter sensitivity. Panel (a) reports the η sweep with both XD-Violence AP and UCF-Crime AUC; Panel (b) reports λ
+
+and Nbuf sweeps on XD-Violence. The default setting is η=0 .5, λ=1 .0, and Nbuf =2 .
+
+(a) Interaction-cost sweep. 
+
+η Inter. (%) Avg. Steps Dist. Locs HRR (%) XD AP (%) UCF AUC (%) 
+
+0.0 36.11 0.2865 1.8696 2.81 70.04 84.52 0.1 13.26 0.2658 1.8631 2.61 72.43 83.22 0.5 11.74 0.2650 1.8570 2.49 72.29 84.46 1.0 11.26 0.2593 1.7809 1.78 70.87 82.87 2.0 09.75 0.2439 1.5764 1.53 69.90 82.53 
+
+(b) AEI-weight and buffer-size sweeps. Hyperparam. Value Inter. (%) Avg. Steps Dist. Locs HRR (%) XD AP (%) 
+
+λ
+
+0.5 10.66 0.2507 1.6820 2.37 71.98 1.0 11.74 0.2650 1.8570 2.49 72.29 2.0 12.59 0.2761 1.9913 2.68 72.15 
+
+Nbuf 
+
+1 6.84 0.1819 1.0809 2.48 70.29 2 11.74 0.2650 1.8570 2.49 72.29 3 12.16 0.2683 1.8939 2.65 72.33 
+
+D.2. Hyperparameter Sensitivity 
+
+For hyperparameters, we vary the interaction-cost weight η, the AEI weight λ, and the evidence buffer size Nbuf ; the full sweep is given in Table 12. The interaction-cost sweep shows the clearest trade-off. When η=0 , the policy explores much more frequently (36.11% interacted clips), but XD-Violence AP drops to 70.04, suggesting that removing the cost term encourages redundant evidence gathering rather than better decisions. Moderate costs give the best balance: η=0 .1 reaches the best XD-Violence AP (72.43), while the default η=0 .5 remains near-optimal on XD-Violence (72.29) and gives the best UCF-Crime AUC (84.46). In contrast, larger costs make the policy too conservative: at η=2 .0, the interaction ratio decreases to 9.75%, but XD-Violence AP and UCF-Crime AUC fall to 69.90 and 82.53, respectively. The λ sweep is much flatter. Increasing λ from 0.5 to 2.0 changes XD-Violence AP only within a 0.31-point range (71.98-72.29), while gradually increasing the interaction ratio, average steps, and distinct sampled locations. This indicates that once the cost term is present, the method is not highly sensitive to the exact AEI weight. The Nbuf sweep shows a different pattern: a buffer of one observation is insufficient (70.29 AP), whereas Nbuf =2 and Nbuf =3 perform almost identically (72.29 vs. 72.33 AP). We therefore use Nbuf =2 as the default because it captures most of the benefit while avoiding unnecessary context growth. 
+
+Table 13. Trajectory construction variants on XD-Violence. AP is reported in %, Avg. Steps counts evidence-acquisition actions beyond the initial observation, and ∆AP is measured relative to full iDPO. 
+
+Variant Ranking Signal AP Avg. Steps ∆AP 
+
+Terminal-only Final prediction only 66.87 0.2880 -5.42 Cost-agnostic Task/evidence utility without interaction cost 70.04 0.2865 -2.25 Extreme-pairs-only Only highest- vs. lowest-utility pairs 71.80 0.2690 -0.49 Full iDPO Task + AEI + cost-aware trajectory ranking 72.29 0.2650 0.00 
+
+20 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+D.3. Trajectory Construction and Protocol Robustness 
+
+Through the ablations reported in Table 13, we next isolate the effect of preference construction for iDPO. Terminal-only ranking, which scores trajectories only by the final prediction, obtains 66.87 AP and is 5.42 points below full iDPO, showing that final-label correctness alone is too weak to supervise evidence acquisition and stopping. Removing the interaction cost improves over terminal-only ranking but still reaches only 70.04 AP, and it uses more steps than full iDPO (0.2865 vs. 0.2650), consistent with cost-agnostic preferences encouraging unnecessary exploration. Using only extreme utility pairs performs much better (71.80 AP), but remains 0.49 points below full iDPO, suggesting that the complete preference set provides useful additional comparisons. Overall, the dominant factor is whether the ranking signal captures task utility, AEI evidence quality, and interaction cost jointly.               
+
+> Table 14. Stride robustness on XD-Violence. We use clip length L=16 and vary the evaluation stride ∆on the subsampled frame sequence. AP is reported in %.
+> Stride ∆Setting XD AP
+> 1Dense overlap 74.57 8Default 72.29
+> 16 Non-overlapping 69.89
+
+When varying the evaluation stride for frame-level scoring (Table 14), dense overlap with ∆=1 gives the highest AP (74.57), while non-overlapping evaluation with ∆=16 is more challenging (69.89). The default ∆=8 setting reaches 72.29 AP, providing a middle ground between dense temporal coverage and evaluation cost. Since prior methods usually report a single score under their own evaluation protocols and do not provide matched stride sweeps, we use the results in Table 1 only as reference. Under the default setting, Anom-π remains higher than VERA at 70.11 AP and PANDA at 70.16 AP on XD-Violence. These results show that the advantage is not tied to a single stride choice, although denser evaluation naturally gives more opportunities to cover short anomalous intervals. 
+
+D.4. Representative UCF-Crime Class-wise Evidence 
+
+Finally, the UCF-Crime class-wise breakdown (Table 15) highlights where active interaction helps most. The gain is much larger for Stealing (+13.31 AUC), where decisive cues are often local, subtle, and easy to miss under a fixed initial view. In contrast, RoadAccidents improves by a smaller +3.05 AUC because the abnormal event is usually global and visually salient, so the initial observation already provides stronger evidence. This helps explain why the dataset-level UCF-Crime improvement is moderate: active querying is most beneficial for localized or ambiguous categories, while gains are naturally diluted by classes that are already well served by open-loop observation.        
+
+> Table 15. Representative class-wise gains on UCF-Crime. The examples illustrate where active querying helps more or less. Gains are reported as AUC(%) differences.
+> Class Typical Visual Pattern AUC Gain
+> Stealing Localized and subtle evidence +13.31 RoadAccidents Global and visually salient events +3.05
+
+21 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization 
+
+E. Additional Qualitative Visualizations 
+
+We first provide paired comparison cases between Anom-π and an open-loop QwenVL baseline, grouped into Fig. 6 and Fig. 7. We further include representative failure cases to illustrate remaining limitations of closed-loop evidence acquisition and stopping. 
+
+Comparison cases I. The first pair of qualitative comparisons highlights cases where the abnormal cue is present but easy to under-localize (Fig. 6). In the street scene, the initial frames contain many distractors, including pedestrians, parked cars, and street lights. Anom-π first probes the frames around the white car with a shattered windshield, then checks the previous segment to rule out a normal traffic scene and localizes the riot over the full clip. The open-loop baseline notices the broken window but treats it as a minor disturbance and predicts Normal. In the beach scene, the abnormality evolves from a tense approach to a struggle in shallow water. Anom-π samples intermediate frames to connect the early confrontation with the later physical struggle, whereas the baseline fires only at the last few frames and misses the onset of the fight. 
+
+Comparison cases II. The second pair shifts to cases that require either boundary refinement or close-up interaction evidence (Fig. 7). In the dim explosion sequence, early frames show a low-visibility military setting, but the decisive smoke and debris appear later. Anom-π checks the suspected burst and its following context, extending the prediction to cover the visible aftermath; the baseline instead assigns the event to the beginning of the clip. In the residential scene, the global view looks like a routine encounter involving a uniformed person, so the initial hypothesis is Normal. Fine-grained sampling around the doorway reveals a person in a white shirt being physically restrained, which changes the decision to Fighting; the open-loop baseline misses this local contact and remains Normal. 
+
+Failure cases. Fig. 8 illustrates two remaining limitations. In the redundant-exploration case, low visual quality and heavy blur make the additionally queried frames and previous-segment context nearly indistinguishable, so interaction increases cost without resolving the ambiguity. In the premature-stopping case, the agent inspects only a narrow local moment in a prison confrontation and does not further verify whether the tense interaction develops into violence. These cases suggest that future policies should better estimate information gain under poor visibility and calibrate uncertainty before triggering FINAL when ambiguity persists. 22 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization The video shows a crowded street scene with people, vehicles, 
+
+and motorcycles . In frames 11 -14 , a white car is prominently 
+
+featured with its windshield shattered, and people are gathered 
+
+around it . Some individuals appear to be in conflict or 
+
+confrontation . The presence of graffiti and the chaotic crowd 
+
+suggests an unrest situation . This is likely a riot or violent 
+
+gathering . Confirm the anomaly span by examining frames 11 -14 
+
+closely .
+
+D [11 , 14 ] B [11 , 14 ] A [0, 0] 
+
+The selected frames (11 -14 ) show a white car with a shattered 
+
+windshield, people gathered around it, and some individuals in 
+
+close proximity suggesting confrontation . The background 
+
+includes graffiti and a white pickup truck, indicating an urban 
+
+setting . This visual evidence aligns with a riot or violent 
+
+disturbance . DECIDE : The anomaly is consistent with 'Riot' (D) 
+
+from frame 11 to 14 .
+
+select frames     
+
+> [C14] [C15][C16][C13][C12][C11][C10][C09 ]
+> [C06 ][C07 ][C08 ][C05 ][C04 ][C03 ][C02 ][C01 ]
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+𝝅 𝒂𝒏𝒔 
+
+HYPOTHESIS 
+
+FINAL 
+
+ACTION Targets 
+
+D: Riot [1, 16] 
+
+[11, 12, 13, 14] 
+
+> Video Env. ( 𝑉 )
+
+D [11 , 14] HYPOTHESIS 
+
+get segment context    
+
+> [SEG -P1] [SEG -P2 ][SEG -P3 ][SEG -P4 ]
+
+ACTION Side prev 
+
+> Video Env. ( 𝑉 )
+
+The previous context frames [SEG -P1] to [SEG -P4] show a
+
+normal street scene with people walking, vehicles, and no visible 
+
+signs of violence or chaos . The anomaly (shattered windshield, 
+
+gathering of people) begins in frame 11 . The anomaly starts at 
+
+frame 1 and ends at frame 16 , consistent with 'Riot' (D) . Finalize 
+
+the answer .
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+Frames 1-16 show a white car with a shattered windshield, 
+
+people gathered around it, and some individuals in close 
+
+proximity , indicating a violent or disruptive gathering consistent 
+
+with a riot .   
+
+> [C11] [C1 2][C1 3][C1 4]
+
+(a) Anom-π (Ours) The frames depict a busy street scene with people, vehicles, and 
+
+some minor disturbances like a broken car window, but no clear 
+
+signs of violence, fighting, or other listed anomalies .
+
+𝝅 𝒂𝒏𝒔 FINAL A: Normal [0, 0] 
+
+(b) Open-loop Baseline (QwenVL) The first 3 frames show a man and a woman walking on a beach .
+
+From frame 4, the woman appears to be in distress or aggressive 
+
+behavior as she moves toward the man . Frames 5-7 show them 
+
+near the water with splashes, possibly indicating a physical 
+
+confrontation . Frames 8-11 depict a violent struggle in water, 
+
+with one person being thrown or submerged . Frame 12 shows the 
+
+man emerging from water, and frames 13 -16 show them standing 
+
+together again, possibly after the incident . This sequence strongly 
+
+suggests a physical altercation or fight . I will select key frames to 
+
+confirm the nature of the anomaly .
+
+B [4, 11 ] E [4, 11 ] A [0, 0] 
+
+select frames    
+
+> [C4] [C 7][C1 0][C1 3]
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+𝝅 𝒂𝒏𝒔 
+
+HYPOTHESIS 
+
+ACTION Targets 
+
+FINAL B: fighting [7, 16] 
+
+[4, 7, 10, 13] 
+
+> Video Env. ( 𝑉 )
+
+The sequence shows a physical confrontation between two 
+
+individuals, starting with the woman approaching aggressively 
+
+(frame 4) and escalating to a violent struggle in the water (frames 
+
+7-16 ). This indicates a clear fighting anomaly .    
+
+> [C14] [C15][C16][C13][C12][C11][C10][C09 ]
+> [C06 ][C07 ][C08 ][C05 ][C04 ][C03 ][C02 ][C01 ]
+
+(c) Anom-π (Ours) The frames transition from a calm beach scene to a physical 
+
+altercation between two individuals, with the second person 
+
+appearing in close proximity and engaging in a violent 
+
+interaction . This aligns with the Fighting category .
+
+𝝅 𝒂𝒏𝒔 FINAL B: fighting [14, 16] 
+
+(d) Open-loop Baseline (QwenVL) 
+
+Figure 6. Qualitative comparison cases I. Anom-π is shown in (a,c), and the open-loop QwenVL baseline is shown in (b,d). 
+
+23 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization The first 6 frames show individuals in a dimly lit, possibly 
+
+military or industrial setting, with some wearing headgear and 
+
+medals . Frames 7-9 focus on hanging medals, suggesting a
+
+commemorative or honorific context . Frames 10 -16 depict a
+
+large tank in a smoky, war -torn environment with visible fire and 
+
+debris, indicating an explosion or combat aftermath . DECIDE :
+
+The transition from individuals to the tank and explosion suggests 
+
+a violent event . The explosion in frames 10 -12 is the most 
+
+anomalous . Confirm the explosion event by examining frames 10 -
+
+12 closely .
+
+G [10 , 12 ] D [10 , 12 ] A [0, 0] 
+
+The explosion is visible in frame 11 , with smoke and debris 
+
+erupting from the scene . The surrounding frames (10 and 12 )
+
+show the immediate aftermath, with smoke and fire still present .
+
+select frames       
+
+> [C1 0][C1 1][C1 2]
+> [C14] [C15][C16][C13][C12][C11][C10][C09 ]
+> [C06 ][C07 ][C08 ][C05 ][C04 ][C03 ][C02 ][C01 ]
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+𝝅 𝒂𝒏𝒔 
+
+HYPOTHESIS 
+
+FINAL 
+
+ACTION Targets 
+
+G: Explosion [10, 16] 
+
+[10, 11, 12] 
+
+Video Env. ( 𝑉 )
+
+G [10 , 12] HYPOTHESIS 
+
+get segment context    
+
+> [SEG -N1] [SEG -N2 ][SEG -N3 ][SEG -N4 ]
+
+ACTION Side next 
+
+Video Env. ( 𝑉 )
+
+The next -context frames [SEG -N1] to [SEG -N4] show the 
+
+aftermath of the explosion, with smoke and debris still present, 
+
+confirming the explosion event . DECIDE : The explosion is 
+
+clearly visible in frames 9-16 and continues into the next frames .
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+Frames 10 -16 show a clear explosion with smoke and debris 
+
+erupting from a tank in a war -torn environment, indicating a
+
+violent event . The surrounding frames depict the aftermath, 
+
+confirming the anomaly .
+
+(e) Anom-π (Ours) Frames 1-4 show a tank -like vehicle amidst smoke and debris, 
+
+with visible explosions and flying particles, indicating an 
+
+explosion event .
+
+𝝅 𝒂𝒏𝒔 FINAL G: Explosion [1, 4] 
+
+(f) Open-loop Baseline (QwenVL) [C14] [C15] [C16][C13][C12][C11][C10][C09 ]  
+
+> [C06 ][C07 ][C08 ][C05 ][C04 ][C03 ][C02 ][C01 ]
+
+The video shows a man in police uniform and another man 
+
+walking in a residential area, then entering a house . They meet 
+
+with a third man at the door . There is no visible violence, fighting, 
+
+shooting, riot, abuse, car accident, or explosion . The interactions 
+
+appear to be casual and non -aggressive .
+
+A [0, 0] 
+
+The video frames depict a man in police uniform and another 
+
+man walking in a residential area, then entering a house . They 
+
+meet with a third man at the door .
+
+fine grained sampling  
+
+> [C1 -F1 ][C1 -F2 ]
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+𝝅 𝒂𝒏𝒔 
+
+HYPOTHESIS 
+
+FINAL 
+
+ACTION PARA 
+
+B: Fighting [12, 15] 
+
+[1] 
+
+Video Env. ( 𝑉 )
+
+A [0, 0] HYPOTHESIS 
+
+fine grained sampling    
+
+> [C12 -F1 ][C12 -F1 ][C12 -F3 ][C12 -F4 ]
+
+ACTION PARA [12] 
+
+Video Env. ( 𝑉 )
+
+The fine -grained frames around frame 12 show a man in a white 
+
+shirt being restrained by another man in police uniform . The man 
+
+in white appears to be resisting, with visible struggle and 
+
+physical contact . This suggests a physical altercation is 
+
+occurring . The scene involves a clear physical confrontation, 
+
+which falls under 'Fighting' . Confirm the anomaly span and 
+
+output final answer .
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+Frames 12 -15 show a man in a white shirt being physically 
+
+restrained by a police officer, indicating a fighting incident . The 
+
+man appears to be resisting, with visible struggle and contact 
+
+against the officer's clothing .
+
+(g) Anom-π (Ours) The frames depict a calm, non -violent interaction between two 
+
+individuals, with no signs of fighting, shooting, rioting, abuse, car 
+
+accidents, explosions, or other anomalies .
+
+𝝅 𝒂𝒏𝒔 FINAL A: Normal [0, 0] 
+
+(h) Open-loop Baseline (QwenVL) 
+
+Figure 7. Qualitative comparison cases II. Anom-π is shown in (e,g), and the open-loop QwenVL baseline is shown in (f,h). 
+
+24 Learning to Watch: Active Video Anomaly Understanding via Interleaved Policy Optimization The frames show a blurry, green -tinted view of a dark object 
+
+emitting smoke or dust in a snowy or dusty environment . The 
+
+object appears to be moving erratically and is captured within a
+
+targeting reticle . There is no clear indication of human figures, 
+
+weapons, or vehicles . The scene suggests an unknown object or 
+
+event, possibly related to an explosion or malfunction, but the 
+
+visual cues are ambiguous . The anomaly is not clearly 
+
+identifiable as one of the listed categories (e .g., no visible 
+
+fighting, shooting, or riot) . It may be an explosion or other 
+
+anomalous event, but the evidence is insufficient . Since the 
+
+frames are too blurry and lack clear context to definitively 
+
+classify as any specific anomaly, I will classify it as 'Other' (Z) for 
+
+now .
+
+Z [1, 16 ]
+
+The frames show a blurry, green -tinted view of a dark object 
+
+emitting smoke or dust in a snowy or dusty environment . The 
+
+object appears to be moving erratically and is captured within a
+
+targeting reticle . There is no clear indication of human figures, 
+
+weapons, or vehicles . The scene suggests an unknown object or 
+
+event, possibly related to an explosion or malfunction, but the 
+
+visual cues are ambiguous . The anomaly is not clearly 
+
+identifiable as one of the listed categories (e .g., no visible 
+
+fighting, shooting, or riot) . It may be an explosion or other 
+
+anomalous event, but the evidence is insufficient . Since the 
+
+frames are too blurry and lack clear context to definitively 
+
+classify as any specific anomaly, I will classify it as 'Other' (Z) for 
+
+now .
+
+select frames     
+
+> [C14] [C15][C16][C13][C12][C11][C10][C09 ]
+> [C06 ][C07 ][C08 ][C05 ][C04 ][C03 ][C02 ][C01 ]
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+𝝅 𝒂𝒏𝒔 
+
+HYPOTHESIS 
+
+FINAL 
+
+ACTION Targets 
+
+G: Explosion [1, 15] 
+
+[1, 8, 14, 16] 
+
+> Video Env. ( 𝑉 )
+
+Z [1, 16 ]HYPOTHESIS 
+
+get segment context    
+
+> [SEG -P1] [SEG -P2 ][SEG -P3 ][SEG -P4 ]
+
+ACTION Side prev 
+
+> Video Env. ( 𝑉 )
+
+The previous context frames [SEG -P1] to [SEG -P4] show a
+
+similar blurry, green -tinted scene with a dark object emitting 
+
+smoke or dust in a snowy or dusty environment . The object 
+
+appears to be moving erratically and is captured within a
+
+targeting reticle . There is no clear indication of human figures, 
+
+weapons, or vehicles . The scene suggests an unknown object or 
+
+event, possibly related to an explosion or malfunction, but the 
+
+visual cues are ambiguous . The anomaly is not clearly 
+
+identifiable as one of the listed categories (e .g., no visible 
+
+fighting, shooting, or riot) . It may be an explosion or other 
+
+anomalous event, but the evidence is insufficient . Since the 
+
+frames are too blurry and lack clear context to definitively 
+
+classify as any specific anomaly, I will classify it as 'Other' (Z) for 
+
+now .
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+The frames show a blurry, green -tinted view of a dark object 
+
+emitting smoke or dust in a snowy or dusty environment . The 
+
+object appears to be moving erratically and is captured within a
+
+targeting reticle, suggesting an unknown anomalous event, 
+
+possibly related to an explosion, but no clear evidence of violence 
+
+or other categories is present .   
+
+> [C1] [C 8][C14] [C1 6]
+
+(a) Redundant exploration The sequence shows a tense interaction in what appears to be a
+
+prison or detention facility . Initially, individuals are facing each 
+
+other in a confrontational manner (frames 1-4). Frame 5-7 shows 
+
+a person in a yellow jumpsuit holding a pen, then reacting with 
+
+surprise . Frames 8-10 show the same person with an alarmed 
+
+expression, and frame 11 shows them standing . Frame 12 shows 
+
+multiple individuals gathered around a table, suggesting a
+
+meeting or trial . Frame 13 shows the person in yellow raising 
+
+their hand, possibly signaling or gesturing . Frame 14 shows them 
+
+turning away, and frame 15 shows them looking upward, possibly 
+
+at authority . No physical violence, weapons, or explosions are 
+
+visible . The tension is verbal and behavioral . The scene does not 
+
+contain any clear physical violence (fighting, shooting, car 
+
+accident, explosion) . The tension is interpersonal but non -violent .
+
+It may be classified as 'Normal' if no other anomaly is present .
+
+Since no violent or anomalous events are evident, I will classify 
+
+this as Normal .
+
+A [0, 0] 
+
+fine grained sampling        
+
+> [C1 3-F1] [C1 3-F2][C1 3-F3][C1 3-F4]
+> [C14] [C15][C16][C13][C12][C11][C10][C09 ]
+> [C06 ][C07 ][C08 ][C05 ][C04 ][C03 ][C02 ][C01 ]
+
+𝝅 𝒕 𝒉𝒌 
+
+𝝅 𝒆𝒙𝒑 
+
+𝝅 𝒂𝒏𝒔 
+
+HYPOTHESIS 
+
+FINAL 
+
+ACTION PARA 
+
+A: Normal [0, 0] 
+
+13 
+
+> Video Env. ( 𝑉 )
+
+The scene depicts a tense but non -violent interaction in a
+
+detention facility . While individuals appear confrontational, there 
+
+is no physical violence, weapons, or anomalous events such as 
+
+fighting, shooting, or explosions . The atmosphere is dramatic but 
+
+does not meet the criteria for any anomaly .
+
+The fine -grained frames around frame 13 show a person in a
+
+yellow jumpsuit with a red light on their collar, appearing 
+
+agitated or shouting (frames [C 13 -F2], [C 13 -F3]) . Other 
+
+individuals are standing around a table, some with neutral 
+
+expressions . There is no visible physical violence, weapons, or 
+
+explosions . The scene remains tense but non -violent . The 
+
+interaction is confrontational but does not involve any actual 
+
+violence or anomalous events as defined by the categories (e .g.,
+
+fighting, shooting, car accident, explosion) . It appears to be a
+
+dramatic or stressful scene without any real harm . I will classify 
+
+this as Normal .
+
+𝝅 𝒕 𝒉𝒌 (b) Premature stopping 
+
+Figure 8. Failure-case visualizations. (a) Redundant exploration under low visual quality. (b) Premature stopping under persistent temporal ambiguity. 
+
+25
