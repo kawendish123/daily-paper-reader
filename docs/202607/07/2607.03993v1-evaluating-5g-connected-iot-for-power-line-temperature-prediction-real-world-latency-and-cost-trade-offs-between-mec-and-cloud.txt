@@ -1,0 +1,249 @@
+Title: Evaluating 5G-connected IoT for Power Line Temperature Prediction: Real-World Latency and Cost Trade-offs Between MEC and Cloud
+
+URL Source: https://arxiv.org/pdf/2607.03993v1
+
+Published Time: Tue, 07 Jul 2026 02:34:17 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Evaluating 5G-connected IoT for Power Line Temperature Prediction: Real-World Latency and Cost Trade-offs Between MEC and Cloud 
+
+Aakash Sharma 1, Sigmund Akselsen 2, Anders Andersen 1, Lars Ailo Bongo 1,and Arne Munch-Ellingsen 2 
+
+> 1
+
+UiT – The Arctic University of Norway, Tromsø, Norway, 
+
+aakash.sharma@uit.no  
+
+> 2
+
+Telenor Research, Fornebu, Norway 
+
+Abstract. One of the key promises of Mobile Edge Computing (MEC) is its low latency. Current large-scale IoT deployments rely on cloud for their reliability, low cost, and ease of use. For outdoor IoT deployments, 5G cellular networks offer significantly enhanced bandwidth and dra-matically reduced latency compared to previous generations, enabling real-time data processing and control. Therefore, leveraging 5G connec-tivity is crucial for outdoor IoT applications requiring responsiveness and complex data handling. Combining MEC with 5G has the poten-tial to provide the ease of cloud computing alongside low latency. We investigate the latency performance on a 5G cellular network with an experimental MEC setup. In our proof-of-concept, we demonstrate the benefits of using an edge-based compute server for real-time power trans-mission line analytics. We compare our solution with state-of-the-art multi-region cloud deployments and discuss the advantages of mobile edge computing (MEC). Our real-world evaluation demonstrates a low latency of 44.62 ms for MEC compared to cloud regions; however, the gap is narrowing. While such low latencies can benefit real-world de-ployments, they remain insufficient to meet the stringent requirements of smart power grid operations ( ∼8 ms). 
+
+Keywords: mobile edge computing, iot, latency, edge, 5G, MEC 
+
+## 1 Introduction 
+
+Mobile Edge Computing, or Multi-Access Edge Computing (MEC), introduces a novel architecture that enables computing closer to the edge of the network, reducing latency and enabling real-time processing capabilities. A key feature of MEC is its ability to facilitate low-latency communication between end-points, making it attractive for applications requiring low latencies. The fifth generation (5G) cellular networks provide a complementary infrastructure, of-fering faster network speeds, lower latency, and increased bandwidth to sup-port the growing number of devices connecting to the Internet. The Internet of Things (IoT) is a notable beneficiary of 5G, enabling seamless integration  
+
+> arXiv:2607.03993v1 [cs.NI] 4 Jul 2026 2Aakash Sharma et al.
+
+of a vast array of devices into our digital landscape. Furthermore, recent ad-vancements in machine learning and artificial intelligence have the potential to augment the intelligence and control of IoT devices, unlocking new possibilities. The widespread availability of 5G networks provides a unique opportunity to test and validate the benefits of MEC in real-world scenarios, which is crucial for its large-scale adoption. Multi-access Edge Computing (MEC) targets a new class of applications and services with stringent requirements on ultra-low latency, high bandwidth, and efficient resource utilization [6]. Although multiple architectures and ap-proaches have been proposed to reduce latency in MEC, real-world evaluations are required to determine which classes of low-latency applications can be sup-ported by current 5G networks [6,15]. Recent studies indicate that 5G and MEC architectures are being designed to support distributed AI/ML workloads by en-abling low-latency, real-time processing close to data sources [10]. The increasing complexity of next-generation networks and services necessitates AI/ML-driven automation and optimization, making MEC a key enabler for future intelligent applications. This study is set in Norway, a unique test environment due to the widespread availability of 5G, varied landscape, and remote communities in Northern Nor-way. We focus on IoT devices that connect directly to 5G networks, excluding those that rely on home Wi-Fi connections. This study investigates the differ-ences in P99 latency and operational costs between local edge and regional cloud deployment architectures for mobile edge applications operating on Telenor’s 5G network in Norway. We identify a promising application of power transmission line sensors, which gather data on power transmission lines and cable condition. This data is uti-lized to predict Ambient Adjusted Ratings (AAR), enabling more efficient use of existing power transmission lines. A study in Argentina [13] demonstrates the potential of AAR to increase transmission capacity on thermally limited lines, thereby unlocking the full output of a wind-based electricity plant. The contributions of this paper are: (a) real-world measurements of P99 la-tency [2] for an end-to-end proof-of-concept (PoC) machine learning application deployed across multiple regional cloud and local edge (MEC) environments on Telenor’s 5G network in Norway, (b) a comparative analysis of the operational costs associated with these deployment architectures, and (c) an evaluation of the scalability of the PoC machine learning application, analyzing the relation-ship between latency and request rate (requests per second). 
+
+## 2 Related Works 
+
+Miladinovic et al. [11] showed that Mobile Edge Computing (MEC) can signif-icantly reduce latency and jitter compared to cloud deployments, highlighting physical distance and network hops as key latency contributors. Huang et al. [8] conducted a comparison of real-time smart grid monitoring on edge and cloud platforms. They demonstrated a reduction in detection delay by a factor of 10 Latency and Cost Trade-offs between MEC and Cloud 3
+
+by using edge computing versus a cloud platform. Deng et al. [3] evaluated dis-tributed MEC scenarios through simulation and reported end-to-end latencies of approximately 900 ms for complex image processing tasks, underscoring the challenges of latency-sensitive workloads. EdgeBench [1] measured end-to-end latency for representative edge applications on resource-constrained devices, but it does not capture the capabilities of a modern 5G-connected MEC platform. Hybrid MEC-cloud architectures have been proposed to improve resilience and performance [5]. However, the availability of public 5G networks and MEC by telecom operators changes how such systems should be evaluated. In contrast to prior works, we measure real-world end-to-end network latency using a proof-of-concept machine learning inference application to assess which low-latency services can benefit from MEC. 
+
+## 3 Mobile Edge Computing for Critical Infrastructure 
+
+Mobile Edge Computing (MEC) brings compute and storage resources closer to where data is generated, enabling localized processing at the network edge. By reducing reliance on distant centralized cloud infrastructures, MEC can signifi-cantly lower end-to-end latency and improve service availability. Beyond perfor-mance benefits, MEC also offers resilience advantages by allowing critical ser-vices to continue operating even during partial network failures or connectivity disruptions. Huang et al. [8] show that smart grid monitoring requires fast, reliable pro-cessing of large volumes of sensor data, which centralized cloud solutions struggle to support due to latency and bandwidth constraints. Their work demonstrates that placing computation at the network edge enables real-time fault detection, rapid response, and improved system stability by reducing end-to-end delays and dependency on wide-area connectivity. This makes edge computing particu-larly suitable for critical infrastructure, where timely decisions and operational resilience are essential. Although many existing systems do not yet require ultra-low latency, the increasing digitization of critical infrastructure introduces stricter requirements on reliability, responsiveness, and autonomy. In this context, MEC provides a cost-effective alternative to large-scale cloud deployments by enabling localized processing while reducing dependency on long-haul communication links [19]. 
+
+## 4 Use Case: Smart Grids 
+
+Traditional power transmission lines operate under static current limits to pre-vent thermal overload. Rising electrification and energy demand have stressed existing grids, often requiring costly upgrades. Recent advances in IoT sensors and power electronics show that existing lines can safely carry more current than static limits allow under favorable conditions [13]. In northern Norway, cold Arc-tic winters improve heat dissipation, enabling higher transmission capacity, while 4 Aakash Sharma et al. 
+
+high summer temperatures in regions like Texas can increase line sag and wild-fire risk. Some sensors include cameras for early fire detection, allowing rapid intervention. Safe transmission depends on multiple factors. While grid voltages and topol-ogy are predetermined, current limits are traditionally static. Modern approaches such as Ambient Adjusted Rating (AAR) and Dynamic Line Rating (DLR) dy-namically calculate safe limits using real-time measurements and environmental data, potentially increasing line capacity by up to 50% [13]. Our industry partner deploys sensors that transmit real-time data via Telenor cellular network to cloud analytics pipelines using MQTT [12]. These systems combine historical data, weather forecasts, and live measurements to predict next-day safe AAR/DLR values. While grid control remains manual, these in-sights support day-ahead planning and monitoring. Future intelligent grids will require widespread sensor deployment for contin-uous monitoring and automated control. Low-latency communication and pro-cessing will be essential for rapid responses to changing conditions, including temperature fluctuations, line sag, and fire hazards. Real-time, intelligent mon-itoring will be crucial to safely maximize transmission efficiency, reduce infras-tructure costs, and enhance operational resilience in next-generation power grids. 
+
+4.1 Sensors Data and Machine Learning 
+
+Cable-mounted sensor boxes (Figure 1) enable continuous monitoring and data collection for advanced analytics on power transmission lines. They typically measure conductor temperature and current, wind speed and direction, and line sag. Line sag can be affected by snow and ice in winter, and these measurements aid maintenance planning. Some sensor boxes also include cameras to detect anomalies and hazards, such as forest fires, enabling timely preventive actions. We received a year of sensor readings to train our model, with sensitive information such as GPS coordinates removed. The dataset contains ambient temperature, line temperature (both standard and thermistor-measured), line current, atmospheric pressure, humidity, and distance to the ground. 
+
+Fig. 1: Experimental setup showing a sensor box connected via 5G to edge servers and cloud back-end. Latency and Cost Trade-offs between MEC and Cloud 5
+
+Using this dataset of 947,590 records, we trained a feedforward neural net-work to predict linetemp and linetemp ntc from multivariate sensor data. The model has an input layer with eight features (including temporal features ex-tracted from the timestamp), three hidden layers with 256, 128, and 64 neurons, and an output layer predicting the two target variables. The data were par-titioned into training (70%), validation (10%), and test (20%) sets, with all features standardized using z-score normalization. 
+
+4.2 Proof-of-Concept: Temperature Prediction 
+
+In this proof-of-concept, we simulate a power transmission line sensor that pe-riodically sends a tuple of parameters to a server, which in turn infers the tem-perature of the power transmission line. Rather than computing full AAR/DLR values—which require large streams of historical and contextual data—we de-sign a lightweight inference task that reflects a common IoT interaction pattern: multiple devices transmitting small data tuples and receiving near-real-time re-sponses. This setup also represents intelligent IoT devices that rely on server-side inference to guide subsequent actions, with device state optionally maintained on the server. Our primary objective is to analyze end-to-end latency to assess the feasibility of low-latency IoT applications. After training the machine learning model, we implemented a containerized web server that receives sensor data, performs inference, and returns predicted line temperature values ( linetemp and linetemp ntc ). The server was imple-mented using FastAPI with Uvicorn and packaged as a Docker image. The system architecture consists of two main components: (i) periodic net-work latency measurements, performed hourly, and (ii) inference-based temper-ature prediction using the trained model. Our evaluation aims to assess the feasibility of low-latency to support interactive monitoring and control. Client-side test scripts are configured via a configuration file specifying server endpoints at different deployment locations. The client randomly selects tuples from the sensor dataset (subsection 4.1) and sends them to the server, which performs inference and returns the results. The client measures round-trip time (RTT), while the server records inference execution time. Although prediction error is computed, it is not analyzed in this paper, as our focus is on network and deployment-induced latency characteristics rather than model accuracy. RTT and server processing times are measured in milliseconds. To ensure comparability, the experimental setup is kept consistent across all evaluations (see section 5). In some cases, the connection falls back to 4G when 5G coverage is unavailable. This behavior reflects real-world deployments where 5G coverage is primarily available in densely populated areas. 
+
+4.3 Equipment 
+
+Figure 2 shows our setup, simulating an IoT device sending a JSON payload via POST requests to the server. We simulated IoT clients using a MacBook (model A2141) running macOS 26 with Python 3.12, connected to a Teltonika RUTX50 6 Aakash Sharma et al. 
+
+modem over an Ethernet cable. LAN port 1 was used for all experiments over 5G, while the WAN port connected to an optical fiber link when testing fiber-based communication. The router firmware was 07.18.3, and the modem version was RG501QEU-AAR12A11M4G with kernel 6.6.96. Client  Modem  Server 
+
+> Ethernet
+> 4G/5G
+
+Fig. 2: Setup used for latency measurements. 
+
+## 5 Evaluation 
+
+We replicate a processing pipeline to investigate the flow of sensor readings as a JSON object from the client to the server and inferred values back to the client. We containerized the workflows, enabling easy deployment across cloud and edge (MEC) environments. For our evaluation, we focus on two key parameters: latency and cost. Latency is critical for time-sensitive applications, such as AR/VR gaming and intelligent robots ( ∼100 ms) [20], industrial automation ( ∼50 ms) [17], and power grid systems ( ∼8 ms) [14]. Cost is a key factor in scaling deployments for large dis-tributed sensor networks. We also evaluate latency degradation under increasing request rates. We evaluated a full day of compute requirements for the analytical pipeline with back-ends deployed in different locations and cloud zones. Norway’s elon-gated geography results in large physical distances between remote communities and available cloud regions. Among major cloud providers, Microsoft Azure was selected as it offers the required regional coverage, including two regions in Nor-way, namely Norway East (NO-East) and Norway West (NO-West). NO-East is located near Oslo, while NO-West is near Stavanger. Both data centers are more than one thousand kilometers from Tromsø. We also included Sweden Cen-tral (SE-Central) cloud region, reflecting the current compute pipeline used by the sensor box developer. 
+
+5.1 Client Locations 
+
+The locations were selected to simulate different sensor proximities to 5G tow-ers: two in dense urban areas with multiple towers, and one near a defunct Latency and Cost Trade-offs between MEC and Cloud 7
+
+Table 1: Cellular network details across locations, as reported by the router.                                
+
+> Location
+> (Postal code, City)
+> Status Lights RSSI
+> (dBm)
+> RSRQ
+> (dB)
+> Network Type Connected Bands Carrier Aggrega-tion
+> 9019, Tromsø 5G •4G •-60 -8 5G (NSA) LTE B1/B3/B7, 5G n78 Active 0366, Oslo 5G •4G •-45 -10 5G (NSA) LTE B1/B3/B7, 5G n78 Active 9131, K˚ arvik 5G •4G •-76 -20 4G (LTE) LTE B20 Inactive 1360, Fornebu 5G •4G •-47 -10 5G (SA) 5G n78 Inactive
+
+hydroelectric power station, representing a remote scenario. Building a func-tional 4G/5G mobile network test environment is challenging due to its inherent complexity [4]. Therefore, for MEC experiments, we relied on Telenor’s facili-ties in Fornebu. Tests were performed using a public 5G network, and Table 1 summarizes the locations, signal strengths, and cellular parameters. For com-parison, we also tested from a recently established fiber connection, connecting the computer via the router to replicate router-induced latencies. 
+
+## 6 Results 
+
+We conducted experiments in which the client machine sent requests and received responses from servers hosted in various cloud regions and at the edge. RTT data were collected and analyzed to plot key performance indicators. Statistical significance was validated using p-value tests, and the coefficient of volatility 
+
+CV = σμ (1) was calculated to quantify latency variability. All scripts and observed latency logs are publicly available in Zenodo. A summary of the evaluation is also pre-sented in [16]. 
+
+6.1 Latency 
+
+We ran our program to collect round-trip time (RTT) measurements over a period of 24 hours from each location. We analyzed the results and highlighted differences up to and beyond the 99th percentile by plotting P99 latencies. P99 is often used as a key performance metric for measuring latencies for latency-sensitive applications [7]. Also, a high percentile like P99 is critical for assessing the network’s unpredictability [9]. 8 Aakash Sharma et al. 0 2 4 6 8 10 12 14 16 18 20 22  
+
+> Hour of Day (0-23)
+> 600
+> 800
+> 1000
+> P99 Latency (ms)  SE-Central
+> NO-East
+> NO-West
+> SE-Central NO-East NO-West
+> Server
+> 600
+> 800
+> 1000
+> P99 Latency (ms)
+
+(a) 9131, K˚ arvik 0 2 4 6 8 10 12 14 16 18 20 22   
+
+> Hour of Day (0-23)
+> 80
+> 100
+> 120
+> P99 Latency (ms)
+> SE-Central
+> NO-East
+> NO-West
+> SE-Central NO-East NO-West
+> Server
+> 80
+> 100
+> 120
+> P99 Latency (ms)
+
+(b) 9019, Tromsø 0 2 4 6 8 10 12 14 16 18 20 22   
+
+> Hour of Day (0-23)
+> 60
+> 70
+> 80
+> 90
+> P99 Latency (ms)  SE
+> NO-East
+> NO-West
+> SE NO-East NO-West
+> Server
+> 60
+> 70
+> 80
+> 90
+> P99 Latency (ms)
+
+(c) 0366, Oslo 
+
+Fig. 3: P99 latency from multiple Norwegian locations to cloud regions over Te-lenor’s cellular 4G/5G network. Figure 3a shows the end-to-end latency from K˚ arvik. The coverage is spotty in this area and resembles locations near the edge of cellular service coverage. Table 1 shows the limited cell signal strength and the lack of 5G. There is not much difference between the latencies to different cloud regions, as signal propagation time is likely the main contributing factor to the high latencies observed. There is also high relative volatility ( ≈0.2) for each cloud region. The latency for each cloud region is around 660 ms, which is high for latency-sensitive applications. We performed a p-test and obtained a p-value of 0.9726. Therefore, there is no significant difference between servers since p ≥ 0.05. From UiT campus in Tromsø, we observed latency values plotted in Fig-ure 3b. The signal strength is good. We can clearly see the difference between cloud servers in Norway (NO-East and NO-West) and Sweden (SE-Central). On average, the difference in latency between the Norwegian regions and Sweden was around 30 ms. The volatility was higher for SE-Central (0.132) compared Latency and Cost Trade-offs between MEC and Cloud 90 2 4 6 8 10 12 14 16 18 20 22   
+
+> Hour of Day (0-23)
+> 40
+> 50
+> 60
+> P99 Latency (ms)  SE-Central
+> NO-East
+> NO-West
+> SE-Central NO-East NO-West
+> Server
+> 40
+> 50
+> 60
+> P99 Latency (ms)
+
+Fig. 4: P99 latency from the client to different cloud regions over a fiber-optic network. to NO-East (0.099) and NO-West (0.089). We obtain a p-value of 7.1199e-09; therefore, there are significant differences between servers ( p< 0.05). From the client machine in Oslo, the latency was further reduced to each of the cloud regions. There was higher volatility (0.201) in the latency to SE-Central, but it was very stable for the other two regions (NO-East and NO-West). Average end-to-end latencies to the NO-East and NO-West regions were ≈58 ms. The average latency was ≈85 ms for the SE-Central region. We observed a p-value of 3.6124e-07 and therefore the difference between servers is significant (p< 0.05). Additionally, we conducted the same evaluation using a fiber-optic-based con-nection. The latency results are shown in Figure 4. As expected, the Norwegian regions exhibited lower latency than the Swedish region; however, the difference in average latency was less than 10 ms. Despite this small absolute difference, the measured p-value of 3.7374e-14 indicates a statistically significant difference between the latencies. 0 2 4 6 8 10 12 14 16 18 20 22    
+
+> Hour of Day (0-23)
+> 50
+> 60
+> 70
+> 80
+> P99 Latency (ms)
+> SE-Central
+> NO-East
+> NO-West
+> MEC
+> SE-Central NO-East NO-West MEC
+> Server
+> 50
+> 60
+> 70
+> 80
+> P99 Latency (ms)
+
+Fig. 5: P99 latency comparison between cloud regions and the edge in Telenor’s experimental 5G MEC network. Finally, we measured the latencies to all the cloud regions and to a server deployed at the mobile edge (MEC) close to the 5G core. Figure 5 shows the la-tencies observed. MEC shows the lowest average latency at approximately 44.62 ms, with a volatility of 0.021. The average latency to NO-East is 47.69 ms, fol-lowed by 48.80 ms for NO-West and 78.49 ms for SE-Central. Compared to MEC, 10 Aakash Sharma et al. 
+
+latency is 7% higher for NO-East, 9% higher for NO-West, and 76% higher for SE-Central. Similar to the measurements in Tromsø, the difference between SE-Central and NO-East is ≈30 ms. Again, the volatility is higher for SE-Central. We measured a p-value of 1.2542e-15, indicating significant statistical differences in latency among servers. 
+
+6.2 Capacity Planning 
+
+In our P99 evaluation, we initially sent approximately one request per second to the server. We assessed how end-to-end latency degrades under increasing load by gradually increasing the request rate. The experiment was conducted from Tromsø to the SE-Central region, and the results are shown in Figure 6. At 1024 requests/second, the average latency reached approximately 1 second. At 8,192 requests/second, some requests began to fail, and the fraction of failed requests increased further as the load continued to rise. At 65,536 requests/second, the P99 latency reached 119 seconds, far exceeding the requirements of interactive applications. The observed latency degradation is useful for planning server scal-ing to support higher request rates. 64 
+
+> 128
+> 256
+> 512
+> 1024
+> 2048
+> 4096
+> 8192
+> 16384
+> 32768
+> 65536
+> Request Rate (requests/second)
+> 10 2
+> 10 3
+> 10 4
+> 10 5
+> Round-Trip Time (ms)
+> Mean RTT
+> ±1 SD
+> P99 RTT
+
+Fig. 6: Latency degradation under increased requests. 
+
+6.3 Cost 
+
+We used Azure cloud services to host containerized workloads across multiple regions. Azure employs dynamic pricing, and the Norwegian krone (NOK) is sub-ject to volatility. Each container was configured with minimal resources (1 CPU and 512 MB memory). CPU utilization remained within limits, except during capacity testing (subsection 6.2), where some requests failed. The average daily cost of running a container was 10.4 NOK in SE-Central, 12.09 NOK in NO-East, and 15.71 NOK in NO-West. In addition, a container registry was required for orchestration, incurring a fixed cost of 1.36 NOK per day independent of usage. Running a container continuously for one year therefore costs 4,292 NOK in SE-Central, 4,909 NOK in NO-East, and 6,231 NOK in Latency and Cost Trade-offs between MEC and Cloud 11 
+
+NO-West, corresponding to increases of 14% and 45% relative to SE-Central. Currently, no pricing information is available for Telenor’s MEC offering. 
+
+## 7 Discussion 
+
+Our results indicate that MEC over 5G can achieve latencies comparable to those of optical fiber connections, enabling low-latency applications even in re-mote areas with cellular coverage. MEC shows lower latency volatility than cloud services, resulting in a more consistent and improved user experience [2]. Hy-brid MEC-cloud architectures provide support for intelligent applications with low latency while maintaining the scalability benefits of cloud platforms [5,18]. Furthermore, MEC facilitates AI/ML deployments by allowing low-latency exe-cution and dynamic resource management [10]. For critical infrastructures, such as power grids, ultra-low latency is crucial for automated monitoring and control [14]. MEC, in conjunction with cloud resources, has the potential to enhance resilience in these critical systems. This hybrid approach can improve reliability and responsiveness in scenarios where rapid decision-making is essential. 
+
+## 8 Conclusion 
+
+In this paper, we analyzed real-world latency and cost of deploying an analytics pipeline in both multi-region cloud and edge environments over 5G. The results demonstrate that mobile edge computing (MEC) can significantly reduce end-to-end latency (44.62 ms) compared to multi-region cloud deployments, benefiting latency-sensitive IoT applications such as smart power grids. However, present-day 5G MEC solutions remain insufficient for meeting the ultra-low latency requirements ( ∼8 ms) of smart grid operations. Future progress in edge archi-tectures and network capabilities will be essential to enable reliable, real-time grid intelligence. 
+
+Acknowledgement. This work was supported by the AI4Europe project un-der EU Horizon Europe Grant No. 101070000. The authors thank Abdelhakim Cherifi for his support. 
+
+## References     
+
+> 1. Das, A., Patterson, S., Wittie, M.: Edgebench: Benchmarking edge computing platforms. In: 2018 IEEE/ACM International Conference on Utility and Cloud Computing Companion (UCC Companion), pp. 175–180. IEEE (2018) 2. Dean, J., Barroso, L.A.: The tail at scale. Communications of the ACM 56 (2), 74–80 (2013) 3. Deng, C., Fang, X., Wang, X., Law, K.: Software orchestrated and hardware accel-erated artificial intelligence: Toward low latency edge computing. IEEE Wireless Communications 29 (4), 110–117 (2022)
+
+12 Aakash Sharma et al. 4. Dreibholz, T.: Flexible 4G/5G testbed setup for mobile edge computing using OpenAirInterface and open source MANO. In: Workshops of the international conference on advanced information networking and applications, pp. 1143–1153. Springer (2020) 5. Dreibholz, T., Mazumdar, S., Zahid, F., Taherkordi, A., Gran, E.G.: Mobile edge as part of the multi-cloud ecosystem: a performance study. In: 2019 27th Euromicro International Conference on Parallel, Distributed and Network-Based Processing (PDP), pp. 59–66. IEEE (2019) 6. Filali, A., Abouaomar, A., Cherkaoui, S., Kobbane, A., Guizani, M.: Multi-access edge computing: A survey. IEEE Access 8, 197,017–197,046 (2020) 7. Høiland-Jørgensen, T., Ahlgren, B., Hurtig, P., Brunstrom, A.: Measuring latency variation in the internet. In: Proceedings of the 12th International on Conference on emerging Networking EXperiments and Technologies, pp. 473–480 (2016) 8. Huang, Y., Lu, Y., Wang, F., Fan, X., Liu, J., Leung, V.C.: An edge computing framework for real-time monitoring in smart grid. In: 2018 IEEE International conference on industrial internet (ICII), pp. 99–108. IEEE (2018) 9. Iorio, M., Risso, F., Casetti, C.: When latency matters: measurements and lessons learned. ACM SIGCOMM Computer Communication Review 51 (4), 2–13 (2021) 10. Kaloxylos, A., Gavras, A., Camps Mur, D., Ghoraishi, M., Hrasnica, H.: AI and ML–Enablers for beyond 5G Networks (2021) 11. Miladinovic, I., Schefer-Wenzl, S., Burger, T., Hirner, H.: Multi-access edge com-puting: An overview and latency evaluation. In: 2021 22nd IEEE International Conference on Industrial Technology (ICIT), vol. 1, pp. 744–748. IEEE (2021) 12. Nipper, A., Stanford-Clark, A.: MQ Telemetry Transport (MQTT). https://mqtt. org/. Accessed: 2025-10-06 13. Pascual, S., Del Rosso, A., Anello, M.: Potential Benefits of Implementing Ambient Adjusted Rating in the Argentinean Transmission System. In: 2020 IEEE PES Transmission & Distribution Conference and Exhibition-Latin America (T&D LA), pp. 1–5. IEEE (2020) 14. Rudy, B., et al.: Iec/ieee tsn profile for industrial automation. document IEC/IEEE 60802 V0. 61 (2018) 15. Shahzadi, S., Iqbal, M., Dagiuklas, T., Qayyum, Z.U.: Multi-access edge comput-ing: open issues, challenges and future perspectives. Journal of Cloud Computing 
+
+6(1), 30 (2017) 16. Sharma, Aakash and Akselsen, Sigmund and Andersen, Anders and Bongo, Lars Ailo and Munch-Ellingsen, Arne: Replication Data: Evaluating 5G-connected IoT for Power Line Temperature Prediction: Real-World Latency and Cost Trade-offs Between MEC and Cloud (2026). DOI 10.5281/zenodo.18435283 17. Stefanovi´ c, ˇC.: Industry 4.0 from 5g perspective: Use-cases, requirements, chal-lenges and approaches. In: 2018 11th CMI International Conference: Prospects and Challenges Towards Developing a Digital Economy within the EU, pp. 44–48. IEEE (2018) 18. Taherkordi, A., Zahid, F., Verginadis, Y., Horn, G.: Future cloud systems design: challenges and research directions. IEEE Access 6, 74,120–74,150 (2018) 19. Zhao, Y., Wang, W., Li, Y., Meixner, C.C., Tornatore, M., Zhang, J.: Edge com-puting and networking: A survey on infrastructures and applications. IEEE Access 
+
+7, 101,213–101,230 (2019) 20. Zhou, Z., Chen, X., Li, E., Zeng, L., Luo, K., Zhang, J.: Edge intelligence: Paving the last mile of artificial intelligence with edge computing. Proceedings of the IEEE 
+
+107 (8), 1738–1762 (2019)

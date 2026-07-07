@@ -1,0 +1,436 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-07T20:31:01.966628+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 5,
+    "deep_cap": 6,
+    "deep_selected": 5,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2606.30981v1",
+      "source": "arxiv",
+      "title": "Universal Inference for model selection on networks",
+      "abstract": "Model selection and hypothesis testing are important tasks on networks. A key challenge lies in the inherent dependence in network data, as well as the fact that typically only a single realization is observed. As a result, many existing methods must be carefully tailored to specific models and only come with asymptotic theoretical guarantees. In this work, however, we propose a general model selection framework using Universal Inference, making our method widely applicable to various testing scenarios. Since Universal Inference requires two sets of data, we employ edge sampling to obtain proper networks with tractable dependence. We prove that the proposed statistic is an e-value, thus controlling the type I error rate in finite samples under nearly any hypothesis test. To our knowledge, this is the first Universal Inference-type statistic constructed from dependent splits of data as well as the first finite-sample testing guarantee for hypothesis testing on networks. We also prove that the logarithm of the test statistic diverges to positive infinity under various alternative models. On simulated and real-world networks, the proposed method performs well on tasks such as choosing the random graph model and the number of communities.",
+      "authors": [
+        "Eric Yanchenko",
+        "Jonathan P. Williams",
+        "Ryan Martin"
+      ],
+      "primary_category": "stat.ME",
+      "categories": [
+        "stat.ME"
+      ],
+      "published": "2026-06-29T23:35:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.30981v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "general model selection framework using Universal Inference on networks",
+      "llm_evidence_cn": "基于通用推断的网络模型选择框架",
+      "llm_evidence": "基于通用推断的网络模型选择框架",
+      "canonical_evidence": "基于通用推断的网络模型选择框架",
+      "llm_tldr_en": "Proposes a Universal Inference-based model selection framework for networks, using edge sampling to achieve finite-sample type I error control.",
+      "llm_tldr_cn": "该论文针对网络中的模型选择问题，提出了一种基于通用推断的通用框架。现有方法需针对特定模型定制且渐近保证。作者通过边采样获得两个独立网络，构造 e 值统计量，在有限样本下控制第一类错误率。理论证明该统计量为 e 值，适用于几乎所有假设检验场景，且无需特定模型假设。",
+      "llm_tldr": "该论文针对网络中的模型选择问题，提出了一种基于通用推断的通用框架。现有方法需针对特定模型定制且渐近保证。作者通过边采样获得两个独立网络，构造 e 值统计量，在有限样本下控制第一类错误率。理论证明该统计量为 e 值，适用于几乎所有假设检验场景，且无需特定模型假设。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.01798v2",
+      "source": "arxiv",
+      "title": "Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference",
+      "abstract": "Vision Transformers have reshaped computer vision by using self-attention to capture global context across image regions. This makes them attractive for edge visual inspection and monitoring in applications such as renewable-energy infrastructure, industrial quality control, medical imaging, and autonomous-system sensing. However, deploying ViTs on small FPGAs remains challenging because the softmax stage in self-attention requires exponential evaluation and normalization, which are costly in hardware. Existing implementations often rely on CORDIC pipelines or BRAM-based look-up tables, increasing area and power consumption. This paper presents a BRAM-free approximate attention-weighting unit for FPGA-based ViT inference. The proposed design approximates the natural exponential in softmax using a 16-segment piecewise-linear function implemented entirely with distributed LUT fabric. Unlike base-2 approximations, the natural-exponential formulation preserves the pre-trained attention temperature and avoids model-specific recalibration. Implemented on a Xilinx Zynq-7020, the complete attention-row core uses 1444 LUTs, 77 DSPs, and no BRAM, while hardware-accurate emulation shows accuracy within a \\(0.20\\%\\) absolute top-1 difference from the exact-softmax reference on ViT-family models. These results demonstrate the potential of the proposed core for energy-efficient ViT inference on resource-constrained edge-AI platforms.",
+      "authors": [
+        "Muhammad Usman",
+        "Muhammad Akmal Shafique",
+        "Shujaat Khan",
+        "Dorit Merhof"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-07-02T07:15:08+00:00",
+      "link": "https://arxiv.org/pdf/2607.01798v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "FPGA-based vision transformer inference for edge visual inspection",
+      "llm_evidence_cn": "用于边缘视觉检测的FPGA视觉Transformer推理",
+      "llm_evidence": "用于边缘视觉检测的FPGA视觉Transformer推理",
+      "canonical_evidence": "用于边缘视觉检测的FPGA视觉Transformer推理",
+      "llm_tldr_en": "Presents a BRAM-free approximate attention-weighting unit for FPGA-based ViT inference, targeting edge visual inspection applications.",
+      "llm_tldr_cn": "该论文针对在小型FPGA上部署视觉Transformer（ViT）进行边缘视觉检测的挑战，提出了一种无BRAM的近似注意力权重单元。ViT的softmax阶段需要指数运算和归一化，硬件开销大。作者设计的近似单元避免了BRAM查找表，减少了面积和功耗。实验表明该方法在保持精度的同时，显著降低了资源消耗，适用于资源受限的边缘设备。",
+      "llm_tldr": "该论文针对在小型FPGA上部署视觉Transformer（ViT）进行边缘视觉检测的挑战，提出了一种无BRAM的近似注意力权重单元。ViT的softmax阶段需要指数运算和归一化，硬件开销大。作者设计的近似单元避免了BRAM查找表，减少了面积和功耗。实验表明该方法在保持精度的同时，显著降低了资源消耗，适用于资源受限的边缘设备。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.03131v1",
+      "source": "arxiv",
+      "title": "A Multi-Task Deep Learning Framework for Real-Time Intelligent Video Surveillance with Temporal Event Validation",
+      "abstract": "Modern video surveillance systems generate far more video streams than human operators can effectively monitor, making automated analysis essential for timely detection of security events. This paper presents a unified multi-task deep learning framework that simultaneously performs face recognition with zone-based authorization, automatic license plate recognition, weapon detection, fire and smoke detection, and human action recognition on a shared GPU platform. Among the integrated modules, two task-specific deep-learning models are proposed in this work to address scenarios that are insufficiently represented in publicly available datasets: a single-class weapon detector fine-tuned on a merged and relabeled dataset, achieving a mean average precision (mAP@0.5) of 0.947, and a SlowFast-R50 action recognition model trained on a purpose-built vandalism dataset comprising 614 video clips, achieving 94.33% classification accuracy. To improve robustness in continuous video, all detection modules are integrated into a temporal event-validation architecture based on multi-frame confirmation, confidence-weighted voting, and cascaded filtering, transforming frame-level predictions into reliable security events. Each module is evaluated independently on established public datasets (LFW, D-Fire, FIRESENSE, and UCF-Crime), followed by integrated end-to-end system evaluation. The proposed temporal validation strategy reduces the fire and smoke false-alarm rate from 52% to 4% and improves video license plate exact-match accuracy from 66.7% to 81.8%, while the complete framework maintains real-time operation with a per-frame latency below 100 ms on commodity hardware. These results demonstrate that combining specialized deep-learning models with temporal event validation provides an effective and practical solution for reliable real-time intelligent video surveillance.",
+      "authors": [
+        "Estera Dumitru",
+        "Stelian Spînu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-03T09:20:58+00:00",
+      "link": "https://arxiv.org/pdf/2607.03131v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "real-time video surveillance with multi-task deep learning on shared GPU",
+      "llm_evidence_cn": "共享GPU上的实时视频监控多任务深度学习",
+      "llm_evidence": "共享GPU上的实时视频监控多任务深度学习",
+      "canonical_evidence": "共享GPU上的实时视频监控多任务深度学习",
+      "llm_tldr_en": "A unified multi-task framework performs face recognition, license plate recognition, weapon detection, fire/smoke detection, and action recognition in real-time on a shared GPU, with temporal event validation.",
+      "llm_tldr_cn": "针对现代视频监控产生大量流需要自动分析的问题，提出统一多任务深度学习框架，在共享GPU上同时执行人脸识别、车牌识别、武器检测、火灾烟雾检测和人体动作识别，并包含时序事件验证。集成了两个新任务专用模型。实验表明该系统在实时性上满足监控需求，准确率高。",
+      "llm_tldr": "针对现代视频监控产生大量流需要自动分析的问题，提出统一多任务深度学习框架，在共享GPU上同时执行人脸识别、车牌识别、武器检测、火灾烟雾检测和人体动作识别，并包含时序事件验证。集成了两个新任务专用模型。实验表明该系统在实时性上满足监控需求，准确率高。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.03993v1",
+      "source": "arxiv",
+      "title": "Evaluating 5G-connected IoT for Power Line Temperature Prediction: Real-World Latency and Cost Trade-offs Between MEC and Cloud",
+      "abstract": "One of the key promises of Mobile Edge Computing (MEC) is its low latency. Current large-scale IoT deployments rely on cloud for their reliability, low cost, and ease of use. For outdoor IoT deployments, 5G cellular networks offer significantly enhanced bandwidth and dramatically reduced latency compared to previous generations, enabling real-time data processing and control. Therefore, leveraging 5G connectivity is crucial for outdoor IoT applications requiring responsiveness and complex data handling. Combining MEC with 5G has the potential to provide the ease of cloud computing alongside low latency. We investigate the latency performance on a 5G cellular network with an experimental MEC setup. In our proof-of-concept, we demonstrate the benefits of using an edge-based compute server for real-time power transmission line analytics. We compare our solution with state-of-the-art multi-region cloud deployments and discuss the advantages of mobile edge computing (MEC). Our real-world evaluation demonstrates a low latency of 44.62 ms for MEC compared to cloud regions; however, the gap is narrowing. While such low latencies can benefit real-world deployments, they remain insufficient to meet the stringent requirements of smart power grid operations (~8 ms).",
+      "authors": [
+        "Aakash Sharma",
+        "Sigmund Akselsen",
+        "Anders Andersen",
+        "Lars Ailo Bongo",
+        "Arne Munch-Ellingsen"
+      ],
+      "primary_category": "cs.NI",
+      "categories": [
+        "cs.NI",
+        "cs.PF"
+      ],
+      "published": "2026-07-04T19:27:48+00:00",
+      "link": "https://arxiv.org/pdf/2607.03993v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "evaluates 5G-connected IoT MEC latency and cost trade-offs",
+      "llm_evidence_cn": "评估5G连接IoT中MEC的延迟和成本权衡",
+      "llm_evidence": "评估5G连接IoT中MEC的延迟和成本权衡",
+      "canonical_evidence": "评估5G连接IoT中MEC的延迟和成本权衡",
+      "llm_tldr_en": "Real-world latency and cost trade-offs between MEC and cloud for 5G IoT, directly addressing mobile edge computing.",
+      "llm_tldr_cn": "该论文通过实验测量了5G蜂窝网络下MEC与云的延迟和成本，验证了MEC在低延迟物联网应用中的优势。虽然具体场景是电力线温度预测，但其核心聚焦MEC性能，与移动边缘计算需求高度匹配。",
+      "llm_tldr": "该论文通过实验测量了5G蜂窝网络下MEC与云的延迟和成本，验证了MEC在低延迟物联网应用中的优势。虽然具体场景是电力线温度预测，但其核心聚焦MEC性能，与移动边缘计算需求高度匹配。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.05093v1",
+      "source": "arxiv",
+      "title": "Semantic Video Communication via Multi-Scale Convolution and Dynamic Routing for Next-Generation Networks",
+      "abstract": "The exponential growth of video traffic demands novel semantic communication paradigms that transmit meaning rather than raw bits. We present a generative AI-enabled framework for semantic video communication addressing two critical challenges: efficient hierarchical temporal modeling for bandwidth-constrained transmission and robust semantic alignment between video content and natural language queries at network edge devices. Our approach introduces a multi-scale temporal convolutional encoder that captures motion patterns across different temporal granularities with O(T) complexity suitable for resource-constrained IoT deployments. We further propose a capsule-based dynamic routing mechanism that iteratively refines segment-query associations, enabling flexible modeling of non-monotonic semantic alignments essential for goal-oriented communication. These components are unified through a multi-task learning objective optimizing temporal boundary regression, cross-modal alignment, and capsule diversity. Experiments on ActivityNet Captions demonstrate significant improvements, achieving 42.9% Recall@0.5 and 41.1% mean IoU while maintaining computational efficiency critical for edge deployment.",
+      "authors": [
+        "Gengtian Shi",
+        "Jinze Yu",
+        "Chenhao Wu",
+        "Shaofei Wang",
+        "Eiji Fukuzawa",
+        "Junjie Tang",
+        "Hiroshi Onoda",
+        "Jiang Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-06T13:52:46+00:00",
+      "link": "https://arxiv.org/pdf/2607.05093v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "semantic video communication at network edge",
+      "llm_evidence_cn": "面向网络边缘的语义视频通信",
+      "llm_evidence": "面向网络边缘的语义视频通信",
+      "canonical_evidence": "面向网络边缘的语义视频通信",
+      "llm_tldr_en": "Presents a generative AI framework for semantic video communication with multi-scale temporal convolutional encoder and capsule-based dynamic routing, designed for bandwidth-constrained edge devices and robust semantic alignment.",
+      "llm_tldr_cn": "针对视频流量激增和带宽受限问题，本文提出一种生成式AI赋能的语义视频通信框架。它采用多尺度时序卷积编码器高效捕获运动模式，并利用胶囊动态路由机制实现视频内容与自然语言查询的语义对齐。该框架复杂度为O(T)，适合资源受限的物联网和边缘设备部署，为下一代网络中的高效视频传输提供了新范式。",
+      "llm_tldr": "针对视频流量激增和带宽受限问题，本文提出一种生成式AI赋能的语义视频通信框架。它采用多尺度时序卷积编码器高效捕获运动模式，并利用胶囊动态路由机制实现视频内容与自然语言查询的语义对齐。该框架复杂度为O(T)，适合资源受限的物联网和边缘设备部署，为下一代网络中的高效视频传输提供了新范式。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.03803v1",
+      "source": "arxiv",
+      "title": "CineMobile: On-Device Image-to-Video Diffusion for Cinematic Camera Motion Generation",
+      "abstract": "The growing demand for image-to-video creation on mobile devices has increasingly focused on cinematic motion effects like bullet time, dolly zoom, slow motion, etc. While Diffusion Transformers (DiTs) exhibit strong performance in video generation, their large parameter sizes and multi-step iterative denoising processes lead to substantial computational overhead, making efficient generation on mobile devices challenging. We propose CineMobile to bridge the gap. In particular, CineMobile adopts a three-fold optimization strategy: (1) leveraging a distillation-guided pruning approach to derive a compact yet efficient model that retains the essential video generation capabilities required for cinematic effects; (2) optimizing the compressed model into a 4-step generator via a combination of diffusion distillation and reinforcement learning; (3) employing a hybrid post-training quantization strategy to compress the model footprint to under 1 GB. Experimental results show that compared to the teacher model with the Wan 2.1 architecture, CineMobile achieves a 40x speedup in generation while maintaining comparable visual quality. Specifically, CineMobile generates 49-frame 480p videos with a per-step denoising latency of 0.6s on an NVIDIA H200 GPU and 20s on the MediaTek Dimensity 8400 Ultimate 5G platform, with a peak memory usage of 1.8 GB, demonstrating its practical applicability for mobile-based image-to-video creation.",
+      "authors": [
+        "Xuyao Huang",
+        "Zelai Deng",
+        "Xu Wang",
+        "Xizhong Xiao",
+        "Zhijie Deng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-04T10:24:35+00:00",
+      "link": "https://arxiv.org/pdf/2607.03803v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "on-device video generation with model optimization",
+      "llm_evidence_cn": "移动设备上的视频生成与模型优化",
+      "llm_evidence": "移动设备上的视频生成与模型优化",
+      "canonical_evidence": "移动设备上的视频生成与模型优化",
+      "llm_tldr_en": "Proposes CineMobile, a three-fold optimization for on-device image-to-video diffusion, using distillation-guided pruning, model compression, and efficient inference to enable cinematic effects on mobile devices.",
+      "llm_tldr_cn": "针对扩散变换器参数大、迭代多导致移动端视频生成困难的问题，本文提出CineMobile。它采用蒸馏引导剪枝获得紧凑模型，优化压缩框架实现高效推理，从而在移动设备上生成子弹时间、慢动作等电影效果。实验表明在保持视频质量的同时大幅降低计算开销，为移动端生成式AI应用提供了可行方案。",
+      "llm_tldr": "针对扩散变换器参数大、迭代多导致移动端视频生成困难的问题，本文提出CineMobile。它采用蒸馏引导剪枝获得紧凑模型，优化压缩框架实现高效推理，从而在移动设备上生成子弹时间、慢动作等电影效果。实验表明在保持视频质量的同时大幅降低计算开销，为移动端生成式AI应用提供了可行方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.30490v1",
+      "source": "arxiv",
+      "title": "From Frames to Features: Scalable Zigzag Persistence for Binary Video",
+      "abstract": "Zigzag persistence tracks topological features in spatio-temporal data through combinatorial invariants called barcodes. For binary videos, existing methods are bottlenecked by the construction of prohibitively large cubical complexes and performing Gaussian elimination on large boundary matrices, rendering high-resolution videos out of reach. We show that the $H_0$ and $H_1$ barcodes can be extracted directly from connected-component dynamics. By encoding these dynamics in a graph, we bypass cubical complexes entirely and are able to leverage the near-linear time barcode decomposition algorithm by Dey and Hou, leading to significant speedups. The total runtime of our pipeline is dominated by the construction of the underlying graph structures, which scales linearly with pixel count and is embarrassingly parallel across frames, ensuring excellent scalability. We demonstrate how this approach enables zigzag persistence on 4k video at real-time rates on consumer hardware.",
+      "authors": [
+        "David Lanners"
+      ],
+      "primary_category": "math.AT",
+      "categories": [
+        "math.AT"
+      ],
+      "published": "2026-06-29T15:54:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.30490v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "binary video topological feature extraction",
+      "llm_evidence_cn": "二元视频拓扑特征提取",
+      "llm_evidence": "二元视频拓扑特征提取",
+      "canonical_evidence": "二元视频拓扑特征提取",
+      "llm_tldr_en": "Proposes scalable zigzag persistence for binary video, extracting barcodes from connected-component dynamics, bypassing cubical complexes for speedup.",
+      "llm_tldr_cn": "该论文针对二元视频的拓扑数据分析，提出了一种可扩展的 zigzag 持久性方法。现有方法因构造庞大立方复形而无法处理高分辨率视频。作者通过从连通分量动力学中直接提取条形码，并利用图结构编码，避免了立方复形，实现了近线性时间算法。实验表明该方法显著加速，且总运行时间受限于图结构构建。",
+      "llm_tldr": "该论文针对二元视频的拓扑数据分析，提出了一种可扩展的 zigzag 持久性方法。现有方法因构造庞大立方复形而无法处理高分辨率视频。作者通过从连通分量动力学中直接提取条形码，并利用图结构编码，避免了立方复形，实现了近线性时间算法。实验表明该方法显著加速，且总运行时间受限于图结构构建。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.00948v1",
+      "source": "arxiv",
+      "title": "Dataset Biases and Shortcut Learning in Motion-Based AI-Generated Video Detection",
+      "abstract": "The visual quality of AI-generated videos has improved drastically in recent years, making it increasingly difficult for humans to distinguish between real and synthetic media. In this work, we evaluate the robustness and applicability of four state-of-the-art motion-based AI-generated video detectors. We identify significant preprocessing and sampling biases in these methods and demonstrate that they account for a substantial portion of their reported performance. Furthermore, we find that these detectors are highly sensitive to motion patterns specific to their evaluation datasets, where AI-generated videos generally exhibit less inter-frame movement than real videos. We show that for all detectors, performance collapses to near-random levels when evaluated on a dataset that does not contain this motion bias. Additionally, through dataset rebalancing and the application of simple spatial augmentations, we observe severe performance degradation across all evaluated models. In contrast, we find that an existing frequency-based detector maintains strong performance across all evaluated datasets, suggesting that frequency-based approaches may offer a more generalizable path forward for AI-generated video detection. We hope that our work raises awareness towards these vulnerabilities and encourages the development of more representative, unbiased datasets and more robust evaluation protocols.",
+      "authors": [
+        "Joren Michels",
+        "Lode Jorissen",
+        "Nick Michiels"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-01T13:47:42+00:00",
+      "link": "https://arxiv.org/pdf/2607.00948v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "detects AI-generated videos using motion patterns, video analytics",
+      "llm_evidence_cn": "利用运动模式检测AI生成视频，视频分析",
+      "llm_evidence": "利用运动模式检测AI生成视频，视频分析",
+      "canonical_evidence": "利用运动模式检测AI生成视频，视频分析",
+      "llm_tldr_en": "Exposes biases in motion-based AI video detectors, relevant to video analytics but not streaming.",
+      "llm_tldr_cn": "该论文评估了四个基于运动的AI生成视频检测器，发现其性能受数据集偏见和预处理偏差影响。尽管涉及视频分析技术，但重点在于检测而非实时流式处理，且未涉及边缘计算。",
+      "llm_tldr": "该论文评估了四个基于运动的AI生成视频检测器，发现其性能受数据集偏见和预处理偏差影响。尽管涉及视频分析技术，但重点在于检测而非实时流式处理，且未涉及边缘计算。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.02819v1",
+      "source": "arxiv",
+      "title": "Vision Token Manipulation Attacks on Cloud-Edge Inference of Large Vision-Language Models",
+      "abstract": "Cloud-edge Large Vision-Language Model (LVLM) inference enables efficient deployment by splitting computation between edge devices and cloud servers. In this process, intermediate vision tokens are transmitted from the edge to the cloud over a communication link, thereby exposing a new attack surface. We study vision token manipulation attack (VTM-Attack) under a black-box man-in-the-middle setting, where an adversary intercepts and manipulates a subset of transmitted vision tokens under a budget constraint. We propose four naïve attack strategies and an optimization-based token selection method. Experiments on 6 state-of-the-art LVLMs (3B-72B) across 4 benchmarks show that manipulating only 10\\% of vision tokens can reduce accuracy by up to 88.31\\%. These results reveal a critical vulnerability in cloud-edge LVLM inference.",
+      "authors": [
+        "Zikai Zhang",
+        "Rui Hu",
+        "Olivera Kotevska",
+        "Jiahao Xu"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-07-02T23:16:02+00:00",
+      "link": "https://arxiv.org/pdf/2607.02819v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "cloud-edge inference security",
+      "llm_evidence_cn": "云边推理安全",
+      "llm_evidence": "云边推理安全",
+      "canonical_evidence": "云边推理安全",
+      "llm_tldr_en": "This paper studies vision token manipulation attacks on cloud-edge LVLM inference, showing that manipulating 10% of tokens can severely degrade accuracy.",
+      "llm_tldr_cn": "云边联合推理中视觉令牌通过通信链路传输易受攻击。本文研究黑盒中间人攻击，提出优化令牌选择方法，在6种LVLM上仅操纵10%令牌即显著降低准确率，揭示了云边视频分析系统的安全隐患。",
+      "llm_tldr": "云边联合推理中视觉令牌通过通信链路传输易受攻击。本文研究黑盒中间人攻击，提出优化令牌选择方法，在6种LVLM上仅操纵10%令牌即显著降低准确率，揭示了云边视频分析系统的安全隐患。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.02922v1",
+      "source": "arxiv",
+      "title": "STAC: Selective Spatiotemporal Aggregation and Compression for Video Reasoning Segmentation",
+      "abstract": "Video reasoning segmentation demands pixel-accurate object tracking across hundreds of frames under complex natural language queries, producing dense spatiotemporal tokens whose quadratic self-attention cost makes long-video processing prohibitive. Existing methods address this through token compression, yet typically operate on encoder features lacking temporal context, constraining selection before content redundancy can be reliably assessed. Informed compression requires contextual awareness, but acquiring that awareness at full resolution incurs the same quadratic cost compression aims to reduce. State-space models resolve this constraint, as their linear recurrence selectively conditions each token on temporal context at $\\mathcal{O}(T)$ cost, producing representations where content redundancy becomes assessable. Building on this, Selective SpatioTemporal Aggregation and Compression (STAC) enriches features via decoupled bidirectional spatial and causal temporal scanning, leveraging recurrence-derived redundancy for hierarchical compression with adaptive thresholds optimised with segmentation objective. STAC achieves 85% token reduction and 1.8$\\times$ speedup while surpassing compression-free baselines on reasoning segmentation benchmarks in a zero-shot streaming-compatible setting. Code is available \\href{https://github.com/MCG-NKU/nku-video}{here}.",
+      "authors": [
+        "Syed Ariff Syed Hesham",
+        "Yun Liu",
+        "Guolei Sun",
+        "Jing Yang",
+        "Henghui Ding",
+        "Xue Geng",
+        "Xudong Jiang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-03T03:28:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.02922v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "spatiotemporal aggregation and compression for video reasoning segmentation, relevant to streaming video analysis techniques",
+      "llm_evidence_cn": "视频推理分割中的时空聚合与压缩，与流式视频分析技术相关",
+      "llm_evidence": "视频推理分割中的时空聚合与压缩，与流式视频分析技术相关",
+      "canonical_evidence": "视频推理分割中的时空聚合与压缩，与流式视频分析技术相关",
+      "llm_tldr_en": "STAC addresses long-video reasoning segmentation by introducing selective spatiotemporal aggregation and compression using state-space models, achieving significant computation reduction while maintaining accuracy.",
+      "llm_tldr_cn": "STAC针对长视频推理分割中密集时空标记导致的计算瓶颈，利用状态空间模型的线性递归特性，实现选择性时空聚合与压缩。实验表明，该方法在保持像素级精度的同时大幅降低计算成本，为流式视频分析提供了高效的标记压缩方案，适用于资源受限边缘场景。",
+      "llm_tldr": "STAC针对长视频推理分割中密集时空标记导致的计算瓶颈，利用状态空间模型的线性递归特性，实现选择性时空聚合与压缩。实验表明，该方法在保持像素级精度的同时大幅降低计算成本，为流式视频分析提供了高效的标记压缩方案，适用于资源受限边缘场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.04559v1",
+      "source": "arxiv",
+      "title": "QSVideo: Query-Conditioned Semantic Temporal Retrieval for Video Understanding",
+      "abstract": "The performance of vision-language models (VLMs) in video understanding declines with increasing video duration, as video moments unrelated to the query confuse their language components. Multimodal retrieval has emerged as a critical component of video understanding, addressing this challenge by localizing key visual evidence. However, existing multimodal retrieval methods suffer from biased relevance estimation, limited diversity, and temporal collapse. In this paper, we propose QSVideo, a unified framework that systematically addresses relevance, diversity, and temporal modeling in video retrieval. We first introduce a query-conditioned semantic ranker, QSRanker, which reformulates arbitrary questions into retrieval-friendly queries and estimates structured relevance along object, action, and location dimensions. Building upon this, we design QSRetrieval to jointly optimize relevance and diversity for more informative frame selection. Moreover, we propose temporal alignment strategies tailored for both long and streaming videos to improve evidence recall. Extensive experiments on long and streaming video benchmarks demonstrate that QSVideo greatly enhances video VLM performance under strict frame limit constraints. The code is available at https://github.com/human-analysis/QSVideo.",
+      "authors": [
+        "Wei Ao",
+        "Lan Wang",
+        "Vishnu Naresh Boddeti"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-06T00:19:42+00:00",
+      "link": "https://arxiv.org/pdf/2607.04559v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "query-conditioned video retrieval for understanding",
+      "llm_evidence_cn": "查询条件的视频检索用于理解",
+      "llm_evidence": "查询条件的视频检索用于理解",
+      "canonical_evidence": "查询条件的视频检索用于理解",
+      "llm_tldr_en": "QSVideo introduces a query-conditioned semantic ranker and diversity-aware sampling to improve temporal video retrieval, addressing bias and collapse issues for video understanding.",
+      "llm_tldr_cn": "针对长视频理解中无关片段混淆语言模型的问题，提出QSVideo框架。包含查询条件语义排序器QSRanker将任意问题转化为检索友好查询，并设计多样性感知采样和时序建模。实验表明在多个视频理解基准上显著提升检索和问答性能。",
+      "llm_tldr": "针对长视频理解中无关片段混淆语言模型的问题，提出QSVideo框架。包含查询条件语义排序器QSRanker将任意问题转化为检索友好查询，并设计多样性感知采样和时序建模。实验表明在多个视频理解基准上显著提升检索和问答性能。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

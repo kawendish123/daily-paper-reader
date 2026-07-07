@@ -1,0 +1,4337 @@
+Title: Universal Inference for model selection on networks
+
+URL Source: https://arxiv.org/pdf/2606.30981v1
+
+Published Time: Wed, 01 Jul 2026 00:19:51 GMT
+
+Number of Pages: 44
+
+Markdown Content:
+# Universal Inference for model selection on networks 
+
+## Eric Yanchenko ∗
+
+## , Jonathan P. Williams †and Ryan Martin †
+
+## July 1, 2026 
+
+Abstract 
+
+Model selection and hypothesis testing are important tasks on networks. A key chal-lenge lies in the inherent dependence in network data, as well as the fact that typically only a single realization is observed. As a result, many existing methods must be carefully tailored to specific models and only come with asymptotic theoretical guar-antees. In this work, however, we propose a general model selection framework using Universal Inference, making our method widely applicable to various testing scenarios. Since Universal Inference requires two sets of data, we employ edge sampling to obtain proper networks with tractable dependence. We prove that the proposed statistic is an e-value, thus controlling the type I error rate in finite samples under nearly any hypothesis test. To our knowledge, this is the first Universal Inference-type statistic constructed from dependent splits of data as well as the first finite-sample testing guar-antee for hypothesis testing on networks. We also prove that the logarithm of the test statistic diverges to positive infinity under various alternative models. On simulated and real-world networks, the proposed method performs well on tasks such as choosing the random graph model and the number of communities. 
+
+# 1 Introduction 
+
+Model selection and hypothesis testing are classical statistical inference tasks and have impor-tant applications in network-valued data. Consider the following motivating examples. First, numerous random graph models can be fit to an observed network. A non-exhaustive list includes: Erdos-Renyi (Erd¨ os and R´ enyi, 1959), Chung-Lu (Chung and Lu, 2002), stochas-tic block model (Holland et al., 1983), degree-corrected block model (Karrer and Newman, 2011), and popularity-adjusted block model (Sengupta and Chen, 2018). Practitioners are thus faced with a difficult task: given a network, which model is most appropriate? For example, does the network have a statistically significant community structure, or is the Erdos-Renyi model appropriate? Compared with a stochastic block model, is the extra flex-ibility of the degree-corrected block model truly warranted? Each of these model selection tasks can be recast as a hypothesis testing problem. For example, we may be interested in testing 
+
+H0 : stochastic block model vs. H1 : degree-corrected block model, 
+
+> ∗
+
+Human and AI Center, Akita International University. eyanchenko@aiu.ac.jp 
+
+> †
+
+Department of Statistics, North Carolina State University. 
+
+> arXiv:2606.30981v1 [stat.ME] 29 Jun 2026
+
+which is effectively testing if the degree parameters in the degree-corrected block model are all identical ( H0) or not ( H1). Once a random graph model has been chosen, most models still require the user to set other parameter values. For example, in block models, the number of communities, K, must be pre-specified. While there may be situations where 
+
+K is known based on domain-knowledge, in general, it is unknown. Thus, choosing the number of communities is another important model selection task that can also be framed as a hypothesis test, i.e., 
+
+H0 : K = 2 vs. H1 : K = 3 .
+
+Many existing works tackle only one of these tasks. For example, for selecting the number of communities K, Wang and Bickel (2017) and Hu et al. (2020) propose likelihood-based ap-proaches while Bickel and Sarkar (2016) use the largest eigenvalue to recursively test against an Erdos-Renyi null model. For selecting a random graph model, Yanchenko and Sengupta (2024) propose a model-agnostic parameter with analytic and bootstrap cut-off. For these methods, however, the solution is tailored to a specific test and cannot be easily generalized to other settings. Recently, more general model selection paradigms have been introduced as a starting point and/or when no other methods exist. Li et al. (2020) propose an edge cross validation approach by randomly sampling node pairs and using matrix completion. Chakrabarty et al. (2025) and Bhadra et al. (2025) leverage loss functions with the former sub-sampling the network and the latter proposing a unified approach to select the best block model from a natural hierarchy. While these methods are more generally applicable across various testing settings, the theoretical results must be derived for each particular model and only apply in the asymptotic regime. Moreover, the loss-function-based methods (e.g., Li et al., 2020; Chakrabarty et al., 2025; Bhadra et al., 2025) simply provide a rejection decision rather than a statistical measure of evidence such as a p- or e-value. One recent approach to handle difficult hypothesis testing settings is Universal Inference (Wasserman et al., 2020; Dey et al., 2025). Given independent copies of the data, Universal Inference uses sample splitting to construct a likelihood ratio-like statistic with finite-sample control of type I errors for nearly any sets of hypotheses. Universal Inference is also a special case of e-values, an exciting alternative to p-values (Vovk and Wang, 2021; Wang and Ramdas, 2022; Gr¨ unwald et al., 2024). Given the complexities of testing on networks, Universal Inference would appear to be a promising approach. The main problem, however, is that Universal Inference requires independent copies of the data. With network data, however, we typically only obtain a single observation, and even in situations where there are multiple copies, i.e., temporal networks (Holme and Saram¨ aki, 2012), the successive network realizations are likely correlated. Prior approaches to split networks would also run into difficulties if they were to be used in Universal Inference. For example, Li et al. (2020) split the network via node-pairs, but this does not result in proper matrices, thus requiring an additional matrix completion step. Data Fission (Leiner et al., 2025) has also been used to split networks, but the resulting pieces exhibit a complicated dependence structure (Leiner and Ramdas, 2024; Ancell et al., 2025). To overcome this challenge, we propose using edge sampling , randomly dividing the ob-served edges between two new networks. While the resulting networks exhibit some depen-dence, it is analytically manageable and still allows us to construct a Universal Inference testing statistic. We prove that our statistic is an e-value under nearly any null hypothe-2Figure 1: Visual schematic of the proposed method. sis, meaning that our test maintains a proper type I error rate even in finite samples. To our knowledge, this is the first Universal Inference-like statistic constructed from dependent data, as well as the first finite-sample guarantee for hypothesis testing on networks. We also prove that the statistic is theoretically guaranteed to diverge to infinity under various alternative models. See Figure 1 for an overview of the proposed method. The remainder of this paper is structured as follows. In Section 2, we give the necessary background on random graph models and Universal Inference. The proposed method is presented in Section 3 with theoretical results in Section 4. Experiments on synthetic and real-world data are the topic of Section 5, and the conclusion can be found in Section 6. 
+
+# 2 Background 
+
+## 2.1 Notation 
+
+We begin by introducing notation before providing the necessary background for this work. We represent a network with n nodes by an n × n adjacency matrix A ∈ { 0, 1}n×n where 
+
+Aij = 1 if nodes i and j have an edge, and 0 otherwise. For simplicity, we only consider undirected, unweighted networks with no self-loops, but the ideas in this work can easily be generalized. We let P(θ) represent the n × n data-generating matrix defined by parameters 
+
+θ such that A ∼ P(θ) corresponds to 
+
+Aij | θ ind. 
+
+∼ Bernoulli (Pij (θ)) 3for all 1 ≤ i < j ≤ n. When we want to emphasize that the network was generated from the 
+
+true model parameters, we will denote this with a star, i.e., θ∗.When describing asymptotic rates, we say that a deterministic sequence an = O(bn) if lim n→∞ an/b n = c for some constant c, and an = o(bn) if lim n→∞ an/b n = 0. For a sequence of random variables, Xn = Op(an) if for any ϵ > 0 and some finite N, M > 0, P(|Xn/a n| >M ) < ϵ for all n > N ; and Xn = op(an) if for any ϵ > 0, lim n→∞ P(|Xn/a n| > ϵ ) = 0. We also use ∼ as a shorthand whenever the result is O(·) or Op(·). Additionally, Xn ≲ Yn means 
+
+Xn = Op(Yn) and Xn ≤ Yn for all n.
+
+## 2.2 Random graph models 
+
+We now discuss the form of P(θ) for several popular random graph models. First, the stochastic block model (SBM) (Holland et al., 1983) is a popular model of meso-scale structures in networks. We assume that nodes are partitioned into K groups such that 
+
+c ∈ { 1, . . . , K }n is the group assignment vector where ci = k means that node i belongs to group k for i ∈ { 1, . . . , n } and k ∈ { 1, . . . , K }. Then the probability of two nodes forming an edge depends solely on their group membership through the K × K matrix B. Specifically, 
+
+θ = {B, c} and Pij (θ) = Bci,c j . A special case of the SBM is the Erdos-Renyi (ER) model (Erd¨ os and R´ enyi, 1959) where K = 1 and Pij (θ) = p for all ( i, j ). In other words, the probability of an edge is the same for all node pairs. As an extension of the SBM, the degree-corrected block model (DCBM) (Karrer and Newman, 2011) allows for degree heterogeneity. In addition to the group labels c and probability matrix B, this model introduces a node-specific weight parameter ψ ∈ (0 , 1) n
+
+where ψi corresponds to the degree of node i, i.e., larger ψi means larger expected degree. In this way, the DCBM can model both block structure (through B) and degree heterogeneity (through ψ) in a network. Then the probability of an edge between nodes is Pij (θ) = 
+
+ψiBci,c j ψj where θ = {c, B, ψ}. If the Bjk ’s are equal for all j and k, then the DCBM reduces to the Chung-Lu (CL) model (Chung and Lu, 2002), i.e., Pij (θ) = ψiψj , and does not encode block structure. Finally, as an extension to the DCBM, Sengupta and Chen (2018) propose the popularity-adjusted block model (PABM) which allows each node to have a different popularity param-eter for each group. Specifically, the authors define λ ∈ (0 , 1) n×K where λik corresponds to the propensity of node i to form an edge with a node in group k. Then θ = {c, λ}
+
+and Pij (θ) = λi,c j λj,c i . For identifiability, we will always assume that Λ kℓ = Λ ℓk for all 
+
+k, ℓ ∈ { 1, . . . , K } where Λ kℓ = Pni=1 λiℓ 1(ci = k) and 1(·) is the indicator function. In words, this condition requires that the sum of the parameters for nodes in group k connect-ing with group ℓ must equal the sum of the parameters for nodes in group ℓ connecting with group k. Clearly, the ER, SBM, CL and DCBM are all special cases of the PABM. 
+
+## 2.3 Universal Inference 
+
+Universal Inference (Wasserman et al., 2020; Dey et al., 2025) was proposed as a general hypothesis testing framework with finite-sample type I error guarantees. Let X1, . . . , X 2n
+
+> iid.
+
+∼
+
+Pθ∗ where θ∗ is the true parameter value which generated the data and Pθ∗ ∈ { Pθ : θ ∈ Θ}.4Additionally, let L(θ|X) be the associated likelihood function, but mis-specified models (Park et al., 2025) and/or loss functions based on risk-minimizers also exist (Dey et al., 2025). Suppose the goal is to test H0 : θ∗ ∈ Θ0 vs. H1 : θ∗ ∈ Θ1. In a typical hypothesis testing setting, we would derive the distribution of some test statistic T (θ) when θ ∈ Θ0.As discussed in Section 1, however, this can be quite difficult with network data due to the inherent correlation in the data. Instead, the Universal Inference procedure splits the data into two parts, D0 and D1. We calculate ˆθ1 ∈ Θ1 which is any estimator under the alternative hypothesis constructed using 
+
+only the data from D1. We then evaluate the likelihood function using the data from D0 but the parameters estimated from D1, i.e., L1 = L(ˆθ1|D0). Next, we estimate the parameter value ˆθ0 ∈ Θ0 under the null hypothesis using only the data from D0, and then evaluate the likelihood using this same data, i.e., L0 = L(ˆθ0|D0). We stress that L1 is evaluated on D0
+
+but the parameter estimates come from D1; on the other hand, L0 is both evaluated and estimated from D0. The ratio of the two likelihoods is then the test statistic, i.e., 
+
+E = L1
+
+L0
+
+. (1) Wasserman et al. (2020) prove that if we reject H0 whenever E > 1/α , then this test has a type I error rate of at most α. This result holds for almost any testing scenario and does not require any further derivations. The statistic in (1) is also a special case of an e-value, a testing alternative to p-values (e.g., Gr¨ unwald et al., 2024). A statistic E is an e-value if 
+
+EθE ≤ 1 for all θ ∈ Θ0, i.e., the expected value is at most one under the null hypothesis. 
+
+# 3 Methodology 
+
+## 3.1 Procedure 
+
+In this section, we propose the main method of this paper. Assume that we observe a network 
+
+A ∼ P(θ) and are interested in testing 
+
+H0 : θ ∈ Θ0 vs. H1 : θ ∈ Θ1,
+
+where Θ 0 and Θ 1 correspond to different models. For example, Θ 0 may correspond to an ER model while Θ 1 might be a 2-block SBM. Regardless, we can write down a likelihood for each model, L(P(θ)|A). Given these hypotheses, we propose the following model-selection framework using Universal Inference. 
+
+Step 1: Edge sampling. To utilize Universal Inference, we first must split the data into two parts, but this is challenging with network data where we typically only obtain a single observation. One approach is sampling node pairs as in Li et al. (2020) since these are assumed to be conditionally independent. Sampling node pairs, however, does not lead to proper matrices (networks) so the authors must perform an additional matrix completion step to obtain a proper matrix (network). Another possibility to split the network would be to use Data Fission (e.g., Leiner and Ramdas, 2024; Leiner et al., 2025; Ancell et al., 2025), 5but since the data are constructed from Bernoulli data, the resulting data splits exhibit a complicated dependence. We instead propose using edge sampling to generate two copies of data from the observed network. Specifically, we construct two networks Y and Z defined by 
+
+Zij ∼
+
+(
+
+0 if Aij = 0 
+
+Bernoulli (γ) if Aij = 1 and Y = A − Z where γ ∈ (0 , 1) is the probability that an edge from A is allocated to 
+
+Z. In words, if Aij = 1, then this edge will appear in Z with probability γ, and in Y with probability 1 − γ. Marginally, Yij 
+
+> ind.
+
+∼ Bernoulli ((1 − γ)Pij (θ)) and Zij 
+
+> ind.
+
+∼ Bernoulli (γP ij (θ)), but Zij ̸ ⊥ Yij . We will need to carefully account for this fact when deriving theoretical results. Please see Section S1 of the Supplemental Materials for a more detailed discussion of the joint distribution between Yij and Zij . Notably, we can derive the joint distribution exactly, and if the network is sparse, then for large n, Yij and Zij are approximately independent. Regardless, both Y and Z yield information on the parameters of interest P(θ). Additionally, if γ is large, then more edges will be allocated to Z than Y (with high probability), with 
+
+γ = 1 resulting in Z = A and Y = 0n×n.
+
+Step 2: Find parameters under H1 and evaluate on Z. In this step, we use Y to estimate θ under the alternative hypothesis, i.e., ˆθ1 = arg max θ∈Θ1 L(P(θ)|Y). Then using ˆθ1, we evaluate the likelihood on Z, i.e., L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z) where 
+
+L(P(θ) | A) = Y
+
+> i<j
+
+e−Pij (θ)Pij (θ)Aij .
+
+We use the Poisson likelihood as an approximation to the Bernoulli likelihood to simplify theoretical derivations, which is a standard approximation in the literature (e.g., Sengupta and Chen, 2018). Additionally, the ratio of γ terms is motivated by the edge sampling step. Recall that Y is such that Yij ∼ Bernoulli ((1 − γ)Pij (θ)). Therefore, when we find ˆθ1, this really yields the MLE for (1 − γ)P(θ). Thus, we divide by 1 − γ to yield the MLE for 
+
+P(θ). But since this will be applied to the likelihood of Z which has marginal distribution 
+
+Zij ∼ Bernoulli (γP ij (θ)), multiplying by γ will better match the likelihood of Z. For this reason, we calculate the likelihood as L1 = L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z) with the correction for γ.
+
+Step 3: Find parameters under H0 and evaluate on Z. Using Z and assuming that the null hypothesis is true, we find ˆθ0 = arg max θ∈Θ0 L(P(θ)|Z). The likelihood function is then evaluated on Z, i.e., L0 = L(P(ˆθ0)|Z). Since the parameters were estimated from the same data that are being used to evaluate the likelihood, we do not require any factors of 
+
+γ. Notice this differs from step 2 where the parameter estimates and likelihood evaluation come from different networks. 
+
+Step 4: Calculate e-value and reject if large. Finally, we compute the test statistic as the ratio of the two likelihoods, E = L1/L 0, and reject if E is large. We prove below that E is 6an e-value. One complication is that we constructed the statistic using a Poisson likelihood, but the data are truly coming from a Bernoulli model; i.e., mis-specified model (e.g., Park et al., 2025). Even more importantly, however, we do not have independence between Y
+
+and Z, which is usually needed when constructing the Universal Inference e-value statistic. To our knowledge, this is the first Universal Inference e-value constructed from dependent splits of data. 
+
+## 3.2 Example: Erdos-Renyi vs. Stochastic Block Model 
+
+To fix ideas, we detail the procedure for the specific example of testing if the network was generated from H0: Erdos-Renyi vs. H1: SBM with K = 2 communities. For the SBM, the likelihood function (assuming the Poisson approximation) is 
+
+LSBM (P(θ)|A) = Y
+
+> i<j
+
+e−Bci,c j BAij 
+
+> ci,c j
+
+where θ = {B, c}, B ∈ (0 , 1) K×K is the block connectivity matrix, and c ∈ { 1, . . . , K }n is the community assignment vector, i.e., ci = k if node i is in community k. Notice that the Erdos-Renyi model is a special case of the SBM, where K = 1: 
+
+LER (P(θ)|A) = Y
+
+> i<j
+
+e−ppAij = e−pn (n−1) /2pP  
+
+> i<j Aij
+
+, θ = {p}.
+
+Assume we observe a network A and then use edge sampling to split it in two, Y and Z.Using Y, we estimate the parameters of a two-block SBM, namely the community labels and block connectivity parameters, i.e., ˆθ1 = { ˆB, ˆc} = arg max 
+
+> B,c
+
+Y
+
+> i<j
+
+e−Bci,c j BYij  
+
+> ci,c j
+
+.
+
+Since Zij ∼ Bernoulli (γP ij (θ)) and Yij ∼ Bernoulli ((1 − γ)Pij (θ)), we need to scale the estimates ˆB by γ/ (1 − γ) to properly evaluate the likelihood function on Z. We then use these parameter estimates to evaluate the SBM likelihood on Z, i.e., 
+
+L1 = LSBM ( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z) = Y
+
+> i<j
+
+e− γ 
+
+> 1−γˆBˆci,ˆcj
+
+ γ 
+
+> 1−γ
+
+ˆBˆci,ˆcj
+
+Zij 
+
+.
+
+Next, we estimate the Erdos-Renyi model parameter using Z
+
+ˆp = 1
+
+n(n − 1) /2
+
+X
+
+> i<j
+
+Zij ,
+
+and evaluate 
+
+L0 = LER (P(ˆ p)|Z) = e−ˆpn (n−1) /2 ˆpP  
+
+> i<j Zij
+
+.
+
+Finally, we compute E = L1/L 0 and reject the null hypothesis if E is large. 73.3 Hyper-parameter selection 
+
+While the approach is relatively automatic, there are a few considerations practitioners must be aware of when implementing it. Of course the models, number of communities, etc. for the null and alternative hypotheses must be carefully chosen based on domain knowledge and the network of interest. Moreover, since the edge sampling step introduces some randomness, we suggest running the algorithm multiple times and taking the average e-value. Unless otherwise specified, we report the mean e-value over 100 data splits. The other hyper-parameter that must be carefully selected is γ ∈ (0 , 1) which controls the “amount” of data contained in Y and Z. If γ is closer to zero, then Y will be relatively dense, while Z will have comparatively more edges if γ is near one. Naively, we may think that setting γ = 0 .5 is the best choice to ensure a similar density of Y and Z, but this can be shown intuitively and empirically not to be the case. Consider a simple example of testing H0: ER vs. H1: SBM with K = 2 communities. Based on our procedure, we split the adjacency matrix A into Y and Z. Then Y is used to estimate the model parameters under the alternative hypothesis, which here means the community labels c and block probabilities 
+
+B, i.e., n + K(K − 1) /2 parameters. On the other hand, the model parameters for the null model are estimated from Z, which, in this case, simply means estimating one parameter 
+
+p, the mean edge probability of the ER model. Clearly, estimation under the null model is far easier and does not require as much data in order to achieve a good estimate. The alternative model, conversely, has many more parameters to estimate. Therefore, we should set γ close to 0 to ensure that Y, which is used to estimate the more complicated alternative model, has more edges. We described this for the case of testing a stochastic block model, but the idea holds more generally as typically the null model will be simpler compared to the alternative. Thus, we suggest setting γ < 0.5 to improve the power of the test, with simpler null models allowing for even smaller values, i.e., γ = 0 .1. This approach is validated in the empirical experiments and aligns with suggestions in Li et al. (2020). 
+
+# 4 Theoretical results 
+
+In this section, we theoretically study the performance of the proposed hypothesis test, with all proofs left to the Supplemental Materials, Sections S2-S6. We begin by proving that the proposed method yields an e-value, which guarantees a type I error rate of at most α, only requiring a single, minor assumption: 
+
+A1. Let P(ˆθ) = arg max θ∈Θ L(P(θ)|A). Then P 
+
+> ij
+
+Pij (ˆθ) = P 
+
+> ij
+
+Aij .
+
+Sengupta and Chen (2018) show that A1 holds for the PABM, of which the ER, CL, SBM, and DCBM are all special cases. It is not clear that this necessarily holds for all models, e.g., Random Dot Product Graphs, which is why we explicitly include the assumption. 
+
+Theorem 1. Let A ∼ P(θ∗) and consider testing 
+
+H0 : θ∗ ∈ Θ0 vs. H1 : θ∗ ∈ Θ1.
+
+Under A1 and for any n, the statistic constructed in Section 3.1 is an e-value, i.e., 
+
+sup 
+
+> θ∈Θ0
+
+EθE ≤ 1.
+
+8While the proof technique was inspired by Wasserman et al. (2020), there are various chal-lenges here that require extra care. First, our e-value statistic is constructed assuming a Poisson model, but the edges are actually generated from a Bernoulli distribution. This bears some similarities to Universal Inference for mis-specified models (Park et al., 2025). More important, however, is handling the dependence between Y and Z. To do this, we took an iterated expectation and leveraged the conditional distribution of Zij | Yij (Section S1). After taking the expectation conditional on Y, we prove that the resulting term is deterministically less than one starting from the definition of P(ˆθ). To our knowledge, this is the first Universal Inference-type statistic constructed from dependent splits of data. 
+
+Corollary 1. Under A1, the testing procedure described in Section 3.1 has a type I error rate of at most α, i.e., 
+
+sup 
+
+> θ∈Θ0
+
+Pθ(E > 1/α ) ≤ α. 
+
+The corollary follows immediately from Theorem 1 by applying Markov’s inequality. We stress that this result applies for finite samples, whereas existing network hypothesis testing methods only establish type I error rates in an asymptotic regime (e.g., Bickel and Sarkar, 2016; Wang and Bickel, 2017; Yanchenko and Sengupta, 2024; Chakrabarty et al., 2025; Ancell et al., 2025). We also emphasize the generality of this theorem; we derived a single result that applies to nearly any random graph model of the form in Section 2.2. For example, testing the number of communities in a network or which network model is most appropriate are both covered by this theorem and ensure that the proposed approach maintains a proper type I error. This again contrasts with previous works, which need to prove separate results for each null model. Moreover, previous general model selection approaches (e.g., Li et al., 2020; Chakrabarty et al., 2025) only yield a model selection decision, i.e., which model fits best, but do not provide a statistical measure of evidence like a p- or e-value. While we have shown that our statistic is an e-value, simply setting E = 1 independent of the network would also yield an e-value, even though this is clearly a meaningless statistic. Therefore, we want to show that our proposed hypothesis test yields large values of E when the network is generated under the alternative model. In the following theorem, we prove this for testing an ER model against a PABM (given the following assumptions) where we emphasize that the following are asymptotic results by using subscripts on Pn, An and En.
+
+A2. P n(θ∗) = ϱnP(θ∗) where ϱn = o(1) and nϱ 2
+
+> n
+
+/ log 2 n → ∞ 
+
+A3. K is fixed and known and the number of nodes in each (true and estimated) community is O(n)
+
+A4. min (i,j ){Pij (θ∗)} > 0
+
+A5. For any two nodes j1, j 2 where c∗
+
+> j1
+
+̸ = c∗ 
+
+> j2
+
+, the set {Pij 1 (θ∗)/P ij 2 (θ∗)}ni=1 has at least K +1 
+
+distinct values 
+
+A6. If the average interaction level between any two large, distinct subsets of the vertex set is non-zero, it must be at least O(ϱn/ log n)
+
+A7. ¯p = n−2 P 
+
+> ij
+
+Pij (θ∗) does not depend on n
+
+9Theorem 2. Let An ∼ ϱnP(θ∗) under A2. Assume that we are testing 
+
+H0 : θ∗ ∈ Θ0 vs. θ∗ ∈ Θ1
+
+where Θ0 is the parameter space corresponding to the Erdos-Renyi model, i.e., Pij (θ∗) = p for all (i, j ), and Θ1 corresponds to the popularity-adjusted Block Model, i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+,under A3–A7. If θ∗ ∈ Θ1 such that An is generated from the alternative model, then there exists some ϵ > 0 such that, as n → ∞ ,
+
+P(log En > ϵϱ nn2) → 1.
+
+This result implies that, under the alternative hypothesis and with high probability, the e-value grows at a rate of exp( ϱnn2), diverging to positive infinity. Moreover, the asymptotic power of the test — that rejects the null hypothesis whenever En > 1/α — is 1 for any 
+
+α ∈ (0 , 1). Additionally, assumptions A2, A3, A5 and A6 are technical assumptions inherited from Sengupta and Chen (2018) to establish that the estimated community labels of the PABM, ˆ c, are asymptotically close to the true data-generating labels, c∗, and that the model parameter estimates, ˆλik , converge to the true values, λ∗
+
+> ik
+
+. We highlight that A2 means the networks are sparse since ϱn = o(1), but the result also holds for dense networks, i.e., ϱn = O(1). Additionally, the communities in the PABM are detectable thanks to A5 while A4 ensures that log Pij (θ∗) is well-defined for all ( i, j ); an analogous assumption is made in Chakrabarty et al. (2025). To our knowledge, this is the first network model selection result incorporating the PABM as an alternative model. The CL, SBM and DCBM models are all special cases of the PABM so Theorem 2 can easily be adapted to each of these models. That being said, modifying the proof would require adjusting A5 for these special cases. In particular, for the CL model, A5 simplifies to requiring that not all weight parameters are equal such that the CL model is truly distinct from an ER model. For the SBM, A5 changes to requiring that any two rows in the block probability matrix B have at least one disagreement, a standard assumption in the SBM literature (e.g., Bickel and Chen, 2009). For the DCBM, A5 would reduce to requiring {Pij 1 (θ∗)/P ij 2 (θ∗)}ni=1 to take at least two distinct values when c∗
+
+> j1
+
+̸ = c∗ 
+
+> j2
+
+.In the e-value literature, it is common to show that the expected value of the logarithm of the statistic diverges to positive infinity, i.e., E(log En) → ∞ as n → ∞ (e.g., Gr¨ unwald et al., 2024). Due to the discrete nature of the network data, however, there is a small, but non-zero probability that En = 0, which means E(log En) = −∞ . We formalize this in the following proposition for Bernoulli data, but stress that it more generally applies for random variables with non-zero probability of being zero. 
+
+Proposition 1. Let X1, . . . , X 2n
+
+> iid.
+
+∼ Bernoulli (θ) and En be the split-likelihood Universal Inference statistic from Wasserman et al. (2020). Assume that we are testing 
+
+H0 : θ = θ0 vs. θ̸ = θ0,
+
+where 0 < θ 0 < 1. Then E(log En) = −∞ .
+
+One approach to avoid this issue would be to “pad” the estimate of ˆθ such that it is bounded away from zero and one, but it is not obvious how this would affect the properties of the 10 statistic. We view this as an open problem in the e-value / Universal Inference literature that is worthy of future consideration. Next, we prove a similar result for testing against the CL null model after adding an addi-tional assumption. 
+
+A8. The vector ( ¯Pi ¯Pj )ij is linearly independent of (Pij (θ∗)) ij where ¯Pi(θ∗) := 1
+
+> n
+
+Pnj=1 Pij (θ∗)
+
+for all i ∈ { 1, . . . , n }.
+
+Theorem 3. Let An ∼ ϱnP(θ∗) under A2. Assume that we are testing 
+
+H0 : θ∗ ∈ Θ0 vs. θ∗ ∈ Θ1
+
+where Θ0 is the parameter space corresponding to the Chung-Lu model, i.e., Pij (θ∗) = ψiψj ,and Θ1 corresponds to the popularity-adjusted Block Model, i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+, under A3–A8. If θ∗ ∈ Θ1 such that An is generated from the alternative model, then there exists some ϵ > 0 such that, as n → ∞ ,
+
+P(log En > ϵϱ nn2) → 1.
+
+The proof follows similarly to that of Theorem 2 with extra care needed for the additional parameters in the CL null model. The extra assumption ensures that the alternative model is strictly different from the CL model. In other words, if A8 were not true, then the PABM could reduce to a CL model. Again, the SBM and DCBM are special cases of the PABM, so this theorem can be adapted to these alternative models as well. Finally, we prove an analogous result for testing for the number of communities in an SBM. 
+
+Theorem 4. Let An ∼ ϱnP(θ∗) under A2. Assume that we are testing 
+
+H0 : θ∗ ∈ Θ0 vs. θ∗ ∈ Θ1
+
+where Θ0 is the parameter space corresponding to the stochastic block model with K − 1 > 1
+
+blocks, and Θ1 corresponds to the stochastic block model with K blocks under A3, A4 and A7 where the block probability matrix is also of full rank. If θ∗ ∈ Θ1 such that An is generated from the alternative model, then there exists some ϵ > 0 such that, as n → ∞ ,
+
+P(log En > ϵϱ nn2) → 1.
+
+We sketch a proof in Section S6 by leaning on the results from Wang and Bickel (2017) and Hu et al. (2020). These works use the Bernoulli likelihood as opposed to the Poisson approximation which is why we refer to this as a proof sketch. The same proof technique could also be applied to testing for the number of communities in a DCBM. Ideally, we would also like to derive the asymptotic growth rate of our proposed statistic for testing, e.g., H0 : SBM with K blocks vs. H1 : DCBM with K blocks. This is difficult, however, as we need to understand the behavior of the community labels estimated assuming an SBM when in reality the network is generated from a DCBM. Thus, similar to Li et al. (2020), we omit this theoretical result but demonstrate it numerically in the following section. 11 5 Numerical experiments 
+
+## 5.1 Simulation studies 
+
+In this section, we validate the empirical performance of the proposed method on simulated data. The goal is to show that our method yields small values of E when the network is generated from the null model (low type I error rate) and larger values under the alternative (high power). For each setting, we generate a network and record whether the null hypothesis is rejected or not with results averaged over 200 Monte Carlo iterations. For each network, we run the proposed algorithm 100 times, i.e., perform edge sampling 100 times, and report the average e-value. We reject the null hypothesis if E > 20, corresponding to a type I error rate of 0 .05. We also vary γ, which controls the amount of data in each part of the split. The proposed method is compared against NETCROP (Chakrabarty et al., 2025) and ECV (Li et al., 2020), two popular methods for model selection. Code to implement the proposed method and replicate all results in this section is available at the author’s GitHub: 
+
+https://github.com/eyanchenko/network_model_selection .
+
+5.1.1 Number of communities in SBM 
+
+First, we test for the number of communities in an SBM. Let n = 1000 be the number of nodes and K be the number of blocks or communities. We define the block-block probability matrix as B = α{βIK + (1 − β)JK } where α controls the sparsity, β controls the strength of the community structure and IK and JK are the identity matrix and matrix of all ones, respectively. Unless otherwise noted, α = 0 .05, and is not to be confused with the type I error rate. We also define π ∈ (0 , 1) K with πk as the probability that a node is assigned to community k ∈ { 1, . . . , K } and PKk=1 πk = 1. For the proposed method, we follow the steps in Section 3.1 where we use the spectral clustering algorithm (Rohe et al., 2011) (implemented in the randnet R package) to estimate the community labels, and vary γ ∈ { 0.1, 0.5, 0.9}.Estimating the community labels under the alternative hypothesis accounts for the majority of the computing time for our method. In the first setting, we test H0 : K = 1 vs. H1 : K = 2. Notice that an SBM with 
+
+K = 1 is an ER model, so this is effectively testing if there is a community structure in the network. We first set π = (0 .75 , 0.25) ⊤ and vary β ∈ { 0.400 , 0.425 , . . . , 0.900 } where larger 
+
+β corresponds to stronger community structure. Since β > 0, the data are generated from the alternative hypothesis and we expect a large rejection rate. The results are in Figure 2 (left). The proposed method with γ = 0 .1 performs the best as it has the largest power for all 
+
+β > 0.4 and yields a rejection rate of one for β > 0.6. The next best method is ECV which generally demonstrates a non-decreasing power. While the proposed method with γ = 0 .5eventually has a large rejection rate, γ = 0 .9 and NETCROP both show weak performance. The results in Figure 2 (right) correspond to the same test and settings except now we fix 
+
+β = 0 .6 and vary δ ∈ [0 .01 , 0.50] of length 20 where π = ( δ, 1−δ)⊤. As δ increases, the size of the communities becomes more equal, making the community detection task easier. Similar to the previous setting, the proposed method with γ = 0 .1 performs the best followed by the ECV and γ = 0 .5 methods. Again, the e-value with γ = 0 .9 and NETCROP methods never reject the null hypothesis. For the last setting, we test H0 : K = 4 vs. H1 : K = 5 such that 12 0.00 0.25 0.50 0.75 1.00      
+
+> 0.4 0.5 0.6 0.7 0.8 0.9
+
+β     
+
+> Rejection Rate
+> 0.00 0.25 0.50 0.75 1.00
+> 0.0 0.1 0.2 0.3 0.4 0.5
+
+δ
+
+Method e−value0.1 e−value0.5 e−value0.9 ECV NETCROP Figure 2: (left) H0 : K = 1 (ER) vs. H1 : K = 2 (SBM) with increasing community strength 
+
+β ∈ [0 .4, 0.9], and δ = 0 .25. All networks are generated from the alternative model. (right) 
+
+H0 : K = 1 (ER) vs. H1 : K = 2 (SBM) with increasing community size δ ∈ [0 .01 , 0.5], and 
+
+β = 0 .6. All networks generated from the alternative model. the null and alternative hypotheses correspond to proper SBMs. We fix β = 0 .8 and vary 
+
+δ ∈ [0 .01 , 0.20] of length 20 where π = ((1 − δ)/(K − 1) , . . . , (1 − δ)/(K − 1) , δ )⊤. Again, the networks with more balanced communities (larger δ) should make it easier to reject the null. The results are in Figure 3. Interestingly, the proposed method with γ = 0 .1 yields a rejection rate of one for all δ while for ECV, there is an increasing rejection rate which reaches a power of one by δ = 0 .20. 
+
+5.1.2 Number of communities in DCBM 
+
+We use similar settings to test for the number of communities in a DCBM. For these results, we set the sparsity parameter to α = 0 .25, sample ψi
+
+> iid.
+
+∼ Uniform (0 .25 , 0.75) and consider γ ∈{0.4, 0.5, 0.6} for the proposed method. We choose values of γ that are closer to 0.5 because fitting the CL model requires estimating n parameters compared to the one parameter of the ER model, i.e., we require more data in Z. We also adopt the spherical clustering algorithm to detect the DCBM community labels as it is proven to consistently recover the true labels (Qin and Rohe, 2013; Lei and Rinaldo, 2015). In the first setting, we test H0 : K = 1 vs. H1 : K = 2, noting that K = 1 corresponds to the Chung-Lu model, i.e., degree heterogeneity but no community structure. We set 
+
+π = (0 .75 , 0.25) ⊤ and vary β ∈ { 0, 0.0475 , . . . , 0.950 }. When β = 0, the networks are generated from the null model (CL) but for β > 0, they come from the alternative model (DCBM). The results are in Figure 4 (left). While ECV has the largest power, it also rejects 100% of the time for β = 0, i.e., when the null hypothesis is true. Thus, ECV is not reliable here because it does not maintain an appropriate type I error rate. The proposed method with γ = 0 .4 performs the best, with a power that begins to increase around β = 0 .75. 13 0.00 0.25 0.50 0.75 1.00    
+
+> 0.05 0.10 0.15 0.20
+> δ
+> Rejection Rate  Method
+> e−value0.1
+> e−value0.5
+> e−value0.9
+> ECV
+> NETCROP
+
+Figure 3: H0 : K = 4 (SBM) vs. H1 : K = 5 (SBM) with increasing fifth community size 
+
+δ ∈ [0 .01 , 0.20] and β = 0 .8. All networks generated from the alternative model. NETCROP, however, does not reject the null hypothesis for any values of β.In the next setting, we again test H0 : K = 1 vs. H1 : K = 2, now fixing β = 0 .7and varying δ ∈ { 0.05 , 0.10 , . . . , 0.50 } where π = ( δ, 1 − δ)⊤. The results are in Figure 4 (right) and are similar to the previous setting. Even though all networks are generated from the alternative model and the ECV power is one, recall from the previous experiment that it does not maintain a proper type I error rate. The proposed method with γ = 0 .4and γ = 0 .5 consistently yields the best rejection rate of the remaining methods, while NETCROP and the e-value method with γ = 0 .6 perform similarly. Finally, we test H0 :
+
+K = 4 vs. H1 : K = 5 with α = β = 0 .90 and vary δ ∈ [0 .01 , 0.20] of length 20 where 
+
+π = ((1 − δ)/(K − 1) , . . . , (1 − δ)/(K − 1) , δ )⊤. The results are in Figure 5. ECV has the best power and the proposed methods with γ ∈ { 0.4, 0.5} performing similarly. 
+
+5.1.3 SBM versus DCBM 
+
+In the previous two sub-sections, we tested for the number of communities but used the same block model in the null and alternative. Now, we want to test between two different block models, namely H0 : SBM with K communities vs. H1 : DCBM with K communities. To generate data, we sample DCBM networks where ψi
+
+> iid.
+
+∼ Uniform (0 .5 − 12 ν, 0.5 + 12 ν). Since the SBM is a special case of the DCBM where ψi are equal for all i, we are effectively testing 
+
+H0 : ν = 0 vs. H1 : ν > 0. In the first setting, we fix α = 0 .25 and β = 0 .50 with K = 2 and π = (0 .75 , 0.25) ⊤. We then vary ν ∈ { 0.00 , 0.04 , . . . , 0.80 } where larger ν means there is more degree heterogeneity among the nodes which should make it easier to reject the null hypothesis. When ν = 0, the DCBM reduces to the SBM so the null hypothesis is true, otherwise we expect to see a large rejection rate. We consider γ ∈ { 0.4, 0.5, 0.6} with the results in Figure 6 (left). The e-value statistic with γ = 0 .4 yields the best results because although ECV has a similar power, it also has a large type I error rate ( ≈ 0.15). In Figure 6 (right), we plot the results for the same testing scenario but now with α = 0 .25, β = 0 .80, 
+
+K = 5, π = (0 .2, . . . , 0.2) ⊤ and ν ∈ { 0.25 , 0.30 , . . . , 0.75 }. ECV consistently yields the largest power, followed by the proposed method with γ = 0 .4. 14 0.00 0.25 0.50 0.75 1.00 
+
+0.00 0.25 0.50 0.75 
+
+β
+
+> Rejection Rate
+
+0.00 0.25 0.50 0.75 1.00 
+
+0.0 0.1 0.2 0.3 0.4 0.5 
+
+δ
+
+Method e−value0.4 e−value0.5 e−value0.6 ECV NETCROP Figure 4: (left) H0 : K = 1 (CL) vs. H1 : K = 2 (DCBM) with increasing community strength β ∈ [0 , 0.95], and δ = 0 .25. β = 0 corresponds to the null model while β > 0corresponds to the alternative model. (right) H0 : K = 1 (CL) vs. H1 : K = 2 (DCBM) with increasing community size δ ∈ [0 .05 , 0.5], and β = 0 .7. All networks generated from the alternative model. 0.00 0.25 0.50 0.75 1.00    
+
+> 0.05 0.10 0.15 0.20
+
+δ
+
+> Rejection Rate
+
+Method 
+
+> e−value0.4
+> e−value0.5
+> e−value0.6
+> ECV
+> NETCROP
+
+Figure 5: H0 : K = 4 (DCBM) vs. H1 : K = 5 (DCBM) with increasing fifth community size δ ∈ [0 .01 , 0.20], and β = 0 .9. All networks generated from the alternative model. 15 0.00 0.25 0.50 0.75 1.00     
+
+> 0.0 0.2 0.4 0.6 0.8
+
+ν    
+
+> Rejection Rate
+> 0.00 0.25 0.50 0.75 1.00
+> 0.3 0.4 0.5 0.6 0.7
+
+ν
+
+Method e−value0.4 e−value0.5 e−value0.6 ECV NETCROP Figure 6: (left) H0 : ν = 0 (SBM) vs. H1 : ν > 0 (DCBM) with increasing degree variability 
+
+ν ∈ [0 , 0.80] and K = 2. ν = 0 corresponds to the null model while ν > 0 corresponds to the alternative model. (right) H0 : ν = 0 (SBM) vs. H1 : ν > 0 (DCBM) with increasing degree variability ν ∈ [0 .25 , 0.75] and K = 5. All networks generated from the alternative model. Finally, in Section S7 of the Supplemental Materials, we include a simulation setting testing the DCBM with K communities against a PABM with K communities. As neither ECV nor NETCROP are described for this setting, we compare the proposed method with varying values of γ. We find that the rejection rate increases as the data-generating model further departs from the null hypothesis. 
+
+## 5.2 Political Blogs network 
+
+We demonstrate the performance of the proposed method on a real-world network. Over the past two decades, the political blogs network (Adamic and Glance, 2005) has provided a popular case-study for new network methods, in part because of the known underlying community labels. Specifically, the nodes in this network correspond to blogs (websites) and there is an edge between nodes if the blogs reference one another. This network has 
+
+n = 1224 nodes and m = 16 , 715 (undirected) edges. A natural partition of the nodes arises from labeling the blogs as liberal or conservative, making it a popular benchmark for various community detection algorithms. In particular, this network was studied in the original DCBM paper (Karrer and Newman, 2011) where it was shown the DCBM yielded a better fit than that of the SBM. We apply the proposed method to this network under multiple different hypotheses. Unless otherwise specified, we set K = 2 since there are believed to be two communities corresponding to liberal and conservative blogs. Additionally, we set γ = 0 .5 and repeat the data splitting 1000 times with average e-values reported in Table 1. First, we test the ER model against the CL model, i.e., testing if there is statistically significant degree heterogeneity in the network. As the ER model is very simplistic, it is unsurprising that this 16 H0 H1 e-value ER CL > 10 100 
+
+ER SBM > 10 100 
+
+CL DCBM > 10 100 
+
+SBM DCBM > 10 100 
+
+DCBM ( K = 2) DCBM ( K = 3) 0DCBM PABM 0Table 1: Results from applying the proposed method to the political blogs network averaged over 1000 data splits. test yields such a large e-value. Similarly, a test of the ER model against a two-block SBM, effectively testing for the presence of a community structure, yields a large value of the test statistic, indicating a statistically significant community structure. In a parallel way, we can test the CL model against the DCBM, testing if degree heterogeneity alone is enough to model the network, or if degree heterogeneity plus community structure is required. The latter is affirmed with the large e-value. Next, we test SBM vs. DCBM to see if block structure alone is sufficient, or if degree heterogeneity is also needed. This large e-value confirms the need for the degree parameters in the DCBM, further validating the conclusions in Karrer and Newman (2011). We then test a DCBM with K = 2 communities against a DCBM with 
+
+K = 3 to see if there are truly two communities (liberal and conservative) in the network. A small e-value gives strong evidence in favor of two communities. Lastly, we test the DCBM against the PABM to see if the extra flexibility afforded by the latter yields a better model fit. We again find a small e-value, implying that the popularity of a node is not different between different communities. In other words, a blog that is popular among liberal blogs is expected to have a similar popularity among conservative blogs. Thus, our final conclusion is that a DCBM with K = 2 communities best fits this network, i.e. it exhibits statistically significant community structure and degree heterogeneity. 
+
+# 6 Conclusion 
+
+In this work, we leveraged edge sampling and Universal Inference to carry out model selec-tion on networks. We showed the proposed method’s applicability across numerous testing scenarios including testing the number of communities and choice of random graph model. Our method comes with finite-sample type I error control and asymptotic growth-rate guar-antees, while also demonstrating strong empirical performance. While we only applied our proposal to a few testing scenarios, we stress that the ideas can easily be extended to almost limitless settings, provided the data-generating mechanism has a likelihood. Extensions of this work to, e.g., testing on temporal networks (Yanchenko et al., 2026) or settings without a likelihood (Dey et al., 2025), provide many interesting directions to pursue. Additionally, we acknowledge that a data-splitting approach inherently loses information, so future work can include directly constructing an e-value as it could lead to a more powerful test. Finally, our results showed that the edge sampling parameter, γ, plays a large role in the empirical performance of the proposed method. While we gave some general guidelines on how to set 17 this parameter, a more thorough and perhaps theoretical treatment might be warranted, i.e., setting γ such that the numerator and denominator of E have the same variance. 
+
+# Acknowledgments 
+
+We would like to thank Srijan Sengupta for helpful discussions. Claude was used to identify grammatical and typographical errors. 
+
+# References 
+
+Adamic, L. A. and Glance, N. (2005). The political blogosphere and the 2004 us election: divided they blog. In Proceedings of the 3rd international workshop on Link discovery ,pages 36–43. Ancell, E., Witten, D., and Kessler, D. (2025). Post-selection inference with a single real-ization of a network. arXiv preprint arXiv:2508.11843 .Bhadra, S., Tang, M., and Sengupta, S. (2025). A unified framework for community detection and model selection in blockmodels. Journal of Computational and Graphical Statistics ,(just-accepted):1–27. Bickel, P. J. and Chen, A. (2009). A nonparametric view of network models and newman–girvan and other modularities. Proceedings of the National Academy of Sciences ,106(50):21068–21073. Bickel, P. J. and Sarkar, P. (2016). Hypothesis testing for automated community detection in networks. Journal of the Royal Statistical Society Series B: Statistical Methodology ,78(1):253–273. Chakrabarty, S., Sengupta, S., and Chen, Y. (2025). Network cross-validation and model selection via subsampling. arXiv preprint arXiv:2504.06903 .Chung, F. and Lu, L. (2002). The average distances in random graphs with given expected degrees. Proceedings of the National Academy of Sciences , 99(25):15879–15882. de Caen, D. (1998). An upper bound on the sum of squares of degrees in a graph. Discrete Mathematics , 185(1-3):245–248. Dey, N., Martin, R., and Williams, J. P. (2025). Generalized universal inference on risk minimizers. Journal of the Royal Statistical Society Series B: Statistical Methodology ,page qkaf065. Erd¨ os, P. and R´ enyi, A. (1959). On random graphs. Publicationes Mathematicae Debrecen ,6:290–297. Gr¨ unwald, P., de Heide, R., and Koolen, W. (2024). Safe testing. Journal of the Royal Statistical Society Series B: Statistical Methodology , 86(5):1091–1128. Holland, P., Laskey, K., and Leinhardt, S. (1983). Stochastic blockmodels: first steps. Social Networks , 5:109–137. Holme, P. and Saram¨ aki, J. (2012). Temporal networks. Physics Reports , 519(3):97–125. Hu, J., Qin, H., Yan, T., and Zhao, Y. (2020). Corrected bayesian information criterion for stochastic block models. Journal of the American Statistical Association , 115(532):1771– 1783. 18 Karrer, B. and Newman, M. E. J. (2011). Stochastic blockmodels and community structure in networks. Physical Review E , 83:016107. Lei, J. and Rinaldo, A. (2015). Consistency of spectral clustering in sparse stochastic block models. Annals of Statistics , 43(1):215–237. Leiner, J., Duan, B., Wasserman, L., and Ramdas, A. (2025). Data fission: splitting a single data point. Journal of the American Statistical Association , 120(549):135–146. Leiner, J. and Ramdas, A. (2024). Graph fission and cross-validation. In International Conference on Artificial Intelligence and Statistics , pages 2638–2646. PMLR. Li, T., Levina, E., and Zhu, J. (2020). Network cross-validation by edge sampling. 
+
+Biometrika , 107(2):257–276. Park, B., Balakrishnan, S., and Wasserman, L. (2025). Robust universal inference for mis-specified models. Biometrika , page asaf070. Qin, T. and Rohe, K. (2013). Regularized spectral clustering under the degree-corrected stochastic blockmodel. Advances in neural information processing systems , 26. Rohe, K., Chatterjee, S., and Yu, B. (2011). Spectral clustering and the high-dimensional stochastic blockmodel. The Annals of Statistics , 39(4):1878–1915. Sengupta, S. and Chen, Y. (2018). A block model for node popularity in networks with com-munity structure. Journal of the Royal Statistical Society: Series B (Statistical Methodol-ogy) , 80(2):365–386. Vovk, V. and Wang, R. (2021). E-values: Calibration, combination and applications. The Annals of Statistics , 49(3):1736–1754. Wang, R. and Ramdas, A. (2022). False discovery rate control with e-values. Journal of the Royal Statistical Society Series B: Statistical Methodology , 84(3):822–852. Wang, Y. X. R. and Bickel, P. J. (2017). Likelihood-based model selection for stochastic block models. Annals of Statistics , 45(2):500–528. Wasserman, L., Ramdas, A., and Balakrishnan, S. (2020). Universal inference. Proceedings of the National Academy of Sciences , 117(29):16880–16890. Yanchenko, E. and Sengupta, S. (2024). A generalized hypothesis test for community struc-ture in networks. Network Science , 12(2):122–138. Yanchenko, E., Sengupta, S., and Mukherjee, D. (2025). Statistical inference for core-periphery structures. arXiv preprint arXiv:2508.04730 .Yanchenko, E., Williams, J. P., and Martin, R. (2026). Hypothesis testing for community structure in temporal networks using e-values. Network Science , e14:1–17. 19 Supplemental Materials 
+
+Table of Contents S1 Joint distribution of Zij and Yij 
+
+S2 Proof of Theorem 1 (e-value) S3 Proof of Theorem 2 (ER null) S4 Proof of Proposition 1 (expectation of log e-value) S5 Proof of Theorem 3 (CL null) S6 Proof of Theorem 4 (SBM null) S7 Additional simulation results: DCBM versus PABM 20 S1 Joint distribution of Zij and Yij 
+
+We now study the relationship between Zij and Yij . Recall that Aij 
+
+> ind.
+
+∼ Bernoulli (ϱnPij ) where 
+
+Pij ≡ Pij (θ). If Aij = 0, which happens with probability 1 − ϱnPij , then ( Yij , Z ij ) = (0 , 0) as there is no edge to split. If Aij = 1, then ( Yij , Z ij ) = (0 , 1) with probability γ, and (Yij , Z ij ) = (1 , 0) with probability 1 − γ. It is impossible for ( Yij , Z ij ) = (1 , 1). Thus, the joint distribution is defined by 
+
+P(Zij = 0 , Y ij = 0) = 1 − ϱnPij 
+
+P(Zij = 0 , Y ij = 1) = (1 − γ)ϱnPij 
+
+P(Zij = 1 , Y ij = 0) = γϱ nPij 
+
+P(Zij = 1 , Y ij = 1) = 0 ,
+
+so marginally, 
+
+Yij 
+
+> ind.
+
+∼ Bernoulli ((1 − γ)ϱnPij )
+
+Zij 
+
+> ind.
+
+∼ Bernoulli (γϱ nPij ).
+
+It is easy to use these results to find the conditional distribution of Zij | Yij :
+
+Zij | Yij ∼ Bernoulli 
+
+ γϱ nPij (1 − Yij )1 − (1 − γ)ϱnPij 
+
+
+
+.
+
+Now, in order to show independence, we need P(Zij = z, Y ij = y) = P(Zij = z)P(Yij = y)for all y, z . We can see that 
+
+P(Zij = 0) P(Yij = 0) = {1 − γϱ nPij }{ 1 − (1 − γ)ϱnPij }
+
+P(Zij = 0) P(Yij = 1) = {1 − γϱ nPij }(1 − γ)ϱnPij 
+
+P(Zij = 1) P(Yij = 0) = γϱ nPij {1 − (1 − γ)ϱnPij }
+
+P(Zij = 1) P(Yij = 1) = γ(1 − γ)ϱ2
+
+> n
+
+(Pij )2
+
+so Zij and Yij are clearly not independent. Since ϱn → 0 as n → ∞ , however, for large n,we can ignore terms that depend on ϱ2
+
+> n
+
+. Thus, for large n,
+
+P(Zij = 0) P(Yij = 0) ∼ 1 − ϱnPij 
+
+P(Zij = 0) P(Yij = 1) ∼ (1 − γ)ϱnPij 
+
+P(Zij = 1) P(Yij = 0) ∼ γϱ nPij 
+
+P(Zij = 1) P(Yij = 1) ∼ 0,
+
+such that Yij and Zij are asymptotically independent. 21 S2 Proof of Theorem 1 
+
+Let A ∼ P(θ∗) and consider testing 
+
+H0 : θ∗ ∈ Θ0 vs. H1 : θ∗ ∈ Θ1.
+
+Under A1 and for any n, the statistic constructed in Section 3.1 is an e-value i.e., 
+
+sup 
+
+> θ∈Θ0
+
+EθE ≤ 1.
+
+Proof. Assume that A ∼ P(θ∗) where θ∗ ∈ Θ0, i.e., the network was generated under the null hypothesis. Then 
+
+Eθ∗
+
+(L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(P(ˆθ0)|Z)
+
+)
+
+≤ Eθ∗
+
+(L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γP(θ∗)|Z)
+
+)
+
+where ˆθ1 = arg max θ∈Θ1 L(θ|Y) since ˆθ0 = arg max θ∈Θ0 L(θ|Z) such that L(P(ˆθ0)|Z) ≥L(γP(θ∗)|Z). For notational simplicity, we write Pij (θ∗) ≡ P ∗ 
+
+> ij
+
+and Pij (ˆθ1) ≡ ˆPij . To analyze the term on the right-hand side, we will use an iterated expectations argument as in Wasserman et al. (2020). Thus, 
+
+E
+
+(L( γ 
+
+> 1−γ
+
+ˆP(ˆθ)|Z)
+
+L(γP(θ∗)|Z) Y
+
+)
+
+=
+
+> 1
+
+X
+
+> z11 =0
+
+· · · 
+
+> 1
+
+X
+
+> znn =0
+
+Y
+
+> i<j
+
+e− γ  
+
+> 1−γˆPij
+
+( γ 
+
+> 1−γ
+
+ˆPij )Zij 
+
+e−γP ∗ 
+
+> ij
+
+(γP ∗ 
+
+> ij
+
+)Zij 
+
+×
+
+ γP ∗ 
+
+> ij
+
+(1 − Yij )1 − (1 − γ)P ∗
+
+> ij
+
+Zij 
+
+1 − γP ∗ 
+
+> ij
+
+(1 − Yij )1 − (1 − γ)P ∗
+
+> ij
+
+1−Zij 
+
+where the form of the statistic comes from Section 3.1 and 
+
+Zij | Yij ∼ Bernoulli 
+
+ γP ∗ 
+
+> ij
+
+(1 − Yij )1 − (1 − γ)P ∗
+
+> ij
+
+
+
+by Section S1. This expectation can be written in a more general form as 
+
+> 1
+
+X
+
+> x1=0
+
+· · · 
+
+> 1
+
+X
+
+> xn=0
+> n
+
+Y
+
+> i=1
+
+axi 
+
+> i
+
+b1−xi 
+
+> i
+
+,
+
+where we ignore multiplicative factors that don’t depend on xi (Zij ). Since n is finite, as are all terms, we can clearly re-write this expression as 
+
+> 1
+
+X
+
+> x1=0
+
+ax1 
+
+> 1
+
+b1−x1
+
+> 1
+
+!
+
+× · · · × 
+
+> 1
+
+X
+
+> xn=0
+
+axn 
+
+> n
+
+b1−xn
+
+> n
+
+!
+
+and evaluating each summation yields (a1 + b1) × · · · × (an + bn) = 
+
+> n
+
+Y
+
+> i=1
+
+(ai + bi).
+
+22 Returning to our expression of interest, this result implies 
+
+E
+
+(L( γ 
+
+> 1−γ
+
+ˆP(ˆθ)|Z)
+
+L(γP(θ∗)|Z) Y
+
+)
+
+= e− P       
+
+> i<j (γ
+> 1−γˆPij −γP ∗
+> ij )
+
+Y
+
+> i<j
+
+(
+
+1 − γP ∗ 
+
+> ij
+
+(1 − Yij )1 − (1 − γ)P ∗
+
+> ij
+
++ 
+
+> γ
+> 1−γ
+
+ˆPij (1 − Yij )1 − (1 − γ)P ∗
+
+> ij
+
+)
+
+.
+
+Since 1 + x ≤ ex for all x,
+
+E
+
+(L( γ 
+
+> 1−γ
+
+ˆP(ˆθ)|Z)
+
+L(γP(θ∗)|Z) Y
+
+)
+
+≤ exp 
+
+"
+
+− X 
+
+> i<j
+> γ
+> 1−γ
+
+ˆPij − γP ∗ 
+
+> ij
+
++ γP ∗ 
+
+> ij
+
+(1 − Yij )1 − (1 − γ)P ∗
+
+> ij
+
+− 
+
+> γ
+> 1−γ
+
+ˆPij (1 − Yij )1 − (1 − γ)P ∗
+
+> ij
+
+!# 
+
+,
+
+and simplifying this expression yields 
+
+E
+
+(L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γP(θ∗)|Z)
+
+)
+
+= E E
+
+(L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γP(θ∗)|Z) Y
+
+)! 
+
+≤ E exp − γ
+
+1 − γ
+
+X
+
+> i<j
+
+{Yij − (1 − γ)P ∗ 
+
+> ij
+
+}{ ˆPij − (1 − γ)P ∗ 
+
+> ij
+
+}
+
+1 − (1 − γ)P ∗
+
+> ij
+
+!
+
+.
+
+Now, instead of looking at the expected value, we claim that the sum inside is deterministi-cally ≥ 0; i.e., 
+
+X
+
+> i<j
+
+{Yij − (1 − γ)P ∗ 
+
+> ij
+
+}{ ˆPij − (1 − γ)P ∗ 
+
+> ij
+
+}
+
+1 − (1 − γ)P ∗
+
+> ij
+
+≥ 0.
+
+Re-arranging some terms, this is equivalent to proving that 
+
+X
+
+> i
+
+{Yi − (1 − γ)P ∗ 
+
+> i
+
+}{ ˆPi − (1 − γ)P ∗ 
+
+> i
+
+}
+
+1 − (1 − γ)P ∗
+
+> i
+
+= X
+
+> i
+
+[(1 − Yi) − (1 − { 1 − γ}P ∗ 
+
+> i
+
+)][(1 − ˆPi) − (1 − { 1 − γ}P ∗ 
+
+> i
+
+)] 1 − (1 − γ)P ∗
+
+> i
+
+≡ X
+
+> i
+
+(Xi − βi)( ˆβi − βi)
+
+βi
+
+≥ 0,
+
+where we have changed the summation to a single index and defined Xi ≡ 1 − Yi ∼
+
+Bernoulli (βi) with βi = 1 − (1 − γ)P ∗ 
+
+> i
+
+. To show this last line, we will use the following useful facts. By A1, X
+
+> i
+
+ˆβi = X
+
+> i
+
+Xi.
+
+Additionally, since ˆθ1 = arg max θ∈Θ1 L(θ|Y), then L(P(ˆθ1)|Y)) ≥ L (P(θ)|Y) for all θ, or equivalently, L(P( ˆβ)|X)) ≥ L (P(β)|X). This implies 
+
+Y
+
+> i
+
+e− ˆβi ˆβXi 
+
+> i
+
+≥ Y
+
+> i
+
+e−βi βXi 
+
+> i
+
+⇐⇒ X
+
+> i
+
+(− ˆβi + Xi log ˆβi) ≥ X
+
+> i
+
+(−βi + Xi log βi).
+
+23 Shuffling around the last inequality gives 
+
+X
+
+> i
+
+( ˆβi − βi) ≤ X
+
+> i
+
+Xi log ˆβi
+
+βi
+
+,
+
+and under A1, this implies X
+
+> i
+
+(Xi − βi) ≤ X
+
+> i
+
+Xi log ˆβi
+
+βi
+
+.
+
+Dividing both sides by P 
+
+> j
+
+Xj and applying Jensen’s inequality gives 
+
+P
+
+> i
+
+(Xi − βi)
+
+P 
+
+> j
+
+Xj
+
+≤ X
+
+> i
+
+Xi
+
+P 
+
+> j
+
+Xj
+
+log ˆβi
+
+βi
+
+≤ log X
+
+> i
+
+Xi
+
+P 
+
+> j
+
+Xj
+
+ˆβi
+
+βi
+
+!
+
+.
+
+Noting that log x ≤ x − 1 for all x, we get 1 −
+
+P 
+
+> i
+
+βi
+
+P 
+
+> i
+
+Xi
+
+≤ X
+
+> i
+
+Xi
+
+P 
+
+> j
+
+Xj
+
+ˆβi
+
+βi
+
+− 1or, equivalently, 2 −
+
+P 
+
+> i
+
+βi
+
+P 
+
+> i
+
+Xi
+
+≤ X
+
+> i
+
+Xi
+
+P 
+
+> j
+
+Xj
+
+ˆβi
+
+βi
+
+.
+
+Multiplying both sides by P 
+
+> j
+
+Xj yields 2 X
+
+> i
+
+Xi − X
+
+> i
+
+βi ≤ X
+
+> i
+
+Xi ˆβi
+
+βi
+
+.
+
+Since 2 P 
+
+> i
+
+Xi = P 
+
+> i
+
+Xi + P 
+
+> i
+
+ˆβi, we get 0 ≤ X
+
+> i
+
+Xi ˆβi
+
+βi
+
+− Xi − ˆβi + βi
+
+!
+
+= X
+
+> i
+
+(Xi − βi)( ˆβi − βi)
+
+βi
+
+,
+
+as desired. Therefore, 
+
+E
+
+(L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γP(θ∗)|Z)
+
+)
+
+≤ E exp − γ
+
+1 − γ
+
+X
+
+> i<j
+
+{Yij − (1 − γ)P ∗ 
+
+> ij
+
+}{ ˆPij − (1 − γ)P ∗ 
+
+> ij
+
+}
+
+1 − (1 − γ)P ∗
+
+> ij
+
+!
+
+≤ 1as we hoped to show. □
+
+24 S3 Proof of Theorem 2 
+
+Let An ∼ ϱnP(θ∗) under A2. Assume that we are testing 
+
+H0 : θ∗ ∈ Θ0 vs. θ∗ ∈ Θ1
+
+where Θ0 is the parameter space corresponding to the Erdos-Renyi model, i.e., Pij (θ∗) = p for all (i, j ), and Θ1 corresponds to the popularity-adjusted block model, i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+,under A3–A7. If θ∗ ∈ Θ1 such that An is generated from the alternative model, then there exists some ϵ > 0 such that, as n → ∞ ,
+
+P(log En > ϵϱ nn2) → 1.
+
+## Main proof 
+
+Recall that log En = log L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(P(ˆθ0)|Z) = log L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+Q 
+
+> ij
+
+e−ˆp(ˆ p)Zij 
+
+where ˆ p = n−2 P 
+
+> ij
+
+Zij (the MLE under the null hypothesis), and, from now on, we take all products/summations over all ( i, j ) instead of {i < j } for notational simplicity. This effectively treats the network as directed and allowing for self-loops, but all results also hold for undirected networks, i.e., only considering {i < j }. We first define the following terms: 
+
+Bn = log 
+
+Q 
+
+> ij
+
+e−γϱ nPij (θ∗)
+
+Q 
+
+> ij
+
+e−ˆp
+
+Cn = log 
+
+Q 
+
+> ij
+
+{γϱ nPij (θ∗)}Zij 
+
+Q 
+
+> ij
+
+(γϱ n ¯p)Zij 
+
+Dn = log 
+
+Q 
+
+> ij
+
+(γϱ n ¯p)Zij 
+
+Q 
+
+> ij
+
+(ˆ p)Zij 
+
+Ln = log L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γϱ nP(θ∗)|Z)where ¯ p = n−2 P 
+
+> ij
+
+Pij (θ∗). Then it is clear that log En = Bn + Cn + Dn + Ln.
+
+Notice that for any two random variables X and Y ,
+
+P(X + Y ≤ a) = P(X + Y ≤ a, X ≤ − b) + P(X + Y ≤ a, X > −b)
+
+≤ P (X ≤ − b) + P(Y ≤ a + b).
+
+By induction, it is easy to show that this implies 
+
+P
+
+> d
+
+X
+
+> i=1
+
+Yi ≤ a
+
+!
+
+≤
+
+> d−1
+
+X
+
+> i=1
+
+P(Yi ≤ − ai) + P Yd ≤ a +
+
+> d−1
+
+X
+
+> i=1
+
+ai
+
+!
+
+.
+
+25 Thus, 
+
+P(log En ≤ ϵϱ nn2)= P(Bn + Cn + Dn + Ln ≤ ϵϱ nn2)
+
+≤ P(Bn ≤ − ϵ1ϱnn2) + P(Dn ≤ − ϵ2ϱnn2) + P(Ln ≤ − ϵ3ϱnn2) + P{Cn ≤ (ϵ + ϵ1 + ϵ2 + ϵ3)ϱnn2}
+
+where ϵ > 0 will be chosen later. The claim is proved if we can show that each of these probabilities goes to zero, which we do with the following lemmas. 
+
+Lemma 1. Let A ∼ ϱnP(θ∗) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+, and ˆθ = arg max θ∈Θ L(θ|A). Define 
+
+Xn = log 
+
+Q 
+
+> ij
+
+e−ϱnPij (θ∗)
+
+Q 
+
+> ij
+
+e− ˆPij (ˆθ) .
+
+Then 
+
+(ϱnn2)−1/2Xnd
+
+→ N(0 , k 2)
+
+as n → ∞ for some constant k, and, hence, Xn = op(ϱnn2).
+
+Lemma 2. Let A ∼ ϱnP(θ∗) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+. Furthermore, define ˆp = n−2 P 
+
+> ij
+
+Aij , ¯p = n−2 P 
+
+> ij
+
+Pij (θ∗) and 
+
+Xn = log 
+
+Q 
+
+> ij
+
+(ϱn ¯p)Aij 
+
+Q 
+
+> ij
+
+(ˆ p)Aij .
+
+Then for any ϵ > 0,
+
+lim  
+
+> n→∞
+
+P(Xn ≤ − ϵϱ nn2) = 0 .
+
+Lemma 3. Let An ∼ ϱnP(θ∗) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+. Define Y and Z by the edge sampling procedure described in Section 3, ˆθ1 = arg max θ∈Θ L(θ|Y) for any Θ in the PABM family where θ∗ ∈ Θ, and 
+
+Xn = log L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γϱ nP(θ∗)|Z).
+
+Then for any ϵ > 0,
+
+lim  
+
+> n→∞
+
+P(Xn ≤ − ϵϱ nn2) = 0 .
+
+Lemma 4. Let 
+
+f (u, v) = 1 −
+
+Pni=1 (uivi)1/2
+
+Pni=1 ui
+
+.
+
+where Pni=1 ui = Pni=1 vi. Then f (u, v) ≥ 0 for all u, v ≥ 0 with equality if and only if u
+
+and v are linearly dependent. 
+
+26 Lemma 5. Let A ∼ ϱnP(θ∗
+
+> n
+
+) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+. Let 
+
+Xn = log 
+
+Q 
+
+> ij
+
+{ϱnPij (θ∗)}Aij 
+
+Q 
+
+> ij
+
+(ϱn ¯p)Aij .
+
+where ¯p = n−2 P 
+
+> ij
+
+Pij (θ∗), i.e., the average edge probability. Then there exists some ϵ > 0
+
+such that 
+
+lim  
+
+> n→∞
+
+P(Xn ≤ ϵϱ nn2) = 0 .
+
+Thus, Lemmas 1, 2 and 3, respectively, give us that, for any ϵ1, ϵ 2, ϵ 3 > 0, 
+
+P(Bn < −ϵ1ϱnn2) → 0,
+
+P(Dn ≤ − ϵ2ϱnn2) → 0and 
+
+P(Ln ≤ − ϵ3ϱnn2) → 0as n → ∞ . Finally, from Lemma 5, we know that we can set ϵ to be small enough such that 
+
+ϵ + ϵ1 + ϵ2 + ϵ3 < 2γ ¯pC 
+
+where 
+
+C = 1 − 1¯pn 2
+
+X
+
+> ij
+
+{¯pP ij (θ∗)}1/2 > 0.
+
+Thus, 
+
+P{Cn ≤ (ϵ + ϵ1 + ϵ2 + ϵ3)ϱnn2} → 0as n → ∞ . □
+
+## Proof of lemmas 
+
+For all proofs of lemmas, we assume that A2–A7 are met as in the statement of the theorem. 
+
+Lemma 1. Let A ∼ ϱnP(θ∗) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+, and ˆθ = arg max θ∈Θ L(θ|A). Define 
+
+Xn = log 
+
+Q 
+
+> ij
+
+e−ϱnPij (θ∗)
+
+Q 
+
+> ij
+
+e− ˆPij (ˆθ) .
+
+Then 
+
+(ϱnn2)−1/2Xnd
+
+→ N(0 , k 2)
+
+as n → ∞ for some constant k, and, hence, Xn = op(ϱnn2). 27 Proof. We have that 
+
+Xn = X
+
+> ij
+
+{Pij (ˆθ) − ϱnPij (θ∗)} = X
+
+> ij
+
+(Aij − EAij )since Sengupta and Chen (2018) show that A1 is met for the PABM. The terms inside the sum are clearly independent with mean 0 and (finite) variance ϱnPij (θ∗){1 − ϱnPij (θ∗)} such that 
+
+s2 
+
+> n
+
+= X
+
+> ij
+
+ϱnPij (θ∗){1 − ϱnPij (θ∗)} = O(ϱnn2).
+
+We want to invoke Lyapunov’s Central Limit Theorem so we must show lim 
+
+> n→∞
+
+1
+
+s2+ δn
+
+X
+
+> ij
+
+E|Aij − EAij |2+ δ → 0.
+
+Letting δ = 2 and noting that E|Aij |4 = ϱnPij (θ∗) ∼ ϱn, we have that lim 
+
+> n→∞
+
+1
+
+s4
+
+> n
+
+X
+
+> ij
+
+E|Aij − EAij |4 ≲ lim 
+
+> n→∞
+
+1
+
+s4
+
+> n
+
+X
+
+> ij
+
+ϱn = O( 1 
+
+> ϱnn2
+
+) → 0by A2. Thus, by Lyapunov’s Central Limit Theorem 1
+
+sn
+
+X
+
+> ij
+
+(Aij − EAij ) d
+
+→ N(0 , 1) .
+
+Therefore, (ϱnn2)−1/2Xn = 1
+
+sn
+
+X
+
+> ij
+
+(Aij − EAij )
+
+!
+
+× sn
+
+(ϱnn2)1/2
+
+> d
+
+→ N(0 , k 2)since sn(ϱnn2)−1/2 → k for some constant k as n → ∞ . □
+
+Lemma 2. Let A ∼ ϱnP(θ∗) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+. Furthermore, define ˆp = n−2 P 
+
+> ij
+
+Aij , ¯p = n−2 P 
+
+> ij
+
+Pij (θ∗) and 
+
+Xn = log 
+
+Q 
+
+> ij
+
+(ϱn ¯p)Aij 
+
+Q 
+
+> ij
+
+(ˆ p)Aij .
+
+Then for any ϵ > 0,
+
+lim  
+
+> n→∞
+
+P(Xn ≤ − ϵϱ nn2) = 0 .
+
+Proof. First, we write out Xn as 
+
+Xn = X
+
+> ij
+
+Aij {log( ϱn ¯p) − log(ˆ p)} = n2 ˆp log ϱn ¯p
+
+ˆp .
+
+28 Dividing by ϱnn2, we have Xn
+
+ϱnn2 = ˆpϱn
+
+log ¯p
+
+ˆp/ (ϱn).
+
+Implicitly from Lemma 1, we know that ˆ p/ϱ np
+
+→ ¯p since P 
+
+> ij
+
+(Aij − EAij ) = n2(ˆ p − ϱn ¯p) and by A7 ¯ p does not depend on n. If we define f (x) = x log ¯px , then by the continuous mapping theorem Xn
+
+ϱnn2 = f
+
+ ˆpϱn
+
+ p
+
+→ f (¯ p) = ¯ p log ¯p
+
+¯p = 0 .
+
+Thus, for any ϵ > 0, lim  
+
+> n→∞
+
+P(Xn ≤ − ϵϱ nn2) = 0 . □
+
+Lemma 3. Let An ∼ ϱnP(θ∗) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+. Define Y and Z by the edge sampling procedure described in Section 3, ˆθ1 = arg max θ∈Θ L(θ|Y) for any Θ in the PABM family where θ∗ ∈ Θ, and 
+
+Xn = log L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γϱ nP(θ∗)|Z).
+
+Then for any ϵ > 0,
+
+lim  
+
+> n→∞
+
+P(Xn ≤ − ϵϱ nn2) = 0 .
+
+Proof. First, we note that we prove this result for a general PABM from which the results for the SBM (needed for Theorem 4) are easy to deduce as this model is a special case of the PABM. We start by defining ˆλik (ˆ c) = 
+
+Pnj=1 Yij 1(ˆ cj = k)
+
+{P 
+
+> ab
+
+Yab 1(ˆ ca = ˆ ci, ˆcb = k)}1/2 = Op(ϱ1/2 
+
+> n
+
+) (2) and 
+
+λ∗
+
+> ik
+
+(ˆ c) = 
+
+Pnj=1 Pij (θ∗)1(ˆ cj = k)
+
+{P 
+
+> ab
+
+Pab (θ∗)1(ˆ ca = ˆ ci, ˆcb = k)}1/2
+
+where ˆ c is a function of Y and Sengupta and Chen (2018) show that the MLEs of the PABM take the form in (2). We then write out Xn as log L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z) − log L(γϱ nP(θ∗)|Z)= X
+
+> ij
+
+{ γ 
+
+> 1−γ
+
+Pij (ˆθ1) − γϱ nPij (θ∗)} + X
+
+> ij
+
+Zij {log γ 
+
+> 1−γ
+
+Pij (ˆθ1) − log γϱ nPij (θ∗)}
+
+= γ
+
+> 1−γ
+
+X
+
+> ij
+
+(Yij − EYij ) + X
+
+> ij
+
+Zij (log γ 
+
+> 1−γ
+
+ˆλiˆcj
+
+ˆλjˆci − log γϱ nλ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+)= γ
+
+> 1−γ
+
+X
+
+> ij
+
+(Yij − EYij )
+
+| {z }
+
+> X(1)
+> n
+
++2 X
+
+> ij
+
+Zij {log ˆλiˆcj − log ϱ1/2 
+
+> n
+
+λ∗ 
+
+> iˆcj
+
+(ˆ c)}
+
+| {z }
+
+> X(2)
+> n
+
++2 X
+
+> ij
+
+Zij {log λ∗ 
+
+> iˆcj
+
+(ˆ c) − log λ∗ 
+
+> ic ∗
+> j
+
+}
+
+| {z }
+
+> X(3)
+> n
+
+29 where we used the fact that A1 is met, and for simplicity, we absorb the effect of (1 − γ)−1/2
+
+into ˆλik . Similar to the argument above, we have 
+
+P(Xn ≤ − ϵϱ nn2) = P(X(1)  
+
+> n
+
++ X(2)  
+
+> n
+
++ X(3)  
+
+> n
+
+≤ − ϵϱ nn2)
+
+≤ P(X(1)  
+
+> n
+
+≤ − ϵ1ϱnn2) + P(X(2)  
+
+> n
+
+≤ − ϵ2ϱnn2) + P(X(3)  
+
+> n
+
+≤ − (ϵ − ϵ1 − ϵ2)ϱnn2).
+
+(3) We will show that each of these three probabilities goes to 0. First, by Lemma 1, for any 
+
+ϵ1 > 0, 
+
+P(X(1)  
+
+> n
+
+≤ − ϵ1ϱnn2) → 0.
+
+We next note that there could be an identifiability problem between ˆ c and c∗, i.e., community ‘1’ in ˆ c could be different from community ‘1’ in c∗. For notational simplicity, we assume that ˆ c and c∗ are “aligned” such that community labels correspond to the same blocks. Now, we separate the probability of interest into two cases, where X(2)  
+
+> n
+
+is finite versus infinite: 
+
+P(X(2)  
+
+> n
+
+≤ − ϵ2n2) = P(X(2)  
+
+> n
+
+≤ − ϵ2n2|X(2)  
+
+> n
+
+> −∞ )P(X(2)  
+
+> n
+
+> −∞ ) + P(X(2)  
+
+> n
+
+= −∞ ).
+
+We break the probability up in this way because there is a small, but non-zero probability that X(2)  
+
+> n
+
+= −∞ . To see this, note that 
+
+X(2)  
+
+> n
+
+= X
+
+> ij
+
+Zij {log ˆλiˆcj − log ϱ1/2 
+
+> n
+
+λ∗ 
+
+> iˆcj
+
+(ˆ c)} =
+
+> n
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+Mik {log ˆλik − log ϱ1/2 
+
+> n
+
+λ∗
+
+> ik
+
+(ˆ c)}
+
+where 
+
+Mik =
+
+> n
+
+X
+
+> j=1
+
+Zij 1(ˆ cj = k),
+
+i.e., the number of edges in Z between node i and nodes assigned to group k. It is important to remember that Mik is a function of Z, while ˆλik (ˆ c) and ˆ c are estimated from Y. We want to see when this term will equal negative infinity. First, λ∗
+
+> ik
+
+(ˆ c) > 0, for all ( i, k ) by A4. If Mik = ˆλik (ˆ c) = 0, we can simply set this term in the sum to zero. The issue arises when ˆλik (ˆ c) = 0 but Mik > 0. Then this term will be undefined, e.g., equal negative infinity. Thus, we need to compute 
+
+P{ˆλik (ˆ c) = 0 , M ik > 0} = P{Mik > 0|ˆλik (ˆ c) = 0) P(ˆλik (ˆ c) = 0 }
+
+= P
+
+( nX
+
+> j=1
+
+Zij 1(ˆ cj = k) > 0
+
+> n
+
+X
+
+> j=1
+
+Yij 1(ˆ cj = k) = 0 
+
+)
+
+× P
+
+( nX
+
+> j=1
+
+Yij 1(ˆ cj = k) = 0 
+
+)
+
+30 Using the joint (conditional) distributions of Y and Z found in Section S1, we can show 
+
+P
+
+( nX
+
+> j=1
+
+Zij 1(ˆ cj = k) > 0
+
+> n
+
+X
+
+> j=1
+
+Yij 1(ˆ cj = k) = 0 
+
+)
+
+= 1 − P
+
+( nX
+
+> j=1
+
+Zij 1(ˆ cj = k) = 0 
+
+> n
+
+X
+
+> j=1
+
+Yij 1(ˆ cj = k) = 0 
+
+)
+
+= 1 −
+
+> n
+
+Y
+
+> j=1
+
+(
+
+1 − γλ ∗ 
+
+> iˆcj
+
+λ∗
+
+> jˆci
+
+1 − (1 − γ)λ∗ 
+
+> iˆcj
+
+λ∗
+
+> jˆci
+
+)1(ˆ cj =k)
+
+≤ 1.
+
+Additionally, 
+
+P
+
+( nX
+
+> j=1
+
+Yij 1(ˆ cj = k) = 0 
+
+)
+
+=
+
+> n
+
+Y
+
+> j=1
+
+{1 − (1 − γ)λ∗ 
+
+> iˆcj
+
+λ∗ 
+
+> jˆci
+
+}1(ˆ cj =k)} ≤ (1 − δ)ˆnk
+
+where ˆ nk = Pnj=1 1(ˆ cj = k) is the number of nodes assigned to community k ∈ { 1, . . . , K },
+
+δ = min i,j,k,ℓ {(1 − γ)λ∗
+
+> ik
+
+λ∗
+
+> jℓ
+
+} and δ > 0 by A4. Thus, 
+
+P{ˆλik (ˆ c) = 0 , M ik > 0} ≤ (1 − δ)ˆnk
+
+such that 
+
+P(X(2)  
+
+> n
+
+= −∞ ) = P
+
+> n
+
+[
+
+> i=1
+> K
+
+[
+
+> k=1
+
+{ˆλik (ˆ c) = 0 , M ik > 0}
+
+!
+
+≤
+
+> n
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+(1 − δ)ˆnk
+
+∼ n(1 − δ)n
+
+→ 0for any δ > 0 as n → ∞ where ˆ nk = O(n) by A3. Finally, while this probability is small and asymptotically goes to 0, it is non-zero for any n which is why E log En = −∞ .Returning to the probability that we are currently interested in, we now have 
+
+P(X(2)  
+
+> n
+
+≤ − ϵ2n2) ≤ P(|X(2)  
+
+> n
+
+| ≥ ϵ2n2 | | X(2)  
+
+> n
+
+| < ∞) + o(1) .
+
+We showed above that 
+
+X(2)  
+
+> n
+
+=
+
+> n
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+Mik {log ˆλik − log ϱ1/2 
+
+> n
+
+λ∗
+
+> ik
+
+(ˆ c)}
+
+so by the Cauchy-Schwarz inequality, (X(2)  
+
+> n
+
+)2 ≤
+
+> n
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+M 2
+
+> ik
+
+! nX
+
+> i=1
+> K
+
+X
+
+> k=1
+
+{log ˆλik − log ϱ1/2 
+
+> n
+
+λ∗
+
+> ik
+
+(ˆ c)}2
+
+!
+
+.
+
+31 Recall that 
+
+Mik =
+
+> n
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+Zij 1(ˆ cj = k).
+
+Since Pni=1 1(ˆ cj = k) = O(n) for all k ∈ { 1, . . . , K } by A3, this implies 
+
+Mik =
+
+> n
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+Zij 1(ˆ cj = k) ∼
+
+> n
+
+X
+
+> i=1
+
+Zij = Di
+
+where Di is the degree of node i. In other words, Mik = Op(Di) such that Pni=1 
+
+PKk=1 M 2 
+
+> ik
+
+∼Pni=1 D2 
+
+> i
+
+. de Caen (1998) shows that 
+
+> n
+
+X
+
+> i=1
+
+D2 
+
+> i
+
+≤ m
+
+ 2mn − 1 + n + 2 
+
+
+
+where m is the total number of edges in the network, i.e., m = P 
+
+> ij
+
+Zij . Clearly, m =
+
+Op(ϱnn2) such that nX
+
+> i=1
+
+D2 
+
+> i
+
+≤ m
+
+ 2mn − 1 + n + 2 
+
+
+
+= Op(ϱ2
+
+> n
+
+n3)so nX
+
+> i=1
+> K
+
+X
+
+> k=1
+
+M 2 
+
+> ik
+
+= Op(ϱ2
+
+> n
+
+n3).
+
+Next, we know that ϱ−1/2 
+
+> n
+
+ˆλik (ˆ c) = Op(1) and is strictly positive since we conditioned on the fact that |X(2)  
+
+> n
+
+| < ∞ which implies ˆλik > 0. We also know that λ∗
+
+> ik
+
+(ˆ c) > 0 by A4. Therefore, log( x) is Lipschitz continuous on [ δ, ∞) where δ = min ik {ϱ−1/2 
+
+> n
+
+ˆλik (ˆ c), λ ∗
+
+> ik
+
+(ˆ c)} > 0 such that 
+
+> n
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+{log ˆλik − log ϱ1/2 
+
+> n
+
+λ∗
+
+> ik
+
+(ˆ c)}2 ≲
+
+> n
+
+X
+
+> i=1
+> K
+
+X
+
+> k=1
+
+{ˆλik − ϱ1/2 
+
+> n
+
+λ∗
+
+> ik
+
+(ˆ c)}2 = op(n)where the rate comes from the proof of Theorem 2 in Sengupta and Chen (2018) (with A2, A3, A5 and A6). Combining these two results implies that X(2)  
+
+> n
+
+= op(ϱnn2) such that for any ϵ2 > 0, 
+
+P(X(2)  
+
+> n
+
+≤ − ϵ2ϱnn2) ≤ P(|X(2)  
+
+> n
+
+| ≥ ϵ2ϱnn2 | | X(2)  
+
+> n
+
+| < ∞) + P(X(2)  
+
+> n
+
+= ∞) → 0.
+
+For X(3)  
+
+> n
+
+, recall that 
+
+X(3)  
+
+> n
+
+= X
+
+> ij
+
+Zij {log λ∗ 
+
+> iˆcj
+
+(ˆ c) − log λ∗ 
+
+> ic ∗
+> j
+
+}.
+
+Notice that log λ∗ 
+
+> iˆcj
+
+(ˆ c) − log λ∗ 
+
+> ic ∗
+> j
+
+= O(1) and is non-zero if and only if ˆ cj̸ = c∗ 
+
+> j
+
+. Thus, 
+
+X(3)  
+
+> n
+
+∼ X
+
+> ij
+
+Zij 1(ˆ cj̸ = c∗ 
+
+> j
+
+) = 
+
+> n
+
+X
+
+> i=1
+
+Di1(ˆ ci̸ = c∗ 
+
+> i
+
+)32 where Di is again the degree of node i. Invoking Cauchy-Schwarz once more, (X(3)  
+
+> n
+
+)2 ≤
+
+> n
+
+X
+
+> i=1
+
+D2
+
+> i
+
+! nX
+
+> i=1
+
+1(ˆ ci̸ = c∗ 
+
+> i
+
+)
+
+!
+
+.
+
+We already showed that Pni=1 D2 
+
+> i
+
+= Op(ϱ2
+
+> n
+
+n3), and, by Theorem 1 in Sengupta and Chen (2018) (with A2, A3 and A5), Pni=1 1(ˆ ci̸ = c∗ 
+
+> i
+
+) = op(n), which implies X(3)  
+
+> n
+
+= op(ϱnn2). Thus, for any ϵ3 > 0, 
+
+P(X(3)  
+
+> n
+
+≤ − ϵ3ϱnn2) → 0as n → ∞ . □
+
+Lemma 4. Let 
+
+f (u, v) = 1 −
+
+Pni=1 (uivi)1/2
+
+Pni=1 ui
+
+.
+
+where Pni=1 ui = Pni=1 vi. Then f (u, v) ≥ 0 for all u, v ≥ 0 with equality if and only if u
+
+and v are linearly dependent. Proof. By Cauchy-Schwarz, 
+
+> n
+
+X
+
+> i=1
+
+(uivi)1/2 ≤
+
+( nX
+
+> i=1
+
+ui
+
+! nX
+
+> i=1
+
+vi
+
+!) 1/2
+
+=
+
+> n
+
+X
+
+> i=1
+
+ui
+
+since Pni=1 ui = Pni=1 vi and with equality if and only if u and v are linearly dependent. The result follows immediately by dividing both sides of the inequality by Pni=1 ui. □
+
+Lemma 5. Let A ∼ ϱnP(θ∗
+
+> n
+
+) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+. Let 
+
+Xn = log 
+
+Q 
+
+> ij
+
+{ϱnPij (θ∗)}Aij 
+
+Q 
+
+> ij
+
+(ϱn ¯p)Aij .
+
+where ¯p = n−2 P 
+
+> ij
+
+Pij (θ∗), i.e., the average edge probability. Then there exists some ϵ > 0
+
+such that 
+
+lim  
+
+> n→∞
+
+P(Xn ≤ ϵϱ nn2) = 0 .
+
+Proof. We start by writing out Xn as 
+
+Xn = X
+
+> ij
+
+Aij log 
+
+ϱnPij (θ∗)
+
+ϱn ¯p
+
+
+
+Recall that Aij 
+
+> ind.
+
+∼ Bernoulli (ϱnPij (θ∗)). If Y ∼ Bernoulli (θ), then the moment generating function, MY (t), is 
+
+MY (t) = EeY t = 1 − θ + θe t.
+
+Moreover, the moment generating function of αY where α is a constant is 
+
+MαY (t) = Ee(αY )t = MY (αt ) = 1 − θ + θe αt .
+
+33 Additionally, if Y1, . . . , Y m are independent, then the moment generating function of their sum is simply the product, i.e., 
+
+MPMi=1 Yi (t) = Eet Pmi=1 Yi =
+
+> m
+
+Y
+
+> i=1
+
+EetY i =
+
+> m
+
+Y
+
+> i=1
+
+MYi (t).
+
+Putting this together, the moment generating function of Xn is 
+
+MXn (t) = Y
+
+> ij
+
+(
+
+1 − ϱnPij (θ∗) + ϱnPij (θ∗)et log    
+
+> ϱnP ij (θ∗)
+> ϱn ¯p
+> 
+
+)
+
+= Y
+
+> ij
+
+"
+
+1 + ϱnPij (θ∗)
+
+(ϱnPij (θ∗)
+
+ϱn ¯p
+
+t
+
+− 1
+
+)# 
+
+≤ exp X
+
+> ij
+
+ϱnPij (θ∗)
+
+(ϱnPij (θ∗)
+
+ϱn ¯p
+
+t
+
+− 1
+
+)! 
+
+where the last line is because 1 + x ≤ exp( x) for all x. Then using a Chernoff bound argument, we have 
+
+P(Xn ≤ ϵϱ nn2) ≤ inf  
+
+> t≤0
+
+exp( −tϵϱ nn2)MXn (t)
+
+≤ inf  
+
+> t≤0
+
+exp( −tϵϱ nn2) exp − X
+
+> ij
+
+ϱnPij (θ∗)
+
+(
+
+1 −
+
+ϱnPij (θ∗)
+
+ϱn ¯p
+
+t)! 
+
+.
+
+Setting t = −1/2, 
+
+P(Xn ≤ ϵϱ nn2) ≤ exp 12 ϵϱ nn2 − X
+
+> ij
+
+"
+
+ϱnPij (θ∗)
+
+(
+
+1 −
+
+ ϱn ¯pϱnPij (θ∗)
+
+1/2)#! 
+
+= exp 
+
+" 
+
+> 12
+
+ϵϱ nn2 − X
+
+> ij
+
+ϱnPij (θ∗) − { ϱ2 
+
+> n
+
+¯pP ij (θ∗)}1/2
+
+#
+
+= exp ¯pϱ nn2
+
+"
+
+ϵ
+
+2¯ p − 1¯pn 2
+
+X
+
+> ij
+
+Pij (θ∗) − { ¯pP ij (θ∗)}1/2
+
+#! 
+
+.
+
+Clearly, X
+
+> ij
+
+Pij (θ∗) = X
+
+> ij
+
+¯p = ¯ pn 2
+
+so by Lemma 4, 1¯pn 2
+
+X
+
+> ij
+
+Pij (θ∗) − { ¯pP ij (θ∗)}1/2 = 1 − 1¯pn 2
+
+X
+
+> ij
+
+{¯pP ij (θ∗)}1/2 = C
+
+for some C > 0 where the inequality is strict as the Pij (θ∗)’s are linearly independent of (not all equal to) ¯ p by A5. We can set ϵ > 0 small enough such that 
+
+ϵ
+
+2¯ p − C < 0 = ⇒ ϵ < 2¯ pC 
+
+34 where we recall that ¯ p does not depend on n by A5. Then we have 
+
+P(Xn ≤ ϵϱ nn2) ≲ exp( −ϱnn2) → 0as n → ∞ by A2. □
+
+35 S4 Proof of Proposition 1 
+
+Let X1, . . . , X 2n
+
+> iid.
+
+∼ Bernoulli (θ) and En be the split-likelihood Universal Inference statistic from Wasserman et al. (2020). Assume that we are testing 
+
+H0 : θ = θ0 vs. θ̸ = θ0.
+
+where 0 < θ 0 < 1. Then E(log En) = −∞ .Proof. From Wasserman et al. (2020), we split X1, . . . , X 2n into two parts D0 and D1. For simplicity let D0 = {X1, . . . , X n} and D1 = {Xn+1 , . . . , X 2n}. Then under the alternative hypothesis, the maximum likelihood estimate is ˆθ1 = arg max  
+
+> θ
+
+L(θ|D1) = 1
+
+n
+
+> 2n
+
+X
+
+> i=n+1
+
+Xi.
+
+Thus log En = log L(ˆθ1|D0)
+
+L(θ0|D0) = X log ˆθ1
+
+θ0
+
++ ( n − X) log 1 − ˆθ1
+
+1 − θ0
+
+where X = Pni=1 Xi. Clearly, log En = −∞ if ˆθ1 = 0 and X > 0. The same problem arises if ˆθ1 = 1 and n − X > 0. Thus, 
+
+P(log En = −∞ ) = P(ˆθ1 = 0 , X > 0) + P(ˆθ1 = 1 , X < n )= P(ˆθ1 = 0) {1 − P(X = 0) } + P(ˆθ1 = 1) {1 − P(X = n)}
+
+= (1 − θ)n{1 − (1 − θ)n} + θn(1 − θn)
+
+> 0.
+
+Since log En has a non-zero probability of being −∞ , its expectation necessarily is −∞ . □
+
+36 S5 Proof of Theorem 3 
+
+Let An ∼ ϱnP(θ∗) under A2. Assume that we are testing 
+
+H0 : θ∗ ∈ Θ0 vs. θ∗ ∈ Θ1
+
+where Θ0 is the parameter space corresponding to the Chung-Lu model, i.e., Pij (θ∗) = ψiψj ,and Θ1 corresponds to the popularity-adjusted Block Model, i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+, under A3–A8. If θ∗ ∈ Θ1 such that An is generated from the alternative model, then there exists some ϵ > 0 such that, as n → ∞ ,
+
+P(log En > ϵϱ nn2) → 1.
+
+## Main proof 
+
+We follow a similar strategy as that of Theorem 2, separating log En into the following terms: 
+
+Bn = log 
+
+Q 
+
+> ij
+
+e−γϱ nPij (θ∗)
+
+Q 
+
+> ij
+
+e− ˆψi ˆψj
+
+Cn = log 
+
+Q 
+
+> ij
+
+γϱ nPij (θ∗)Zij 
+
+Q 
+
+> ij
+
+(γϱ n ˜ψ∗ 
+
+> i
+
+˜ψ∗ 
+
+> j
+
+)Zij 
+
+Dn = log 
+
+Q 
+
+> ij
+
+(γϱ n ˜ψ∗ 
+
+> i
+
+˜ψ∗ 
+
+> j
+
+)Zij 
+
+Q 
+
+> ij
+
+( ˆψi ˆψj )Zij 
+
+Ln = log L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γϱ nP(θ∗)|Z)where ˆψi =
+
+Pnj=1 Zij 
+
+pP  
+
+> ab
+
+Zab 
+
+and ˜ψ∗ 
+
+> i
+
+=
+
+Pnj=1 Pij (θ∗)
+
+pP  
+
+> ab
+
+Pab (θ∗)for i ∈ { 1, . . . , n }. Then the result follows the same logic as the proof of Theorem 2 by invoking Lemmas 1, 3, 6 and 7, where from Lemma 7 we know that we can set ϵ to be small enough such that 
+
+ϵ + ϵ1 + ϵ2 + ϵ3 < 2γ ¯pC 
+
+where 
+
+C = 1 − 1¯pn 2
+
+X
+
+> ij
+
+{Pij (θ∗) ˜ψ∗ 
+
+> i
+
+˜ψ∗ 
+
+> j
+
+}1/2 > 0. □
+
+37 Proof of lemmas 
+
+Lemma 6. Let A ∼ ϱnP(θ∗) where P(θ∗) defines a popularity-adjusted block model (PABM), i.e., Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+. Furthermore, define ˆψi = Pnj=1 Aij /pP  
+
+> ab
+
+Aab and 
+
+˜ψ∗ 
+
+> i
+
+= Pnj=1 Pij (θ∗)/pP  
+
+> ab
+
+Pab (θ∗). If 
+
+Xn = log 
+
+Q 
+
+> ij
+
+(ϱn ˜ψ∗ 
+
+> i
+
+˜ψ∗ 
+
+> j
+
+)Aij 
+
+Q 
+
+> ij
+
+( ˆψi ˆψj )Aij 
+
+,
+
+then for any ϵ > 0,
+
+lim  
+
+> n→∞
+
+P(Xn ≤ − ϵϱ nn2) = 0 .
+
+Proof. First, we can replace P 
+
+> ij
+
+Aij in the denominator of ˆψi with ¯ pϱ nn2 where ¯p = 1
+
+n2
+
+X
+
+> ij
+
+Pij (θ∗)as a “shortcut” since this term converges much faster than other appropriately scaled random variables. This assumption has been previously made in the literature (Yanchenko et al., 2025). Then we can write Xn as 
+
+Xn = X
+
+> ij
+
+Aij log ϱn ˜ψ∗ 
+
+> i
+
+˜ψ∗
+
+> j
+
+ˆψi ˆψj
+
+= 2 
+
+> n
+
+X
+
+> i=1
+
+Di{log ϱn ¯Pi(θ∗) − log ¯Di}.
+
+where Di = Pnj=1 Aij is the block modelof node i for i ∈ { 1, . . . , n }, ¯Di = Di/n , and ¯Pi(θ∗) = 1
+
+> n
+
+Pnj=1 Pij (θ∗) . By the Cauchy-Schwarz Inequality, 
+
+X2 
+
+> n
+
+≤
+
+> n
+
+X
+
+> i=1
+
+D2
+
+> i
+
+! nX
+
+> i=1
+
+{log ϱn ¯Pi(θ∗) − log ¯Di}2
+
+!
+
+.
+
+From the proof of Lemma 3, we know that Pni=1 D2 
+
+> i
+
+= Op(ϱ2
+
+> n
+
+n3). By A4, we have that ¯Pi(θ∗) > 0 and the probability that ¯Di = 0 is vanishingly small as n increases so by a similar argument to that of Lemma 3, we can set δ = min i{ ¯Di, ¯Pi(θ∗)} > 0 such that log( x) is Lipschitz for x ∈ [δ, ∞). Thus, 
+
+> n
+
+X
+
+> i=1
+
+{log ϱn ¯Pi(θ∗) − log ¯Di}2 ≲
+
+> n
+
+X
+
+> i=1
+
+{ϱn ¯Pi(θ∗) − ¯Di}2 =
+
+> n
+
+X
+
+> i=1
+
+( ¯Di − E ¯Di)2.
+
+By Hoeffding’s Inequality, for all i and any ε > 0, 
+
+P{( ¯Di − E ¯Di)2 ≥ ε} = P(| ¯Di − E ¯Di| ≥ ε1/2) = P(|Di − EDi| ≥ nε 1/2) ≲ exp( −nε ).
+
+Taking a union bound over all n nodes, we have 
+
+P
+
+"[
+
+> i
+
+{( ¯Di − E ¯Di)2 ≥ ε}
+
+#
+
+≲ n exp ( −nε ) → 0as n → ∞ . Therefore, ( Di − EDi)2 = op(1) for all i such that Pni=1 ( ¯Di − E ¯Di)2 = op(n) and the result we hoped to prove follows immediately by multiplying the rates. □
+
+38 Lemma 7. Let A ∼ ϱnP(θ∗
+
+> n
+
+) where Pij (θ∗) = λ∗ 
+
+> ic ∗
+> j
+
+λ∗ 
+
+> jc ∗
+> i
+
+, i.e., generated from a PABM, under A8. Let 
+
+Xn = log 
+
+Q 
+
+> ij
+
+{ϱnPij (θ∗)}Aij 
+
+Q 
+
+> ij
+
+(ϱn ˜ψ∗ 
+
+> i
+
+˜ψ∗ 
+
+> j
+
+)Aij 
+
+.
+
+where ˜ψ∗ 
+
+> i
+
+= Pnj=1 Pij (θ∗)/pP  
+
+> ab
+
+Pab (θ∗). Then there exists some ϵ > 0 such that 
+
+lim  
+
+> n→∞
+
+P(Xn ≤ ϵϱ nn2) = 0 .
+
+Proof. We start by writing out Xn as 
+
+Xn = X
+
+> ij
+
+Aij log ϱnPij (θ∗)
+
+ϱn ˜ψ∗ 
+
+> i
+
+˜ψ∗
+
+> j
+
+!
+
+Similar to the proof of Lemma 5, we use a Chernoff bound argument and find 
+
+P(Xn ≤ ϵϱ nn2) ≤ exp ¯pϱ nn2
+
+"
+
+ϵ
+
+2¯ p − 1¯pn 2
+
+X
+
+> ij
+
+Pij (θ∗) − { ˜ψ∗ 
+
+> i
+
+˜ψ∗ 
+
+> j
+
+Pij (θ∗)}1/2
+
+#! 
+
+.
+
+Additionally, 
+
+X
+
+> ij
+
+˜ψ∗ 
+
+> i
+
+˜ψ∗ 
+
+> j
+
+= 1¯pn 2
+
+X
+
+> ijkℓ
+
+Pik (θ∗)Pjℓ (θ∗) = 1¯pn 2
+
+X
+
+> ik
+
+Pik (θ∗)
+
+! X
+
+> jℓ
+
+Pjℓ (θ∗)
+
+!
+
+= ¯ pn 2 = X
+
+> ij
+
+Pij (θ∗).
+
+Thus, by Lemma 4 1¯pn 2
+
+X
+
+> ij
+
+Pij (θ∗) − { ˜ψ∗ 
+
+> i
+
+˜ψ∗ 
+
+> j
+
+Pij (θ∗)}1/2 = C
+
+for some C > 0 where the inequality is strict by A8. We can set ϵ > 0 small enough such that ϵ
+
+2¯ p − C < 0 = ⇒ ϵ < 2¯ pC. 
+
+Then we have 
+
+P(Xn ≤ ϵϱ nn2) ≲ exp( −ϱnn2) → 0as n → ∞ by A2. □
+
+39 S6 Proof of Theorem 4 
+
+Let An ∼ ϱnP(θ∗) under A2. Assume that we are testing 
+
+H0 : θ∗ ∈ Θ0 vs. θ∗ ∈ Θ1
+
+where Θ0 is the parameter space corresponding to the stochastic block model with K − 1 > 1
+
+blocks, and Θ1 corresponds to the stochastic block model with K blocks under A3, A4 and A7 where the block probability matrix is also of full rank. If θ∗ ∈ Θ1 such that An is generated from the alternative model, then there exists some ϵ > 0 such that, as n → ∞ ,
+
+P(log En > ϵϱ nn2) → 1.
+
+## Main proof 
+
+We sketch a proof leaning heavily on the results from Wang and Bickel (2017); Hu et al. (2020). Specifically, define B∗ ∈ (0 , 1) K×K as the true block-probability matrix and c∗ ∈{1, . . . , K }n as the true block labels which generated the network under the alternative model (with K blocks). Moreover, let nk be the number of nodes in community k, i.e., nk =Pni=1 1(c∗ 
+
+> i
+
+= k) for k ∈ { 1, . . . , K }. Wang and Bickel (2017) define a “merging operator” that merges two blocks in the (correctly specified) block-probability matrix to construct an (underfit) block-probability matrix ˜B∗ ∈ (0 , 1) K−1×K−1. Without loss of generality, we can assume that we merge blocks K − 1 and K such that ˜B∗ is defined as ˜B∗ 
+
+> kℓ
+
+= B∗ 
+
+> kℓ
+
+for k, ℓ ∈ { 1, . . . , K − 2}
+
+˜B∗ 
+
+> k,K −1
+
+= nknK−1B∗ 
+
+> k,K −1
+
++ nknK B∗
+
+> k,K
+
+nknK−1 + nknK
+
+for k ∈ { 1, . . . , K − 2}
+
+˜B∗ 
+
+> K−1,K −1
+
+= n2
+
+> K−1
+
+B∗ 
+
+> K−1,K −1
+
++ 2 nK−1nK B∗ 
+
+> K−1,K
+
++ n2 
+
+> K
+
+B∗
+
+> K,K
+
+n2 
+
+> K−1
+
++ 2 nK−1nK + n2
+
+> K
+
+.
+
+The merged labels ˜ c∗ are then clearly defined as ˜ c∗ 
+
+> i
+
+= c∗ 
+
+> i
+
+if c∗ 
+
+> i
+
+∈ { 1, . . . , K −1} and ˜ c∗ 
+
+> i
+
+= K −1if c∗ 
+
+> i
+
+= K. Moreover, the number of nodes in block k of the underfit model, ˜ nk, is defined as ˜nk = nk for k ∈ { 1, . . . , K − 2} and ˜ nK−1 = nK−1 + nK .Now, Wang and Bickel (2017) and Hu et al. (2020) show that sup 
+
+> θ∈Θ0
+
+L(P(θ)|Z) = max  
+
+> c∈{ 1,...,K −1}n
+
+sup 
+
+> B∈(0 ,1) K−1×K−1
+
+L(P(c, B)|Z) = L(P(˜ c∗, ˆB)|Z)where ˜ c∗ are the merged labels defined above and ˆB is defined as ˆBkℓ = Skℓ 
+
+nknℓ
+
+for k, ℓ ∈ { 1, . . . , K − 2}
+
+ˆBk,K −1 = Sk,K −1 + Sk,K 
+
+nknK−1 + nknK
+
+for k ∈ { 1, . . . , K − 2}
+
+ˆBK−1,K −1 =
+
+PKk=K−1
+
+PKℓ=k Skℓ 
+
+PKk=K−1
+
+PKℓ=k nknℓ
+
+40 with 
+
+Skℓ = X
+
+> ij
+
+Zij 1(c∗ 
+
+> i
+
+= k, c ∗ 
+
+> j
+
+= ℓ) for k, ℓ ∈ { 1, . . . , K }.
+
+Note that both authors show this result for the Bernoulli model whereas we use a Poisson approximation in this work. For this reason, we refer to this as a proof “sketch.” We can now follow the basic outline of the proofs for Theorems 2 and 3, writing log En as the sum of 
+
+Bn = log 
+
+Q 
+
+> ij
+
+e−γϱ nPij (θ∗)
+
+Q 
+
+> ij
+
+e− ˆB˜c∗
+
+> i ,˜c∗
+> j
+
+Cn = log 
+
+Q 
+
+> ij
+
+γϱ nPij (θ∗)Zij 
+
+Q 
+
+> ij
+
+(ϱn ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+)Zij 
+
+Dn = log 
+
+Q 
+
+> ij
+
+(γϱ n ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+)Zij 
+
+Q 
+
+> ij
+
+( ˆB˜c∗  
+
+> i,˜c∗
+> j
+
+)Zij 
+
+Ln = log L( γ 
+
+> 1−γ
+
+P(ˆθ1)|Z)
+
+L(γϱ nP(θ∗)|Z)where ˜B∗ 
+
+> kℓ
+
+is defined by the merging operator above. The result follows by using Lemmas 1, 3, 8 and 9 where ϵ is set to be small enough such that 
+
+ϵ + ϵ1 + ϵ2 + ϵ3 < 2γ ¯pC 
+
+where 
+
+C = 1 − 1¯pn 2
+
+X
+
+> ij
+
+{ ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+Pij (θ∗)}1/2 > 0. □
+
+## Proof of lemmas 
+
+Lemma 8. Let A ∼ ϱnP(θ∗) where P(θ∗) defines an SBM with K ≥ 2 blocks. Consider 
+
+{ ˜B∗, ˜c∗} and ˆB defined above. If 
+
+Xn = log 
+
+Q 
+
+> ij
+
+(ϱn ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+)Aij 
+
+Q 
+
+> ij
+
+( ˆB˜c∗  
+
+> i,˜c∗
+> j
+
+)Aij 
+
+,
+
+then for any ϵ > 0,
+
+lim  
+
+> n→∞
+
+P(Xn ≤ − ϵϱ nn2) = 0 .
+
+Proof. First, 
+
+Xn = − X
+
+> ij
+
+Aij (log ˆB˜c∗  
+
+> i,˜c∗
+> j
+
+− log ϱn ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+)41 Then, 
+
+P(Xn ≤ − ϵϱ nn2) ≤ P(|Xn| ≥ ϵϱ nn2).
+
+We write the (scaled) absolute value as 
+
+|Xn|
+
+ϱnn2 ≤ 1
+
+ϱnn2
+
+X
+
+> ij
+
+Aij | log ˆB˜c∗  
+
+> i,˜c∗
+> j
+
+−log ϱn ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+| =
+
+> K−1
+
+X
+
+> k=1
+> K−1
+
+X
+
+> ℓ=1
+
+Skℓ 
+
+ϱnn2 log ˆBkℓ 
+
+ϱn ˜B∗
+
+> kℓ
+
+∼
+
+> K−1
+
+X
+
+> k=1
+> K−1
+
+X
+
+> ℓ=1
+
+ˆBkℓ 
+
+ϱn
+
+log ˆBkℓ /ϱ n
+
+˜B∗
+
+> kℓ
+
+where 
+
+Skℓ = X
+
+> ij
+
+Aij 1(˜ c∗ 
+
+> i
+
+= k, ˜c∗ 
+
+> j
+
+= ℓ).
+
+If we define f (x) = x| log( x/δ )| where δ = min k,ℓ { ˜B∗
+
+> kℓ
+
+} with δ > 0 by A4, then by the continuous mapping theorem ˆBkℓ 
+
+ϱn
+
+log ˆBkℓ /ϱ n
+
+˜B∗
+
+> kℓ
+
+= op(1) since Wang and Bickel (2017) and Hu et al. (2020) show that ˆBkℓ /ϱ np
+
+→ ˜Bkℓ for all ( k, ℓ ). The boundedness of x log( x/ ˜B∗
+
+> kℓ
+
+) on [ δ, 1] also allows us to use the Dominated Convergence Theorem to show lim 
+
+> n→∞
+
+Xn
+
+ϱnn2 ∼ lim 
+
+> n→∞
+> K−1
+
+X
+
+> k=1
+> K−1
+
+X
+
+> ℓ=1
+
+ˆBkℓ 
+
+ϱn
+
+log ˆBkℓ /ϱ n
+
+˜B∗
+
+> kℓ
+
+∼
+
+> K−1
+
+X
+
+> k=1
+> K−1
+
+X
+
+> ℓ=1
+
+lim 
+
+> n→∞
+
+ˆBkℓ 
+
+ϱn
+
+log ˆBkℓ /ϱ n
+
+˜B∗
+
+> kℓ
+
+=
+
+> K−1
+
+X
+
+> k=1
+> K−1
+
+X
+
+> ℓ=1
+
+op(1) = op(1) since K does not depend on n. Thus, for any ϵ > 0, 
+
+P(Xn ≤ − ϵϱ nn2) ≤ P(|Xn| ≥ ϵϱ nn2) → 0as n → ∞ . □
+
+Lemma 9. Let A ∼ ϱnP(θ∗
+
+> n
+
+) where Pij (θ∗) = B∗  
+
+> c∗
+> i,c ∗
+> j
+
+, i.e., generated from an SBM with 
+
+K ≥ 2 blocks where the block probability matrix is of full rank. Let 
+
+Xn = log 
+
+Q 
+
+> ij
+
+Pij (θ∗)Aij 
+
+Q 
+
+> ij
+
+( ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+)Aij 
+
+.
+
+where ˜B is defined by the merging operator above. Then there exists some ϵ > 0 such that 
+
+lim  
+
+> n→∞
+
+P(Xn ≤ ϵϱ nn2) = 0 .
+
+42 Proof. We start by writing out Xn as 
+
+Xn = X
+
+> ij
+
+Aij log Pij (θ∗)˜B∗ 
+
+> ˜c∗
+> i,˜c∗
+> j
+
+!
+
+Similar to the proof of Lemma 5, we use a Chernoff bound argument and find 
+
+P(Xn ≤ ϵϱ nn2) ≤ exp ¯pϱ nn2
+
+"
+
+ϵ
+
+2¯ p − 1¯pn 2
+
+X
+
+> ij
+
+Pij (θ∗) − { ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+Pij (θ∗)}1/2
+
+#! 
+
+.
+
+Additionally, 
+
+X
+
+> ij
+
+˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+=
+
+> K−1
+
+X
+
+> k=1
+> K−1
+
+X
+
+> ℓ=1
+
+nknℓ ˜B∗
+
+> kℓ
+
+=
+
+> K−2
+
+X
+
+> k=1
+> K−2
+
+X
+
+> ℓ=1
+
+nknℓB∗ 
+
+> kℓ
+
++
+
+> K−1
+
+X
+
+> k=1
+
+(nknK−1B∗ 
+
+> k,K −1
+
++ nknK B∗ 
+
+> k,K
+
+) + 
+
+> K−1
+
+X
+
+> k=1
+
+(nknK−1B∗ 
+
+> K−1,k
+
++ nknK B∗
+
+> K,k
+
+)+ n2
+
+> K−1
+
+B∗ 
+
+> K−1,K −1
+
++ 2 nK−1nK B∗ 
+
+> K−1,K
+
++ n2 
+
+> K
+
+B∗
+
+> K,K
+
+= X
+
+> ij
+
+Pij (θ∗) = ¯ pn 2.
+
+Thus, by Lemma 4 1¯pn 2
+
+X
+
+> ij
+
+Pij (θ∗) − { ˜B∗  
+
+> ˜c∗
+> i,˜c∗
+> j
+
+Pij (θ∗)}1/2 = C
+
+for some C > 0 where the inequality is strict since B∗ is full rank. In other words, B∗ cannot be collapsed to a smaller model such that it is truly distinct from ˜B∗. We can set ϵ > 0small enough such that ϵ
+
+2¯ p − C < 0 = ⇒ ϵ < 2¯ pC. 
+
+Then we have 
+
+P(Xn ≤ ϵϱ nn2) ≲ exp( −ϱnn2) → 0as n → ∞ by A2. □
+
+43 0.00 0.25 0.50 0.75 1.00    
+
+> 0.10 0.12 0.14 0.16
+> ν
+> Rejection Rate
+> Method
+> e−value0.2
+> e−value0.4
+> e−value0.5
+> e−value0.6
+
+Figure 7: H0 : ν = 0 (DCBM) vs. H1 : ν > 0 (PABM) with increasing ν ∈ [0 .10 , 0.16] and 
+
+K = 2. All networks are generated under the alternative model. 
+
+# S7 Additional simulation results: DCBM versus PABM 
+
+We provide an additional simulation setting to demonstrate the flexibility of the proposed method. Similar to the SBM vs. DCBM test, we test two models which both exhibit com-munity structure but have different levels of flexibility. Namely, we test the null hypothesis that the network was generated from a DCBM against the alternative model of a PABM. To generate PABM networks, we follow a similar approach as in Sengupta and Chen (2018). For node i ∈ { 1, . . . , n } and community labels c ∈ { 1, . . . , K }n,
+
+λij =
+
+(
+
+a/ pβ/ (1 + β) ci = cj
+
+b/ p1/(1 + β) ci̸ = cj .
+
+We fix K = 2 and assign δ = 0 .25 proportion of the nodes to community one and the remaining 1 − δ nodes to community two. In each community we select half of the nodes as group 1 and the other half as group 2. We then set a = 12 (1 + ν) and b = 12 (1 − ν)for nodes in group 1 and a = 12 (1 − ν) and b = 12 (1 + ν) for nodes in group 2. In words, for a group 1 and group 2 node in community one, the group 1 node is more popular in community one while the group 2 node is more popular in community two. When ν = 0, this reduces to the null hypothesis of the network coming from a DCBM. We set β = 3 and vary ν ∈ { 0.10 , 0.11 , . . . , 0.16 }. Since ν > 0, the networks are generated from a proper PABM so the test should reject the null hypothesis. Neither ECV nor NETCROP are described for the PABM, so we only consider the proposed method with γ ∈ { 0.2, 0.4, 0.5, 0.6}. The results are in Figure 7 averaged over 100 MC repetitions. All values of γ yield a non-decreasing power with γ = 0 .4 yielding the best results. 44
