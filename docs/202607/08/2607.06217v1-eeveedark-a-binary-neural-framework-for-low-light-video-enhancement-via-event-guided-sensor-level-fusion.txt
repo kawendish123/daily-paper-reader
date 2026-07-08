@@ -1,0 +1,596 @@
+Title: EeveeDark: A Binary Neural Framework for Low-Light Video Enhancement via Event-Guided Sensor-Level Fusion
+
+URL Source: https://arxiv.org/pdf/2607.06217v1
+
+Published Time: Wed, 08 Jul 2026 01:14:56 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+> IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026 1
+
+# EeveeDark: A Binary Neural Framework for Low-Light Video Enhancement via Event-Guided Sensor-Level Fusion 
+
+Onur Eker 1, Erkut Erdem 2, Senior Member, IEEE , and Aykut Erdem 3, Senior Member, IEEE 
+
+Abstract —Enhancing videos under extreme low-light condi-tions remains challenging due to the difficulty of balancing restoration quality and computational efficiency in resource-constrained settings. This paper introduces EeveeDark, a low-light video enhancement framework that combines the spatial richness of sensor-level RAW data with the temporal precision of event streams. Central to our model is a Binary Neural Net-work (BNN) architecture that reduces computational overhead by quantizing weights and activations while preserving detail. EeveeDark incorporates (i) modality-specific binary encoders for processing RAW frames and event data, (ii) a lightweight fusion block for integrating spatial and temporal cues, and (iii) an event-guided skip gating mechanism for dynamic spatiotemporal refinement. Experiments on synthetic and real-world datasets show that EeveeDark outperforms prior BNN-based methods and offers a favorable performance-efficiency trade-off compared to full-precision models. The project page is available at https: //cyberiada.github.io/EeveeDark/. 
+
+Index Terms —Sensor fusion, Deep learning for visual percep-tion, Low-light video enhancement, Event camera. 
+
+I. I NTRODUCTION 
+
+# LOW-LIGHT video enhancement is essential for many robotics and vision applications but remains challenging due to severe noise, low contrast, color degradation, and the need for temporal coherence. While recent advances in deep learning have significantly improved image enhancement quality [1], balancing restoration performance with efficiency, particularly on resource-constrained platforms, remains an open problem. Event cameras offer a promising sensing modality for low-light scenarios due to their high temporal resolution and dynamic range. However, existing event-guided enhancement methods that integrate event streams with RGB images [2]–[5] face two critical limitations: (i) they rely on computationally intensive components (e.g., optical flow or attention-based alignment), hindering deployment on resource-constrained platforms, and (ii) their dependence on processed RGB inputs 
+
+Manuscript received: November 10, 2025; Revised January 21, 2026; Accepted February 10, 2026. This paper was recommended for publication by Editor Pascal Vasseur upon evaluation of the Associate Editor and Reviewers’ comments. This work was supported by TUBITAK-1001 Program Award No. 121E454. 
+
+> 1
+
+Onur Eker is with the Department of Computer Engineering, Hacettepe University, TR-06800 Ankara, Turkey, and also with HAVELSAN Inc., TR-06510, Ankara, Turkey. onureker@hacettepe.edu.tr 
+
+> 2
+
+Erkut Erdem is with the Department of Computer Engineer-ing, Hacettepe University, TR-06800 Ankara, Turkey, and also with the Koc University Is Bank AI Center, TR-34450, Istanbul, Turkey. 
+
+erkut@cs.hacettepe.edu.tr 
+
+> 3
+
+Aykut Erdem is with the Department of Computer Engineering, Koc University, TR-34450 Istanbul, Turkey, and also with the Koc University Is Bank AI Center, TR-34450, Istanbul, Turkey. aerdem@ku.edu.tr 
+
+Digital Object Identifier (DOI): 10.1109/LRA.2026.3666388. 0 10 20 30 40 50 
+
+> FLOPs (Billions)
+> 28
+> 29
+> 30
+> 31
+> 32
+> 33
+> PSNR (dB) BBCU (0.30M) BRVE (0.30M)
+> EeveeDark (Ours) (0.35M)
+> EvLight (22.73M) FloRNN (10.49M) ShiftNet (13.38M)
+
+Fig. 1. Comparison with state-of-the-art models. PSNR versus compu-tational complexity is shown, with circle sizes indicating parameter count (millions). EeveeDark outperforms prior BNN methods BBCU and BRVE by a significant margin, and offers a favorable performance-efficiency trade-off against full-precision models, ShiftNet, FloRNN, and EvLight. 
+
+discards sensor-level information critical for faithful color and tonal restoration in extreme darkness. Hence, the core challenge shifts to how to effectively fuse the spatial richness of sensor-level RAW data with the temporal precision of event streams, and achieve this fusion under the tight computational budgets required for real-world deployment. Binary Neural Networks (BNNs) [6], [7] offer a path to extreme efficiency by constraining weights and activations to 1-bit precision, but their application to video enhancement remains challenging due to quality degradation, particularly in preserving fine-grained spatial details and temporal consistency. In this paper, we argue that the rich, complementary spatiotemporal signals provided by sensor-level RAW data and event streams are sufficient to bridge this quality gap. We propose EeveeDark, a novel framework that unifies the temporal acuity of event streams, the spatial fidelity of sensor-level RAW inputs, and the efficiency of BNNs. As shown in Fig. 1, EeveeDark strikes a favorable balance of quality and efficiency: it significantly outperforms prior BNNs (BBCU [8], BRVE [9]) and offers a captivating performance-efficiency trade-off against full-precision models like ShiftNet [10] and EvLight [2], but with dramatically reduced computational demands. The resulting model enables robust robotic perception in challenging illumination conditions, improving downstream tasks like object detection and depth estimation critical for autonomous navigation. While the architectural components of EeveeDark draw inspiration from prior work, our framework is the first to unify RAW–event fusion and binary computation within a single end-to-end trainable system for low-light video en-hancement. This integration bridges the gap between event-driven perception and lightweight deployment, enabling high-quality restoration suitable for embedded robotic platforms.  
+
+> © 2026 IEEE. Personal use of this material is permitted. Permission from IEEE must be obtained for all other uses, in any current or future media, including reprinting/republishing this material for advertising or promotional purposes, creating new collective works, for resale or redistribution to servers or lists, or reuse of any copyrighted component of this work in other works. arXiv:2607.06217v1 [cs.CV] 7 Jul 2026 2IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026
+
+Our main contributions are:  
+
+> •
+
+We introduce EeveeDark, the first BNN model that jointly processes asynchronous event data and sensor-level RAW video frames for efficient low-light video enhancement.  
+
+> •
+
+We design an efficient binary backbone with distribution-aware convolutions and selective full-precision components, balancing efficiency and spatial fidelity.  
+
+> •
+
+We propose lightweight spatiotemporal modules, including a multimodal fusion block and an event-guided skip gating mechanism, for effective RAW-event feature integration.  
+
+> •
+
+Experiments on synthetic and real-world datasets show that EeveeDark outperforms prior binary methods and offers a favorable performance-efficiency trade-off compared to full-precision models. II. R ELATED WORK 
+
+Frame-Based Low-Light Enhancement. Low-light image enhancement has progressed from modular [11] and zero-reference methods [12] to high-fidelity RAW-based ap-proaches [13]. Recently, transformer-based architectures [14], [15] and generative models [16] have achieved photorealistic results. Extending these ideas to video poses extra challenges in temporal consistency, addressed through optical-flow–based alignment [17], or recurrent and shift-based designs [10], [18]. In contrast to these full-precision models, our model aims for temporally coherent enhancement under strict computational constraints. 
+
+Event-Guided Low-Light Enhancement. Event cameras pro-vide high temporal resolution and dynamic range, making them well suited for low-light vision tasks. Early work focused on reconstructing intensity images from events alone [19], [20]. More recent approaches adopt hybrid designs that com-bine event streams with frame-based inputs. However, practical performance is often constrained by limited training data real-ism: Some methods rely on synthetic events [4], limiting real-world generalization, while others employ computationally expensive optical-flow modules for cross-modal alignment [3], often in conjunction with simulated data. The introduction of real-world datasets like LIE [5] and EvLight [2] enabled more realistic evaluation. Follow-up works like REN [21] and EvLight++ [22] have recently improved temporal consistency via recurrent modeling and unsupervised losses. Most event-guided enhancement methods operate on processed RGB inputs, while recent event-guided ISP studies [23] focus on image-level RAW-to-RGB reconstruction. In contrast, we in-tegrate event streams with sensor-level RAW data for efficient, temporally coherent low-light video enhancement. 
+
+Binary Neural Networks (BNNs). BNNs enable efficient edge deployment by constraining weights and activations to 1-bit precision, substantially reducing memory usage and en-abling fast bitwise operations [24]. While early work focused on classification [6], [7], BNNs have recently been applied to low-level vision tasks such as image restoration [8]. Closely related to our work, Zhang et al. [9] proposed distribution-aware binary convolutions with temporal shift for low-light video enhancement. However, existing BNN-based methods do not leverage event cameras and often operate solely on RGB data. A recent exception [25] introduced a binarized architecture for HybridEVS demosaicing that targets spatial reconstruction in single frames, without modeling temporal dynamics. In contrast, we integrate event-guided temporal cues and RAW sensor information within a binary neural framework for efficient low-light video enhancement. III. M ETHOD 
+
+A. Formulation of Events and Frames 
+
+Our framework addresses the task of enhancing low-light, noisy RAW video frames by leveraging the complementary strengths of Bayer RAW inputs and asynchronous event data. 
+
+RAW Frame Input. The input Bayer RAW video frames, 
+
+{I1 
+
+> B
+
+, I2 
+
+> B
+
+, . . . , ITB } where IiB ∈ RH×W are first preprocessed. Each 2 × 2 Bayer pattern is packed into four color channels to form Iip ∈ RH/ 2×W/ 2×4, amplified using a scaling factor r,resulting in {I1
+
+> p
+
+, . . . , ITp }, which are processed to generate clean, bright RAW frames {O1, O2, . . . , OT }.
+
+Event Stream Input. The asynchronous event stream {ei} =
+
+{(xi, y i, t i, p i)}, where (xi, y i) denote the pixel coordinates, 
+
+ti is the timestamp, and pi ∈ {+1 , −1} indicates bright-ness increase or decrease, is grouped into sets Gk corre-sponding to the intervals between consecutive RAW frames. These event sets are then converted into voxel grids, Ek ∈
+
+RH/ 2×W/ 2×B , using the polarity-based linear accumulation method from [26]. We use B = 5 temporal bins in all experiments. 
+
+B. Proposed Model 
+
+EeveeDark is an efficient low-light video enhancement method that integrates asynchronous event data and sensor-level RAW frames within a BNN architecture (Fig. 2). 
+
+Modality-Specific Binary Encoders. EeveeDark employs two modality-specific binary encoders to process RAW frames and event voxel grids independently. Each encoder employs distribution-aware binary convolutions [9], which reduce com-putational complexity while maintaining feature quality. To preserve details from the RAW and event inputs, the first convolution layer in each encoder operates in full precision [8], [9]. Given RAW inputs IP and event voxels Et, the encoders produce feature maps: 
+
+Fframe  
+
+> t
+
+= BinaryEncoder (It), Fevent  
+
+> t
+
+= BinaryEncoder (Et),
+
+(1) These feature maps retain spatial and temporal information required for effective video enhancement. 
+
+Multi-Modal Feature Fusion. To integrate the complemen-tary strengths of RAW frames and event data, we design a lightweight Feature Fusion Block. Spatial details from RAW frames Fframe  
+
+> t
+
+are combined with temporal features from event voxel grids Fevent  
+
+> t
+
+using channel-wise concatenation: 
+
+Fconcat  
+
+> t
+
+= Concat (Fframe  
+
+> t
+
+, Fevent  
+
+> t
+
+), (2) The concatenated features are then processed through a combination of binary and full-precision convolutions, fused via element-wise addition: 
+
+Ffused  
+
+> t
+
+= RPReLU (ϕbinary (Fconcat  
+
+> t
+
+)) + ϕfull (Fconcat  
+
+> t
+
+). (3) EKER et al. : EEVEEDARK: A BINARY NEURAL FRAMEWORK FOR LOW-LIGHT VIDEO ENHANCEMENT VIA EVENT-GUIDED SENSOR-LEVEL FUSION 3Shift Decoder 
+
+Shift Encoder 
+
+> Cyclic Shift
+> Spatial Shift
+> Binary Convs
+> Upsample
+> Split
+> Cyclic Shift
+> Spatial Shift
+> Binary Convs
+> Upsample
+> Cyclic Shift
+> Spatial Shift
+> Binary Convs
+> Upsample
+> Cyclic Shift
+> Spatial Shift
+> Binary Convs  Ht-1
+> Channel Shift
+> Binary Convs
+> Downsample
+> Ht-2
+> Ht-1
+> Ftfused
+> Channel Shift
+> Binary Convs
+> Downsample
+> Channel Shift
+> Binary Convs
+> Downsample
+> EGSG
+> Block
+> EGSG
+> Block
+> Channel Shift
+> Binary Convs
+> Downsample
+> EGSG
+> Block
+> EGSG
+> Block
+
+Shallow Encoding and Efficient Binary Fusion 
+
+Preprocessing 
+
+Restoration            
+
+> Ip
+> Black Level
+> Amplification Ratio
+> Binary
+> RAW
+> Encoder
+> t0t1t2t3
+> Binary
+> Event
+> Encoder
+> G0G1Between Frames Event Voxel Grouping G2
+> E2
+> F0F1F2
+> Conv
+> Camera ISP
+> Enhanced RAW
+> Ft
+> Event Voxel
+> Bayer RAW
+> Sequence of Events
+> RAW Frame Sequence
+> Enhanced RGB
+> Binary
+> Decoder
+> Ip
+> Et
+> γ
+> Ht
+> H × W × 1
+> H/2 × W/2 × 4
+> H/2 × W/2 × 5
+> H/2 × W/2 × 4
+> Ftevent
+> Ftevent
+> Ftevent
+> Ftevent
+> frame
+> Ft
+> event
+> Ft
+> decoded
+> Ft
+> decoded
+> Efficient Multi Modal Fusion Block
+> Binary Conv
+> RPReLU
+> Conv
+> C
+> Ft
+> fused
+
+Fig. 2. Overview of EeveeDark. It comprises five key components: (1) Preprocessing and modality-specific encoding , where Bayer RAW frames and event data are separately encoded using binary encoders; (2) an Efficient Multi-Modal Fusion Block that integrates the spatial detail of RAW inputs with the temporal precision of event streams; (3) a Shift Encoder that propagates temporal information across frames and modulates features through Event-Guided Skip Gates (EGSG); (4) a Shift Decoder that refines and aligns features across temporal windows; and (5) a Restoration Module that reconstructs clean, temporally coherent enhanced RAW frames, which are subsequently converted to RGB format via a standard Image Signal Processor (ISP). 
+
+where, ϕbinary (·) represents a 3 × 3 binary convolution [7] optimized for efficiency, ϕfull (·) is a full-precision 1 × 1 con-volution to preserve high-frequency details, and RPReLU (·) is the non-linear activation function introduced in [27] to enhance the representational capacity of the binary networks. 
+
+Shift Encoder with Recurrent Embeddings. The Shift Encoder propagates long-range temporal information across frames by aligning and combining recurrent latent temporal features Ht−2 and Ht−1 from previous time steps with the fused feature Ffused 
+
+t using the cyclic temporal shift mecha-nism [10], and accordingly extracts shifted features: 
+
+Tshifted 
+
+t = ChannelShift (Concat (Ht−2, Ht−1, Ffused 
+
+t )) , (4) with ChannelShift (·) cyclically redistributing feature channels across neighboring frames for temporal information exchange. Shifted features are then refined via binary convolutions and downsampling to capture multi-scale context: 
+
+Fshifted 
+
+t = Downsample (ϕbinary (Tshifted 
+
+t )) . (5) 
+
+Event-Guided Skip Gate (EGSG). EGSG dynamically mod-ulates shifted features using event data for precise feature refinement. Inspired by Distribution-Aware Channel Atten-tion [9], it leverages event-driven cues to emphasize dynamic regions while suppressing redundant information, enabling efficient spatiotemporal feature refinement. As given in Fig. 3, first, the event feature map Fevent 
+
+t is interpolated to match the spatial resolution of the shifted features Fshifted 
+
+t and projected to a lower-dimensional space: 
+
+Fproj 
+
+t = ϕproj (BilinearInterpolate (Fevent 
+
+t )) , (6) with ϕproj (·) denoting a 1 × 1 full-precision convolution layer, aligning event features spatially and reducing dimensionality. Channel-wise feature statistics are then extracted from Fproj 
+
+t :
+
+Zt = Concat (mean (Fproj 
+
+t ), mean (|Fproj 
+
+t |), std (Fproj 
+
+t )) , (7) where mean (·), mean (| · | ), and std (·) are channel-wise mean, absolute mean, and standard deviation, respectively, capturing the distribution characteristics of the event data. The extracted statistics are then processed through a lightweight convolu-tional layer to generate the attention map: 
+
+Gt = σ(ϕattention (Zt)) , (8) where ϕattention (·) is a full-precision 1 × 1 convolution, and 
+
+σ(·) is the sigmoid function that normalizes the gating map to [0 , 1] . Finally, the attention map Gt modulates the shifted features, enhancing dynamic regions indicated by the event data and suppressing redundant information in the features: 
+
+Fgated 
+
+t = Gt ⊙ Fshifted 
+
+t , (9) where ⊙ denotes element-wise multiplication. 
+
+Shift Decoder with Recurrent Embeddings. The decoder refines features through bi-directional temporal propagation and spatial alignment. For each temporal window {t − 2, t −
+
+1, t }, the feature maps {Fgated 
+
+t−2 , Fgated 
+
+t−1 , Fgated 
+
+t }, generated by the EGSG, are split into stationary and shiftable components: 
+
+
+
+F(1) 
+
+i , F(2) 
+
+i
+
+
+
+= Split (Fgated 
+
+i ), i ∈ { t − 2, t − 1, t }, (10) where F(1) 
+
+i retains frame-specific spatial information, and 
+
+F(2) 
+
+i contains features designated for temporal propagation. In 4 IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026 
+
+the cyclic temporal shift , the shiftable components F(2)  
+
+> i
+
+are cyclically redistributed across neighboring frames to aggregate bi-directional temporal information: 
+
+St =
+
+n
+
+F(2)  
+
+> t
+
+, F(2) 
+
+> t−2
+
+, F(2) 
+
+> t−1
+
+o
+
+. (11) To fully integrate temporal dependencies within the three-frame local window, this operation is repeated in the reverse direction. To address spatial misalignments caused by motion or object displacement, a spatial shift operation is applied to the temporally shifted features using a predefined shift kernel expanding the receptive field K:
+
+Sspatial  
+
+> t
+
+= SpatialShift (St, K),
+
+K = {(x, y ) | x, y ∈ {− 8, −4, 0, 4, 8}, (x, y )̸ = (0 , 0) }.
+
+The combined stationary and shifted features are concatenated and refined via binary convolutions and upsampling: 
+
+Fdecoded  
+
+> t
+
+= UpSample (ϕbinary (Concat (Sspatial  
+
+> t
+
+, F(1)  
+
+> t
+
+))) . (12) Finally, enhanced RAW frames are reconstructed as: 
+
+O = Ip + ϕout (Fdecoded  
+
+> t
+
+), (13) where ϕout (·) is a 3 × 3 full-precision convolution layer that ensures high-quality reconstruction by preserving fine spatial details and minimizing artifacts. 
+
+Loss Function. We trained our network using the Charbon-nier loss [28], which is particularly robust to outliers often encountered in low-light scenarios, and defined as: 
+
+LCharbonnier =
+
+q
+
+∥ˆI − IGT ∥2 + ϵ2, (14) with ˆI representing the predicted frame, IGT being the ground-truth frame in RAW domain, and ϵ = 1 × 10 −3 for numerical stability. IV. E XPERIMENTS 
+
+A. Implementation Details 
+
+We implement EeveeDark using PyTorch and conduct all experiments on an NVIDIA RTX A5000 GPU. We use 
+
+128 × 128 patches from 10-frame sequences with standard augmentations (random cropping, horizontal/vertical flipping). The model is optimized using Adam ( β1 = 0 .9, β 2 = 0 .99 )for 100,000 iterations with a cosine annealing restart schedule, where the learning rate decays from 2 × 10 −4 to 1 × 10 −7.Event Guided Skip Gate       
+
+> Biliner
+> Interpolation
+> Conv
+> Ftevent
+> Ft
+> C
+> Conv
+> mean( Ft)
+> std( Ft)
+> mean(| Ft|)
+> Ftshifted
+> Gt
+> proj proj
+> proj
+> proj
+> Fig. 3. Event-Guided Skip Gate (EGSG). It combines the temporal precision of event data with the spatial context of shifted features. Event voxel features are interpolated and projected to the encoder’s resolution to generate an attention map that modulates shifted features, emphasizing dynamic regions and suppressing redundant information.
+
+B. Datasets 
+
+LLRVD (RAW Training with Synthetic Events). We eval-uate RAW-domain performance on the LLRVD dataset [29], comprising 210 paired low-light Bayer RAW videos ( 1400 ×
+
+2600 ) with long-exposure references. As no public paired RAW-event datasets currently exist, we simulate event streams using an improved version of v2e [30] proposed in [31], which models low-light characteristics such as threshold noise and motion trailing. RAW frames are converted to RGB via an image signal processor (ISP) and temporally interpolated at 8× higher frame rate using RIFE [32], enhancing the fidelity of generated events. Final event streams are rendered at 700 × 1300 to maintain alignment with RAW frames. Following [9], we split the dataset into 60 scenes for training, 4 for validation, and 6 for testing. 
+
+HUE (RAW Generalization with Real Events). We evaluate generalization on real-world events on the HUE dataset [33], comprising 106 unpaired sequences of low-light Bayer RAW frames ( 1456 × 1088 , Allied Vision Alvium camera) and simultaneously captured real event streams ( 1280 ×720 , Proph-esee Gen4M sensor). Although time-synchronized, the two modalities are not spatially aligned due to differing optical paths. As no paired ground truth is available, we use no-reference quality metrics. 
+
+RGB Benchmarks: SDE (Real Events) & SDSD (Synthetic Events). We assess RGB-domain robustness on SDE [2] and SDSD [34] datasets, following the protocol in [2]. SDE provides 91 real RGB-event sequences (43 indoor, 48 outdoor) from a DAVIS346 sensor (76 train / 15 test split). SDSD includes low-light and normal-light video pairs at 1920 ×1080 
+
+resolution. For this dataset, we use the v2e-generated synthetic event data provided by EvLight. To ensure a fair comparison, we retrained BRVE and our EeveeDark model on RGB data, removing RAW-specific preprocessing and following the Ev-Light protocol. 
+
+C. Evaluation Metrics and Complexity Analysis 
+
+We evaluate performance using both full-reference (FR) and no-reference (NR) metrics. For datasets with ground truth, we report PSNR, SSIM [35], and ST-RRED [36]. For RGB bench-marks, we additionally report PSNR*, which adjusts for global brightness differences, following the EvLight protocol [2]. For datasets without ground truth (e.g., HUE), we use CLIP-IQA [37], MANIQA [38], TOPIQ-NR [39], and NIQE [40]. Computational efficiency is evaluated following standard BNN protocols [8], [9], [41]. FLOPs are estimated as FLOPs =
+
+OPs bin /64 + OPs f p , where OPs bin and OPs f p denote the number of binary and full-precision operations per second, respectively. Likewise, the total parameter count (Params) is approximated by Params = Params bin /32 + Params f p , with Params bin and Params f p respectively representing binary and real-valued parameters. We report average per-frame FLOPs on a 100-frame video at 256 × 256 resolution. Because existing GPU inference frameworks do not natively support binarized layers [42], direct runtime measurements on GPUs are either impractical or misleading. Therefore, we estimate latency (in milliseconds) and energy consumption (in EKER et al. : EEVEEDARK: A BINARY NEURAL FRAMEWORK FOR LOW-LIGHT VIDEO ENHANCEMENT VIA EVENT-GUIDED SENSOR-LEVEL FUSION 5                     
+
+> TABLE I RAW DOMAIN PERFORMANCES . R ESULTS ARE GROUPED FOR BINARY AND FULL -PRECISION METHODS . B EST RESULTS ARE GIVEN IN BOLD .
+> Method PSNR ↑SSIM ↑ST-RRED ↓
+> FloRNN 37.20 0.960 0.042 ShiftNet 37.85 0.967 0.031
+> BBCU 36.52 0.950 0.058 BRVE 37.07 0.958 0.046 Ours 37.51 0.962 0.039
+
+millijoules) following standard practice. Latency estimation relies on the daBNN framework [43], which provides an empirical mapping between operation counts and execution time on an ARM64 CPU. Energy consumption is estimated according to the 7nm device model in [44], following the methodology of [45]. 
+
+D. Competing Approaches 
+
+We compare EeveeDark against a diverse set of methods across three experimental settings. To ensure a fair com-parison, all methods evaluated on LLRVD and HUE were retrained from scratch using their public implementations. The competing approaches are grouped as:  
+
+> •
+
+RAW-to-RAW (LLRVD, Table I): We include BNNs (BBCU [8], BRVE [9]) and full-precision RAW models (ShiftNet [10], FloRNN [18])  
+
+> •
+
+RGB-domain Evaluation via ISP (LLRVD/HUE, Ta-ble II): We evaluate the models from the first group, adding EvLight [2], an event-guided RGB model demonstrating strong prior performance.  
+
+> •
+
+RGB Benchmarks (SDE/SDSD, Table III): We bench-mark against: (1) RGB-only methods (SNR-Net [46], Uformer [14], Retinexformer [15]); (2) event-guided meth-ods (EvLight [2], ELIE [5], eSL-Net [20], Liu et al. [4]); and (3) the event-only reconstruction baseline E2VID+ [47]. 
+
+E. Experimental Results 
+
+RAW Domain Results on LLRVD. As shown in Table I, EeveeDark outperforms prior BNNs (BBCU, BRVE) across all metrics. Although BRVE achieves similar structural similarity, it shows temporal instability with noticeable flickering artifacts (see the supplemental video). EeveeDark eliminates these issues, achieving superior temporal consistency and provid-ing the best overall balance between perceptual quality and computational efficiency among binary approaches. 
+
+RGB Domain Results on LLRVD and HUE. Table II reports RGB-domain results after ISP conversion. EeveeDark outperforms binary baselines and narrows the gap to full-precision models at far lower cost. EvLight improves tem-poral stability via events but produces static-region artifacts due to RGB dependence. ShiftNet offers the best perceptual quality but at high computational cost, whereas EeveeDark achieves competitive visual fidelity with much lower complex-ity. Fig. 4 and 5 show visual comparisons on LLRVD and HUE. On LLRVD, BBCU and BRVE appear over-smoothed and lose structural detail, while EvLight introduces static                   
+
+> Low Light Input Linearly Scaled Input BBCU BRVE EeveeDark (Ours)
+> Input Events EvLight FloRNN ShiftNet Reference
+> Fig. 4. Qualitative comparison on the LLRVD dataset. EeveeDark gen-erates clean, detailed outputs with strong temporal consistency, outperforming binary baselines (BBCU, BRVE) and approaching the visual quality of full-precision models like ShiftNet and FloRNN. Unlike EvLight, which introduces artifacts in static regions, it preserves both spatial detail and motion cues while remaining efficient. Best viewed when zoomed in.
+> Low Light Input BBCU BRVE EeveeDark (Ours)
+> Input Events EvLight FloRNN ShiftNet
+> Fig. 5. Qualitative comparison on the real-world HUE dataset. EeveeDark generalizes well, avoiding the oversmoothing of BNN-based methods (BBCU, BRVE) and the static artifacts of EvLight. Unlike full-precision models (FloRNN, ShiftNet), which show color distortions and grain, EeveeDark maintains a robust balance of detail and computational efficiency. Best viewed when zoomed in.
+
+artifacts despite good motion handling. ShiftNet and FloRNN recover structure well but are computationally demanding. EeveeDark preserves detail without artifacts and maintains visual smoothness. On real-world HUE dataset, EeveeDark again outperforms binary baselines and matches full-precision methods in perceptual quality. BBCU and BRVE fail to preserve textures, and EvLight sometimes hallucinates textures in low-motion areas. ShiftNet and FloRNN remain visually strong but occasionally show color inconsistencies. EeveeDark consistently yields clean and temporally stable outputs with strong real-world generalization. 
+
+Results on SDE and SDSD. Table III reports quantitative results on the SDE and SDSD RGB benchmarks. EeveeDark consistently outperforms BRVE across all test splits. While full-precision models like EvLight achieve higher peak perfor-mance, EeveeDark offers a compelling performance-efficiency trade-off at a fraction of the computational cost. Qualitatively (Fig. 6), it restores finer structural details and local contrast, whereas BRVE tends to oversmooth edges. This improvement stems from the effective use of event data, which contributes high-frequency cues absent in RGB inputs. Temporal profile analysis (Fig. 7) further confirms EeveeDark’s superior frame-to-frame consistency, avoiding the flickering artifacts observed in BRVE. Additional comparisons are provided in the supple-mentary video. 
+
+Computational Complexity. As detailed in Table II, our ap-6 IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026 
+
+TABLE II PERFORMANCE AND COMPLEXITY COMPARISON ACROSS THE RGB DOMAIN ON LLRVD AND HUE DATASETS                                                                                    
+
+> LLRVD HUE Dataset Complexity Method Input Type PSNR ↑SSIM ↑ST-RRED ↓CLIP-IQA ↑MANIQA ↑TOPIQ-NR ↑NIQE ↓FLOPs(G) Params(M) Latency(ms) Energy(mJ)
+> FloRNN RAW Image Only 30.53 0.853 0.176 0.176 0.168 0.601 6.378 24.57 10.49 ∼7709 20.76 ShiftNet RAW Image Only 32.01 0.889 0.095 0.233 0.173 0.610 5.685 32.87 13.38 ∼10313 27.78 EvLight RGB Image + Events 30.28 0.845 0.185 0.251 0.171 0.589 5.696 48.54 22.73 ∼15227 32.57 BBCU RAW Image Only 28.72 0.795 0.373 0.150 0.151 0.600 5.697 1.47 0.30 ∼521 0.69 BRVE RAW Image Only 29.58 0.821 0.233 0.171 0.152 0.599 5.511 1.49 0.30 ∼528 0.70 Ours RAW Image + Events 30.37 0.850 0.189 0.177 0.158 0.605 5.358 1.66 0.35 ∼588 0.78
+
+TABLE III QUANTITATIVE EVALUATION ON RGB-DOMAIN BENCHMARKS 
+
+SDE SDSD Input Method PSNR ↑ PSNR* ↑ SSIM ↑ PSNR ↑ PSNR* ↑ SSIM ↑
+
+Event Only E2VID+ 15.10 15.97 0.583 15.03 15.47 0.627 Image Only SNR-Net 21.12 22.41 0.646 24.78 25.87 0.785 Image Only Uformer 21.71 23.16 0.750 24.05 25.74 0.859 Image Only RetinexF. 22.11 23.75 0.688 26.00 27.23 0.834 Image+Event ELIE 20.33 22.28 0.635 25.38 28.28 0.811 Image+Event eSL-Net 21.84 23.79 0.724 24.74 26.04 0.841 Image+Event Liu et al. 22.07 23.89 0.698 25.55 28.03 0.807 Image+Event EvLight 22.83 25.21 0.760 27.60 30.02 0.875 
+
+Image Only BRVE 21.52 23.46 0.672 24.14 27.72 0.816 Image+Event Ours 21.99 24.32 0.707 26.66 28.69 0.859     
+
+> Low Light Input Events BRVE EeveeDark (Ours) Reference
+
+Fig. 6. Qualitative comparisons on SDE and SDSD datasets. BRVE often blurs fine structures and amplifies noise in dark regions, whereas EeveeDark produces sharper edges and improved local contrast by effectively leveraging event information. Best viewed with zoom. BRVE EeveeDark 
+
+> xt
+> Input
+
+Fig. 7. Temporal profile comparisons. The temporal profile is generated by stacking a vertical line (shown in yellow) across consecutive frames. BRVE shows flickering and instability over time, whereas EeveeDark yields a smoother, temporally consistent output. Best viewed when zoomed in. 
+
+proach (1.66G FLOPs, 0.35M Params) achieves substantially higher restoration quality than the slightly smaller BRVE (1.49G, 0.30M). While full-precision models like ShiftNet (32.87G) and FloRNN (24.57G) achieve high performance, they do so at a vastly greater computational cost. Our sim-ulations quantify this difference: Full-precision models like ShiftNet require an estimated ∼10.3 seconds and 27.78 mJ per frame. In contrast, BNNs are orders of magnitude more efficient. Our model ( ∼588 ms, 0.78 mJ) represents only a 
+
+TABLE IV IMPACT OF ARCHITECTURAL MODULES 
+
+Model Modality PSNR ↑ SSIM ↑ STRRED ↓
+
+EeveeDark (Ours) RAW + Events 37.51 0.962 0.039 w/o Event Encoder RAW 37.07 0.958 0.046 w/o EGSG RAW + Events 37.44 0.962 0.041 
+
+negligible computational overhead compared to the baseline BRVE ( ∼528 ms, 0.70 mJ). EeveeDark thus strikes a practical balance between quality and efficiency, making it well-suited for resource-constrained robotic environments. 
+
+F. Ablation Study 
+
+We conduct ablation studies along two complementary axes: (1) module-level analysis, examining the contribution of each architectural component, and (2) pipeline-level analysis, eval-uating different input-output configurations commonly used in low-light video enhancement. 
+
+Impact of Architectural Modules. Table IV presents the ablation study of our architectural components. The baseline w/o Event Encoder (RAW only) gives the lowest performance (37.07 PSNR / 0.046 STRRED). Introducing the Event En-coder (w/o EGSG) produces the largest improvement, enhanc-ing both spatial fidelity (37.44 PSNR) and temporal consis-tency (0.041 STRRED), confirming the critical role of event data. The full EeveeDark model, which incorporates the EGSG module, yields the best overall performance (37.51 PSNR / 0.039 STRRED). These results show the complementary roles of both modules: the Event Encoder enriches features with motion-aware signals, while EGSG acts as a refinement mech-anism that improves temporal stability and feature reliability. Together, they form a lightweight yet effective design that enhances restoration quality. 
+
+Impact of Enhancement Settings. In Table V, we compare three enhancement pipelines on the LLRVD dataset. The RAW2RAW+ISP configuration achieves the highest overall performance across all metrics, as it retains the full dynamic range and sensor characteristics prior to ISP processing. The RAW2RGB variant performs worse, struggling to learn the complex, non-linear ISP transformation, while the RGB2RGB setup yields the lowest scores, reflecting the significant infor-mation loss from 8-bit RGB inputs in extreme low-light. These results highlight the clear advantage of operating in the RAW domain and enhancing early in the imaging pipeline, which is crucial for balancing latency, bandwidth, and fidelity on edge devices. EKER et al. : EEVEEDARK: A BINARY NEURAL FRAMEWORK FOR LOW-LIGHT VIDEO ENHANCEMENT VIA EVENT-GUIDED SENSOR-LEVEL FUSION 7
+
+TABLE V IMPACT OF ENHANCEMENT SETTINGS 
+
+Method PSNR ↑ SSIM ↑ ST-RRED ↓
+
+RAW2RAW+ISP 30.37 0.8501 0.2021 
+
+RAW2RGB 28.26 0.8492 0.2393 RGB2RGB 26.79 0.8165 0.4328 TABLE VI MONOCULAR DEPTH ESTIMATION RESULTS ON SDE AND CEAR 
+
+> DATASETS
+
+. δk DENOTES THE ACCURACY METRIC δ < 1.25 k .
+
+Method AbsRel ↓ RMSE ↓ δ1↑ δ2↑ δ3↑
+
+> SDE
+
+L.Light 1.390 1.705 0.350 0.597 0.768 BRVE 0.921 1.101 0.523 0.785 0.869 EeveeDark 0.810 0.983 0.568 0.810 0.893 
+
+> CEAR
+
+L.Light 0.912 1.860 0.191 0.415 0.585 BRVE 0.460 1.230 0.353 0.638 0.812 EeveeDark 0.414 1.060 0.381 0.685 0.863 
+
+G. Analysis on Downstream Tasks 
+
+We evaluate the practical impact of EeveeDark on robotic perception across three downstream tasks: object detection, monocular depth estimation, and visual SLAM. Experiments are conducted on two datasets: SDE [2] for object detection and depth estimation, and CEAR [48], a multisensor dataset collected on an agile quadruped robot, for depth estimation and visual SLAM, focusing on the low-light trotting sequences. As CEAR RGB frames are not spatially aligned with the event stream, they are warped into the event camera frame using calibrated intrinsics and extrinsics. Event-aligned depth maps provided by CEAR are used as ground truth. All CEAR experiments are performed in a zero-shot setting using models trained on SDE. Object detection is evaluated using the YOLOv11-s COCO model [49]. Predictions for vehicle classes ( car, bus, truck, motorcycle ) are retained and mAP@0.5 is computed using the PASCAL VOC metric [50], with detections on normal-light images treated as ground truth. EeveeDark achieves a mAP of 
+
+0.73 , outperforming BRVE (0.47) and low-light inputs (0.21). Depth estimation is evaluated using Depth Anything V2 (ViT-S) [51]. Normal-light predictions are used as ground truth on SDE, while event-aligned depth maps are used on CEAR. Quantitative results, reported using standard depth metrics [51], show that EeveeDark consistently produces more accurate and structurally coherent depth maps than BRVE and low-light baselines (Table VI, Fig. 8). For visual SLAM, ORB-SLAM3 [52] is applied to en-hanced, event-aligned CEAR sequences, with trajectory accu-racy evaluated using EVO [53]. As summarized in Table VII, EeveeDark improves tracking robustness in challenging low-light scenes, maintaining stable localization where BRVE and low-light inputs frequently drift or fail. 
+
+H. Limitations 
+
+Under extremely low photon counts and minimal motion, event streams become sparse while RAW inputs suffer from poor SNR, limiting the effectiveness of our approach. As    
+
+> Low Light BRVE EeveeDark (Ours) Normal Light
+
+Fig. 8. Comparison on downstream tasks. EeveeDark improves object detection and depth estimation under dark conditions compared to BRVE. TABLE VII VISUAL SLAM E VALUATION ON CEAR D ATASET . W E REPORT THE 
+
+ABSOLUTE TRAJECTORY ERROR (ATE) RMSE [ M].                                                   
+
+> Sequence L.Light BRVE Ours Sequence L.Light BRVE Ours
+> around_bldg 39.93 36.36 30.56 mocap3 –0.88 0.71
+> btwn_bldgs 20.29 18.11 16.06 sidewalk1 19.19 3.63 3.54
+> downtown1 11.60 5.93 5.20 parking_lot1 40.46 11.50 6.11
+> downtown2 8.73 6.24 5.23 parking_lot2 34.06 9.24 8.09
+> mocap1 1.77 1.50 0.27 resid_area 14.27 2.45 1.82
+> mocap2 –0.83 0.82 sidewalk2 68.21 32.59 28.33
+> Low Light Events EeveeDark Normal Light
+
+Fig. 9. Visual analysis of limitations and failure cases. The examples illustrate two primary challenges: Performance degradation in static scenes due to sparse event guidance, and artifacts in extreme low-light regions. 
+
+shown in Fig. 9, reliance on noisy RAW observations can result in residual noise and degraded color fidelity. V. C ONCLUSION 
+
+We introduced EeveeDark, an efficient framework for low-light video enhancement that integrates event data and RAW sensor inputs. Built on a lightweight BNN architec-ture, EeveeDark combines efficient spatiotemporal fusion and event-guided refinement for high-quality, temporally consistent restoration at low computational cost. Experiments on both synthetic and real-world datasets demonstrate that EeveeDark outperforms prior binary methods and achieves a favorable performance-efficiency trade-off relative to full-precision mod-els. These results indicate that EeveeDark generalizes well to real-world scenes and is well suited for deployment in resource-constrained robotic vision systems. REFERENCES [1] C. Li, C. Guo, L. Han, J. Jiang, M.-M. Cheng, J. Gu, and C. C. Loy, “Low-light image and video enhancement using deep learning: A survey,” IEEE Trans. Pattern Anal. Mach. , vol. 44, no. 12, pp. 9396– 9416, 2022. 8 IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026 
+
+[2] G. Liang, K. Chen, H. Li, Y. Lu, and L. Wang, “Towards robust event-guided low-light image enhancement: a large-scale real-world event-image dataset and novel approach,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 23– 33. [3] J. Liang, Y. Yang, B. Li, P. Duan, Y. Xu, and B. Shi, “Coherent event guided low-light video enhancement,” in Proc. ICCV , 2023, pp. 10 615– 10 625. [4] L. Liu, J. An, J. Liu, S. Yuan, X. Chen, W. Zhou, H. Li, Y. F. Wang, and Q. Tian, “Low-light video enhancement with synthetic event guidance,” in Proc. AAAI , vol. 37, no. 2, 2023, pp. 1692–1700. [5] Y. Jiang, Y. Wang, S. Li, Y. Zhang, M. Zhao, and Y. Gao, “Event-based low-illumination image enhancement,” IEEE Trans. Multimedia , 2023. [6] I. Hubara, M. Courbariaux, D. Soudry, R. El-Yaniv, and Y. Bengio, “Binarized neural networks,” Advances in neural information processing systems , vol. 29, 2016. [7] M. Rastegari, V. Ordonez, J. Redmon, and A. Farhadi, “Xnor-net: Imagenet classification using binary convolutional neural networks,” in 
+
+Proc. ECCV , 2016, pp. 525–542. [8] B. Xia, Y. Zhang, Y. Wang, Y. Tian, W. Yang, R. Timofte, and L. Van Gool, “Basic binary convolution unit for binarized image restoration network,” in Proc. ICLR , 2023. [9] G. Zhang, Y. Zhang, X. Yuan, and Y. Fu, “Binarized low-light RAW video enhancement,” in Proc. CVPR , 2024, pp. 25 753–25 762. [10] D. Li, X. Shi, Y. Zhang, K. C. Cheung, S. See, X. Wang, H. Qin, and H. Li, “A simple baseline for video restoration with grouped spatial-temporal shift,” in Proc. CVPR , 2023, pp. 9822–9832. [11] F. Lv, F. Lu, J. Wu, and C. Lim, “MBLLEN: Low-light image/video enhancement using cnns.” in Proc. BMVC , 2018. [12] C. Guo, C. Li, J. Guo, C. C. Loy, J. Hou, S. Kwong, and R. Cong, “Zero-reference deep curve estimation for low-light image enhancement,” in 
+
+Proc. CVPR , 2020, pp. 1780–1789. [13] C. Chen, Q. Chen, J. Xu, and V. Koltun, “Learning to see in the dark,” in Proc. CVPR , 2018, pp. 3291–3300. [14] Z. Wang, X. Cun, J. Bao, W. Zhou, J. Liu, and H. Li, “Uformer: A general u-shaped transformer for image restoration,” in Proc. CVPR ,2022, pp. 17 683–17 693. [15] Y. Cai, H. Bian, J. Lin, H. Wang, R. Timofte, and Y. Zhang, “Retinex-former: One-stage Retinex-based transformer for low-light image en-hancement,” in Proc. ICCV , 2023, pp. 12 504–12 513. [16] R. Dagli, “Diffuseraw: End-to-end generative RAW image processing for low-light images,” arXiv preprint arXiv:2402.18575 , 2023. [17] M. Tassano, J. Delon, and T. Veit, “Dvdnet: A fast network for deep video denoising,” in Proc. ICIP , 2019, pp. 1805–1809. [18] J. Li, X. Wu, Z. Niu, and W. Zuo, “Unidirectional video denoising by mimicking backward recurrent modules with look-ahead forward ones,” in Proc. ECCV , 2022, pp. 592–609. [19] S. Zhang, Y. Zhang, Z. Jiang, D. Zou, J. Ren, and B. Zhou, “Learning to see in the dark with events,” in Proc. ECCV , 2020, pp. 666–682. [20] B. Wang, J. He, L. Yu, G.-S. Xia, and W. Yang, “Event enhanced high-quality image recovery,” in Proc. ECCV , 2020, pp. 155–171. [21] X. Wang, H. Fu, J. Wang, X. Wang, H. Zhang, and H. Ma, “Exploring in extremely dark: Low-light video enhancement with real events,” in 
+
+Proc. ICME , 2024, pp. 4805–4813. [22] K. Chen, G. Liang, Y. Lu, H. Li, and L. Wang, “Evlight++: Low-light video enhancement with an event camera: A large-scale real-world dataset, novel method, and more,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [23] L. Yunfan, Y. Qian, Z. Rao, J. Xiao, L. Chen, and H. Xiong, “Rgb-event isp: The dataset and benchmark,” in Proc. ICLR , 2024. [24] H. Qin, R. Gong, X. Liu, X. Bai, J. Song, and N. Sebe, “Binary neural networks: A survey,” Pattern Recognition , vol. 105, p. 107281, 2020. [25] S. Zhou, H. Zeng, Y. Lu, T. Shao, K. Tang, Y. Chen, J. Liu, and J. Su, “Binarized Mamba-transformer for lightweight quad Bayer HybridEVS demosaicing,” in Proc. CVPR , 2025. [26] H. Rebecq, R. Ranftl, V. Koltun, and D. Scaramuzza, “Events-to-video: Bringing modern computer vision to event cameras,” in Proc. CVPR ,2019, pp. 3857–3866. [27] Z. Liu, Z. Shen, M. Savvides, and K.-T. Cheng, “Reactnet: Towards precise binary neural network with generalized activation functions,” in 
+
+Proc. ECCV , 2020, pp. 143–159. [28] W.-S. Lai, J.-B. Huang, N. Ahuja, and M.-H. Yang, “Deep laplacian pyramid networks for fast and accurate super-resolution,” in Proc. CVPR ,2017. [29] Y. Fu, Z. Wang, T. Zhang, and J. Zhang, “Low-light RAW video denoising with a high-quality realistic motion dataset,” IEEE Trans. Multimedia , vol. 25, pp. 8119–8131, 2022. [30] Y. Hu, S.-C. Liu, and T. Delbruck, “v2e: From video frames to realistic dvs events,” in Proc. , 2021, pp. 1312–1321. [31] Z. Zhang, Y. Ma, Y. Chen, F. Zhang, J. Gu, T. Xue, and S. Guo, “From sim-to-real: Toward general event-based low-light frame interpolation with per-scene optimization,” in Proc. SIGGRAPH Asia , 2024. [32] Z. Huang, T. Zhang, W. Heng, B. Shi, and S. Zhou, “Real-time intermediate flow estimation for video frame interpolation,” in Proc. ECCV , 2022, pp. 624–642. [33] B. Ercan, O. Eker, A. Erdem, and E. Erdem, “Hue dataset: High-resolution event and frame sequences for low-light vision,” in European Conference on Computer Vision . Springer, 2024, pp. 174–191. [34] R. Wang, X. Xu, C.-W. Fu, J. Lu, B. Yu, and J. Jia, “Seeing dynamic scene in the dark: A high-quality video dataset with mechatronic alignment,” in Proc. ICCV , 2021, pp. 9700–9709. [35] Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli, “Image quality assessment: from error visibility to structural similarity,” IEEE Trans. Image Process. , vol. 13, no. 4, pp. 600–612, 2004. [36] R. Soundararajan and A. C. Bovik, “Video quality assessment by reduced reference spatio-temporal entropic differencing,” IEEE Trans. Circuits Syst. Video Technol. , vol. 23, no. 4, pp. 684–694, 2012. [37] J. Wang, K. C. Chan, and C. C. Loy, “Exploring clip for assessing the look and feel of images,” in Proc. AAAI , 2023. [38] S. Yang, T. Wu, S. Shi, S. Lao, Y. Gong, M. Cao, J. Wang, and Y. Yang, “Maniqa: Multi-dimension attention network for no-reference image quality assessment,” in Proc. CVPR , 2022, pp. 1191–1200. [39] C. Chen, J. Mo, J. Hou, H. Wu, L. Liao, W. Sun, Q. Yan, and W. Lin, “Topiq: A top-down approach from semantics to distortions for image quality assessment,” IEEE Transactions on Image Processing , vol. 33, pp. 2404–2418, 2024. [40] A. Mittal, R. Soundararajan, and A. C. Bovik, “Making a “completely blind” image quality analyzer,” IEEE Signal Process. Lett. , vol. 20, no. 3, pp. 209–212, 2013. [41] Y. Cai, Y. Zheng, J. Lin, X. Yuan, Y. Zhang, and H. Wang, “Binarized spectral compressive imaging,” in Proc. NeurIPS , 2024. [42] Z. Chen, H. Qin, Y. Guo, X. Su, X. Yuan, L. Kong, and Y. Zhang, “Bi-narized diffusion model for image super-resolution,” in Proc. NeurIPS ,2024, pp. 30 651–30 669. [43] J. Zhang, Y. Pan, T. Yao, H. Zhao, and T. Mei, “DABNN: A super fast inference framework for binary neural networks on arm devices,” in Proc. ICME , 2019, pp. 2272–2275. [44] Y. Zhang, Z. Zhang, and L. Lew, “PokeBNN: A binary pursuit of lightweight accuracy,” in Proc. CVPR , 2022, pp. 12 475–12 485. [45] H. Wang, S. Ma, L. Dong, S. Huang, H. Wang, L. Ma, F. Yang, R. Wang, Y. Wu, and F. Wei, “Bitnet: Scaling 1-bit transformers for large language models,” arXiv preprint arXiv:2310.11453 , 2023. [46] X. Xu, R. Wang, C.-W. Fu, and J. Jia, “SNR-aware low-light image enhancement,” in Proc. CVPR , 2022, pp. 17 714–17 724. [47] T. Stoffregen, C. Scheerlinck, D. Scaramuzza, T. Drummond, N. Barnes, L. Kleeman, and R. Mahony, “Reducing the sim-to-real gap for event cameras,” in Proc. ECCV , 2020, pp. 534–549. [48] S. Zhu, Z. Xiong, and D. Kim, “Cear: Comprehensive event camera dataset for rapid perception of agile quadruped robots,” IEEE Robotics and Automation Letters , 2024. [49] R. Khanam and M. Hussain, “Yolov11: An overview of the key architectural enhancements,” arXiv preprint arXiv:2410.17725 , 2024. [50] M. Everingham, L. Van Gool, C. K. Williams, J. Winn, and A. Zisser-man, “The pascal visual object classes (voc) challenge,” International journal of computer vision , vol. 88, no. 2, pp. 303–338, 2010. [51] L. Yang, B. Kang, Z. Huang, Z. Zhao, X. Xu, J. Feng, and H. Zhao, “Depth anything v2,” in Proc. NeurIPS , 2024, pp. 21 875–21 911. [52] C. Campos, R. Elvira, J. J. G. Rodr´ ıguez, J. M. Montiel, and J. D. Tard´ os, “Orb-slam3: An accurate open-source library for visual, visual– inertial, and multimap slam,” IEEE transactions on robotics , vol. 37, no. 6, pp. 1874–1890, 2021. [53] M. Grupp, “evo: Python package for the evaluation of odometry and slam.” https://github.com/MichaelGrupp/evo, 2017.

@@ -1,0 +1,250 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-08T21:47:47.638192+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2607.03907v1",
+      "source": "arxiv",
+      "title": "Task-Oriented Multimodal Edge Intelligence via Integrated Sensing-Communication-Computation",
+      "abstract": "Integrated sensing, communication, and computation (ISCC) has recently emerged as a unified framework for enabling edge intelligence. However, existing ISCC designs predominantly rely on single-modal sensing, which is inherently vulnerable to occlusions, environmental uncertainties, and modality-specific failures, leading to degraded robustness in real-world deployments. This motivates the need for multi-modal ISCC, yet its design remains insufficiently explored. Compared with the single-modal case, multi-modal ISCC is more challenging because heterogeneous modalities enlarge data dimensionality and tighten communication/computation/energy budgets, while inter-modal correlations further complicate performance characterization. To address these challenges, we propose a task-oriented multi-modal ISCC framework that integrates device-side feature extraction with edge-side joint multi-modal inference. A central component of our approach is the maximal coding rate reduction (MCR^2) criterion, which enables each device to learn compact and discriminative task-relevant features, offering clear advantages over conventional cross-entropy-based extractors. We further leverage MCR^2 as a principled metric for edge-side sensing evaluation. On this basis, we formulate a sensing accuracy maximization problem under delay and resource constraints and develop an efficient block coordinate descent (BCD) algorithm after transforming the problem into a more tractable equivalent form. Focusing on a human activity recognition task, we conduct extensive experiments on publicly available datasets to evaluate the performance of the proposed ISCC framework. The results demonstrate that our approach consistently outperforms three baseline schemes under limited resource conditions.",
+      "authors": [
+        "Weiwei Chen",
+        "Yinghui He",
+        "Zhong Ye",
+        "Dingzhu Wen",
+        "Guanding Yu"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP"
+      ],
+      "published": "2026-07-04T15:04:07+00:00",
+      "link": "https://arxiv.org/pdf/2607.03907v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "task-oriented multimodal edge intelligence with integrated sensing-communication-computation, directly addressing edge computing for video analytics",
+      "llm_evidence_cn": "面向任务的多模态边缘智能，集成感知-通信-计算，直接针对边缘计算与视频分析",
+      "llm_evidence": "面向任务的多模态边缘智能，集成感知-通信-计算，直接针对边缘计算与视频分析",
+      "canonical_evidence": "面向任务的多模态边缘智能，集成感知-通信-计算，直接针对边缘计算与视频分析",
+      "llm_tldr_en": "Proposes a multimodal ISCC framework for edge intelligence, integrating sensing, communication, and computation to enable robust video analytics at the edge.",
+      "llm_tldr_cn": "本文针对单模态边缘智能易受遮挡等环境干扰的问题，提出多模态集成感知-通信-计算（ISCC）框架。该框架联合优化异构数据采集、传输与处理，在能量和计算预算约束下提升任务性能。实验表明，多模态融合显著增强边缘视频分析的鲁棒性与效率，为移动边缘计算在视频分析中的应用提供系统级方案。",
+      "llm_tldr": "本文针对单模态边缘智能易受遮挡等环境干扰的问题，提出多模态集成感知-通信-计算（ISCC）框架。该框架联合优化异构数据采集、传输与处理，在能量和计算预算约束下提升任务性能。实验表明，多模态融合显著增强边缘视频分析的鲁棒性与效率，为移动边缘计算在视频分析中的应用提供系统级方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.06173v1",
+      "source": "arxiv",
+      "title": "MobileWan: Closing the Quality Gap for Mobile Video Diffusion",
+      "abstract": "Recent advances in video diffusion have been driven by scaling transformer-based architectures to billions of parameters, substantially improving visual fidelity and motion coherence. In contrast, existing mobile video diffusion models remain limited to relatively small parameter budgets, typically 0.4-1.8B, restricting generation quality. In this work, we show that high-quality mobile video generation does not require small models. Instead, we demonstrate that a server-scale 5B-parameter video diffusion transformer can be deployed efficiently on memory-constrained mobile hardware through recurrent reformulation and structured compression. Starting from Wan2.2-5B, we rely on a recurrence distillation framework that converts video generation into a chunk-wise autoregressive process with constant-memory attention computation. Combined with causal linear attention, the model operates as an RNN at inference time while preserving temporal coherence across chunks. We further propose a learnable attention head pruning method based on binary per-head gates optimized end-to-end using a noise-biased sparsity objective and distillation-based finetuning. Together with sampling-step distillation and memory-optimized VAE decoding, MobileWan becomes the first 5B-scale video diffusion model deployable on a commercial mobile device. Our system generates 5-second 480x832 videos at 16 FPS in 20 seconds end-to-end latency, achieving a VBench score of 83.79 and establishing a new state of the art in mobile video generation. Project page: https://qualcomm-ai-research.github.io/mobilewan",
+      "authors": [
+        "Mohsen Ghafoorian",
+        "Denis Korzhenkov",
+        "Adil Karjauv",
+        "Ioannis Lelekas",
+        "Noor Fathima",
+        "Spyridon Stasis",
+        "Hanno Ackermann",
+        "Boris van Breugel",
+        "Markus Nagel",
+        "Fatih Porikli",
+        "Animesh Karnewar",
+        "Amirhossein Habibian"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-07T11:52:46+00:00",
+      "link": "https://arxiv.org/pdf/2607.06173v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Model compression for mobile video deployment",
+      "llm_evidence_cn": "面向移动端视频部署的模型压缩",
+      "llm_evidence": "面向移动端视频部署的模型压缩",
+      "canonical_evidence": "面向移动端视频部署的模型压缩",
+      "llm_tldr_en": "Shows how to deploy a 5B-parameter video diffusion transformer on mobile hardware via recurrent reformulation and structured compression, enabling high-quality mobile video generation.",
+      "llm_tldr_cn": "本文针对移动视频扩散模型质量受限于小参数预算的问题，提出一种递归蒸馏框架，将服务器级5B参数视频扩散变压器通过结构压缩和分块自回归方式部署到内存受限的移动设备上。实验表明该方法在保持高质量的同时实现了实时推理，弥合了移动与服务器视频生成的质量差距。",
+      "llm_tldr": "本文针对移动视频扩散模型质量受限于小参数预算的问题，提出一种递归蒸馏框架，将服务器级5B参数视频扩散变压器通过结构压缩和分块自回归方式部署到内存受限的移动设备上。实验表明该方法在保持高质量的同时实现了实时推理，弥合了移动与服务器视频生成的质量差距。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.03089v1",
+      "source": "arxiv",
+      "title": "STELLA: Efficient Sensor-to-LLM Translation for On-Device Human Activity Recognition",
+      "abstract": "HAR is increasingly expected to run continuously on edge devices, yet recent LLM-based methods remain hard to deploy: raw sensor prompts are long, cloud inference adds latency and privacy risk, and fine-tuned LLM pipelines turn general-purpose models into task-specific classifiers. We present STELLA, an efficient sensor-to-LLM translation framework for on-device HAR that shifts the burden from LLM adaptation to sensor tokenization. A lightweight hierarchical tokenizer compresses an entire multi-channel inertial window into a fixed set of compact latent sensor tokens, which are projected into the embedding space of a frozen pretrained LLM and combined with a natural-language prompt for label scoring. This preserves activity-relevant temporal and cross-channel structure while keeping LLM-side computation predictable across sensor configurations. STELLA also supports on-device personalization, adapting only the lightweight tokenizer on small amounts of user-specific labelled data and augmenting inference with a local retrieval context, keeping the LLM, user data, and retrieval on device. Across seven public HAR datasets and eight benchmark settings, STELLA achieves new state-of-the-art performance, improving over prior methods by up to 11.83% F1; on-device personalization yields up to a further 21.91% F1 as user data accumulates after deployment. STELLA also outperforms representative time-series tokenizers under the same LLM pipeline and achieves real-time inference under practical mobile and edge budgets, showing that efficient sensor tokenization is a practical path toward accurate, private, and personalized LLM-based HAR on edge devices.",
+      "authors": [
+        "Nirhoshan Sivaroopan",
+        "Albert Zomaya",
+        "Kanchana Thilakarathna"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-07-03T08:21:40+00:00",
+      "link": "https://arxiv.org/pdf/2607.03089v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "on-device edge computing for activity recognition",
+      "llm_evidence_cn": "设备端边缘计算进行活动识别",
+      "llm_evidence": "设备端边缘计算进行活动识别",
+      "canonical_evidence": "设备端边缘计算进行活动识别",
+      "llm_tldr_en": "STELLA: an efficient sensor-to-LLM translation framework for on-device human activity recognition, using a lightweight hierarchical tokenizer to compress sensor windows into latent tokens for a frozen LLM.",
+      "llm_tldr_cn": "针对边缘设备上连续运行人体活动识别的需求，本文提出STELLA框架。它通过轻量级分层分词器将多通道惯性数据窗口压缩为紧凑的潜在传感器令牌，再投影到冻结大语言模型的嵌入空间，结合自然语言提示进行标签评分。该方法避免了云端推理的延迟和隐私风险，同时保留了活动相关的时间结构。实验表明其在边缘设备上高效且准确。该工作展示了边缘计算中LLM的应用潜力。",
+      "llm_tldr": "针对边缘设备上连续运行人体活动识别的需求，本文提出STELLA框架。它通过轻量级分层分词器将多通道惯性数据窗口压缩为紧凑的潜在传感器令牌，再投影到冻结大语言模型的嵌入空间，结合自然语言提示进行标签评分。该方法避免了云端推理的延迟和隐私风险，同时保留了活动相关的时间结构。实验表明其在边缘设备上高效且准确。该工作展示了边缘计算中LLM的应用潜力。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.03246v1",
+      "source": "arxiv",
+      "title": "Bridging the Semantic Gap in 6G: Tiny Language Models Under the Latency-Accuracy-Size Trilemma",
+      "abstract": "Sixth-generation (6G) wireless networks are expected to serve as AI-native infrastructure, transmitting meaning rather than mere bits -- a shift that makes semantic communication the central paradigm for next-generation connectivity. Deep learning-based semantic encoders show compelling gains in bandwidth efficiency; however, their dependence on large transformer models with hundreds of millions of parameters is at odds with the sub-millisecond latency, microjoule energy budgets, and kilobyte memory footprints of the constrained IoT and edge devices that will dominate 6G endpoints. Tiny language models (t-LMs) -- compact, quantised, task-specialised models deployable on microcontrollers, mobile system-on-chips, and edge accelerators -- are the enabling technology for closing this gap. This review provides a unified treatment of (i) the theoretical foundations of semantic information, covering semantic entropy, channel capacity, and rate-distortion theory; (ii) a two-axis taxonomy of t-LM-based semantic communication systems across five architecture classes and six compression paradigms; (iii) a survey of model compression techniques -- quantisation, pruning, knowledge distillation, low-rank adaptation, split computing, and neural architecture search -- through the lens of semantic quality preservation; and (iv) semantic-aware resource allocation frameworks for 6G multi-user networks. Evidence across the surveyed literature shows that compression can reduce semantic encoder size by up to 99.98% while preserving task accuracy, that split computing achieves device-side encoders with as few as 640 parameters, and that knowledge graph integration cuts transmission energy by 65%. Seven open challenges are identified, spanning theoretical gaps, system design, knowledge-base management, post-quantum security, and hardware co-design, with a 3GPP standardisation roadmap toward IMT-2030.",
+      "authors": [
+        "Arnav Mathur",
+        "Garima Mathur",
+        "Rahul Jashvantbhai Pandya"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP"
+      ],
+      "published": "2026-07-03T12:02:55+00:00",
+      "link": "https://arxiv.org/pdf/2607.03246v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Tiny language models for edge devices addressing latency-accuracy trade-off",
+      "llm_evidence_cn": "面向边缘设备的轻量语言模型解决延迟-精度平衡问题",
+      "llm_evidence": "面向边缘设备的轻量语言模型解决延迟-精度平衡问题",
+      "canonical_evidence": "面向边缘设备的轻量语言模型解决延迟-精度平衡问题",
+      "llm_tldr_en": "Tiny language models optimized for 6G edge devices with low latency and small footprint, relevant to edge computing and model selection on resource-constrained platforms.",
+      "llm_tldr_cn": "针对6G网络边缘设备中大规模语言模型部署的延迟、能耗和内存三难困境，提出小型语言模型（t-LM）方案。通过量化、任务专业化等手段实现微控制器和移动芯片上的高效推理，在语义通信中兼顾带宽效率与实时性。该工作为边缘计算场景下的模型选择提供了方法论支撑，但未直接涉及视频分析任务。",
+      "llm_tldr": "针对6G网络边缘设备中大规模语言模型部署的延迟、能耗和内存三难困境，提出小型语言模型（t-LM）方案。通过量化、任务专业化等手段实现微控制器和移动芯片上的高效推理，在语义通信中兼顾带宽效率与实时性。该工作为边缘计算场景下的模型选择提供了方法论支撑，但未直接涉及视频分析任务。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.04643v1",
+      "source": "arxiv",
+      "title": "Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions",
+      "abstract": "Video quality assessment (VQA) plays a critical role in optimizing video delivery systems. While numerous objective metrics have been proposed to approximate human perception, the perceived quality strongly depends on viewing conditions and display characteristics. Factors such as ambient lighting, display brightness, and resolution significantly influence the visibility of distortions. In this work, we address the question of the multi-screen quality assessment on mobile devices, as this area still tends to be under-covered. We introduce a first large-scale subjective dataset collected across more than different 300 Android devices, accompanied by metadata on viewing conditions and display properties. We propose a strategy for aggregated score extraction and adaptation of VQA models to device-specific quality estimation. Our results demonstrate that incorporating device and context information enables more accurate and flexible quality prediction, offering new opportunities for fine-grained optimization in streaming services. Ultimately, this work advances the development of perceptual quality models that bridge the gap between laboratory evaluations and the diverse conditions of real-world media consumption. We made the dataset and the code available at https://videoprocessing.github.io/device-viewing-conditions.",
+      "authors": [
+        "Nikolay Safonov",
+        "Dmitriy S. Vatolin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-06T03:56:13+00:00",
+      "link": "https://arxiv.org/pdf/2607.04643v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video quality assessment on mobile devices, relevant to video analytics",
+      "llm_evidence_cn": "移动设备上的视频质量评估，与视频分析相关",
+      "llm_evidence": "移动设备上的视频质量评估，与视频分析相关",
+      "canonical_evidence": "移动设备上的视频质量评估，与视频分析相关",
+      "llm_tldr_en": "This work introduces a large-scale subjective VQA dataset across 300+ Android devices, modeling viewing conditions and display properties for improved multi-screen quality assessment.",
+      "llm_tldr_cn": "移动端视频质量评估受设备和观看条件影响显著，现有数据集不足。本文构建覆盖300余款Android设备的大规模主观数据集，包含观看条件和显示属性元数据，提升了多屏环境下VQA的泛化能力。",
+      "llm_tldr": "移动端视频质量评估受设备和观看条件影响显著，现有数据集不足。本文构建覆盖300余款Android设备的大规模主观数据集，包含观看条件和显示属性元数据，提升了多屏环境下VQA的泛化能力。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.06217v1",
+      "source": "arxiv",
+      "title": "EeveeDark: A Binary Neural Framework for Low-Light Video Enhancement via Event-Guided Sensor-Level Fusion",
+      "abstract": "Enhancing videos under extreme low-light conditions remains challenging due to the difficulty of balancing restoration quality and computational efficiency in resource-constrained settings. This paper introduces EeveeDark, a low-light video enhancement framework that combines the spatial richness of sensor-level RAW data with the temporal precision of event streams. Central to our model is a Binary Neural Network (BNN) architecture that reduces computational overhead by quantizing weights and activations while preserving detail. EeveeDark incorporates (i) modality-specific binary encoders for processing RAW frames and event data, (ii) a lightweight fusion block for integrating spatial and temporal cues, and (iii) an event-guided skip gating mechanism for dynamic spatiotemporal refinement. Experiments on synthetic and real-world datasets show that EeveeDark outperforms prior BNN-based methods and offers a favorable performance-efficiency trade-off compared to full-precision models. The project page is available at https://cyberiada.github.io/EeveeDark.",
+      "authors": [
+        "Onur Eker",
+        "Erkut Erdem",
+        "Aykut Erdem"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-07T12:41:36+00:00",
+      "link": "https://arxiv.org/pdf/2607.06217v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "low-light video enhancement with binary neural network for resource-constrained environments, supporting real-time video processing",
+      "llm_evidence_cn": "低光视频增强结合二值神经网络，面向资源受限环境，支持实时视频处理",
+      "llm_evidence": "低光视频增强结合二值神经网络，面向资源受限环境，支持实时视频处理",
+      "canonical_evidence": "低光视频增强结合二值神经网络，面向资源受限环境，支持实时视频处理",
+      "llm_tldr_en": "EeveeDark uses binary neural networks and sensor-level fusion for efficient low-light video enhancement, enabling real-time processing on edge devices.",
+      "llm_tldr_cn": "本文针对资源受限环境下低光视频增强的质量与效率平衡难题，提出EeveeDark框架。该方法通过二值神经网络量化权重与激活值，结合RAW数据和事件流的多模态融合，在保持细节的同时大幅降低计算开销。实验表明，该框架在轻量级硬件上实现了接近全精度模型的增强效果，为实时视频处理提供高效的预处理方案。",
+      "llm_tldr": "本文针对资源受限环境下低光视频增强的质量与效率平衡难题，提出EeveeDark框架。该方法通过二值神经网络量化权重与激活值，结合RAW数据和事件流的多模态融合，在保持细节的同时大幅降低计算开销。实验表明，该框架在轻量级硬件上实现了接近全精度模型的增强效果，为实时视频处理提供高效的预处理方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

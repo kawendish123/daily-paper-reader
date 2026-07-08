@@ -1,0 +1,776 @@
+Title: Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions
+
+URL Source: https://arxiv.org/pdf/2607.04643v1
+
+Published Time: Tue, 07 Jul 2026 03:27:20 GMT
+
+Number of Pages: 21
+
+Markdown Content:
+# Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+Nikolay Safonov 1 2 Dmitriy Vatolin 1
+
+Abstract 
+
+Video quality assessment (VQA) plays a criti-cal role in optimizing video delivery systems. While numerous objective metrics have been pro-posed to approximate human perception, the per-ceived quality strongly depends on viewing con-ditions and display characteristics. Factors such as ambient lighting, display brightness, and res-olution significantly influence the visibility of distortions. In this work, we address the ques-tion of the multi-screen quality assessment on mobile devices, as this area still tends to be under-covered. We introduce a first large-scale sub-jective dataset collected across more than differ-ent 300 Android devices, accompanied by meta-data on viewing conditions and display proper-ties. We propose a strategy for aggregated score extraction and adaptation of VQA models to device-specific quality estimation. Our results demonstrate that incorporating device and con-text information enables more accurate and flex-ible quality prediction, offering new opportuni-ties for fine-grained optimization in streaming ser-vices. Ultimately, this work advances the devel-opment of perceptual quality models that bridge the gap between laboratory evaluations and the diverse conditions of real-world media consump-tion. We made the dataset and the code available at https://videoprocessing.github. io/device-viewing-conditions .
+
+1. Introduction 
+
+Objective video quality assessment (VQA) is a critical task in video processing, with applications in compression, 
+
+> 1
+
+MSU Institute for Artificial Intelligence, Moscow, Rus-sia 2AI Center, Lomonosov Moscow State University, Moscow, Russia. Correspondence to: Nikolay Safonov <niko-lay.safonov@graphics.cs.msu.ru >.
+
+Proceedings of the 43 rd International Conference on Machine Learning , Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). 
+
+Figure 1. Depiction of the multi-screen video quality assessment task problem. The perceived quality strongly depends on viewing conditions and display characteristics. Videos with visibly different quality on the high-end devices may be perceived with the same quality on the low-end ones, and existing VQA metrics do not take that into account. 
+
+streaming, and content delivery. The goal of VQA models is to estimate human-perceived video quality using algo-rithmic predictions. In this work we focus on compressed video quality assessment. To train and evaluate these mod-els, researchers rely on benchmark datasets that contain subjective human scores, typically collected in controlled lab environments or through crowd-sourced studies (Wang et al., 2016a; 2017; Zhu et al., 2016; Barman et al., 2018; Antsiferova et al., 2022; Rao et al., 2024). A key challenge is that human perception of video quality is not invariant, it varies significantly depending on viewing conditions and display characteristics, such as screen size, resolution, brightness, and ambient lighting. For example, in (Barman et al., 2023), a parallel subjective test was con-ducted on a phone, tablet, and television. The results showed substantial differences in Mean Opinion Scores (MOS) ob-tained across the different devices. However, most existing 1
+
+> arXiv:2607.04643v1 [cs.CV] 6 Jul 2026 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions
+
+datasets and VQA models either neglect these contextual factors or assume a uniform viewing environment. As a result, objective metrics that perform well in one setting may fail to generalize across diverse real-world conditions. For example, as shown in the example on Figure 1, videos with a visibly different quality on high-end devices may be perceived with the same quality on low-end ones. This issue is particularly pronounced in the case of banding met-rics, since banding artifacts appear differently depending on screen brightness. As shown in (Safonov et al., 2024), current banding metrics demonstrate very low reliability. For the same reason, the developers of the state-of-the-art Netflix VMAF metric provide different models separately for TVs and mobile phones. While numerous VQA models (Zhang et al., 2018; Ding et al., 2020; Li et al., 2016; Wu et al., 2023) have been proposed in recent years, they typically evaluate perfor-mance on datasets with limited variability in device types and viewing environments. This limits their applicability to real-world use cases, particularly for mobile users and diverse consumer devices. While mobile devices often share similar characteristics in terms of screen size and resolu-tion, the actual viewing conditions for mobile users can vary significantly. For instance, watching the same video scene outdoors in bright sunlight may result in a drastically different perceptual experience compared to viewing it in a dark room. Additionally, many users deliberately reduce screen brightness to conserve battery life, further affecting visual quality. In recent years, a noticeable gap has emerged between high dynamic range (HDR) capable and standard dynamic range (SDR) only mobile devices. Modern flagship smartphones are equipped with HDR displays capable of peak bright-ness levels exceeding 2500 nits, offering enhanced visibil-ity in bright environments and more accurate rendering of dark scenes. A detailed analysis of how SDR and HDR content is perceived on HDR-enabled displays is provided in (Ebenezer et al., 2024), highlighting additional complex-ities introduced by display capabilities when assessing vi-sual quality. Without accounting for such contextual differ-ences, VQA models risk producing misleading predictions, which can hinder user experience optimization for content providers and device manufacturers. In this work, we address the problem of multi-screen quality assessment. First off all we collect a large-scale, crowd-sourced multi-screen video quality dataset designed to bridge this realism gap. The dataset comprises pairwise preference judgments on 300+ unique Android devices, en-riched with detailed metadata: device model, screen tech-nology, diagonal size, peak brightness, applied brightness setting, measured ambient light etc. The dataset also in-cludes pairwise comparison judgments and the ”reference” scores collected on high-resolution desktop monitors. On this dataset, we evaluate existing learning-based im-age quality assessment (IQA) and VQA models and show their limited ability to preserve correct quality orderings across different viewing conditions. To address this, we pro-pose a training strategy and a vote aggregation framework that generalize VQA metrics for improved performance un-der diverse device-specific conditions. To the best of our knowledge, this is the first framework that explicitly trains quality metrics to account for viewing-device characteristics. Our findings show that incorporating device and context in-formation substantially improves prediction accuracy and robustness across viewing conditions that can serve as a foundation for new generations of adaptive streaming solu-tions. Our contributions are as follows: • We introduce a large-scale dataset with over 250K pair-wise comparisons collected on 300+ mobile devices, enriched with detailed viewing-condition metadata. • We propose a practical adaptation algorithm to fit objec-tive quality metrics predictions for the different view-ing conditions; • We propose using a viewing conditions pool, which enables training models on conditions not explicitly represented in the subjective dataset, thereby improv-ing robustness and generalization performance. 
+
+2. Related works 
+
+The diversity of modern display mobile devices has im-portant implications across many areas of video process-ing. However, in this work, we focus specifically on video compression, which remains one of the most fundamental and widespread applications where perceptual video quality plays a critical role. Another broad category of subjective datasets involves in-the-wild distortions, typically captured by non-professionals and characterized by artifacts such as shaking, blurring, and faded colors. These distortions are primarily related to the aesthetic aspects of content and may require separate quality assessment approaches, as shown in (Wu et al., 2023). Notably, the perceived quality in such cases tends to remain relatively consistent across different display screens. Consequently, we concentrate our compar-isons on compression-oriented and general quality video quality datasets and benchmarks. A summary of relevant datasets is provided in Table 1. Numerous datasets have been proposed to support the de-velopment and evaluation of perceptual video quality met-rics, particularly in the context of video compression and streaming. Large-scale just noticeable difference (JND) based datasets such as VideoSet (Wang et al., 2016b) and MCL-JCV (Wang et al., 2016a) enable fine-grained analy-2Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+Table 1. Summary of subjective compressed video quality datasets including multi-screen and the proposed dataset.                                                                                                                                                                         
+
+> Dataset Content Orig. Dist. Device number Subjective Framework Subj. Ans.
+> General
+> MCL-JCV (2016) (Wang et al., 2016a) SDR 30 1,560 -In-lab 150 78K VideoSet (2017) (Wang et al., 2017) SDR 220 45,760 -In-lab 800 -SJTU-4K (2017) (Zhu et al., 2016) SDR 20 200 -In-lab 30 6K GamingVSET (2018) (Barman et al., 2018) SDR 24 576 -In-lab 25 -NFLX (2016) (Li et al., 2016) SDR 12 300 -In-lab 54 9K KUGVD (2019) (Barman et al., 2019) SDR 6144 -In-lab 17 -UGC-VIDEO (2020) (Li et al., 2020b) SDR 50 550 -In-lab 30 16.5K AVT-VQDB (2019) (Rao et al., 2019) SDR 15 300 -In-lab 50 15K TGV (2022) (Wen et al., 2022) SDR 150 1,143 -In-lab 19 -TaoLive (2023) (Zhang et al., 2023) SDR 418 3,762 -In-lab 44 165.5K KVQ (2024) (Lu et al., 2024) SDR 600 4,200 -In-lab 15 63K CVQAD (2022) (Antsiferova et al., 2022) SDR 36 1,022 -Crowd. 10,800 320K LEHA-CVQAD (2025) (Gushchin et al., 2025) SDR 59 6,240 -Crowd. 11,000 400K YT-UGC+ (2021) (Wang et al., 2021) SDR/HDR 189 567 -In-lab 30 17K HDR-sport (2023) (Shang et al., 2023) HDR 12 42 -In-lab 140 32K BrightVQA (2025) (Authors, 2025) HDR 300 2100 -Crowd. 200 74K AVT-VQDB-UHD-1-HDR(2024) (Rao et al., 2024) HDR 5195 -In-lab 24 4,7K Shang2022 (2022) (Shang et al., 2022) HDR 31 310 -In-lab 66 22K
+> Multi-screen
+> MSVSA (2023) (Barman et al., 2023) SDR 436 3In-lab 26 -MS-Banding (2024) (Safonov et al., 2024) SDR 15 120 3In-lab 186 9K HDRSDR-VQA (2025) (Chen et al., 2025a) SDR/HDR 54 960 6In-lab 145 22K HDRorSDR (2024) (Ebenezer et al., 2024) SDR/HDR 25 356 3In-lab 67 23K
+> Proposed SDR/HDR 25 650 300+ Crowd. 10,000 240K
+
+sis of compression artifacts, while classic datasets like the H.264/AVC video database (Nuutinen et al., 2016) provide foundational resources for benchmarking quality metrics. Recent efforts have also introduced compression-oriented benchmarks tailored to learning-based approaches, as seen in the Video Compression Dataset and Benchmark (Antsifer-ova et al., 2022). To address streaming-specific challenges, MCL-V (Lin et al., 2015) simulates bitrate fluctuations and stalling, and GamingVideoSet (Barman et al., 2018) along with related machine learning approaches (Barman et al., 2019) focus on passive gaming video quality estimation. Similarly, user-generated content (UGC) and its perceptual variability are examined in UGC-Video (Li et al., 2020b), which highlights the aesthetic and artifact-rich nature of such content. Other works investigate factors influenc-ing subjective perception beyond compression, temporal effects on video quality of experience (Bampis et al., 2017), and Quality of Service parameters (Fiedler et al., 2010). High-quality reference datasets such as the TUM HD Video Datasets (Keimel et al., 2012) provide additional controlled material for model development and evaluation. Recent works (Shang et al., 2023; Authors, 2025; Rao et al., 2024) have also introduced datasets containing compressed HDR video. Several studies explicitly investigate the impact of viewing conditions by modeling them under controlled laboratory settings. For example, experiments conducted under varying ambient illumination conditions have been proposed to ana-lyze their influence on perceived visual quality (Shang et al., 2022). Other work introduce test protocols in which both SDR and HDR content are evaluated across different display devices employing diverse panel technologies (Ebenezer et al., 2024). Additionally, the effect of viewing distance on perceived visual quality has been systematically stud-ied (Keller et al., 2024). Several metrics that model the human visual system (HVS) have been developed to explicitly account for different view-ing conditions; for example, in (Mantiuk et al., 2024; 2023; Narwaria et al., 2015), the authors model display type and viewing distance by adjusting the parameters of HVS per-ceptual response curves. Models to of operate consistently on both SDR and HDR compressed video have been devel-oped (Chen et al., 2025b). In (Barman et al., 2023), a small-scale dataset was col-lected using three display devices: tablet, phone, and TV viewed in parallel. The dataset includes Mean Opinion Scores (MOS) for each device type, revealing notable dif-ferences in perceived quality across screens. In (Chen et al., 2025a) authors note that visual quality may vary across dif-ferent viewing conditions and therefore conduct subjective testing on six devices; however, the reported results are aggregated into the single scores, without an analysis of multi-screen effects. In (Safonov et al., 2024), the authors investigate the performance of banding metrics across three domains: TV, MacBook, and crowd-sourcing platforms. To support this analysis, they introduce a dataset comprising MOS scores for 120 distorted video variants. However, the dataset in (Safonov et al., 2024) is distortion-specific, with a strong emphasis on videos containing flat regions, which are particularly susceptible to banding artifacts. Existing datasets, regardless of distortion type, typically 3Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+assume controlled viewing conditions or focus on a single device type. As such, they are not well-suited for exploring the impact of device diversity and ambient conditions on perceived quality. Our work fills this gap by introducing a large-scale, multi-device dataset with associated viewing metadata, allowing for more representative evaluation of compression quality under realistic usage scenarios. 
+
+3. Dataset Q1 Q2 Q3 Q4                       
+
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Correlation  0.909 0.916 0.935 0.945
+> PLCC
+> Q1 Q2 Q3 Q4
+> 0.836 0.855 0.862 0.883
+> SROCC
+> Q1 Q2 Q3 Q4
+> 0.689 0.692 0.711 0.740
+> KROCC
+> LCD LED
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Correlation  0.950 0.926
+> LCD LED
+> 0.897
+> 0.855
+> LCD LED
+> 0.752
+> 0.708
+> HDR SDR
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Correlation  0.933
+> 0.881
+> HDR SDR
+> 0.901
+> 0.851
+> HDR SDR
+> 0.701
+> 0.650
+> Quarter with the smallest screen size
+> Second quarter by screen size
+> Third quarter by screen size
+> Quarter with the largest screen size
+> LCD devices
+> LED devices
+> HDR screen
+> SDR screen
+> SSIM
+> Subjective score on the whole dataset
+
+Figure 2. Top row : Bradley–Terry (Bradley & Terry, 1952) ag-gregated scores for subsets of devices grouped by screen size (the smallest quarter, the two middle quarters, and the largest quarter) and comparing them with aggregated scores obtained on desk-top devices with large screens by Pearson (PLCC), Spearman (SROCC) and Kendall (KROCC) correlations; 
+
+Middle row : correlations separately for LED and LCD displays; 
+
+Bottom row : correlations on HDR videos separately for HDR-capable and SDR displays. 
+
+3.1. Dataset construction 
+
+We constructed a compression dedicated dataset exhibiting diverse compression artifacts. For reliable evaluation, ref-erence videos must be of sufficiently high quality to avoid confounding recompression effects. We therefore sampled from over 18,000 high-bitrate open-source videos available on Vimeo under appropriate licenses. Only videos with a minimum bitrate of 20 Mbps were retained, resulting in a collection with an average bitrate of 130 Mbps. To ensure representative coverage of spatial and temporal complexities, we performed clustering in the complexity space. Spatial complexity was measured as the average size of x264-encoded I-frames normalized by uncompressed frame size, while temporal complexity was defined as the ratio of average P-frame to I-frame sizes. The source videos were selected via clustering in the spatial–temporal com-plexity space. We introduced compression artifacts by en-coding them with five encoders spanning different standards (HEVC, VVC, and AV1). The details on encoding settings and source video properties may be found in Appendix B.1. 
+
+3.2. Subjective testing 
+
+To collect pairwise preference annotations across a wide range of devices and viewing conditions, we relied on crowd-sourcing. To ensure precise control over device characteris-tics and viewing environments, we developed an Android application that automatically recorded the device model, screen specifications, and contextual information such as brightness, ambient luminance, and orientation. Partici-pants recruited via a crowd-sourcing platform were asked to install the application, which both launched the video qual-ity assessment interface and continuously logged relevant metadata. Screen brightness and ambient light levels were sampled every second using system APIs and the device’s light sensor, when available. By default, participants used their own brightness settings; however, the application also supported enforced brightness levels. Using this feature, we collected additional subsets with brightness fixed to max-imum and minimum values. The details on the collected characteristics, metadata, filtering and parameters distribu-tions may be found in Appendix B.3. Our subjective study followed a pairwise comparison proto-col, where for each source video we generated all possible pairs of its compressed versions. The reference source video itself was also included in the pool. Participants watched the pairs sequentially in full-screen mode and indicated which video exhibited better visual quality, or selected an “equal quality” option. They were allowed to replay the videos before making a choice. Each participant completed 12 comparisons, two of which were control pairs with an ob-vious quality difference; responses from participants who failed these checks were discarded. To improve the ro-bustness of the results, a minimum of 15 judgments was collected for every pair. In total, the study yielded 250,000 valid annotations from nearly 10,000 contributors. Dataset parameters are summarized in Table 1. We further enriched the dataset with HDR video content. For these sequences, we used high-quality reference subjec-tive labels from (Rao et al., 2024). During crowd-sourced labeling, we did not require participants to use HDR-capable displays; therefore, on SDR devices the HDR videos were viewed in automatically tone-mapped form provided by the playback pipeline. 
+
+4. Blade-Chest model 
+
+Different models can be applied to aggregate pairwise pref-erence votes. The most commonly used approach is the Bradley–Terry (Bradley & Terry, 1952) model, which has 4Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+been employed in large-scale datasets such as (Antsiferova et al., 2022) and (Gushchin et al., 2025). An alternative is the Elo rating system (Elo, 1978), which estimates la-tent scores through iterative updates after each comparison. However, such models do not account for the viewing condi-tions under which comparisons are made, even though these conditions can significantly influence the results. Figure 2 illustrates this effect by showing Bradley–Terry (Bradley & Terry, 1952) aggregated scores for subsets of devices grouped by screen size (the smallest quarter, the two mid-dle quarters, and the largest quarter) and comparing them with aggregated scores obtained on desktop devices with large screens by Pearson (PLCC), Spearman (SROCC) and Kendall (KROCC) correlations. The correlations steadily increase from the smallest to the largest screen groups. Fig-ure 2 also reports correlations separately for LED and LCD displays. It may be noted that LCD displays correlate with the desktop scores much better than LED displays. This could be explained by the fact that most desktop monitors also use LCD matrices, which, for example, perform worse in rendering dark colors. Also Figure 2 presents a com-parison of HDR and SDR displays for HDR video quality assessment. While evaluations performed on HDR-capable screens show higher correlation with the reference subjec-tive scores, the difference compared to assessments con-ducted on SDR displays is not radical. This observation is consistent with previously reported results (Ebenezer et al., 2024). The Blade-Chest model (Chen & Joachims, 2016) leverages this limitations and makes possible to encounter conditions under which each pair were compared, as it proposes learn-ing two vectors for each player qi, namely qblade  
+
+> i
+
+and qchest  
+
+> i
+
+.The probability of qi defeating xj is then determined by comparing the distances between these representations: if 
+
+qblade  
+
+> i
+
+is closer to qchest  
+
+> j
+
+than qblade  
+
+> j
+
+is to qchest  
+
+> i
+
+, player qi is predicted to win. The use of the “blade” and “chest” embed-dings provides an intuitive interpretation of the underlying model. Therefore, we adopt the Blade–Chest model (Chen & Joachims, 2016) for our task, as it naturally incorporates information about the viewing conditions into the score aggregation process. To obtain rank scores from pairwise votes, we assumed that the probability of video i being pre-ferred over video j in the viewing conditions z is given by: 
+
+P (i ≻ j, z ) = σ(|| fc(qi, z ) − fb(qj , z )|| 2−|| fc(qj , z ) − fb(qi, z )|| 2) (1) where qi and qj are the desired subjective score estimates of videos i and j, σ(·) denotes the sigmoid function, while 
+
+fc(·) and fb(·) are transformation functions conditioned on the subjective score estimates and viewing conditions. These functions output qchest  
+
+> i
+
+and qblade  
+
+> j
+
+, respectively. The functions fc(·) and fb(·) can take different forms; however, in this work we initialize them as fully connected neural networks, parameterized by θ and ψ, respectively. For the activation functions we use tanh , in order to avoid purely linear behavior. Our experiments have shown that, due to the dominant influence of qi over z, the networks tend to de-generate into linear mappings without nonlinear activations. The vector z was defined as a five-dimensional represen-tation containing information about the display’s physical size, pixel resolution, brightness, surrounding luminance, and display type. To estimate the latent values qi and the network parame-ters θ and ψ, we employed a two-step optimization pro-cedure based on the expectation–maximization approach. In our formulation, the latent subjective quality scores 
+
+qi cannot be directly observed, while the available su-pervision comes only from the pairwise preference votes 
+
+D = {(i, j, z )}. We therefore treat qi as latent variables and optimize them jointly with the network parameters θ and ψ
+
+via the Expectation–Maximisation (EM) algorithm. The goal of the EM procedure is to obtain a stable condi-tional decomposition that maximizes the pairwise likelihood. Use of EM is motivated by the fact that the latent quality scores qi are not directly observed, while supervision is available only through pairwise votes under conditions z.The supplementary A makes this explicit by defining the complete-data likelihood, the E-step as updating the latent scores under the current network parameters (current condi-tions), and the M-step as updating the parameters of fc and 
+
+fb through maximization of the surrogate objective. The complete-data likelihood of observing a pairwise vote 
+
+(i ≻ j, z ) can be expressed as: 
+
+Lc(q, θ, ψ | D ) = Y
+
+> (i,j,z )∈D
+
+P (i ≻ j, z | q, θ, ψ ). (2) Taking the logarithm, the complete-data log-likelihood be-comes: 
+
+log Lc(q, θ, ψ ) = 
+
+X
+
+> (i,j,z )∈D
+
+log σ
+
+
+
+|| fc(qi, z ; θ) − fb(qj , z ; ψ)|| 2−|| fc(qj , z ; θ) − fb(qi, z ; ψ)|| 2
+
+.
+
+(3) Thus, the EM procedure allows us to jointly infer the latent subjective quality scores qi and optimise the transformation networks fc(·) and fb(·) under varying viewing conditions. A more detailed derivation of the update rules and imple-mentation details of the optimisation procedure are provided in Appendix A. The obtained subjective scores exhibit a high correlation with those derived using the Bradley–Terry 5Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+model on both the mobile and desktop datasets, indicat-ing that the learned representation is consistent and logi-cally grounded. Table 2 reports the obtained scores correla-tions with the reference scores and scores aggregated using Bradley-Terry model.                 
+
+> Table 2. Correlation of the Blade-Chest scores with the reference and Bradley-Terry scores. PLCC SROCC KROCC Desktop scores 0.898 ±0.063 0.864 ±0.059 0.770 ±0.070 BT-scores 0.912 ±0.059 0.881 ±0.055 0.808 ±0.067
+
+5. Conditions adaptation     
+
+> Figure 3. The training framework scheme: from the video set a random pair is sampled, and viewing conditions are selected from a distribution. The video quality metric predictions for the selected videos and the viewing conditions are processed through the adap-tation module, while the estimated subjective scores together with the viewing conditions are processed through the match function using fc(·)and fb(·).
+
+Although we obtained subjective scores qi, these values alone are of limited interest, since it is nontrivial to interpret or compare absolute score levels directly. We also trained fully connected neural networks, fc(·) and fb(·), which operate on score pairs; however, this formulation is not well suited for VQA applications, where it is often necessary to estimate the quality of a single video. Therefore, we treat the extraction of subjective scores as an intermediate step in adapting VQA metrics for quality prediction under varying viewing conditions. The goal of VQA model adaptation is to enable predictions of relevant quality labels under specific viewing conditions. This is particularly useful for streaming platforms, which often optimize compression strategies for certain device types and have access to user distributions and profiles, yet still rely on standard VQA models that may under- or over-estimate the quality perceived by the end users. Mod-ern learning-based models, both deep and traditional (e.g., VMAF), are typically trained on large-scale datasets, so retraining them directly on our proposed dataset may be not sufficient, even when targeting condition-dependent predic-tion. To address this, we fine-tune the models by passing their predictions to a condition adaptation module. The adaptation module is a lightweight fully connected neu-ral network trained separately for each VQA model. It takes as input the model prediction together with the target view-ing conditions z, and outputs a single value representing the predicted video quality under these conditions. The training samples are drawn from the proposed dataset. For train-ing, the viewing conditions z are generated by randomly sampling parameters from a uniform distribution, subject to hand-picked physically motivated constraints. Now, when we have obtained subjective scores qi and trained the networks fc(·) and fb(·) on the real predictions, we can use their combination to expand the training set with simulated samples. Since the set of videos is fixed and new videos cannot be added without additional human judgments, we instead simulate new viewing conditions. Conditions z are sampled from a uniform distribution and passed to fc(·) and fb(·) together with a randomly selected pair of distorted versions of the same source video. This yields the probability that video i is of higher quality than video j under the given conditions z.So the training framework is as follows: from the video set a random pair is sampled, and viewing conditions are selected from a uniform distribution. The video quality met-ric predictions for the selected videos and the conditions are processed through the adaptation module, while the estimated subjective scores together with the viewing condi-tions are processed through the match function using fc(·)
+
+and fb(·). The overall framework is illustrated in Figure 3. The adaptation network was implemented as a fully con-nected neural network of depth 4, with hidden layers of size 64. We used tanh activations in the hidden layers to avoid linearity and applied a sigmoid activation at the output to constrain predictions to the [0 , 1] range. We employ a MLP to capture nonlinear dependencies and implicit interactions between display-related parameters and perceived visual quality. Compared to generalized additive models (GAM) and attention-based tabular models such as TabNet (Arik & Pfister, 2021), MLP offers a better trade-off between expressiveness, robustness, and computational efficiency in low-data subjective settings, while remaining interpretable. The condition pool is a key component motivated by the inherent sparsity of subjective data collected under heteroge-neous viewing conditions. In the first stage, the Blade–Chest aggregation operates on sparse pairwise comparisons col-lected under varying conditions to estimate latent subjective scores and learn condition-aware transformations. Once these scores are obtained, the original sparse observations are no longer sufficient for robust training of downstream 6Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions AVQT 
+
+> FSIM
+> VMAF
+> CLIP-IQA-PLUS
+> LPIPS
+> DISTS
+> SSIMULACRA
+> HAARPSI
+> UNIQUE
+> VMAF NEG
+> LI2022
+> DOVER
+> DBCNN
+> COMPRESSED-VQA
+> PAQ2PIQ
+> VIF
+> MDTVSFA
+> TOPIQ-NR
+> RANK-IQA
+> PSNR
+> SSIM
+> NLPD
+> MS-SSIM
+> KONCEPT
+> LINEARITY
+> TOPIQ
+> MUSIQ
+> VSFA
+> VIDEVAL
+> NIQE
+> BRISQUE
+> CLIP-IQA
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> Kendall rank correlation
+> Highest unadapted KROCC
+
+Kendall rank correlation gain for the adapted metrics 
+
+> Kendall rank correlation (original)
+> Gain (positive)
+> Gain (negative)
+> No-reference
+
+Figure 4. Kendall rank correlations for the original metrics and their adapted counterparts. Gain represents how score improved after metric training (green = positive, red = negative). 
+
+models. The condition pool addresses this by enabling sam-pling of viewing conditions independently from the original annotations, effectively augmenting the training process and improving generalization, including to conditions not explic-itly observed in the dataset. Importantly, this mechanism is only feasible due to the use of the Blade–Chest model, which explicitly incorporates viewing conditions into the aggregation process. As a result, the adaptation module is able to predict video quality based on both the metric predictions and the viewing conditions. We trained separate adaptation modules for each of the considered metrics. In addition, we conducted experiments where the adaptation module was used as a fusion mechanism across multiple metrics. 
+
+6. Evaluation 
+
+For evaluating the performance of VQA models, correla-tions with subjective quality scores are commonly employed. Pearson and Spearman correlations are appropriate when aggregated subjective scores (e.g., MOS, Bradley–Terry es-timates) are available. However, in our dataset each crowd-sourcing assessor evaluated only a small portion of the con-tent. Consequently, the number of samples collected under identical viewing conditions is insufficient to construct reli-able subjective scores for a fixed screen setup. In contrast, Kendall rank correlation relies on the proportion of cor-rectly ordered pairs. Since the subjective annotations in our dataset consist of pairwise preference selections under differ-ent measured viewing conditions, Kendall rank correlation provides a natural criterion for assessing whether a VQA metric preserves the quality ordering implied by human judgments. Therefore, we adopt Kendall rank correlation as the primary evaluation metric. 0 2 4 6 8 10 12 14 
+
+> Screen diagonal (inches)
+> 0.72
+> 0.73
+> 0.74
+> 0.75
+> 0.76
+> 0.77
+> 0.78
+> 0.79
+> 0.80
+> Qulity by adapteded VMAF (scale 0 to 1)
+> Adapted VMAF from screen diagonal for different VMAF levels
+> VMAF=90 level
+> VMAF=80 level
+> VMAF=70 level
+> VMAF=60 level
+> VMAF=50 level
+> VMAF=40 level
+
+Figure 5. Relationship between the estimated quality of the VMAF adaptation module and the viewing conditions, predictions for several fixed VMAF levels with varying the screen diagonal (all other parameters are held constant). 
+
+Five source videos, along with all their distorted versions, were held out as the testing set. We first applied both clas-sical and modern neural network–based image and video quality metrics to these videos. For each participant’s vote, we derived the predicted ordering from the metric outputs and then computed Kendall rank correlation with the sub-jective preference. Subsequently, we trained an adaptation fully connected network separately for each of the evalu-ated metrics on the training portion of the dataset and also tested by Kendall rank. Figure 4 demonstrates the Kendall rank correlations for the original metrics and their adapted counterparts. It can be observed that even state-of-the-art metrics exhibit relatively low correlations on the raw vote data compared to the aggregated scores. This is expected, as the raw an-7Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+Table 3. Kendall rank correlations for the original metrics and their adapted counterparts over three most common phone models. Gain represents how score improved after metric training (red = positive, blue = negative).                                                                                                                                                                                                                                                                                                            
+
+> Phone model 1 Phone model 2 Phone model 3 Metric KROCC KROCC (adapted) Gain KROCC KROCC (adapted) Gain KROCC KROCC (adapted) Gain Full-reference LPIPS (Zhang et al., 2018) 0.308 0.652 +0.344 0.404 0.548 +0.145 0.313 0.631 +0.318 DISTS (Ding et al., 2020) 0.338 0.610 +0.272 0.340 0.517 +0.178 0.399 0.550 +0.152 VMAF (Li et al., 2016) 0.509 0.600 +0.091 0.498 0.595 +0.097 0.548 0.572 +0.024 AVQT (Sodhani, 2021) 0.439 0.694 +0.255 0.427 0.613 +0.186 0.478 0.584 +0.106 FSIM (Zhang et al., 2011) 0.387 0.634 +0.247 0.419 0.645 +0.226 0.439 0.617 +0.178 SSIMULACRA (Sneyers, 2023) 0.457 0.635 +0.178 0.480 0.541 +0.061 0.412 0.634 +0.222 HAARPSI (Kastryulin et al., 2019) 0.481 0.526 +0.045 0.454 0.552 +0.098 0.436 0.510 +0.074 VMAF NEG 0.416 0.565 +0.149 0.469 0.563 +0.094 0.470 0.535 +0.065 VIF (Sheikh & Bovik, 2006) 0.449 0.535 +0.086 0.487 0.505 +0.018 0.449 0.543 +0.094 PSNR 0.469 0.478 +0.009 0.448 0.491 +0.043 0.501 0.430 -0.071 MS - SSIM (Wang et al., 2003) 0.427 0.451 +0.024 0.485 0.454 -0.031 0.454 0.405 -0.049 SSIM 0.415 0.511 +0.096 0.481 0.500 +0.019 0.456 0.459 +0.003 NLPD 0.473 0.485 +0.012 0.468 0.415 -0.053 0.491 0.431 -0.060 TOPIQ (Chen et al., 2024) 0.484 0.498 +0.014 0.438 0.474 +0.036 0.479 0.456 -0.023 No-reference CLIP-IQA-PLUS (Wang et al., 2023b) 0.417 0.581 +0.164 0.427 0.607 +0.180 0.463 0.572 +0.109 LI2022 (Li et al., 2022) 0.434 0.539 +0.105 0.403 0.468 +0.065 0.398 0.566 +0.168 UNIQUE (Zhang et al., 2021) 0.466 0.608 +0.142 0.447 0.516 +0.069 0.422 0.596 +0.174 DBCNN (Zhang et al., 2020) 0.373 0.598 +0.225 0.414 0.486 +0.072 0.374 0.522 +0.148 COMPRESSED - VQA (Sun et al., 2021) 0.351 0.568 +0.217 0.361 0.551 +0.190 0.423 0.496 +0.073 DOVER (Wu et al., 2023) 0.491 0.580 +0.089 0.430 0.565 +0.135 0.422 0.586 +0.164 VIDEVAL (Tu et al., 2021) 0.283 0.407 +0.124 0.264 0.243 -0.021 0.266 0.322 +0.056 MDTVSFA (Li et al., 2021) 0.445 0.532 +0.087 0.482 0.496 +0.014 0.456 0.481 +0.025 PAQ2PIQ (Ying et al., 2020) 0.395 0.612 +0.217 0.393 0.494 +0.101 0.451 0.535 +0.084 NIQE 0.187 0.306 +0.119 0.250 0.249 -0.001 0.194 0.315 +0.121 RANK - IQA (Liu et al., 2017) 0.470 0.503 +0.033 0.394 0.450 +0.056 0.451 0.498 +0.047 TOPIQ - NR (Chen et al., 2024) 0.444 0.526 +0.082 0.440 0.502 +0.062 0.414 0.457 +0.043 KONCEPT (Hosu et al., 2020) 0.376 0.444 +0.068 0.421 0.422 +0.001 0.454 0.438 -0.016 BRISQUE (Mittal et al., 2012) 0.246 0.279 +0.033 0.198 0.242 +0.044 0.210 0.251 +0.041 LINEARITY (Li et al., 2020a) 0.367 0.435 +0.068 0.376 0.400 +0.024 0.381 0.437 +0.056 MUSIQ (Chen et al., 2024) 0.320 0.320 -0.000 0.306 0.325 +0.019 0.402 0.379 -0.023 VSFA (Li et al., 2019) 0.347 0.380 +0.033 0.392 0.419 +0.027 0.333 0.446 +0.113 CLIP-IQA (Wang et al., 2023a) 0.222 0.227 +0.005 0.329 0.281 -0.048 0.185 0.169 -0.016
+
+notations are inherently noisy: for the same video under identical conditions, different participants may prefer dif-ferent versions. Moreover, individual differences such as prior viewing experience or eye health can further contribute to variability. Nevertheless, despite the use of visual acu-ity tests and validation procedures on the crowd-sourcing platform, the same participant may occasionally select dif-ferent options for the same video pair. Another important factor is the viewing condition, which strongly influences perceived quality but is not explicitly modeled by existing metrics. Nevertheless, the adapted versions of the metrics substantially improve performance. While adaptation con-sistently enhances correlations, the remaining label noise limits performance. To study the out-of-distribution generalization of the pro-posed approach, we evaluate the model on the three most frequent smartphone models, each accounting for more than 2% of the collected votes: Xiaomi Redmi Note 13 (model 1), Samsung Galaxy A55 (model 2), and Xiaomi Redmi Note 8 Pro (model 3). During training, all samples associ-ated with each target device were excluded, and evaluation was performed separately on the held-out device. Table 3 shows Kendall correlations of metrics, adapted metrics and the gain. It can be observed that, for most metrics, training consistently improves performance, indicating good gen-eralization. This behavior may be attributed to the use of condition pool, which enables robust learning across differ-ent combinations of display parameters, including those not explicitly present in the subjective test data. Since the adaptation module employs a sigmoid activation function, the predicted scores are scaled between 0 and 1, which makes the model’s outputs fairly interpretable. To il-lustrate the relationship between the estimated quality of the VMAF adaptation module and the viewing conditions, we plot predictions for several fixed VMAF levels while vary-ing only the screen diagonal (all other parameters are held constant). Figure 5 shows this dependency. As expected, the perceived quality decreases as the screen size increases. It should also be noted that beyond the observed range (our dataset includes only a limited number of devices with diag-onals larger than 8 inches), the predicted curves become less reliable. For the higher levels of VMAF the screen enlarge-ment is more sufficient, as people tend to star seeing the artifacts, similar effect demonstrated in (Wang et al., 2024). 8Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+Also we conducted SHAP (Lundberg & Lee, 2017) analy-sis of display-related factors influencing perceived visual quality. Display brightness and physical screen size exhibit the strongest contribution to the model predictions. Pixel density and surrounding luminance show weaker but system-atic effects. The contribution of display type demonstrates substantially higher variance, indicating different sensitivity of display technologies to the artifacts. 
+
+7. Conclusion 
+
+We created a new diverse dataset containing videos com-pressed by various encoding standards, including HEVC, AV1, and VVC, and enriched with information about label-ing conditions such as screen size, screen brightness, and ambient luminance. The labels were collected on more than 300 different devices. We used this dataset to analyze how both classical and modern learning-based objective qual-ity metrics predict video ordering across different devices. Our analysis revealed that, due to human factor annotation noise and the strong dependence of pairwise preferences on viewing conditions, existing metrics achieve only limited accuracy in predicting quality orderings. To address this limitation, we proposed a training strategy for adapting and generalizing metrics to specific viewing conditions, which results in a clear improvement in ordering quality. The proposed dataset will be valuable for researchers and practitioners developing image- and video-quality metrics for compression artifacts and optimizing solutions for di-verse devices. It can be used to train models to perform VQA with higher accuracy and viewing condition specific precision, bringing more flexible encoders optimization. 
+
+8. Limitations 
+
+In this work, we did not retrain the evaluated metrics on the proposed dataset; instead, we applied the adaptation module to the outputs of pre-trained models without tuning their internal parameters. While this approach demonstrates the feasibility of condition-aware adaptation, it may limit the full potential of the underlying metrics. Future work will therefore include retraining or fine-tuning metrics directly on subsets of the dataset to achieve further improvements. Another limitation is that, in the current design, the adapta-tion module must be inferences separately for each target device, which may be inefficient when scaling to a large number of devices. As a next step, we plan to explore direct mappings from device distributions to score distributions, enabling more efficient and unified adaptation across diverse viewing conditions. 
+
+Acknowledgment 
+
+The work of Nikolay Safonov was supported by the The Ministry of Economic Development of the Russian Federa-tion in accordance with the subsidy agreement (agreement identifier 000000C313925P4H0002; grant No 139-15-2025-012). The research was carried out using the MSU-270 supercom-puter of Lomonosov Moscow State University. The labeling was performed using the Yandex Tasks platform. 
+
+Impact Statement 
+
+This work introduces a multi-device video quality assess-ment (VQA) dataset and a condition-aware adaptation framework to model human visual perception across di-verse real-world viewing environments. Environmentally, our approach enables streaming services to optimize adap-tive bitrate algorithms based on specific display properties and ambient lighting, which can reduce unnecessary band-width consumption and the associated energy costs of large-scale video delivery. Ethically, our crowd-sourced data collection followed strict privacy protocols by excluding personally identifiable information (PII) and location data, while ensuring informed consent and fair compensation for all participants. Although the dataset is currently limited to the Android ecosystem and specific user demograph-ics, which may introduce sampling biases, our proposed condition-pool augmentation strategy mitigates these limi-tations by mathematically simulating unobserved hardware states. Overall, this research poses no foreseeable risks of dual-use or malicious application, and instead provides a scientifically grounded methodology for developing more energy-efficient, equitable, and perceptually accurate video compression systems across heterogeneous consumer de-vices. 
+
+References 
+
+Antsiferova, A., Lavrushkin, S., Smirnov, M., Gushchin, A., Vatolin, D., and Kulikov, D. Video compression dataset and benchmark of learning-based video-quality metrics. 
+
+Advances in Neural Information Processing Systems , 35: 13814–13825, 2022. Arik, S. ¨O. and Pfister, T. Tabnet: Attentive interpretable tab-ular learning. In Proceedings of the AAAI conference on artificial intelligence , volume 35, pp. 6679–6687, 2021. Authors, A. Brightvq: Quality assessment for user-generated hdr videos. Dataset and model available online, 2025. https://brightvqa.github.io/ BrightVQ/ .Bampis, C. G., Li, Z., Moorthy, A. K., Katsavounidis, I., 9Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+Aaron, A., and Bovik, A. C. Study of temporal effects on subjective video quality of experience. IEEE Transactions on Image Processing , 26(11):5217–5231, 2017. Barman, N., Zadtootaghaj, S., Schmidt, S., Martini, M. G., and M ¨oller, S. Gamingvideoset: a dataset for gam-ing video streaming applications. In 2018 16th Annual Workshop on Network and Systems Support for Games (NetGames) , pp. 1–6. IEEE, 2018. Barman, N., Jammeh, E., Ghorashi, S. A., and Martini, M. G. No-reference video quality estimation based on machine learning for passive gaming video streaming applications. 
+
+IEEE Access , 7:74511–74527, 2019. Barman, N., Reznik, Y., and Martini, M. G. A subjective dataset for multi-screen video streaming applications. In 
+
+2023 15th International Conference on Quality of Multi-media Experience (QoMEX) , pp. 270–275. IEEE, 2023. Bradley, R. A. and Terry, M. E. Rank analysis of incom-plete block designs: I. the method of paired comparisons. 
+
+Biometrika , 39(3/4):324–345, 1952. Chen, B., Lee, C.-h., Chen, Y., Shang, Z., Wei, H., and Bovik, A. C. Hdrsdr-vqa: A subjective video quality dataset for hdr and sdr comparative evaluation. arXiv preprint arXiv:2505.21831 , 2025a. Chen, C., Mo, J., Hou, J., Wu, H., Liao, L., Sun, W., Yan, Q., and Lin, W. Topiq: A top-down approach from semantics to distortions for image quality assessment. IEEE Trans-actions on Image Processing , 33:2404–2418, 2024. doi: 10.1109/TIP.2024.3378466. Chen, S. and Joachims, T. Modeling intransitivity in matchup and comparison data. In Proceedings of the ninth acm international conference on web search and data mining , pp. 227–236, 2016. Chen, Y., Chen, B., Wei, H., Bovik, A. C., Li, B., Sun, W., Cao, L., Fu, K., Zhu, D., Jia, J., et al. Icme 2025 general-izable hdr and sdr video quality measurement grand chal-lenge. In 2025 IEEE International Conference on Mul-timedia and Expo Workshops (ICMEW) , pp. 1–6. IEEE, 2025b. Ding, K., Ma, K., Wang, S., and Simoncelli, E. P. Image quality assessment: Unifying structure and texture simi-larity. IEEE transactions on pattern analysis and machine intelligence , 44(5):2567–2581, 2020. Ebenezer, J. P., Shang, Z., Chen, Y., Wu, Y., Wei, H., Sethu-raman, S., and Bovik, A. C. Hdr or sdr? a subjective and objective study of scaled and compressed videos. IEEE Transactions on Image Processing , 33:3606–3619, 2024. Elo, A. E. The Rating of Chessplayers, Past and Present .Arco Pub., 1978. Fiedler, M., Hossfeld, T., and Tran-Gia, P. A generic quan-titative relationship between quality of experience and quality of service. IEEE Network , 24(2):36–41, 2010. Gushchin, A., Smirnov, M., Vatolin, D., and Antsiferova, A. Leha-cvqad: Dataset to enable generalized video qual-ity assessment of compression artifacts. arXiv preprint arXiv:2507.03990 , 2025. Hosu, V., Lin, H., Sziranyi, T., and Saupe, D. Koniq-10k: An ecologically valid database for deep learning of blind image quality assessment. IEEE Transactions on Image Processing , 29:4041–4056, 2020. Kastryulin, S., Zakirov, D., and Prokopenko, D. Py-Torch Image Quality: Metrics and measure for image quality assessment, 2019. URL https://github. com/photosynthesis-team/piq . Open-source software available at https://github.com/photosynthesis-team/piq. Keimel, C., Redl, A., and Diepold, K. The tum high defini-tion video datasets. In 2012 Fourth international work-shop on quality of multimedia experience , pp. 97–102. IEEE, 2012. Keller, D., Rao, R. R. R., and Raake, A. Assessing quality differences for 8k/uhd-2 and 4k/uhd-1 hdr video based on viewing distance. IEEE Access , 2024. Li, B., Zhang, W., Tian, M., Zhai, G., and Wang, X. Blindly assess quality of in-the-wild videos via quality-aware pre-training and motion perception. IEEE Transactions on Circuits and Systems for Video Technology , 32(9):5944– 5958, 2022. Li, D., Jiang, T., and Jiang, M. Quality assessment of in-the-wild videos. In Proceedings of the 27th ACM international conference on multimedia , pp. 2351–2359, 2019. Li, D., Jiang, T., and Jiang, M. Norm-in-norm loss with faster convergence and better performance for image qual-ity assessment. In Proceedings of the 28th ACM Interna-tional conference on multimedia , pp. 789–797, 2020a. Li, D., Jiang, T., and Jiang, M. Unified quality assessment of in-the-wild videos with mixed datasets training. Inter-national Journal of Computer Vision , 129(4):1238–1257, 2021. Li, Y., Meng, S., Zhang, X., Wang, S., Wang, Y., and Ma, S. Ugc-video: Perceptual quality assessment of user-generated videos. In 2020 IEEE Conference on Multi-media Information Processing and Retrieval (MIPR) , pp. 35–38. IEEE, 2020b. 10 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+Li, Z., Aaron, A., Katsavounidis, I., Moorthy, A. K., Manohara, M., and Aaron, A. Toward a practical perceptual video quality metric. Netflix Tech Blog, 2016. URL https://netflixtechblog.com/ toward-a-practical-perceptual-video-quality-metric-653f208b9652 .Lin, J. Y., Song, R., Wu, C.-H., Liu, T., Wang, H., and Kuo, C.-C. J. Mcl-v: A streaming video quality assessment database. Journal of Visual Communication and Image Representation , 30:1–9, 2015. Liu, X., Van De Weijer, J., and Bagdanov, A. D. Rankiqa: Learning from rankings for no-reference image quality assessment. In Proceedings of the IEEE international conference on computer vision , pp. 1040–1049, 2017. Lu, Y., Li, X., Pei, Y., Yuan, K., Xie, Q., Qu, Y., Sun, M., Zhou, C., and Chen, Z. Kvq: Kwai video quality assessment for short-form videos. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 25963–25973, 2024. Lundberg, S. M. and Lee, S.-I. A unified approach to in-terpreting model predictions. In Advances in Neural Information Processing Systems , volume 30. Curran As-sociates, Inc., 2017. Mantiuk, R. K., Hammou, D., and Hanji, P. Hdr-vdp-3: A multi-metric for predicting image differences, quality and contrast distortions in high dynamic range and regular content. arXiv preprint arXiv:2304.13625 , 2023. Mantiuk, R. K., Hanji, P., Ashraf, M., Asano, Y., and Chapiro, A. Colorvideovdp: A visual difference pre-dictor for image, video and display distortions. arXiv preprint arXiv:2401.11485 , 2024. Mittal, A., Moorthy, A. K., and Bovik, A. C. No-reference image quality assessment in the spatial domain. IEEE Transactions on image processing , 21(12):4695–4708, 2012. Narwaria, M., Da Silva, M. P., and Le Callet, P. Hdr-vqm: An objective quality measure for high dynamic range video. Signal Processing: Image Communication , 35: 46–60, 2015. Nuutinen, M., Virtanen, T., Vaahteranoksa, M., Vuori, T., Oittinen, P., and H ¨akkinen, J. Cvd2014—a database for evaluating no-reference video quality assessment algo-rithms. IEEE Transactions on Image Processing , 25(7): 3073–3086, 2016. Rao, R. R. R., G ¨oring, S., Robitza, W., Feiten, B., and Raake, A. Avt-vqdb-uhd-1: A large scale video quality database for uhd-1. In 2019 IEEE International Symposium on Multimedia (ISM) , pp. 17–177. IEEE, 2019. Rao, R. R. R., Herb, B., Takala, H.-A., Ahmed, M. T. M., and Raake, A. Avt-vqdb-uhd-1-hdr: an open video qual-ity dataset for quality assessment of uhd-1 hdr videos. In 
+
+2024 16th International Conference on Quality of Multi-media Experience (QoMEX) , pp. 179–185. IEEE, 2024. Safonov, N., Kulikov, D., and Vatolin, D. Multi-screen effects on quality assessment: Investigating banding met-rics inconsistencies. In 2024 IEEE International Confer-ence on Visual Communications and Image Processing (VCIP) , pp. 1–4. IEEE, 2024. Shang, Z., Ebenezer, J. P., Bovik, A. C., Wu, Y., Wei, H., and Sethuraman, S. Subjective assessment of high dy-namic range videos under different ambient conditions. In 
+
+2022 IEEE international conference on image processing (ICIP) , pp. 786–790. IEEE, 2022. Shang, Z., Chen, Y., Wu, Y., Wei, H., and Sethuraman, S. Subjective and objective video quality assessment of high dynamic range sports content. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision , pp. 556–564, 2023. Sheikh, H. R. and Bovik, A. C. Image information and visual quality. IEEE Transactions on image processing ,15(2):430–444, 2006. Sneyers, J. Ssimulacra 2 — structural similarity unveiling local and compression related artifacts, 2023. URL https://github.com/cloudinary/ ssimulacra2 . BSD-3-Clause license. Perceptual im-age quality metric. Sodhani, P. Evaluate videos with the advanced video qual-ity tool. Apple Developer (WWDC21, Session 10145), 2021. URL https://developer.apple.com/ videos/play/wwdc2021/10145/ . WWDC21 video session. Sun, W., Wang, T., Min, X., Yi, F., and Zhai, G. Deep learning based full-reference and no-reference quality assessment models for compressed ugc videos. In 2021 IEEE International Conference on Multimedia & Expo Workshops (ICMEW) , pp. 1–6. IEEE, 2021. Tu, Z., Wang, Y., Birkbeck, N., Adsumilli, B., and Bovik, A. C. Ugc-vqa: Benchmarking blind video quality assess-ment for user generated content. IEEE Transactions on Image Processing , 2021. Wang, H., Gan, W., Hu, S., Lin, J. Y., Jin, L., Song, L., Wang, P., Katsavounidis, I., Aaron, A., and Kuo, C.-C. J. Mcl-jcv: a jnd-based h. 264/avc video quality assessment dataset. In 2016 IEEE international conference on image processing (ICIP) , pp. 1509–1513. IEEE, 2016a. 11 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+Wang, H., Katsavounidis, I., Zhou, J., Park, J., Lei, S., Zhou, X., Pun, M.-O., Jin, X., Wang, R., Wang, X., et al. Videoset: A large-scale compressed video quality dataset based on jnd measurement. Journal of Visual Communi-cation and Image Representation , 46:292–302, 2017. Wang, J., Chan, K. C., and Loy, C. C. Exploring clip for assessing the look and feel of images. In AAAI , 2023a. Wang, J., Chan, K. C., and Loy, C. C. Exploring clip for assessing the look and feel of images. In Proceedings of the AAAI conference on artificial intelligence , volume 37, pp. 2555–2563, 2023b. Wang, S., Gu, K., Zhang, X., Lin, W., Zhang, L., Ma, S., and Gao, W. Subjective and objective quality assessment of compressed screen content images. IEEE Journal on Emerging and Selected Topics in Circuits and Systems , 6 (4):532–543, 2016b. Wang, Y., Ke, J., Talebi, H., Yim, J. G., Birkbeck, N., Adsumilli, B., Milanfar, P., and Yang, F. Rich features for perceptual quality assessment of ugc videos. In Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 13435–13444, 2021. Wang, Z., Simoncelli, E. P., and Bovik, A. C. Multiscale structural similarity for image quality assessment. In The thrity-seventh asilomar conference on signals, systems & computers, 2003 , volume 2, pp. 1398–1402. Ieee, 2003. Wang, Z., Zhou, R., Athar, S., Yang, W., and Wang, Z. Boosting image quality assessment performance: Un-supervised score fusion by deep maximum a posteriori estimation. In ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 3940–3944. IEEE, 2024. Wen, S., Ling, S., Wang, J., Chen, X., Jing, Y., and Le Callet, P. Subjective and objective quality assessment of mobile gaming video. In ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 1810–1814. IEEE, 2022. Wu, H., Zhang, E., Liao, L., Chen, C., Hou, J., Wang, A., Sun, W., Yan, Q., and Lin, W. Exploring video quality assessment on user generated contents from aesthetic and technical perspectives. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pp. 20144– 20154, 2023. Ying, Z., Niu, H., Gupta, P., Mahajan, D., Ghadiyaram, D., and Bovik, A. From patches to pictures (paq-2-piq): Mapping the perceptual space of picture quality. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 3575–3585, 2020. Zhang, L., Zhang, L., Mou, X., and Zhang, D. Fsim: A feature similarity index for image quality assessment. 
+
+IEEE transactions on Image Processing , 20(8):2378– 2386, 2011. Zhang, R., Isola, P., Efros, A. A., Shechtman, E., and Wang, O. The unreasonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE conference on computer vision and pattern recognition , pp. 586–595, 2018. Zhang, W., Ma, K., Yan, J., Deng, D., and Wang, Z. Blind image quality assessment using a deep bilinear convolu-tional neural network. IEEE Transactions on Circuits and Systems for Video Technology , 30(1):36–47, 2020. Zhang, W., Ma, K., Zhai, G., and Yang, X. Uncertainty-aware blind image quality assessment in the laboratory and wild. IEEE Transactions on Image Processing , 30: 3474–3486, Mar. 2021. Zhang, Z., Wu, W., Sun, W., Tu, D., Lu, W., Min, X., Chen, Y., and Zhai, G. Md-vqa: Multi-dimensional quality assessment for ugc live videos. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 1746–1755, 2023. Zhu, Y., Song, L., Xie, R., and Zhang, W. Sjtu 4k video subjective quality dataset for content adaptive bit rate estimation without encoding. In 2016 IEEE international symposium on broadband multimedia systems and broad-casting (BMSB) , pp. 1–4. IEEE, 2016. 12 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+A. Optimization Procedure 
+
+In this appendix, we provide a detailed derivation of the Expectation–Maximisation (EM) procedure used to jointly infer the latent subjective scores {qi} and optimise the parameters of the transformation networks fc(·) and fb(·).
+
+A.1. Complete-Data Likelihood 
+
+Let D = {(i, j, z )} denote the set of observed pairwise preference votes under viewing condition z, where (i ≻ j, z )
+
+indicates that video i was preferred over video j. The probability of this observation under our model is 
+
+P (i ≻ j, z | q, θ, ψ ) = σ  ∥fc(qi, z ; θ) − fb(qj , z ; ψ)∥2 − ∥ fc(qj , z ; θ) − fb(qi, z ; ψ)∥2 , (4) where σ(·) is the sigmoid function, and θ and ψ are the parameters of fc and fb, respectively. The complete-data likelihood is then 
+
+Lc(q, θ, ψ | D ) = Y
+
+> (i,j,z )∈D
+
+P (i ≻ j, z | q, θ, ψ ), (5) and the corresponding log-likelihood is 
+
+log Lc(q, θ, ψ ) = X
+
+> (i,j,z )∈D
+
+log σ
+
+
+
+∆ij (z; q, θ, ψ )
+
+
+
+, (6) where 
+
+∆ij (z; q, θ, ψ ) = ∥fc(qi, z ; θ) − fb(qj , z ; ψ)∥2 − ∥ fc(qj , z ; θ) − fb(qi, z ; ψ)∥2. (7) 
+
+A.2. E-Step 
+
+In the E-step, we compute the expected log-likelihood with respect to the posterior of the latent variables q, given the current parameter estimates (θ(t), ψ (t)):
+
+Q(q, θ, ψ | θ(t), ψ (t)) = Eq|D ,θ (t),ψ (t) [log Lc(q, θ, ψ )] . (8) In practice, this expectation is approximated by point estimates of the latent scores {qi} obtained from the previous iteration, i.e. we set 
+
+q(t) = arg max  
+
+> q
+
+log Lc(q, θ (t), ψ (t)). (9) 
+
+A.3. M-Step 
+
+In the M-step, we maximise the surrogate function Q with respect to both the latent scores and network parameters: 
+
+(q(t+1) , θ (t+1) , ψ (t+1) ) = arg max  
+
+> q,θ,ψ
+
+Q(q, θ, ψ | θ(t), ψ (t)). (10) This reduces to gradient-based optimisation of the log-likelihood. Specifically, the gradients are given by 
+
+∇qi log Lc = X
+
+> (i,j,z )∈D
+
+(1 − σ(∆ ij )) ∇qi ∆ij (z; q, θ, ψ ), (11) 
+
+∇θ log Lc = X
+
+> (i,j,z )∈D
+
+(1 − σ(∆ ij )) ∇θ ∆ij (z; q, θ, ψ ), (12) 
+
+∇ψ log Lc = X
+
+> (i,j,z )∈D
+
+(1 − σ(∆ ij )) ∇ψ ∆ij (z; q, θ, ψ ). (13) The terms ∇qi ∆ij , ∇θ ∆ij , and ∇ψ ∆ij can be computed via automatic differentiation since fc(·) and fb(·) are implemented as neural networks. 13 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+A.4. Regularisation and Identifiability 
+
+Since the latent scores {qi} are only identifiable up to affine transformations, we impose constraints to avoid degeneracy: 
+
+1
+
+N
+
+> N
+
+X
+
+> i=1
+
+qi = 0 , 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+q2 
+
+> i
+
+= 1 . (14) These constraints normalise the latent quality scale, ensuring that the scores are comparable across training runs. 
+
+A.5. Summary 
+
+The EM optimisation alternates between: 1. Updating the latent quality scores {qi} based on the current network parameters (E-step), 2. Updating the network parameters (θ, ψ ) by maximising the surrogate log-likelihood (M-step), until convergence. In practice, we implement both steps jointly using stochastic gradient descent, with normalisation of {qi}
+
+applied after each iteration to enforce identifiability. 
+
+B. Dataset 
+
+B.1. Videos Preparation 
+
+We have 18,000 open-source high-bitrate videos licensed under CC BY or CC0. The clips include both professional and amateur recordings, with nearly half exhibiting scene changes and high motion. The proportion of synthetic to natural lighting is approximately 1:3. The content covers a wide range of categories, including nature, sports, close-up human scenes, gameplay, music videos, water or steam, and CGI. Common effects and distortions include camera shake, slow motion, grain and noise, extreme lighting conditions, on-screen text, and extraneous objects near the camera lens. This diversity enables a more realistic simulation of real-world viewing conditions. For the SI/TI calculation and building a representative set samples were encoded using x264 with a constant quantization parameter, after which the spatial and temporal complexity of each scene was computed. Spatial complexity is defined as the average I-frame size normalized by the uncompressed frame size, while temporal complexity is computed as the ratio of the average P-frame size to the average I-frame size. In addition, a preprocessing step was applied to standardize chroma subsampling across all videos, as it affects complexity estimation. Specifically, all sequences were converted to YUV 4:2:0. 
+
+B.2. Crowd-Worker Protocol 
+
+This study involves human participants who performed subjective video quality assessment (VQA) tasks using their personal Android devices. The data collection was conducted with careful consideration of ethical principles, including informed consent, fair compensation, data minimization, and participant privacy. Participants were recruited via a crowd-sourcing platform and voluntarily installed a custom Android application developed specifically for this study. Before participation, users were presented with a clear description of the task, the types of data being collected, and the purpose of the study. Participation was fully optional, and users could withdraw at any time by uninstalling the application, after which no further data were collected. The application performed a subjective VQA task in which participants compared or rated video content under natural viewing conditions. In addition to subjective responses, the application logged limited device and environmental metadata required for the analysis of viewing conditions, including device model and basic hardware specifications, as well as screen brightness and ambient light levels sampled once per second during the task. No audio, video, location, contact information, or other sensitive personal data were collected. All collected data were pseudonymized at the source using randomly generated participant identifiers. No directly identifying information (such as names, phone numbers, email addresses, advertising IDs, or precise location data) was stored. Device metadata were limited strictly to attributes necessary for grouping results by display characteristics and viewing conditions. 14 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions  
+
+> Table 4. Encoding commands used for creating compressed videos
+
+Encoder (name, version) Encoding commands 
+
+x265 (2020-04-13) x265.exe tune ssim preset medium crf TARGET_RC SOURCE_FILE -o TARGET_FILE input-res WIDTHxHEIGHT fps FPS 
+
+rav1e (unspecified) rav1e.exe threads 12 tiles 8 min-keyint 25 keyint 250 speed 3 quantizer TARGET_RC -o TARGET_FILE.ivf SOURCE_FILE 
+
+SVT-HEVC (v1.5.1) SvtHevcEncApp.exe -i SOURCE_FILE -w WIDTH -h HEIGHT -fps FPS -rc 1 -tbr TARGET_BITRATE -encMode 5 -b TARGET_FILE 
+
+SVT-AV1 (v0.8.3) SvtAv1EncApp.exe -i SOURCE_FILE -w WIDTH -h HEIGHT fps FPS rc 0 -q BITRATE_KBPS preset 3 -b TARGET_FILE 
+
+SVT-VP9 (v0.2.0) SvtVp9EncApp.exe -i SOURCE_FILE w WIDTH h HEIGHT fps FPS rc 0 -q BITRATE_KBPS -enc-mode 0 -b TARGET_FILE 
+
+x265 (3.5+1-ce882936d) x265-8bit.exe input SOURCE_FILE input-res WIDTHxHEIGHT fps FPS crf TARGET_RC vbv-bufsize 12000 vbv-maxrate 12000 preset veryslow rskip 0 ref 5 merange 92 rc-lookahead 50 -o TARGET_FILE psnr ssim tune=ssim 
+
+vvenc (v1.0.0) ./vvencapp preset fast -i SOURCE_FILE -s WIDTHxHEIGHT -r FPS bitrate TARGET_BITRATE -o TARGET_FILE 
+
+rav1e (0.5.0-alpha (p20210518)) rav1e-ch.exe threads 16 tiles 8 slots 2 min-keyint 25 keyint 250 speed 3 quantizer TARGET_RC frame-rate FPS_NUM time-scale FPS_DENOM -o TARGET_FILE.ivf SOURCE_FILE 
+
+Raw sensor logs were retained only for the duration required for statistical analysis and were stored on secure servers with restricted access. Participants were compensated monetarily for their time. Task design and payment rates were calibrated to ensure that the effective hourly compensation met or exceeded local minimum wage estimates for crowd work, accounting for task duration, installation time, and potential overhead. No unpaid screening or mandatory follow-up tasks were required. While the study did not involve medical procedures or interventions, it constitutes human-subjects research due to the collection of subjective responses and contextual metadata. An ethics review focused on informed consent, proportional data collection, and privacy safeguards is therefore warranted. The study design follows widely accepted ethical guidelines for crowd-sourced user studies and low-risk human-computer interaction research, emphasizing transparency, voluntariness, and protection of participant data. 
+
+B.3. Data Processing 
+
+To evaluate the proposed methods under realistic viewing conditions, we use a dedicated mobile application and a crowd-sourcing platform to recruit participants. Only users who explicitly agree to run the application and follow the testing instructions are selected. When a user launches the application, the device model is automatically recorded. The application starts a video quality assessment task defined by our experimental protocol. During the entire session, the application continuously monitors several important parameters that may influence visual perception. In particular, if the device provides an ambient light sensor, the current illumination level is logged. This information is later used to analyze or filter sessions conducted under unsuitable lighting conditions. Ambient light sensor readings collected during the experiments were additionally filtered to remove unreliable measurements. First, we excluded sessions from devices that did not provide a dedicated ambient light sensor or reported constant illumination values over time, which typically indicates missing or non-functional sensors. Second, we removed measurements with abrupt and physically implausible changes in illumination, such as large spikes or drops occurring within one-second intervals, as these are often caused by sensor noise, temporary occlusions, or background system events. Finally, sessions with illumination values consistently outside a predefined valid range were discarded. This filtering procedure ensures that only stable and meaningful ambient light measurements are used in the analysis, reducing noise and preventing sensor artifacts from influencing the reported results. 15 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 
+
+To ensure consistent viewing conditions, the application enforces a horizontal (landscape) screen orientation throughout the test. If the orientation changes, the session is paused or discarded. In addition, the application tracks the screen brightness once per second. Since different devices use different brightness scales (commonly ranging from 0–100 or 0–255), the recorded brightness values are normalized to the range [0,1] using the device-specific maximum brightness value obtained from system settings. We incorporated a server-controlled option in the application that allows the screen brightness to be set to predefined levels. Using this mode, we collected additional test sessions at the minimum and maximum brightness levels supported by each user device. This procedure enables controlled analysis of visual quality under extreme brightness conditions while accounting for device-specific brightness limits. All collected signals are logged together with the subjective responses. To the final dataset mean and maximum results are reported. Based on the device model we have filled the dataset with device properties obtained from the web. Figures 6 and 7 demonstrate the distribution of the models in the testing. Table 5 lists the available metadata fields. Phone models (sorted by frequency) 
+
+0.0 
+
+0.5 
+
+1.0 
+
+1.5 
+
+2.0 
+
+> Share of model (%)
+
+# Distribution of phone models in the dataset  
+
+> Figure 6. Distribution of the phone models frequency.
+
+C. Evaluation 
+
+16 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions Other 
+
+> Redmi Note 8 Pro
+> SM-A556E
+> 23124RA7EO
+> M2101K6G
+> M2102J20SG
+> M2101K7BNY
+> M2006C3MNG
+> TECNO KJ6
+> 23053RN02Y
+> RMX3085
+
+Phone model 
+
+0
+
+20 
+
+40 
+
+60 
+
+80          
+
+> Share of model (%)
+> 83.9%
+> 2.3% 2.3% 2.3% 1.7% 1.5% 1.4% 1.2% 1.2% 1.2% 1.1%
+
+## Distribution of phone models in the dataset (top-10)   
+
+> Figure 7. Distribution of the phone models frequency. Top-10 models cover almost 20% of the votes.
+> Table 5. Description of the display and environment characteristics collected during testing.
+
+Name Data type Description 
+
+h pix integer Display height in pixels w pix integer Display width in pixels dpi integer Display pixel density (dots per inch) h ph float Physical display height in inches w ph float Physical display width in inches model string Device model name displaysize float Display diagonal size in inches HDR boolean HDR support flag Dolby Vision boolean Dolby Vision support flag Display type categorical Display technology (e.g., OLED, LCD) Peak (nits) float Peak display luminance in nits (sparse) HBM (nits) float High Brightness Mode luminance in nits (sparse) Typical (nits) float Typical display luminance in nits (sparse) Hz integer Display refresh rate in Hz bit-depth integer Display color bit depth illumination max float Maximum ambient light level during session illumination mean float Mean ambient light level during session has light sensor boolean Indicates presence of ambient light sensor brightness max float Maximum recorded screen brightness (normalized) brightness mean float Mean screen brightness (normalized) 17 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 2 3 4 5 6 7
+
+# Screen height (inches) 
+
+0.00 
+
+0.25 
+
+0.50 
+
+0.75 
+
+1.00 
+
+1.25 
+
+1.50 
+
+1.75 
+
+2.00 
+
+> Probability density
+
+# Distribution of screen height during the test 
+
+Figure 8. Distribution of device heights. 
+
+18 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 0.0 0.2 0.4 0.6 0.8 1.0 
+
+# Mean brightness 
+
+0.00 
+
+0.25 
+
+0.50 
+
+0.75 
+
+1.00 
+
+1.25 
+
+1.50 
+
+1.75 
+
+2.00 
+
+> Probability density
+
+# Distribution of screen brightness during the test 
+
+Figure 9. Distribution of screen brightness levels. 
+
+19 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions 0 2 4 6 8 10 
+
+# Mean log(ambient luminance) 
+
+0.00 
+
+0.05 
+
+0.10 
+
+0.15 
+
+0.20 
+
+0.25 
+
+> Probability density
+
+# Distribution of log(ambient luminance) 
+
+Figure 10. Distribution of the ambient lightning. AVQT 
+
+> LPIPS
+> SSIMULACRA
+> FSIM
+> PAQ2PIQ
+> DISTS
+> UNIQUE
+> VMAF
+> DBCNN
+> CLIP-IQA-PLUS
+> DOVER
+> COMPRESSED-VQA
+> VMAF NEG
+> LI2022
+> VIF
+> MDTVSFA
+> HAARPSI
+> TOPIQ-NR
+> SSIM
+> RANK-IQA
+> TOPIQ
+> NLPD
+> PSNR
+> MS-SSIM
+> KONCEPT
+> LINEARITY
+> VIDEVAL
+> VSFA
+> MUSIQ
+> NIQE
+> BRISQUE
+> CLIP-IQA
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> KROCC
+
+KROCC gain for adapted metrics (Phone model 1) 
+
+KROCC (original) 
+
+Gain (positive) 
+
+Gain (negative) 
+
+No-reference 
+
+Figure 11. Kendall rank correlations for the original metrics and their adapted counterparts for Xiaomi Redmi Note 13. Gain represents how score improved after metric training (green = positive, red = negative) 
+
+20 Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions FSIM 
+
+> AVQT
+> CLIP-IQA-PLUS
+> VMAF
+> DOVER
+> VMAF NEG
+> HAARPSI
+> COMPRESSED-VQA
+> LPIPS
+> SSIMULACRA
+> DISTS
+> UNIQUE
+> VIF
+> TOPIQ-NR
+> SSIM
+> MDTVSFA
+> PAQ2PIQ
+> PSNR
+> DBCNN
+> TOPIQ
+> LI2022
+> MS-SSIM
+> RANK-IQA
+> KONCEPT
+> VSFA
+> NLPD
+> LINEARITY
+> MUSIQ
+> CLIP-IQA
+> NIQE
+> VIDEVAL
+> BRISQUE
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> KROCC
+
+KROCC gain for adapted metrics (Phone model 2) 
+
+KROCC (original) 
+
+Gain (positive) 
+
+Gain (negative) 
+
+No-reference 
+
+Figure 12. Kendall rank correlations for the original metrics and their adapted counterparts for Samsung Galaxy A55. Gain represents how score improved after metric training (green = positive, red = negative) SSIMULACRA 
+
+> LPIPS
+> FSIM
+> UNIQUE
+> DOVER
+> AVQT
+> VMAF
+> CLIP-IQA-PLUS
+> LI2022
+> DISTS
+> VIF
+> VMAF NEG
+> PAQ2PIQ
+> DBCNN
+> HAARPSI
+> RANK-IQA
+> COMPRESSED-VQA
+> MDTVSFA
+> SSIM
+> TOPIQ-NR
+> TOPIQ
+> VSFA
+> KONCEPT
+> LINEARITY
+> NLPD
+> PSNR
+> MS-SSIM
+> MUSIQ
+> VIDEVAL
+> NIQE
+> BRISQUE
+> CLIP-IQA
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> KROCC
+
+KROCC gain for adapted metrics (Phone model 3) 
+
+KROCC (original) 
+
+Gain (positive) 
+
+Gain (negative) 
+
+No-reference 
+
+Figure 13. Kendall rank correlations for the original metrics and their adapted counterparts for Xiaomi Redmi Note 8 Pro. Gain represents how score improved after metric training (green = positive, red = negative) 
+
+21

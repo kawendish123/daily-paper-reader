@@ -6,55 +6,38 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-07
-- 运行时间：2026-07-07 20:38:34 UTC
+- 最新运行日期：2026-07-08
+- 运行时间：2026-07-08 21:52:32 UTC
 - 运行状态：成功
-- 本次总论文数：11
-- 精读区：5
-- 速读区：6
+- 本次总论文数：6
+- 精读区：1
+- 速读区：5
 
 ### 今日简报（AI）
-今天共更新11篇论文，精读5篇速读6篇，重点覆盖网络模型选择与FPGA视觉Transformer推理两大方向。  
-最值得精读的是《Universal Inference for model selection on networks》（9.0分，网络模型通用推断）和《Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference》（8.0分，FPGA上近似注意力加权优化）。  
-建议优先精读这两篇高分解法，并留意《CineMobile》等速读论文中的移动端图像到视频生成思路。
-- 详情：[/202607/07/README](/202607/07/README)
+今日精读一篇高分论文《Task-Oriented Multimodal Edge Intelligence》，速读涵盖移动视频扩散、传感器LLM翻译及6G语义鸿沟等方向。最值得关注的是面向任务的多模态边缘智能框架，以及移动端视频生成的质量突破。建议优先精读9分论文，理解通信-计算-感知融合的设计逻辑。
+- 详情：[/202607/08/README](/202607/08/README)
 
 ### 精读区论文标签
-1. [Universal Inference for model selection on networks](/202607/07/2606.30981v1-universal-inference-for-model-selection-on-networks)  
+1. [Task-Oriented Multimodal Edge Intelligence via Integrated Sensing-Communication-Computation](/202607/08/2607.03907v1-task-oriented-multimodal-edge-intelligence-via-integrated-sensing-communication-computation)  
    标签：评分：9.0/10、query:mec-video
-   evidence：基于通用推断的网络模型选择框架
-2. [Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference](/202607/07/2607.01798v2-approximate-attention-weighting-for-sustainable-fpga-based-vision-transformer-inference)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：用于边缘视觉检测的FPGA视觉Transformer推理
-3. [A Multi-Task Deep Learning Framework for Real-Time Intelligent Video Surveillance with Temporal Event Validation](/202607/07/2607.03131v1-a-multi-task-deep-learning-framework-for-real-time-intelligent-video-surveillance-with-temporal-event-validation)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：共享GPU上的实时视频监控多任务深度学习
-4. [Evaluating 5G-connected IoT for Power Line Temperature Prediction: Real-World Latency and Cost Trade-offs Between MEC and Cloud](/202607/07/2607.03993v1-evaluating-5g-connected-iot-for-power-line-temperature-prediction-real-world-latency-and-cost-trade-offs-between-mec-and-cloud)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：评估5G连接IoT中MEC的延迟和成本权衡
-5. [Semantic Video Communication via Multi-Scale Convolution and Dynamic Routing for Next-Generation Networks](/202607/07/2607.05093v1-semantic-video-communication-via-multi-scale-convolution-and-dynamic-routing-for-next-generation-networks)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：面向网络边缘的语义视频通信
+   evidence：面向任务的多模态边缘智能，集成感知-通信-计算，直接针对边缘计算与视频分析
 
 ### 速读区论文标签
-1. [CineMobile: On-Device Image-to-Video Diffusion for Cinematic Camera Motion Generation](/202607/07/2607.03803v1-cinemobile-on-device-image-to-video-diffusion-for-cinematic-camera-motion-generation)  
+1. [MobileWan: Closing the Quality Gap for Mobile Video Diffusion](/202607/08/2607.06173v1-mobilewan-closing-the-quality-gap-for-mobile-video-diffusion)  
    标签：评分：7.0/10、query:mec-video
-   evidence：移动设备上的视频生成与模型优化
-2. [From Frames to Features: Scalable Zigzag Persistence for Binary Video](/202607/07/2606.30490v1-from-frames-to-features-scalable-zigzag-persistence-for-binary-video)  
+   evidence：面向移动端视频部署的模型压缩
+2. [STELLA: Efficient Sensor-to-LLM Translation for On-Device Human Activity Recognition](/202607/08/2607.03089v1-stella-efficient-sensor-to-llm-translation-for-on-device-human-activity-recognition)  
    标签：评分：6.0/10、query:mec-video
-   evidence：二元视频拓扑特征提取
-3. [Dataset Biases and Shortcut Learning in Motion-Based AI-Generated Video Detection](/202607/07/2607.00948v1-dataset-biases-and-shortcut-learning-in-motion-based-ai-generated-video-detection)  
+   evidence：设备端边缘计算进行活动识别
+3. [Bridging the Semantic Gap in 6G: Tiny Language Models Under the Latency-Accuracy-Size Trilemma](/202607/08/2607.03246v1-bridging-the-semantic-gap-in-6g-tiny-language-models-under-the-latency-accuracy-size-trilemma)  
    标签：评分：6.0/10、query:mec-video
-   evidence：利用运动模式检测AI生成视频，视频分析
-4. [Vision Token Manipulation Attacks on Cloud-Edge Inference of Large Vision-Language Models](/202607/07/2607.02819v1-vision-token-manipulation-attacks-on-cloud-edge-inference-of-large-vision-language-models)  
+   evidence：面向边缘设备的轻量语言模型解决延迟-精度平衡问题
+4. [Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions](/202607/08/2607.04643v1-learning-flexible-generalization-in-video-quality-assessment-by-bringing-device-and-viewing-condition-distributions)  
    标签：评分：6.0/10、query:mec-video
-   evidence：云边推理安全
-5. [STAC: Selective Spatiotemporal Aggregation and Compression for Video Reasoning Segmentation](/202607/07/2607.02922v1-stac-selective-spatiotemporal-aggregation-and-compression-for-video-reasoning-segmentation)  
+   evidence：移动设备上的视频质量评估，与视频分析相关
+5. [EeveeDark: A Binary Neural Framework for Low-Light Video Enhancement via Event-Guided Sensor-Level Fusion](/202607/08/2607.06217v1-eeveedark-a-binary-neural-framework-for-low-light-video-enhancement-via-event-guided-sensor-level-fusion)  
    标签：评分：6.0/10、query:mec-video
-   evidence：视频推理分割中的时空聚合与压缩，与流式视频分析技术相关
-6. [QSVideo: Query-Conditioned Semantic Temporal Retrieval for Video Understanding](/202607/07/2607.04559v1-qsvideo-query-conditioned-semantic-temporal-retrieval-for-video-understanding)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：查询条件的视频检索用于理解
+   evidence：低光视频增强结合二值神经网络，面向资源受限环境，支持实时视频处理
 
 
 <div class="dpr-home-promo-card">
