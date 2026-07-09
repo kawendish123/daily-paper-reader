@@ -6,38 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-08
-- 运行时间：2026-07-08 21:52:32 UTC
+- 最新运行日期：2026-07-09
+- 运行时间：2026-07-09 20:56:22 UTC
 - 运行状态：成功
 - 本次总论文数：6
 - 精读区：1
 - 速读区：5
 
 ### 今日简报（AI）
-今日精读一篇高分论文《Task-Oriented Multimodal Edge Intelligence》，速读涵盖移动视频扩散、传感器LLM翻译及6G语义鸿沟等方向。最值得关注的是面向任务的多模态边缘智能框架，以及移动端视频生成的质量突破。建议优先精读9分论文，理解通信-计算-感知融合的设计逻辑。
-- 详情：[/202607/08/README](/202607/08/README)
+今日共处理6篇论文，精读1篇高分视频分割工作，速读聚焦视频推理、多模态联邦学习压缩及事件视觉GNN剪枝。  
+精读《Attention-Guided Cross-Temporal Clustering》以9.0分领跑，其自监督视频目标分割方法效果突出；速读中《Entropy-Guided Tensor Compression》对边缘设备多模态学习有实用价值。  
+建议优先精读视频分割论文，再根据实际场景选读边缘部署或视频推理方向。
+- 详情：[/202607/09/README](/202607/09/README)
 
 ### 精读区论文标签
-1. [Task-Oriented Multimodal Edge Intelligence via Integrated Sensing-Communication-Computation](/202607/08/2607.03907v1-task-oriented-multimodal-edge-intelligence-via-integrated-sensing-communication-computation)  
+1. [`Attention-Guided Cross-Temporal Clustering for Self-Supervised Video Object Segmentation](/202607/09/2607.07230v1-attention-guided-cross-temporal-clustering-for-self-supervised-video-object-segmentation)  
    标签：评分：9.0/10、query:mec-video
-   evidence：面向任务的多模态边缘智能，集成感知-通信-计算，直接针对边缘计算与视频分析
+   evidence：通过跨时间聚类和注意力实现自监督视频目标分割
 
 ### 速读区论文标签
-1. [MobileWan: Closing the Quality Gap for Mobile Video Diffusion](/202607/08/2607.06173v1-mobilewan-closing-the-quality-gap-for-mobile-video-diffusion)  
+1. [Latent Visual Cache for Video Reasoning](/202607/09/2607.02607v1-latent-visual-cache-for-video-reasoning)  
    标签：评分：7.0/10、query:mec-video
-   evidence：面向移动端视频部署的模型压缩
-2. [STELLA: Efficient Sensor-to-LLM Translation for On-Device Human Activity Recognition](/202607/08/2607.03089v1-stella-efficient-sensor-to-llm-translation-for-on-device-human-activity-recognition)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：设备端边缘计算进行活动识别
-3. [Bridging the Semantic Gap in 6G: Tiny Language Models Under the Latency-Accuracy-Size Trilemma](/202607/08/2607.03246v1-bridging-the-semantic-gap-in-6g-tiny-language-models-under-the-latency-accuracy-size-trilemma)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：面向边缘设备的轻量语言模型解决延迟-精度平衡问题
-4. [Learning Flexible Generalization in Video Quality Assessment by Bringing Device and Viewing Condition Distributions](/202607/08/2607.04643v1-learning-flexible-generalization-in-video-quality-assessment-by-bringing-device-and-viewing-condition-distributions)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：移动设备上的视频质量评估，与视频分析相关
-5. [EeveeDark: A Binary Neural Framework for Low-Light Video Enhancement via Event-Guided Sensor-Level Fusion](/202607/08/2607.06217v1-eeveedark-a-binary-neural-framework-for-low-light-video-enhancement-via-event-guided-sensor-level-fusion)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：低光视频增强结合二值神经网络，面向资源受限环境，支持实时视频处理
+   evidence：使用潜在缓存的视频推理方法，与视频分析相关
+2. [Entropy-Guided Tensor Compression for Multimodal Federated Learning on Edge Devices](/202607/09/2607.06651v1-entropy-guided-tensor-compression-for-multimodal-federated-learning-on-edge-devices)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：边缘计算与模型压缩
+3. [Hardware-aware Graph Neural Networks prunning for embedded event-based vision](/202607/09/2607.06739v1-hardware-aware-graph-neural-networks-prunning-for-embedded-event-based-vision)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：针对资源受限FPGA平台剪枝量化图神经网络
+4. [Smart Scissor: Coupling Spatial Redundancy Reduction and CNN Compression for Embedded Hardware](/202607/09/2607.06915v1-smart-scissor-coupling-spatial-redundancy-reduction-and-cnn-compression-for-embedded-hardware)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：面向嵌入式硬件的边缘AI与CNN压缩
+5. [BehaviorScope-X: reusing pose-trained visual representations for full-video ethology](/202607/09/biorxiv-10-64898-2026-07-02-735695-v1-behaviorscope-x-reusing-pose-trained-visual-representations-for-full-video-ethology)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：重用姿态训练的视觉表征进行全视频行为分类
 
 
 <div class="dpr-home-promo-card">
