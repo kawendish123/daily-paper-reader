@@ -6,40 +6,46 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-09
-- 运行时间：2026-07-09 20:56:22 UTC
+- 最新运行日期：2026-07-10
+- 运行时间：2026-07-10 20:51:30 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：1
-- 速读区：5
+- 本次总论文数：8
+- 精读区：2
+- 速读区：6
 
 ### 今日简报（AI）
-今日共处理6篇论文，精读1篇高分视频分割工作，速读聚焦视频推理、多模态联邦学习压缩及事件视觉GNN剪枝。  
-精读《Attention-Guided Cross-Temporal Clustering》以9.0分领跑，其自监督视频目标分割方法效果突出；速读中《Entropy-Guided Tensor Compression》对边缘设备多模态学习有实用价值。  
-建议优先精读视频分割论文，再根据实际场景选读边缘部署或视频推理方向。
-- 详情：[/202607/09/README](/202607/09/README)
+今天重点研究了延迟关键型边缘系统的协作学习与实时交互式多目标视频分割，两篇精读均为9.0分。  
+值得关注的两个方向：边缘智能模型的协同训练，以及视频分割的实时交互能力。  
+下一步建议：深入探索边缘端模型协同优化策略，并结合实时视频分割技术，以应对低延迟场景需求。
+- 详情：[/202607/10/README](/202607/10/README)
 
 ### 精读区论文标签
-1. [`Attention-Guided Cross-Temporal Clustering for Self-Supervised Video Object Segmentation](/202607/09/2607.07230v1-attention-guided-cross-temporal-clustering-for-self-supervised-video-object-segmentation)  
+1. [Collate: Collaborative Neural Network Learning for Latency-Critical Edge Systems](/202607/10/2607.08013v1-collate-collaborative-neural-network-learning-for-latency-critical-edge-systems)  
    标签：评分：9.0/10、query:mec-video
-   evidence：通过跨时间聚类和注意力实现自监督视频目标分割
+   evidence：通过协作异构学习进行边缘计算模型选择
+2. [SAM-MT: Real-Time Interactive Multi-Target Video Segmentation](/202607/10/2607.08688v1-sam-mt-real-time-interactive-multi-target-video-segmentation)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：实时交互式多目标视频分割
 
 ### 速读区论文标签
-1. [Latent Visual Cache for Video Reasoning](/202607/09/2607.02607v1-latent-visual-cache-for-video-reasoning)  
+1. [SPLIT: Training-Free AI-Generated and Partially Edited Video Detection via Spatial Patch-Level Incoherence and Temporal Roughness](/202607/10/2607.02886v1-split-training-free-ai-generated-and-partially-edited-video-detection-via-spatial-patch-level-incoherence-and-temporal-roughness)  
    标签：评分：7.0/10、query:mec-video
-   evidence：使用潜在缓存的视频推理方法，与视频分析相关
-2. [Entropy-Guided Tensor Compression for Multimodal Federated Learning on Edge Devices](/202607/09/2607.06651v1-entropy-guided-tensor-compression-for-multimodal-federated-learning-on-edge-devices)  
+   evidence：AI生成视频检测属于视频分析
+2. [Latent Clarity: Bridging World-Model Kinematics to Semantic Manifolds for Video Anomaly Anticipation](/202607/10/2607.03558v1-latent-clarity-bridging-world-model-kinematics-to-semantic-manifolds-for-video-anomaly-anticipation)  
    标签：评分：7.0/10、query:mec-video
-   evidence：边缘计算与模型压缩
-3. [Hardware-aware Graph Neural Networks prunning for embedded event-based vision](/202607/09/2607.06739v1-hardware-aware-graph-neural-networks-prunning-for-embedded-event-based-vision)  
+   evidence：视频异常预测属于视频分析
+3. [CompressedVQA-AEV: Full-Reference and No-Reference Quality Assessment Models for Asymmetric Encoded Videos](/202607/10/2607.04606v1-compressedvqa-aev-full-reference-and-no-reference-quality-assessment-models-for-asymmetric-encoded-videos)  
    标签：评分：7.0/10、query:mec-video
-   evidence：针对资源受限FPGA平台剪枝量化图神经网络
-4. [Smart Scissor: Coupling Spatial Redundancy Reduction and CNN Compression for Embedded Hardware](/202607/09/2607.06915v1-smart-scissor-coupling-spatial-redundancy-reduction-and-cnn-compression-for-embedded-hardware)  
+   evidence：面向视频分析的质量评估
+4. [Dual-Correlation Hypergraph Network for Unaligned RGBT Video Object Detection and A Large-scale Benchmark](/202607/10/2607.08191v1-dual-correlation-hypergraph-network-for-unaligned-rgbt-video-object-detection-and-a-large-scale-benchmark)  
    标签：评分：7.0/10、query:mec-video
-   evidence：面向嵌入式硬件的边缘AI与CNN压缩
-5. [BehaviorScope-X: reusing pose-trained visual representations for full-video ethology](/202607/09/biorxiv-10-64898-2026-07-02-735695-v1-behaviorscope-x-reusing-pose-trained-visual-representations-for-full-video-ethology)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：重用姿态训练的视觉表征进行全视频行为分类
+   evidence：RGBT视频目标检测属于视频分析
+5. [Reduced-complexity Adaptive Loop Filtering via Input-dependent Graph Filters](/202607/10/2607.04985v1-reduced-complexity-adaptive-loop-filtering-via-input-dependent-graph-filters)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：低复杂度自适应环路滤波用于视频编码
+6. [ZipDepth: Bringing Lightweight Zero-Shot Monocular Depth Anywhere, on Any Device](/202607/10/2607.08771v1-zipdepth-bringing-lightweight-zero-shot-monocular-depth-anywhere-on-any-device)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：轻量级单目深度模型，适用于边缘设备实时部署
 
 
 <div class="dpr-home-promo-card">

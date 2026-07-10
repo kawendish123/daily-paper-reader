@@ -1,0 +1,329 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-10T20:46:57.817034+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2607.08013v1",
+      "source": "arxiv",
+      "title": "Collate: Collaborative Neural Network Learning for Latency-Critical Edge Systems",
+      "abstract": "Federated Learning (FL) empowers multiple clients to collaboratively learn a model, enlarging the training data of each client for high accuracy while protecting data privacy. However, when deploying FL in real-time edge systems, the heterogeneity of devices among systems has a severe impact on the performance of the inferred model. Existing optimizations on FL focus on improving the training efficiency but fail to speed up inference, especially when there is a latency constraint. In this work, we propose Collate, a novel training framework that collaboratively learns heterogeneous models to meet the latency constraints of multiple edge systems simultaneously. We design a dynamic zeroizing-recovering method to adjust each local model architecture for high accuracy under its latency constraint. A proto-corrected federated aggregation scheme is also introduced to aggregate all heterogeneous local models, satisfying the latency constraint of different systems with only one training process and maintaining high accuracy. Extensive experiments indicate that, compared to state-of-the-art methods and under a latency constraint, our extended models can improve the accuracy by 1.96% on average, and our shrunk models can also obtain a 3.09% accuracy improvement on average, with almost no extra training overhead. The related codes and data will be available at https://github.com/ntuliuteam/Collate",
+      "authors": [
+        "Shuo Huai",
+        "Di Liu",
+        "Hao Kong",
+        "Xiangzhong Luo",
+        "Weichen Liu",
+        "Ravi Subramaniam",
+        "Christian Makaya",
+        "Qian Lin"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.DC"
+      ],
+      "published": "2026-07-09T00:39:20+00:00",
+      "link": "https://arxiv.org/pdf/2607.08013v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "model selection for edge computing via collaborative heterogeneous learning",
+      "llm_evidence_cn": "通过协作异构学习进行边缘计算模型选择",
+      "llm_evidence": "通过协作异构学习进行边缘计算模型选择",
+      "canonical_evidence": "通过协作异构学习进行边缘计算模型选择",
+      "llm_tldr_en": "Collate introduces a collaborative training framework that learns heterogeneous models for multiple edge systems under latency constraints using dynamic zeroizing-recovering.",
+      "llm_tldr_cn": "联邦学习在实时边缘系统中因设备异构导致推理延迟高。Collate提出协作训练框架，通过动态零化恢复方法调整各本地模型架构，同时满足多边缘系统的延迟约束。实验证明该方法有效提升了异构边缘系统的推理性能，为边缘计算中的模型选择提供了实用方案。",
+      "llm_tldr": "联邦学习在实时边缘系统中因设备异构导致推理延迟高。Collate提出协作训练框架，通过动态零化恢复方法调整各本地模型架构，同时满足多边缘系统的延迟约束。实验证明该方法有效提升了异构边缘系统的推理性能，为边缘计算中的模型选择提供了实用方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.08688v1",
+      "source": "arxiv",
+      "title": "SAM-MT: Real-Time Interactive Multi-Target Video Segmentation",
+      "abstract": "Modern Video Object Segmentation (VOS) involves tracking and segmenting user-specified targets. While recent approaches have achieved remarkable performance in single-target scenarios, extending them to multi-target settings typically involves replicating the single-target processing for each individual object, resulting in reduced frame rates (FPS) with unbounded latency as target count increases. Built upon Segment Anything 2 (SAM2), we propose SAM-MT, which addresses this by transforming the model into an interactive framework for real-time Multi-Target video segmentation. SAM-MT uses explicit queries to represent different individual targets, in parallel with a shared representation for global context. It employs decoupled masked attention to keep individual identities distinct from cross-target interference, and sparse memory for stable temporal evolution, along with specialized strategies for occlusion handling and overlap prevention. SAM-MT successfully decouples latency from the number of targets, achieving real-time speed on par with single-target baselines (>36 FPS for 10 targets) while maintaining SAM2's robust video segmentation performance.",
+      "authors": [
+        "Ruiqi Shen",
+        "Chang Liu",
+        "Henghui Ding"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-09T16:49:57+00:00",
+      "link": "https://arxiv.org/pdf/2607.08688v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Real-time interactive multi-target video segmentation",
+      "llm_evidence_cn": "实时交互式多目标视频分割",
+      "llm_evidence": "实时交互式多目标视频分割",
+      "canonical_evidence": "实时交互式多目标视频分割",
+      "llm_tldr_en": "SAM-MT extends SAM2 to real-time multi-target video segmentation using parallel queries and decoupled masked attention, achieving high FPS regardless of target count.",
+      "llm_tldr_cn": "现有视频分割方法在目标数量增加时帧率下降严重。本文基于SAM2提出SAM-MT，通过并行显式查询和分离掩膜注意力机制实现实时多目标分割。实验证明在保持分割精度的同时，帧率不随目标数量线性下降，适合交互式应用。",
+      "llm_tldr": "现有视频分割方法在目标数量增加时帧率下降严重。本文基于SAM2提出SAM-MT，通过并行显式查询和分离掩膜注意力机制实现实时多目标分割。实验证明在保持分割精度的同时，帧率不随目标数量线性下降，适合交互式应用。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.02886v1",
+      "source": "arxiv",
+      "title": "SPLIT: Training-Free AI-Generated and Partially Edited Video Detection via Spatial Patch-Level Incoherence and Temporal Roughness",
+      "abstract": "Deploying AI-generated video detectors in real-world services demands an ultra-low false positive rate (FPR) on real videos to avoid falsely rejecting authentic content, a regime where standard metrics such as AUROC fail to reflect actual operating behavior. We introduce Spatial Patch-Level Incoherence and Temporal Roughness (SPLIT), a training-free detector that operates on patch tokens from a frozen vision encoder to detect both fully generated and partially edited videos. SPLIT computes two complementary signals: Two-step Temporal Roughness (TTR), capturing non-smooth patch trajectories via one-step and two-step feature variation contrast, and Local Spatial Motion Incoherence (LSMI), measuring spatially inconsistent temporal changes through gradients of a feature-space motion field. The two are fused multiplicatively with gamma correction to sharpen real-fake separation at strict thresholds. We further propose a service-aligned evaluation protocol based on Fake Recall at fixed FPR with real-only threshold calibration and cross-real threshold transfer. Across three benchmarks (FakeParts, GenVideo, and ViF-Bench), SPLIT achieves the highest Fake Recall at FPR = $0.1\\%$, substantially outperforming supervised and training-free baselines while remaining robust to post-processing with negligible overhead. The code is publicly available at https://github.com/mldljyh/SPLIT .",
+      "authors": [
+        "Jongyeop Hyun",
+        "Hyounghun Kim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-03T02:34:50+00:00",
+      "link": "https://arxiv.org/pdf/2607.02886v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "AI-generated video detection as video analytics",
+      "llm_evidence_cn": "AI生成视频检测属于视频分析",
+      "llm_evidence": "AI生成视频检测属于视频分析",
+      "canonical_evidence": "AI生成视频检测属于视频分析",
+      "llm_tldr_en": "SPLIT detects AI-generated and partially edited videos via spatial patch incoherence and temporal roughness without training.",
+      "llm_tldr_cn": "现有AI视频检测方法在低误报率场景下表现不佳。本文提出SPLIT，利用冻结视觉编码器的补丁令牌计算时空不一致性指标，无需训练即可检测全生成或局部编辑视频。该方法在保持极低误报率的同时有效识别伪造内容。",
+      "llm_tldr": "现有AI视频检测方法在低误报率场景下表现不佳。本文提出SPLIT，利用冻结视觉编码器的补丁令牌计算时空不一致性指标，无需训练即可检测全生成或局部编辑视频。该方法在保持极低误报率的同时有效识别伪造内容。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.04985v1",
+      "source": "arxiv",
+      "title": "Reduced-complexity Adaptive Loop Filtering via Input-dependent Graph Filters",
+      "abstract": "Adaptive Loop Filtering is an important tool for suppressing compression artifacts in modern video codecs. In the enhanced compression model (ECM), a software test model used for experimenting with video coding tools beyond Versatile Video Coding, fixed filters are trained offline and achieve high signal adaptivity via a fine-grained gradient-based classifier, resulting in a large number of fixed filters that introduce redundancy and increased implementation complexity. Reducing this redundancy without compromising artifact suppression, therefore, remains a key challenge. This paper proposes an alternative graph-based fixed-filtering framework for adaptive loop filtering. By using a graph to encode pixel-intensity relationships, our approach captures local structural information more effectively than gradient-based classification alone. Fixed filters are learned as polynomial graph filters, enabling structurally similar local patterns to share common filtering behavior. Experimental results demonstrate that the proposed approach achieves a comparable performance to the ECM baseline while reducing the number of required filters by an order of magnitude.",
+      "authors": [
+        "Wen-Yang Lu",
+        "Eduardo Pavez",
+        "Antonio Ortega",
+        "Roman Chernyak",
+        "Shan Liu"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV"
+      ],
+      "published": "2026-07-06T12:21:33+00:00",
+      "link": "https://arxiv.org/pdf/2607.04985v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "reduced-complexity adaptive loop filtering for video coding",
+      "llm_evidence_cn": "低复杂度自适应环路滤波用于视频编码",
+      "llm_evidence": "低复杂度自适应环路滤波用于视频编码",
+      "canonical_evidence": "低复杂度自适应环路滤波用于视频编码",
+      "llm_tldr_en": "Proposes graph-based adaptive loop filtering to reduce filter redundancy in video codecs, improving compression efficiency with lower complexity.",
+      "llm_tldr_cn": "现代视频编码中自适应环路滤波使用了大量固定滤波器导致冗余。本文提出基于图滤波的框架，用图结构编码像素强度关系，从而以更少滤波器实现同等或更好的伪影抑制。该方法降低了复杂度并保持了压缩效率，对实时视频传输具有潜力。",
+      "llm_tldr": "现代视频编码中自适应环路滤波使用了大量固定滤波器导致冗余。本文提出基于图滤波的框架，用图结构编码像素强度关系，从而以更少滤波器实现同等或更好的伪影抑制。该方法降低了复杂度并保持了压缩效率，对实时视频传输具有潜力。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.03558v1",
+      "source": "arxiv",
+      "title": "Latent Clarity: Bridging World-Model Kinematics to Semantic Manifolds for Video Anomaly Anticipation",
+      "abstract": "Continuous video anomaly detection is dominated by reactive Multiple Instance Learning (MIL) that collapses spatiotemporal features into scalar scores. We introduce PULS (Predictive Unified Latent Space), a continuous semantic world-model pipeline comprising two modules: a 490M-parameter KSD Bridge (Kinematic-to-Semantic Distillation) and a 16.8M-parameter Anticipatory State Predictor (ASP). The KSD Bridge maps V-JEPA 2 physical tensors into the 2048-d Qwen3-VL-Embedding-2B text-aligned hypersphere, trained on a subset of UCF-Crime. This translation alone yields a chunk-level AUROC of 0.8994 for UCF-Crime and 0.8162 for out-of-distribution XD-Violence without MIL or hierarchical fusion.   We introduce and validate the Latent Clarity Hypothesis: because JEPA's temporal predictor discards aleatoric pixel noise while preserving kinematics, anticipated future representations are more semantically separable than observed presents. The ASP sharpens these anticipated future latents, achieving 44.5% mean 14-way zero-shot VQA accuracy (exceeding observation baseline by +9.6 pp). Applying the ASP to Observation Tensors collapses accuracy to 7.3% (random chance), proving Anticipation and Observation occupy distinct sub-manifolds. A Triple-Track Lead-Time protocol with an L1-surprise gate yields a peak +8.9 pp anticipatory advantage at T-0.5s (p < 0.001, N = 1,000 permutation), separating physical anticipation from static scene priors. Zero-shot transfer to XD-Violence confirms that Newtonian-invariant kinematic representations generalize out-of-distribution.",
+      "authors": [
+        "Abu Anas Ibn Samad"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-03T18:47:54+00:00",
+      "link": "https://arxiv.org/pdf/2607.03558v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video anomaly anticipation as video analytics",
+      "llm_evidence_cn": "视频异常预测属于视频分析",
+      "llm_evidence": "视频异常预测属于视频分析",
+      "canonical_evidence": "视频异常预测属于视频分析",
+      "llm_tldr_en": "PULS bridges world-model kinematics to semantic manifolds for continuous video anomaly anticipation, achieving high AUROC without MIL.",
+      "llm_tldr_cn": "现有视频异常检测多采用被动式多实例学习，存在特征坍缩问题。本文提出PULS流水线，包含KSD桥接和状态预测器，将运动特征映射到语义空间。在UCF-Crime上达到0.8994的AUROC，在XD-Violence上达0.8162，无需融合策略，展示了预测性语义世界模型在视频分析中的潜力。",
+      "llm_tldr": "现有视频异常检测多采用被动式多实例学习，存在特征坍缩问题。本文提出PULS流水线，包含KSD桥接和状态预测器，将运动特征映射到语义空间。在UCF-Crime上达到0.8994的AUROC，在XD-Violence上达0.8162，无需融合策略，展示了预测性语义世界模型在视频分析中的潜力。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.08771v1",
+      "source": "arxiv",
+      "title": "ZipDepth: Bringing Lightweight Zero-Shot Monocular Depth Anywhere, on Any Device",
+      "abstract": "Monocular depth estimation has seen remarkable progress through foundation models achieving robust zero-shot generalization, yet their computational demands place them far beyond the reach of embedded and mobile platforms. Lightweight alternatives exist, but have been developed almost exclusively within single-domain, self-supervised paradigms, failing silently under domain shift. We present ZipDepth, a compact monocular depth network that bridges this gap by combining an efficient reparameterizable encoder-decoder with large-scale knowledge distillation from a foundation model over a large multi-domain training set. Comprising just 6.1M parameters, ZipDepth runs at real-time rates from server GPUs to power-constrained devices, achieving the best trade-off between zero-shot accuracy and deployment efficiency among lightweight models across five benchmarks, taking a significant step towards the accuracy of foundation models with 50x more parameters.",
+      "authors": [
+        "Fabio Tosi",
+        "Luca Bartolomei",
+        "Matteo Poggi",
+        "Stefano Mattoccia"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-09T17:59:58+00:00",
+      "link": "https://arxiv.org/pdf/2607.08771v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "lightweight monocular depth model for real-time edge deployment",
+      "llm_evidence_cn": "轻量级单目深度模型，适用于边缘设备实时部署",
+      "llm_evidence": "轻量级单目深度模型，适用于边缘设备实时部署",
+      "canonical_evidence": "轻量级单目深度模型，适用于边缘设备实时部署",
+      "llm_tldr_en": "ZipDepth combines efficient encoder-decoder with knowledge distillation to achieve compact 6.1M parameter monocular depth model running real-time on edge devices, enabling wide deployment for video analysis.",
+      "llm_tldr_cn": "该论文提出ZipDepth，一种紧凑的单目深度网络，通过可重参数化编码器-解码器和来自基础模型的大规模知识蒸馏，仅6.1M参数即可在从服务器GPU到功耗受限设备上实现实时运行。它弥合了零样本泛化与边缘部署之间的鸿沟，为视频分析中的深度感知提供了高效的边缘解决方案。",
+      "llm_tldr": "该论文提出ZipDepth，一种紧凑的单目深度网络，通过可重参数化编码器-解码器和来自基础模型的大规模知识蒸馏，仅6.1M参数即可在从服务器GPU到功耗受限设备上实现实时运行。它弥合了零样本泛化与边缘部署之间的鸿沟，为视频分析中的深度感知提供了高效的边缘解决方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.04606v1",
+      "source": "arxiv",
+      "title": "CompressedVQA-AEV: Full-Reference and No-Reference Quality Assessment Models for Asymmetric Encoded Videos",
+      "abstract": "This report presents our solutions to the QoMEX 2026 Grand Challenge on Video Quality Assessment for Asymmetric Encoded Videos, comprising a full-reference (FR) model, CompressedVQA-AEV-FR, and a no-reference (NR) model, CompressedVQA-AEV-NR. The FR approach leverages a Swin-B backbone to extract multi-stage similarity statistics between reference and distorted videos for quality prediction. For the NR setting, our model employs complementary frame-level encoders based on SigLIP2 and Swin-B, followed by temporal mean pooling and cross-fold ensembling to estimate perceptual quality without reference data. Our CompressedVQA-AEV-FR achieves first place in the FR track of QoMEX 2026 Grand Challenge, while CompressedVQA-AEV-NR secures fourth place in the NR track, demonstrating the effectiveness of our proposed models. The code is available at https://github.com/sunwei925/CompressedVQA-AEV.",
+      "authors": [
+        "Wei Sun",
+        "Xingwei Liu",
+        "Dandan Zhu",
+        "Xiangyang Zhu",
+        "Weixia Zhang",
+        "Guangtao Zhai"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.CV",
+        "cs.MM"
+      ],
+      "published": "2026-07-06T02:23:39+00:00",
+      "link": "https://arxiv.org/pdf/2607.04606v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video quality assessment for analytics",
+      "llm_evidence_cn": "面向视频分析的质量评估",
+      "llm_evidence": "面向视频分析的质量评估",
+      "canonical_evidence": "面向视频分析的质量评估",
+      "llm_tldr_en": "Full-reference and no-reference VQA models for asymmetric encoded videos, achieving first place in QoMEX 2026 Grand Challenge.",
+      "llm_tldr_cn": "针对非对称编码视频的质量评估问题，本文提出了全参考（FR）和无参考（NR）两个模型。FR模型利用Swin-B骨干网络提取多阶段相似度统计；NR模型结合SigLIP2和Swin-B帧级编码器进行时序池化。最终FR模型在QoMEX 2026挑战赛FR赛道取得第一名，为视频分析中的质量监控提供了有效工具。",
+      "llm_tldr": "针对非对称编码视频的质量评估问题，本文提出了全参考（FR）和无参考（NR）两个模型。FR模型利用Swin-B骨干网络提取多阶段相似度统计；NR模型结合SigLIP2和Swin-B帧级编码器进行时序池化。最终FR模型在QoMEX 2026挑战赛FR赛道取得第一名，为视频分析中的质量监控提供了有效工具。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.08191v1",
+      "source": "arxiv",
+      "title": "Dual-Correlation Hypergraph Network for Unaligned RGBT Video Object Detection and A Large-scale Benchmark",
+      "abstract": "RGB-Thermal (RGBT) Video Object Detection (VOD) has gained significant traction due to its ability to overcome the limitations of conventional RGB-based VOD under challenging conditions. However, spatial misalignment commonly exists between RGBT image pairs. To address this, we propose a Dual-Correlation Hypergraph Network (DHNet) that captures high-dimensional complementary information by explicitly modeling two types of correlations: temporal correlation across consecutive frames and spatial correlation from cross-modal features. Specifically, we first design a Patch-based Spatial Alignment Module (PSAM) to sequentially align the multimodal features at the local region level. Subsequently, we introduce a Dual Hypergraph Fusion Module (DHFM), which constructs separate temporal and multimodal hypergraphs to enhance object discriminability through dual-correlation learning. Furthermore, the field currently lacks a large-scale, scene-diverse benchmark dataset for comprehensive evaluation. To address this gap, we construct DVT-VOD1000, a large-scale RGBT VOD dataset containing 1,000 video sequences with 103,464 RGBT image pairs. The dataset covers diverse scenarios, including campuses, parks, transportation, rural areas, night scenes, rain, and snow. Comprehensive experiments on VT-VOD50 and our DVT-VOD1000 demonstrate that DHNet achieves state-of-the-art detection accuracy. The dataset and source code will be made publicly available on https://github.com/tzz-ahu/ to support academic research.",
+      "authors": [
+        "Qishun Wang",
+        "Yapeng Li",
+        "Bin Luo",
+        "Zhengzheng Tu",
+        "Chenglong Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-09T07:46:20+00:00",
+      "link": "https://arxiv.org/pdf/2607.08191v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "RGBT video object detection as video analytics",
+      "llm_evidence_cn": "RGBT视频目标检测属于视频分析",
+      "llm_evidence": "RGBT视频目标检测属于视频分析",
+      "canonical_evidence": "RGBT视频目标检测属于视频分析",
+      "llm_tldr_en": "DHNet uses dual-correlation hypergraph to align and fuse RGBT features for unaligned video object detection.",
+      "llm_tldr_cn": "RGB热成像视频目标检测面临空间未对准问题。本文提出双相关超图网络DHNet，通过补丁空间对齐模块和双超图分别建模时间与空间相关性。该方法有效捕获高维互补信息，提升未对准条件下的检测性能。",
+      "llm_tldr": "RGB热成像视频目标检测面临空间未对准问题。本文提出双相关超图网络DHNet，通过补丁空间对齐模块和双超图分别建模时间与空间相关性。该方法有效捕获高维互补信息，提升未对准条件下的检测性能。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

@@ -1,0 +1,218 @@
+Title: CompressedVQA-AEV: Full-Reference and No-Reference Quality Assessment Models for Asymmetric Encoded Videos
+
+URL Source: https://arxiv.org/pdf/2607.04606v1
+
+Published Time: Tue, 07 Jul 2026 02:58:01 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# CompressedVQA-AEV: Full-Reference and No-Reference Quality Assessment Models for Asymmetric Encoded Videos 
+
+Wei Sun 1, Xingwei Liu 1, Dandan Zhu 1, Xiangyang Zhu 3, Weixia Zhang 2, Guangtao Zhai 21East China Normal University, 2Shanghai Jiao Tong University 
+
+> 3
+
+Shanghai Artificial Intelligence Laboratory 
+
+Abstract —This report presents our solutions to the QoMEX 2026 Grand Challenge on Video Quality Assessment for Asym-metric Encoded Videos, comprising a full-reference (FR) model, CompressedVQA-AEV-FR, and a no-reference (NR) model, CompressedVQA-AEV-NR. The FR approach leverages a Swin-B backbone to extract multi-stage similarity statistics between reference and distorted videos for quality prediction. For the NR setting, our model employs complementary frame-level en-coders based on SigLIP2 and Swin-B, followed by temporal mean pooling and cross-fold ensembling to estimate perceptual quality without reference data. Our CompressedVQA-AEV-FR achieves first place in the FR track of QoMEX 2026 Grand Challenge, while CompressedVQA-AEV-NR secures fourth place in the NR track, demonstrating the effectiveness of our proposed models. The code is available at https://github.com/sunwei925/ CompressedVQA-AEV. 
+
+I. I NTRODUCTION 
+
+Video quality assessment (VQA) [1]–[6] is essential for optimizing modern video encoding and streaming systems. Traditional video quality metrics such as VMAF [7] and ITU-T P.1204.3 [8] have been primarily developed and validated on conventionally (symmetrically) encoded content, where all spatial regions are treated with uniform encoding parameters. With the advancement of semantic segmentation and visual saliency prediction techniques, Region-of-Interest (ROI) en-coding [9] has emerged as a promising strategy that allocates higher bitrates to perceptually important regions while com-pressing background areas more aggressively. Such asymmet-ric encoding can achieve significant bitrate savings or improve perceived quality at the same bitrate. However, the reliability of existing VQMs on asymmetrically encoded videos—where spatial quality varies substantially across regions—remains largely underexplored. To promote research in this direction, the QoMEX 2026 Grand Challenge on Video Quality Assessment for Asymmet-ric Encoded Videos [10] was organized, providing the Sport-ROI dataset containing both symmetrically and asymmetrically encoded sports videos with subjective quality annotations. Participants were invited to develop full-reference (FR) and no-reference (NR) models that generalize across both encoding paradigms. In this report, we present our solutions to both tracks. For the FR track, we propose CompressedVQA-AEV-FR, which extracts multi-stage hierarchical features from a Swin Transformer [11] backbone and computes per-stage texture and structure similarity descriptors between reference and distorted frames. For the NR track, we propose CompressedVQA-AEV-NR, which employs complementary SigLIP2 [12] and Swin-B [11] encoders with cross-fold ensembling to predict per-ceptual quality without reference information. Our FR model achieves first place in the FR track, and our NR model secures fourth place in the NR track, demonstrating the effectiveness of the proposed approaches. II. M ODEL ARCHITECTURE 
+
+1) CompressedVQA-AEV-FR: CompressedVQA-AEV-FR is a full-reference video quality assessment framework de-signed to predict the perceptual quality of compressed videos by leveraging both reference and distorted content. The frame-work follows a multi-stage feature similarity paradigm [13]– [15]: for each pair of reference and distorted frames, deep hierarchical features are independently extracted through a pretrained visual backbone, and per-stage similarity descrip-tors capturing texture and structure fidelity are computed and concatenated into a unified quality-aware representation. A lightweight regression head maps this representation to a scalar frame-level quality estimate, and the video-level score is obtained via temporal mean pooling over uniformly sampled frames. 
+
+Multi-Stage Feature Extraction. We employ the Swin Transformer Base (Swin-B) [11] as the visual backbone, which computes self-attention within local shifted windows and progressively merges spatial tokens through a hierarchi-cal architecture. This design enables the model to capture multi-scale spatial distortions—from fine-grained compression artifacts such as blocking and ringing to global structural degradations—that are critical for perceptual quality assess-ment. The backbone is partitioned into four sequential stages, producing feature maps of increasing semantic abstraction with channel dimensions of 128, 256, 512, and 1024, respec-tively. In addition to these four deep feature stages, the raw de-normalized input image (3 channels) is retained as a stage-zero representation, yielding five feature levels in total with channel dimensions {3, 128 , 256 , 512 , 1024 }.
+
+> arXiv:2607.04606v1 [eess.IV] 6 Jul 2026
+
+Per-Stage Similarity Computation. For each pair of pre-processed reference and distorted frames zr and zd, the backbone independently extracts hierarchical feature maps 
+
+{f rk }4 
+
+> k=0
+
+and {f dk }4
+
+> k=0
+
+. At each stage k, two complementary similarity descriptors [15] are computed to quantify the fidelity between the reference and distorted representations. The first descriptor measures texture similarity [15] via global mean alignment : 
+
+S1,k = 2 μrk μdk + c1
+
+(μrk)2 + ( μdk)2 + c1
+
+, (1) where μrk and μdk denote the spatial means of the reference and distorted feature maps at stage k, respectively, and c1 is a small constant for numerical stability. The second descriptor captures structure similarity [15] via variance and covariance statistics: 
+
+S2,k = 2 σr,d k + c2
+
+(σrk)2 + ( σdk )2 + c2
+
+, (2) where σrk and σdk are the spatial standard deviations of the respective feature maps, σr,d k denotes the spatial covariance between them, and c2 is a stability constant. Both descriptors are computed independently per channel, producing vectors of dimension Ck at each stage. 
+
+Quality Regression. The per-stage similarity descriptors from all five levels are concatenated into a single quality-aware feature vector: 
+
+f = [ S1,0; S2,0; S1,1; S2,1; . . . ; S1,4; S2,4] , (3) yielding a representation of dimension 2 × (3 + 128 + 256 + 512+1024) = 3846 . This vector is passed through a two-layer multi-layer perceptron (MLP) with 128 hidden units and no intermediate nonlinearity to produce the frame-level quality score ˆqt.
+
+Temporal Pooling. Given a video, we uniformly sample 
+
+T frames to form a sparse temporal representation. Each reference–distorted frame pair is independently forwarded through the feature extraction and regression pipeline. The video-level quality score is computed as the arithmetic mean of all per-frame predictions: 
+
+ˆQ = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+ˆqt. (4) 
+
+A. CompressedVQA-AEV-NR 
+
+CompressedVQA-AEV-NR is a no-reference video quality assessment framework for predicting the perceptual quality of compressed videos without relying on pristine reference con-tent. The framework follows a frame-level feature extraction and temporal pooling paradigm: individual frames are first independently encoded by a pretrained visual backbone to obtain per-frame quality estimates, which are then aggregated via mean pooling to yield a single video-level quality score. We investigate two representative visual backbones for frame-level feature extraction, spanning different architectural paradigms within the Transformer family: a Vision Trans-former (ViT) [16] variant and a Shifted Window Trans-former [11]. 
+
+SigLIP2. The first architecture builds upon the visual en-coder of SigLIP2 [12], a ViT-Base model with a patch size of 16 that operates at a 384 ×384 input resolution. Pretrained with a sigmoid-based contrastive objective on large-scale image-text pairs, the SigLIP2 encoder learns rich semantic and per-ceptual representations that transfer effectively to downstream quality-aware tasks. It produces a 768-dimensional feature vector per input frame. A lightweight quality regression head, consisting of two cascaded fully connected layers ( 768 and 
+
+128 neurons) without intermediate nonlinearities, is appended to project the feature representation onto an unbounded scalar quality score. 
+
+Swin. The second architecture employs the Swin Trans-former Base (Swin-B) [11], which computes self-attention within local shifted windows and progressively merges spatial tokens through a hierarchical structure. This design enables the model to capture multi-scale spatial distortions—ranging from fine-grained compression artifacts to global structural degrada-tions—that are critical for perceptual quality assessment. The hierarchical feature stages, followed by layer normalization and global average pooling, yield a 1024-dimensional feature vector per frame. A quality regression head of identical design (1024 and 128 neurons) maps the extracted representation to a scalar quality prediction. The two backbones are complementary in nature: SigLIP2 leverages vision-language pretraining to encode high-level semantic priors, while Swin-B exploits hierarchical locality to model multi-scale spatial distortions. Both architectures share the same regression head design and temporal pooling mechanism, ensuring that performance differences can be solely attributed to the representational capacity of the visual backbone. 
+
+Temporal Pooling. Both architectures share an identical temporal modeling strategy. Given a video, we first uniformly sample T frames to form a sparse temporal representation. Each frame is independently forwarded through the visual backbone and the quality regression head to obtain a per-frame quality estimate. The video-level quality score is then computed as the arithmetic mean of all per-frame predictions: 
+
+Q = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+qt, (5) where qt denotes the predicted quality score of the t-th sampled frame. III. T RAINING PROCEDURE 
+
+A. Training Dataset 
+
+We conduct experiments on the QoMEX-GC dataset train-ing set [10], which comprises video sequences processed under a variety of compression configurations. The dataset is derived from 6 source reference contents (SRCs) spanning 3 distinct scenes, with each scene contributing 2 SRCs. To evaluate generalization, we adopt a content-separated 3-fold cross-validation protocol: in each fold, 4 SRCs are allocated for training and the remaining 2 are reserved for validation to select the best-performing model. 
+
+B. Video Preprocessing 
+
+Temporal Sampling. To construct a compact temporal representation, we uniformly sample T = 8 frames from each video using linearly spaced indices across the total frame count. When a video contains fewer decodable frames than the target number, the last valid frame is replicated to maintain a fixed-length input. This uniform sampling strategy provides balanced coverage of the temporal extent while keeping com-putational cost constant regardless of video duration. 
+
+Spatial Transformations. Each sampled frame is first re-sized such that its shorter side equals 420 pixels, preserving the original aspect ratio. During training, a random 384 ×384 
+
+crop is extracted to introduce spatial diversity and mitigate overfitting. During inference, a deterministic center crop of the same size is applied to ensure reproducibility. All frames are normalized using ImageNet statistics. 
+
+C. Training Details 
+
+All models are optimized using Adam [17] with an initial learning rate of 1×10 −5 and a weight decay of 1×10 −7. The learning rate is decayed by a factor of 0.9 every 5 epochs following a step-wise schedule. We adopt the mean squared error (MSE) loss to supervise the predicted quality scores against the ground-truth mean opinion scores (MOS): 
+
+L = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+ ˆQi − MOS i
+
+2
+
+, (6) where ˆQi denotes the predicted quality score for the i-th video and N is the number of samples in a mini-batch. Training is conducted for 30 epochs with a batch size of 4. The best checkpoint for each fold is selected based on the highest Spearman Rank-Order Correlation Coefficient (SRCC) on the corresponding validation set. 
+
+D. Inference and Ensemble 
+
+At inference time, we employ ensemble strategies for both the FR and NR tracks to improve prediction robustness. 
+
+FR Track. For full-reference quality assessment, we adopt a cross-fold ensemble by selecting the best-performing Swin-B model from each of the three cross-validation folds, yielding an ensemble of three homogeneous models. Each model in-dependently processes the input reference–distorted video pair and produces a scalar quality estimate. The final prediction is obtained by averaging the three individual scores: 
+
+ˆQFR = 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+Q(m)FR , (7) where Q(m)FR is the prediction of the m-th model and M = 3 is the ensemble size. By combining models trained on different content-disjoint partitions, this strategy reduces the variance                                    
+
+> TABLE I ASYMMETRIC CONDITION RESULTS (S PORT -ROI TEST SET , 40 VIDEOS )
+> Metric SRCC ↑PLCC ↑KRCC ↑RMSE ↓
+> CompressedVQA-AEV-FR 0.877 0.924 0.690 0.281 VMAF 0.856 0.865 0.649 0.368 EQM NR 0.840 0.879 0.638 0.350 CompressedVQA-AEV-NR 0.830 0.939 0.651 0.252 P.1204.3 0.642 0.668 0.472 0.546 PSNR-Y 0.540 0.578 0.415 0.598
+
+arising from data-dependent biases and yields more stable and generalizable quality predictions. 
+
+NR Track. For no-reference quality assessment, we employ a cross-fold and cross-architecture ensemble. Specifically, we select the best-performing model from each of the three cross-validation folds, yielding an ensemble of three heterogeneous models: a SigLIP2 model from fold 1, a Swin-B model from fold 2, and a SigLIP2 model from fold 3. Each model independently processes the input video and produces a scalar quality estimate. The final prediction is similarly obtained by averaging: 
+
+ˆQNR = 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+Q(m)NR , (8) where Q(m)NR is the prediction of the m-th model and 
+
+M = 3 . This strategy leverages two complementary sources of diversity. First, combining models trained on differ-ent content-disjoint partitions reduces the variance arising from data-dependent biases. Second, integrating heterogeneous backbones—one grounded in vision–language pretraining and the other in hierarchical local attention—encourages the en-semble to capture both high-level semantic priors and fine-grained spatial distortions, leading to more accurate and gen-eralizable quality predictions. IV. E XPERIMENTAL RESULTS 
+
+A. Test Dataset 
+
+The proposed models are validated on the test set of the QoMEX 2026 Grand Challenge on Video Quality Assessment for Asymmetric Encoded Videos [10]. The test set includes the Sport-ROI test set, which contains 52 videos from 2 held-out SRCs, comprising 40 asymmetrically encoded videos and 
+
+12 symmetrically encoded videos, and an internal symmetric dataset containing 281 videos from 20 SRCs. The models are evaluated on two symmetric sets and one asymmetric set. 
+
+B. Evaluation Criteria 
+
+SRCC serves as the primary ranking criterion. Pearson Lin-ear Correlation Coefficient (PLCC), Kendall Rank Correlation Coefficient (KRCC), and Root Mean Square Error (RMSE) are also reported for comparison. PLCC and RMSE are computed after a four-parameter nonlinear mapping [18]. The official final ranking score is 
+
+SRCC final = 0 .5 SRCC asym + 0 .5 SRCC sym , (9) TABLE II SYMMETRIC CONDITION RESULTS : S PORT -ROI (12 VIDEOS ), INTERNAL DATASET (281 VIDEOS ), AND WEIGHTED AVERAGE                                                                                                   
+
+> Sport-ROI Internal Weighted avg. Metric SRCC ↑PLCC ↑KRCC ↑RMSE ↓SRCC ↑PLCC ↑KRCC ↑RMSE ↓SRCC ↑PLCC ↑KRCC ↑RMSE ↓
+> EQM NR 0.958 0.979 0.848 0.223 0.909 0.906 0.731 0.930 0.911 0.909 0.736 0.901 VMAF 0.972 0.982 0.909 0.203 0.874 0.873 0.682 1.068 0.878 0.877 0.691 1.032 CompressedVQA-AEV-FR 0.958 0.973 0.848 0.253 0.859 0.868 0.668 1.087 0.863 0.872 0.676 1.053 P.1204.3 0.923 0.963 0.818 0.289 0.827 0.827 0.626 1.229 0.831 0.833 0.634 1.190 PSNR-Y 0.804 0.785 0.673 0.667 0.708 0.696 0.511 1.571 0.712 0.699 0.517 1.534 CompressedVQA-AEV-NR 0.972 0.974 0.909 0.246 0.474 0.642 0.336 1.677 0.494 0.656 0.360 1.618
+
+TABLE III OVERALL RESULTS .                                                                                                         
+
+> Asymmetric Symmetric Overall Metric SRCC ↑PLCC ↑KRCC ↑RMSE ↓SRCC ↑PLCC ↑KRCC ↑RMSE ↓SRCC ↑PLCC ↑KRCC ↑RMSE ↓Time (s)
+> EQM NR 0.840 0.879 0.638 0.350 0.911 0.909 0.736 0.901 0.875 0.894 0.687 0.626 5.20 CompressedVQA-AEV-FR 0.877 0.924 0.690 0.281 0.863 0.872 0.676 1.053 0.870 0.898 0.683 0.667 18.42 VMAF 0.856 0.865 0.649 0.368 0.878 0.877 0.691 1.032 0.867 0.871 0.670 0.700 7.15 P.1204.3 0.642 0.668 0.472 0.546 0.831 0.833 0.634 1.190 0.736 0.750 0.553 0.868 35.16 CompressedVQA-AEV-NR 0.830 0.939 0.651 0.252 0.494 0.656 0.360 1.618 0.662 0.797 0.505 0.935 25.83 PSNR-Y 0.540 0.578 0.415 0.598 0.712 0.699 0.517 1.534 0.626 0.639 0.466 1.066 –
+
+where the symmetric term is itself a weighted average: 
+
+SRCC sym = 12 293 SRCC Sport -ROI sym + 281 293 SRCC internal sym . (10) 
+
+C. Baseline Methods 
+
+We compare our proposed models against the follow-ing baselines. VMAF [7] is a full-reference video quality metric developed by Netflix that fuses multiple elementary features (multi-scale VIF, Detail Loss Metric, and motion information) via a support vector machine regressor trained on subjective scores. ITU-T P.1204.3 [8] is a standardized no-reference bitstream-based model that predicts perceptual quality from codec-level metadata such as quantization pa-rameters, frame types, and resolution without pixel-level de-coding. EQM NR [19] is a no-reference model that combines encoding parameters with motion activity statistics to estimate compression-induced quality degradation. PSNR-Y computes peak signal-to-noise ratio on the luminance channel, serving as a traditional signal-level fidelity baseline. 
+
+D. Experimental Analysis 
+
+We report the performance of baseline and proposed meth-ods on the asymmetric condition dataset in Table I, on the symmetric condition datasets in Table II, and the overall performance in Table III 1.
+
+Results on Asymmetric Encoding. CompressedVQA-AEV-FR achieves the highest correlation on asymmetrically encoded videos, outperforming VMAF and all other baselines. This demonstrates that our multi-stage similarity framework ef-fectively captures spatially non-uniform distortion introduced 
+
+> 1
+
+The results are provided by the report of QoMEX 2026 Grand Challenge on Video Quality Assessment for Asymmetric Encoded Videos [10]. 
+
+by ROI-based encoding. CompressedVQA-AEV-NR also per-forms competitively, achieving the lowest RMSE among all methods. 
+
+Results on Symmetric Encoding. CompressedVQA-AEV-FR remains competitive with VMAF on symmetric con-tent, while CompressedVQA-AEV-NR exhibits notable perfor-mance degradation. This generalization gap likely stems from limited training diversity (only 6 SRCs from 3 sport scenes). The FR model is less susceptible because per-stage similarity computation inherently normalizes content-dependent varia-tions. 
+
+Overall Performance. CompressedVQA-AEV-FR secures first place in the FR track, confirming that learning-based multi-stage similarity can outperform handcrafted feature fu-sion even with limited training data. CompressedVQA-AEV-NR ranks fourth among NR submissions, with the gap primar-ily attributable to limited generalization on symmetric content. The contrasting behavior highlights a fundamental challenge: NR models must implicitly learn both content representation and quality mapping from limited annotations, whereas the FR model circumvents this through content-agnostic similarity features. Future work should explore pretraining on larger-scale datasets to address this limitation. V. C ONCLUSION 
+
+In this report, we present CompressedVQA-AEV, compris-ing a full-reference model based on multi-stage similarity learning and a no-reference model leveraging deep feature regression. CompressedVQA-AEV-FR achieves first place in the FR track of the QoMEX 2025 Grand Challenge, while CompressedVQA-AEV-NR secures fourth place in the NR track, demonstrating the effectiveness of our proposed ap-proaches. REFERENCES [1] Xiongkuo Min, Huiyu Duan, Wei Sun, Yucheng Zhu, and Guangtao Zhai, “Perceptual video quality assessment: A survey,” Science China Information Sciences , vol. 67, no. 11, pp. 211301, 2024. [2] Wei Sun, Xiongkuo Min, Wei Lu, and Guangtao Zhai, “A deep learning based no-reference quality assessment model for ugc videos,” in 
+
+Proceedings of the 30th ACM International Conference on Multimedia ,2022, pp. 856–865. [3] Wei Sun, Wen Wen, Xiongkuo Min, Long Lan, Guangtao Zhai, and Kede Ma, “Analysis of video quality datasets via design of minimalistic video quality models,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 46, no. 11, pp. 7056–7071, 2024. [4] Linhan Cao, Wei Sun, Weixia Zhang, Xiangyang Zhu, Jun Jia, Kaiwei Zhang, Dandan Zhu, Guangtao Zhai, and Xiongkuo Min, “Vqathinker: Exploring generalizable and explainable video quality assessment via reinforcement learning,” in Proceedings of the AAAI Conference on Artificial Intelligence , 2026, vol. 40, pp. 2607–2615. [5] Linhan Cao, Wei Sun, Xiangyang Zhu, Kaiwei Zhang, Jun Jia, Yicong Peng, Dandan Zhu, Guangtao Zhai, and Xiongkuo Min, “Generalizable video quality assessment via weak-to-strong learning,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2026, pp. 25578–25588. [6] Wei Sun, Linhan Cao, Jun Jia, Zhichao Zhang, Zicheng Zhang, Xiongkuo Min, and Guangtao Zhai, “Enhancing blind video quality assessment with rich quality-aware features,” Expert Systems with Applications , p. 130452, 2025. [7] Z. Li, A. Aaron, I. Katsavounidis, A. Moorthy, and M. Manohara, “Toward a practical perceptual video quality metric,” Netflix Technology Blog, 2016. [8] International Telecommunication Union, “Video quality assessment of streaming services over reliable transport for resolutions up to 4K,” ITU-T Recommendation P.1204.3, 2020. [9] Xiaojie Wu, Ping Wang, and Xinhong Wang, “Roi-dvc: A region-of-interest based deep video coding framework,” in IEEE International Conference on Image Processing , 2024, pp. 1967–1972. [10] Jingwen Zhu, Yixu Chen, Hai Wei, Pierre Lebreton, Patrick Le Cal-let, Alexander Kopte, Amritha Premkumar, Anna Meyer, Baojun Li, Changsheng Gao, Christian Herglotz, Christian Timmerer, Dandan Zhu, Diwakara Reddy, Dong Liu, Dounia Hammou, Guangtao Zhai, Hadi Amirpour, Haoyun Cheng, Hichem Faraoun, Jonas Janzen, Kr-ishna Srikar Durbha, Li Li, Marc Windsheimer, MohammadAli Hamidi, Mykyta Skipenko, Paul Wawerek-Lopez, Pragyadipta Adhya, Prajit T Rajendran, Rafał K. Mantiuk, Shien Ke, Sid Ahmed Fezza, Simon Deniffel, Tao Jing, Wei Sun, Weixia Zhang, Xiangguang Chen, Yufan Liu, Zuowei Cao, Minhao Tang, Xiaoyan Sun, Xingwei Liu, Xiangyang Zhu, Yeganeh Chatri, Yenan Xu, Yifan Ding, Zhen Li, and Zijie Liu, “QoMEX 2026 Grand Challenge on Video Quality Assessment for Asymmetric Encoded Videos: Methods and Results,” in Proceedings of the 16th International Conference on Quality of Multimedia Experience (QoMEX) , 2026. [11] Ze Liu, Yutong Lin, Yue Cao, Han Hu, Yixuan Wei, Zheng Zhang, Stephen Lin, and Baining Guo, “Swin transformer: Hierarchical vision transformer using shifted windows,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2021, pp. 10012–10022. [12] Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, et al., “Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features,” arXiv preprint arXiv:2502.14786 , 2025. [13] Wei Sun, Linhan Cao, Kang Fu, Dandan Zhu, Jun Jia, Menghan Hu, Xiongkuo Min, and Guangtao Zhai, “Compressedvqa-hdr: Generalized full-reference and no-reference quality assessment models for com-pressed high dynamic range videos,” in 2025 IEEE International Conference on Multimedia and Expo Workshops , 2025, pp. 1–6. [14] Wei Sun, Tao Wang, Xiongkuo Min, Fuwang Yi, and Guangtao Zhai, “Deep learning based full-reference and no-reference quality assessment models for compressed ugc videos,” in IEEE International Conference on Multimedia & Expo Workshops , 2021, pp. 1–6. [15] Keyan Ding, Kede Ma, Shiqi Wang, and Eero P Simoncelli, “Image quality assessment: Unifying structure and texture similarity,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 44, no. 5, pp. 2567–2581, 2020. [16] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weis-senborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al., “An image is worth 16x16 words: Transformers for image recognition at scale,” 
+
+arXiv preprint arXiv:2010.11929 , 2020. [17] Diederik P Kingma and Jimmy Ba, “Adam: A method for stochastic optimization,” arXiv preprint arXiv:1412.6980 , 2014. [18] Kalpana Seshadrinathan, Rajiv Soundararajan, Alan Conrad Bovik, and Lawrence K Cormack, “Study of subjective and objective quality assessment of video,” IEEE Transactions on Image Processing , vol. 19, no. 6, pp. 1427–1441, 2010. [19] Y. Chen, Z. Shang, H. Wei, Y. Wu, and S. Sethuraman, “Encoder-quantization-motion-based video quality metrics,” in Picture Coding Symposium , 2024, pp. 1–5.

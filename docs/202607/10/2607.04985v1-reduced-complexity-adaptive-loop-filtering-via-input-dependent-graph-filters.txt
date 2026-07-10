@@ -1,0 +1,281 @@
+Title: Reduced-complexity Adaptive Loop Filtering via Input-dependent Graph Filters
+
+URL Source: https://arxiv.org/pdf/2607.04985v1
+
+Published Time: Tue, 07 Jul 2026 03:18:09 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# REDUCED-COMPLEXITY ADAPTIVE LOOP FILTERING VIA INPUT-DEPENDENT GRAPH FILTERS 
+
+# Wen-Yang Lu, Eduardo Pavez, Antonio Ortega 
+
+# University of Southern California Department of Electrical and Computer Engineering Los Angeles, CA, USA 
+
+# Roman Chernyak, Shan Liu 
+
+# Tencent Media Lab Palo Alto, CA, USA 
+
+ABSTRACT 
+
+Adaptive Loop Filtering is an important tool for suppressing com-pression artifacts in modern video codecs. In the enhanced compres-sion model (ECM), a software test model used for experimenting with video coding tools beyond Versatile Video Coding, fixed fil-ters are trained offline and achieve high signal adaptivity via a fine-grained gradient-based classifier, resulting in a large number of fixed filters that introduce redundancy and increased implementation com-plexity. Reducing this redundancy without compromising artifact suppression, therefore, remains a key challenge. This paper pro-poses an alternative graph-based fixed-filtering framework for adap-tive loop filtering. By using a graph to encode pixel-intensity rela-tionships, our approach captures local structural information more effectively than gradient-based classification alone. Fixed filters are learned as polynomial graph filters, enabling structurally similar lo-cal patterns to share common filtering behavior. Experimental re-sults demonstrate that the proposed approach achieves a comparable performance to the ECM baseline while reducing the number of re-quired filters by an order of magnitude. 
+
+Index Terms — Graph signal processing, adaptive loop filtering, video coding, fixed filters 
+
+1. INTRODUCTION 
+
+Modern video coding standards rely on in-loop filtering tools to suppress compression artifacts and improve reconstruction quality. Among these tools, Adaptive Loop Filtering (ALF) [1, 2] plays a critical role by refining reconstructed samples through content-adaptive filtering. By exploiting local signal characteristics, ALF can effectively reduce artifacts introduced by block-based predic-tion, transform, and quantization. In the enhanced compression model (ECM) [3], a software test model that has been used for testing video coding tools beyond Versatile Video Coding (VVC) [4], ALF incorporates both online adaptive filters and a set of offline trained fixed filters. These filter outputs are aggregated through an online-learned Wiener filtering process [1] to generate the final reconstructed output. The fixed filtering stage aims to provide an ini-tial level of artifact suppression before online adaptation. To achieve content adaptivity, ECM employs a fine-grained gradient-based clas-sifier that assigns reconstructed samples to 7168 classes based on local directional and activity features. These classes are mapped to a smaller set of fixed filters that are applied during decoding. While effective, this design introduces computational complexity and substantial redundancy: a large number of classes are avail-able, yet many classes exhibit similar local structures and ultimately share similar filtering behavior. Reducing the number of fixed filters without sacrificing filtering performance is therefore important for achieving low hardware complexity and improved scalability. Prior studies have mainly focused on reducing the number of filter sets through online and encoder-side decisions. In VVC [2, 4], filter sets come from two sources: (i) online-trained adaptation parameter sets (APS), which require the explicit signaling of filter coefficients, and (ii) offline-trained fixed-filter sets, where only the set index is transmitted. To reduce the signaling burden, [5] monitors the usage statistics of these two sources and adaptively disables the fixed-filter component if it is rarely selected for a given frame. In addition, [6] reduces the number of transmitted filter sets via class merging. This method groups classes with similar statistics after a first-pass classification, thereby reducing the number of distinct filters sent in the bitstream. In contrast, our work targets redundancy in the set of fixed filters, enabling a smaller fixed-filter set without relying on online merging or on/off decisions. Graph signal processing (GSP) has been successfully applied to image and video processing tasks [7, 8, 9]. In these applica-tions, local pixel neighborhoods are represented as graphs whose edge weights are determined by the intensity difference between connected pixels. Our work is motivated by the observation that, since structural information is already captured by the graph, a single graph filter on an input-dependent graph has the potential to mimic the filtering of multiple input-independent fixed filters. As an exam-ple, the popular input-dependent bilateral filter can be viewed as a single low-pass graph filter on an input-dependent graph [10]. We expect GSP-based methods to naturally encode pixel-intensity rela-tionships and local structural information in a manner invariant to certain geometric transformations, since graphs that differ only by geometric rotation are mathematically equivalent. These properties suggest that some neighborhoods assigned to different fixed filters by the gradient-based classifiers of ECM can be represented by similar graphs (e.g., rotated versions of the same graph) and can therefore be processed with a single graph filter . In this paper, we propose a graph-based fixed filtering framework for ALF, which enables mul-tiple fixed-filter classes to share the same graph filters, resulting in a substantially reduced set of fixed filters with practically no impact in filtering performance. 
+
+2. PRELIMINARIES 
+
+Consider a weighted undirected graph G = ( V, E, W), where V de-notes a set of vertices that correspond to pixels in an image block, and E is a collection of edges describing the pairwise similarity be-tween pixels. Denote the matrix entry wi,j in W as the weight associated with the edge (i, j ) ∈ E , and let wi,j = 0 whenever  
+
+> arXiv:2607.04985v1 [eess.IV] 6 Jul 2026 (a) (b)
+
+Fig. 1 . Example fixed filtering operators on a 9 × 9 diamond neigh-borhood: (a) baseline fixed-filter coefficients h (color-coded and la-beled), used in ˆy = h⊤x; (b) 4-connected weighted graph Laplacian 
+
+L (thicker edges represent larger weights) used in ˆy = s⊤h(L)x.
+
+(i, j ) /∈ E . The random-walk Laplacian is then given by 
+
+L = I − D−1W, (1) where D is the diagonal degree matrix with each diagonal element 
+
+di,i equal to the sum Pnj=1 wi,j . The random-walk Laplacian pro-vides a normalized representation of local signal variations on the graph and is widely adopted in graph-based filtering and restoration tasks [8, 9, 11]. Given an input x ∈ RN , in our case, pixel values in a local neighborhood, defined on the nodes of a graph, a polynomial graph filter produces an output y ∈ RN ,
+
+y = h(L)x =
+
+> K
+
+X
+
+> k=0
+
+bk Lk x. (2) In fixed filtering for ALF, each pixel inherits a class label from its corresponding 2 × 2 block, based on fine-grained gradient-based classification of 7168 classes. It is then filtered using a class-specific fixed filter defined over a larger local support, i.e., a 9 × 9 diamond-shaped neighborhood shown in Fig. 1(a). The fixed-filter output is computed and retained independently for each pixel based on its assigned class, regardless of whether neighboring pixels share the same class label. Letting h ∈ RN denote the vectorization of class-specific fixed-filter coefficients, the baseline fixed filtering computes the center-pixel output via the dot product ˆyFF = h⊤x.
+
+In the graph-based formulation, filtering follows the same per-pixel procedure. A graph is constructed over a 9 × 9 local neighbor-hood shown in Fig. 1(b), and only the filter output corresponding to the center node is retained. This can be expressed by introducing a selection vector s ∈ RN , whose entries are zero except at the center position, yielding 
+
+ˆy = s⊤h(L)x. (3) 
+
+3. GRAPH-BASED FIXED FILTER DESIGN FOR ALF 
+
+This section presents the proposed graph-based fixed-filter design, including the problem formulation, graph construction strategy, and offline training procedure. 
+
+3.1. Problem Formulation 
+
+ALF is employed as an in-loop post-processing stage to improve the quality of reconstructed samples by exploiting local spatial correla-tions. As illustrated in Fig. 2, the ECM [3] ALF framework con-sists of three major stages: in-loop prefiltering, fixed filtering, and 
+
+Fig. 2 . Block diagram of the ECM [3] ALF pipeline. We modify the fixed filter component by replacing 512 input-independent filters with 16 graph filters operating on local, input-dependent graphs. online ALF. The in-loop prefiltering stage includes deblocking fil-tering (DBF), sample adaptive offset (SAO), and bilateral in-loop filtering (BIF). In this paper, we focus on the fixed filtering stage, which in ECM consists of 512 fixed filters (512-FF). We will pro-pose methods to replace them with a much smaller set of 16 graph filters (16-GF). Fixed filters constitute an important deterministic component of ALF. They are trained offline and applied to recon-structed samples based on local structural characteristics. In ECM, a gradient-based classifier assigns each 2 × 2 luma block sample to one of 56 × 8 × 16 = 7168 classes, corresponding to 56 gradient direction categories characterized by horizontal/vertical and diago-nal edge strengths (EHV , E D), 8 L2-norm–based activity levels AL2 ,and 16 L1-norm–based activity levels AL1 .Let x ∈ RN denote the reconstructed pixel intensities within a local neighborhood, and let y denote the corresponding ground-truth intensity at the center pixel. Fixed filtering estimates ˆy from x using a class-dependent linear filter trained offline. Although the classifier produces 7168 distinct class indices, only 512 fixed filters are trained and implemented. A predefined many-to-one mapping assigns mul-tiple gradient-based classes to the same fixed filter, reflecting signifi-cant redundancy in the classifier space and enabling reduced storage and implementation complexity. Moreover, the gradient-based clas-sification and associated fixed filters are not fully rotation-invariant, as local structures related by geometric rotation may be assigned to different classes and processed using different filters. As illustrated in Fig. 3, by applying an appropriate rotation to the 9 × 9 diamond support, some fixed filters can be revealed to be related: The two fixed filters of Fig. 3(a) and the two fixed filters of Fig. 3(b) could each be implemented with a single filter and a suitable rotation of the pixels in the diamond region. To address this redundancy, a graph-based representation is in-troduced to further reduce the number of fixed filters. Each local neighborhood is modeled as a graph signal, with pixel-intensity re-lationships encoded through a graph Laplacian constructed for each training sample. As illustrated in Fig. 4, neighborhoods that differ only by a geometric transformation (e.g., symmetric or rotations) can yield isomorphic graphs and Laplacians that are equivalent up to a node permutation. This allows a single set of graph-based fixed-filter coefficients to be shared across multiple fixed-filter classes related by such transformation. 
+
+3.2. Graph Construction Strategies 
+
+For each training sample, a graph is constructed on the 9 × 9
+
+diamond-shaped local neighborhood centered at the target pixel, consistent with the support of the fixed filters. Local graphs with either 4- or 8-connected neighborhoods are considered. An example of a 4-connected graph is shown in Fig. 1(b), and the corresponding 8-connected graph is obtained by including the diagonal connec-tions. Given the fixed local connectivity, edge weights are defined solely in terms of pixel-intensity differences. Specifically, the weight (a) 
+
+> (b)
+
+Fig. 3 . Examples of rotation-based matching between 512 fixed-filter classes on the 9×9 diamond support. Colors encode coefficient values. Left: source class coefficients; middle: source class rotated by θ (interpolated on the diamond support); right: best-matching class at angle θ. (a) θ = 45 ◦: class 78 → class 368. (b) θ = 15 ◦:class 170 → class 262.  
+
+> (a) (b)
+
+Fig. 4 . 1-D toy example showing graph isomorphism. A 5-pixel row is represented as a weighted path graph with unit edge weights, except one highlighted edge of weight 2 at: (a) left of center; (b) right of center. between two connected pixels i and j is given by 
+
+wij = exp 
+
+
+
+− (xi − xj )2
+
+σ2
+
+> r
+
+
+
+, (4) where xi and xj denote the pixel intensities used for the graph con-struction. This formulation captures local intensity similarity, while the geometric relationship between pixels is implicitly encoded by the fixed neighborhood connectivity. The graph construction is adapted to the compression noise level by choosing the intensity-domain bandwidth σr proportional to the quantization step, so more aggressive filtering is used when larger quantization errors are ex-pected [12]. Specifically, we define 
+
+σr = 0 .35 · Qstep , (5) where the quantization step size Qstep is given by 
+
+Qstep = 2 QP −46 . (6) The corresponding random-walk Laplacian in (1) is used as the graph filtering operator in (2). From an implementation perspective, to avoid redundant computation of edge weights for overlapping neighborhoods, a weighted graph can be constructed once for the entire decoded frame. The local graph corresponding to each target pixel is then obtained by cropping the subgraph associated with its 
+
+9 × 9 diamond-shaped neighborhood. The choice of graph connectivity influences both the expressive-ness of the local graph representation and the polynomial order re-quired by the graph filter. As will be shown in Section 4.4, the 8-connected graph configuration achieves a performance comparable 
+
+Algorithm 1 Offline Training of Graph-Based Fixed Filters 
+
+Require: Training samples grouped into 512 classes; polynomial order K; regularization λ; number of clusters M
+
+Ensure: Cluster-level filters {˜bm}Mm=1 and partitions {C m}Mm=1  
+
+> 1:
+
+for c = 1 to 512 do  
+
+> 2:
+
+Construct L(n) for each sample n in class c 
+
+> 3:
+
+Estimate bc via ridge regression (Sec. 3.3)  
+
+> 4:
+
+end for  
+
+> 5:
+
+Compute clusters {C m}Mm=1 by weighted K-means on {bc}512  
+
+> c=1
+> 6:
+
+for m = 1 to M do  
+
+> 7:
+
+Aggregate all samples from classes in Cm 
+
+> 8:
+
+Retrain coefficients ˜bm via ridge regression  
+
+> 9:
+
+end for  
+
+> 10:
+
+return {˜bm}Mm=1 and {C m}Mm=1 
+
+to the 4-connected alternative while reaching its best performance at a lower polynomial order. This behavior suggests that increased local connectivity enables more efficient propagation of structural information through the graph Laplacian. 
+
+3.3. Training of Graph-Based Fixed Filters 
+
+The full training procedure is summarized in Algorithm 1. The proposed graph-based fixed filters are learned offline by exploiting the existing fixed-filter class structure in ECM. Rather than learn-ing filters directly from the full classifier space, the learning process starts from the 512 fixed-filter classes and further reduces redun-dancy among them through coefficient-space clustering. 
+
+3.3.1. Initial Per-Class Training 
+
+In the first stage, a graph-based fixed filter is trained indepen-dently for each of the 512 fixed-filter classes. For a given class, let 
+
+{(x(n), L(n), y (n))}Nc 
+
+> n=1
+
+denote its set of training samples, where 
+
+x(n) is the reconstructed input signal defined on the local neigh-borhood, L(n) is the graph Laplacian constructed for that sample as described in Sec. 3.2, and y(n) is the corresponding clean target value. Note that the graph Laplacian is constructed independently for each training sample, and no shared graph structure is assumed within a class. For each class, the graph-based fixed filter is pa-rameterized as a K-th order polynomial graph filter. The filter coefficients b = [b0, . . . , b K ]⊤ are obtained by solving a ridge regression problem, 
+
+min 
+
+> b
+> Nc
+
+X
+
+> n=1
+
+y(n) − s⊤
+
+> K
+
+X
+
+> k=0
+
+bk
+
+ L(n)k x(n)
+
+!2
+
++ λ∥b∥22, (7) where s denotes the selection vector that extracts the center pixel from the graph filter output, and λ is the regularization parameter, which we empirically set to λ = 10 −2 to prevent excessively large filter coefficients. This procedure yields 512 sets of graph filter co-efficients, one for each of the ECM fixed-filter classes. 
+
+3.3.2. Coefficient-Space Clustering 
+
+To further reduce the number of graph filters, the 512 learned graph filters are grouped using K-means clustering in the coefficient space. Each graph filter is represented by its coefficient vector b,and clustering is performed based on coefficient similarity. This coefficient-space clustering reflects similarity in filtering behavior, enabling classes with similar local neighborhood structures to share a single graph-based fixed filter. A weighted K-means algorithm is adopted to address class imbalance, with weights proportional to the number of training samples per class. Formally, let bi ∈ RK+1 
+
+denote the graph filter coefficient vector learned for the i-th fixed-filter class, and let αi denote its associated weight, defined as the number of training samples in that class. Given a target number of clusters M , weighted K-means clustering seeks to partition the 512 
+
+coefficient vectors into M clusters by minimizing 
+
+min  
+
+> {C m},{μm}
+> M
+
+X
+
+> m=1
+
+X
+
+> i∈C m
+
+αi bi − μm
+
+> 22
+
+, (8) where Cm denotes the index set of classes assigned to the m-th clus-ter and μm is the corresponding cluster centroid. 
+
+3.3.3. Cluster-Level Retraining 
+
+Rather than directly averaging the graph filter coefficients within each cluster, a second training stage is performed to fully exploit the aggregated training data. For each cluster, all training samples as-sociated with the mapped classes are aggregated, and a cluster-level graph filter is learned by re-solving the ridge regression problem in (7) using this aggregated training set. 
+
+4. DESIGN ANALYSIS AND ABLATION STUDY 
+
+This section analyzes the impact of key design choices in the pro-posed graph-based fixed filtering framework. As illustrated in Fig. 2, the ALF processing in ECM consists of multiple stages. The recon-structed signal xrec is first processed by the in-loop prefilters, pro-ducing the prefiltered signal xpre . This signal is then fed to the fixed filtering stage, where the fixed filters are applied to generate xFF . Fi-nally, the online ALF stage aggregates the outputs of the previous stages and applies Wiener filtering to generate the final reconstruc-tion xfinal . This multi-stage structure provides multiple candidate signals that can be used either for graph construction or as training targets, enabling different design choices. 
+
+4.1. Experimental Setup 
+
+Experiments are conducted on the BVI-DVC dataset [13], which contains a diverse set of natural video sequences with varying spatial and temporal characteristics. A total of 200 sequences are used, with 
+
+180 sequences for training and 20 sequences reserved for testing. Experiments are conducted using the 480 × 272 resolution, focusing on luma (Y) samples with 10-bit depth. All experiments are per-formed at the quantization parameter QP = 37 , a typical operating point for evaluating compression artifacts. Performance is measured using the mean absolute error (MAE) between the filtered and origi-nal clean samples. For comparison, we report the error between the clean input and output at different stages, including (i) samples be-fore fixed filtering xpre , (ii) fixed filtering output xFF , and (iii) ALF output xfinal of the ECM baseline under the same experimental con-ditions. 
+
+4.2. Graph Connectivity 
+
+Fig. 5 shows the relation between MAE and the number of graph-based fixed filters (clusters). Fig. 5(a) compares the performance of 4-connected and 8-connected graph constructions across different number of clusters. Although the 8-connected graph outperforms the 4-connected graph when the number of clusters is large, the two   
+
+> (a) (b) (c)
+
+Fig. 5 . Comparison of filtering performance in terms of MAE ver-sus the total number of clusters under different configurations. (a) Graph construction using either (i) 4-connectivity (grid graph) or (ii) 8-connectivity (8-conn graph). (b) Graph edge weighted computed from sample (i) before in-loop prefiltering xrec or (ii) after in-loop prefiltering xpre . (c) Target outputs for training selected to be (i) original clean samples xclean or (ii) ALF outputs xfinal .types of graphs perform similarly when the number of clusters is small, which is the more practical operating point. 
+
+4.3. Graph Construction Input and Training Target Selection 
+
+Fig. 5(b) compares different choices of reconstructed samples used to build the graph Laplacian L in (7). We consider samples before in-loop prefiltering xrec and after in-loop prefiltering xpre . When the number of clusters is small, constructing graphs from the prefiltered samples xpre consistently yields better performance. Although us-ing unfiltered samples xrec may be beneficial when a large number of clusters is available, this advantage is less relevant to the goal of reducing the number of fixed filters in modern coding software. Therefore, graphs constructed from xpre are adopted in the proposed framework. The choice of training target y in (7) is also examined in Fig. 5(c) by comparing two candidate signals: the original clean samples 
+
+xclean and the output of the online ALF stage xfinal . Across all set-tings, using the clean samples as y achieves the lowest MAE. Thus, clean samples provide the most appropriate supervision, which is adopted in the proposed framework. 
+
+4.4. Number of Clusters and Polynomial Order 
+
+In this experiment, graphs are constructed from xpre and clean sam-ples are used as the target output for training. Fig. 6 shows the re-lation between MAE and the polynomial order of graph-based fixed filters. The optimal polynomial order differs between the two graph connectivity configurations. 8-connected graph achieves its best per-formance at order K = 5 , whereas the 4-connected graph requires a higher order K = 7 to reach comparable performance. This be-havior indicates that richer local connectivity enables more efficient information propagation through the graph Laplacian, allowing a lower-order polynomial in the filter design. Moreover, graph-based fixed filters can outperform the origi-nal fixed filters under appropriate configurations. This suggests that many of the original 512 fixed-filter classes exhibit similar filter-ing behavior and can be effectively represented by a compact set of graph-based filters. Based on these findings, an 8-connected graph with M = 16 clusters and polynomial order K = 5 is selected as a favorable trade-off between performance and model complexity. (a) (b)  
+
+> (c) (d)
+
+Fig. 6 . Comparison of filtering performance in terms of MAE versus the filter order under different predefined number of clusters. 
+
+Table 1 . MAE Performance Comparison Prefiltered Input FF Output GF Output MAE 22.34 21.23 20.89 
+
+Relative MAE Reduction 0% 5.0% 6.5% 
+
+Standard Deviation 5.50 5.49 5.57 
+
+4.5. Performance Comparison 
+
+Based on the ablation analysis, we select a configuration that bal-ances filtering performance and hardware complexity. We use an 
+
+8-connected graph constructed from xpre , and train the filters to ap-proximate xclean , with M = 16 clusters and polynomial order K =5. The performance of the recommended configuration is evalu-ated using five-fold cross-validation, with the corresponding stan-dard deviations reported in Table 1. The ECM fixed filtering (FF Output) achieves a relative MAE reduction of 5.0% , while the pro-posed graph-based fixed filtering (GF Output) achieves a larger re-duction of 6.5% . This improvement is achieved despite reducing the number of fixed filters from 512 to 16 , while using the same gradient-based classifier for filter selection. The worst performance is observed for the sequence WoodSJTU , where the GF output in-creases the MAE from 28 .57 for the prefiltered input to 29 .02 . This sequence contains dense, thin tree structures with strong backlight-ing and lens flare, where smoothing can easily introduce distortion. To further evaluate generalization, we directly apply the GFs trained on the BVI-DVC dataset to the JCT-VC Class C dataset [14], which consists of uncompressed sequences with a resolution of 832 × 480 .On this dataset, the MAE of the prefiltered input is 4.51 . The pro-posed GF output achieves an MAE of 4.38 , close to the ECM FF output MAE of 4.35 . These results demonstrate that the proposed graph-based framework can more effectively suppress compression artifacts while using a substantially smaller set of fixed filters. 
+
+Fig. 7 . Mapping from ECM’s gradient-based classifier classes to the learned graph filter (GF) indices. Each cell corresponds to a single original gradient-based class, and its color denotes the assigned GF index. The horizontal and vertical axes indicate the binned horizon-tal/vertical and diagonal edge strengths (EHV , E D). Each subplot corresponds to a different AL1 level (with AL2 = 0 ). The diagonal split separates cases with EHV ≥ ED and EHV < E D.
+
+4.6. Structural Interpretation of GF Grouping 
+
+To further understand the clustering behavior of the proposed graph filters, Fig. 7 visualizes the mapping from the original fine-grained gradient-based classes to the learned GF indices. Overall, the learned GF combines classes that are similar in both orientation-related measures and activity levels. For instance, GF cluster 3 (blue) mainly occupies neighboring cells in the lower-left portion of the table and across several consecutive AL1 levels. This sug-gests that the graph-based representation tends to group classes with structurally similar (i.e., approximately isomorphic) neighborhoods while reducing the number of distinct filters. 
+
+5. CONCLUSION 
+
+This paper presented a graph-based fixed filtering framework for ALF in ECM. By modeling local neighborhoods as graph signals and learning fixed filters as polynomial graph filters, the proposed approach captures local structural information more effectively than gradient-based classification alone. Exploiting structural similarity in the graph domain enables a compact representation of fixed fil-ters, substantially reducing redundancy while preserving compatibil-ity with the existing ALF framework. Experimental results demon-strate that the proposed method improves fixed-filter performance compared to the ECM baseline while significantly reducing the num-ber of required filters. These results suggest that graph-based repre-sentations offer an effective and scalable solution for fixed filtering in adaptive loop filtering. 6. REFERENCES 
+
+[1] Chia-Yang Tsai, Ching-Yeh Chen, Tomoo Yamakage, In Suk Chong, Yu-Wen Huang, Chih-Ming Fu, Takayuki Itoh, Takashi Watanabe, Takeshi Chujoh, Marta Karczewicz, and Shaw-Min Lei, “Adaptive loop filtering for video coding,” IEEE Journal of Selected Topics in Signal Processing , vol. 7, no. 6, pp. 934– 945, 2013. [2] Marta Karczewicz, Nan Hu, Jonathan Taquet, Ching-Yeh Chen, Kiran Misra, Kenneth Andersson, Peng Yin, Taoran Lu, Edouard Franc ¸ois, and Jie Chen, “Vvc in-loop filters,” IEEE Transactions on Circuits and Systems for Video Technology ,vol. 31, no. 10, pp. 3907–3925, 2021. [3] Muhammed Coban, Ru-Ling Liao, Karam Naser, Jacob Str¨ om, and Li Zhang, “Algorithm description of enhanced compres-sion model 19 (ecm 19),” JVET-AN2025, Dec. 2025. [4] Benjamin Bross, Ye-Kui Wang, Yan Ye, Shan Liu, Jianle Chen, Gary J. Sullivan, and Jens-Rainer Ohm, “Overview of the ver-satile video coding (vvc) standard and its applications,” IEEE Transactions on Circuits and Systems for Video Technology ,vol. 31, pp. 3736–3764, 2021. [5] Jiayue Fang and Fuzheng Yang, “The optimization of adap-tive loop filter based on the reduction of the filter sets,” in 
+
+2023 International Conference on Ubiquitous Communication (Ucom) , 2023, pp. 166–170. [6] Chengkang Huang, Leilei Huang, Chang Liu, Shuocheng Wang, Ke Xu, and Yibo Fan, “Fast adaptive loop filter al-gorithm based on the optimization of class merging,” in 2024 IEEE International Conference on Visual Communications and Image Processing (VCIP) , 2024, pp. 1–5. [7] Gene Cheung, Enrico Magli, Yuichi Tanaka, and Michael K Ng, “Graph spectral image processing,” Proceedings of the IEEE , vol. 106, no. 5, pp. 907–930, 2018. [8] Yongzhe Wang, Antonio Ortega, Dong Tian, and Anthony Vetro, “A graph-based joint bilateral approach for depth en-hancement,” in 2014 IEEE International Conference on Acous-tics, Speech and Signal Processing (ICASSP) , 2014, pp. 885– 889. [9] Xianming Liu, Gene Cheung, Xiaolin Wu, and Debin Zhao, “Random walk graph laplacian-based smoothness prior for soft decoding of jpeg images,” IEEE Transactions on Image Pro-cessing , vol. 26, no. 2, pp. 509–524, 2017. [10] Akshay Gadde, Sunil K Narang, and Antonio Ortega, “Bi-lateral filter: Graph spectral interpretation and extensions,” in 2013 IEEE International Conference on Image Processing .IEEE, 2013, pp. 1222–1226. [11] Peyman Milanfar, “A tour of modern image filtering: New insights and methods, both practical and theoretical,” IEEE Signal Processing Magazine , vol. 30, no. 1, pp. 106–128, 2013. [12] Per Wennersten, Jacob Strom, Ying Wang, Kenneth Anders-son, Rickard Sjoberg, and Jack Enhorn, “Bilateral filtering for video coding,” in 2017 IEEE Visual Communications and Im-age Processing (VCIP) , 2017, pp. 1–4. [13] Di Ma, Fan Zhang, and David R. Bull, “Bvi-dvc: A training database for deep video compression,” IEEE Transactions on Multimedia , vol. 24, pp. 3847–3858, 2022. [14] Frank Bossen, “Common test conditions and software refer-ence configurations,” Tech. Rep. JCTVC-L1100, Joint Collab-orative Team on Video Coding (JCT-VC), 2013.
