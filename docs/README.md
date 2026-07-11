@@ -6,46 +6,35 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-10
-- 运行时间：2026-07-10 20:51:30 UTC
+- 最新运行日期：2026-07-11
+- 运行时间：2026-07-11 21:02:56 UTC
 - 运行状态：成功
-- 本次总论文数：8
+- 本次总论文数：5
 - 精读区：2
-- 速读区：6
+- 速读区：3
 
 ### 今日简报（AI）
-今天重点研究了延迟关键型边缘系统的协作学习与实时交互式多目标视频分割，两篇精读均为9.0分。  
-值得关注的两个方向：边缘智能模型的协同训练，以及视频分割的实时交互能力。  
-下一步建议：深入探索边缘端模型协同优化策略，并结合实时视频分割技术，以应对低延迟场景需求。
-- 详情：[/202607/10/README](/202607/10/README)
+今日精读聚焦微型线段检测与移动端大模型推理两篇高分论文。MiLSD高效检测线段，MORES通过分布式推理扩展LLM应用。普通读者可关注边缘AI部署，尝试轻量化模型与分布式协作。
+- 详情：[/202607/11/README](/202607/11/README)
 
 ### 精读区论文标签
-1. [Collate: Collaborative Neural Network Learning for Latency-Critical Edge Systems](/202607/10/2607.08013v1-collate-collaborative-neural-network-learning-for-latency-critical-edge-systems)  
+1. [MiLSD: A Micro Line-Segment Detector for Resource-Constrained Devices](/202607/11/2607.06600v1-milsd-a-micro-line-segment-detector-for-resource-constrained-devices)  
    标签：评分：9.0/10、query:mec-video
-   evidence：通过协作异构学习进行边缘计算模型选择
-2. [SAM-MT: Real-Time Interactive Multi-Target Video Segmentation](/202607/10/2607.08688v1-sam-mt-real-time-interactive-multi-target-video-segmentation)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：实时交互式多目标视频分割
+   evidence：为边缘计算进行模型选择：面向MCU的线段检测器
+2. [MORES: Mobile Reasoning-as-a-Service via Distributed LLM Inference-Time Scaling](/202607/11/2607.08116v1-mores-mobile-reasoning-as-a-service-via-distributed-llm-inference-time-scaling)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：移动边缘设备上的分布式LLM推理
 
 ### 速读区论文标签
-1. [SPLIT: Training-Free AI-Generated and Partially Edited Video Detection via Spatial Patch-Level Incoherence and Temporal Roughness](/202607/10/2607.02886v1-split-training-free-ai-generated-and-partially-edited-video-detection-via-spatial-patch-level-incoherence-and-temporal-roughness)  
+1. [Event Detection in Videos: A Framework for the Development of New Methods](/202607/11/2607.04372v1-event-detection-in-videos-a-framework-for-the-development-of-new-methods)  
    标签：评分：7.0/10、query:mec-video
-   evidence：AI生成视频检测属于视频分析
-2. [Latent Clarity: Bridging World-Model Kinematics to Semantic Manifolds for Video Anomaly Anticipation](/202607/10/2607.03558v1-latent-clarity-bridging-world-model-kinematics-to-semantic-manifolds-for-video-anomaly-anticipation)  
+   evidence：视频事件检测框架，核心视频分析任务，涉及实时性
+2. [GUSH3R: Everyone Everywhere All at Once as Gaussians](/202607/11/2607.05243v1-gush3r-everyone-everywhere-all-at-once-as-gaussians)  
    标签：评分：7.0/10、query:mec-video
-   evidence：视频异常预测属于视频分析
-3. [CompressedVQA-AEV: Full-Reference and No-Reference Quality Assessment Models for Asymmetric Encoded Videos](/202607/10/2607.04606v1-compressedvqa-aev-full-reference-and-no-reference-quality-assessment-models-for-asymmetric-encoded-videos)  
+   evidence：从单目视频进行在线动态人体场景重建
+3. [EdgeCompress: Coupling Multidimensional Model Compression and Dynamic Inference for EdgeAI](/202607/11/2607.06982v1-edgecompress-coupling-multidimensional-model-compression-and-dynamic-inference-for-edgeai)  
    标签：评分：7.0/10、query:mec-video
-   evidence：面向视频分析的质量评估
-4. [Dual-Correlation Hypergraph Network for Unaligned RGBT Video Object Detection and A Large-scale Benchmark](/202607/10/2607.08191v1-dual-correlation-hypergraph-network-for-unaligned-rgbt-video-object-detection-and-a-large-scale-benchmark)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：RGBT视频目标检测属于视频分析
-5. [Reduced-complexity Adaptive Loop Filtering via Input-dependent Graph Filters](/202607/10/2607.04985v1-reduced-complexity-adaptive-loop-filtering-via-input-dependent-graph-filters)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：低复杂度自适应环路滤波用于视频编码
-6. [ZipDepth: Bringing Lightweight Zero-Shot Monocular Depth Anywhere, on Any Device](/202607/10/2607.08771v1-zipdepth-bringing-lightweight-zero-shot-monocular-depth-anywhere-on-any-device)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：轻量级单目深度模型，适用于边缘设备实时部署
+   evidence：面向边缘设备的模型压缩与动态推理
 
 
 <div class="dpr-home-promo-card">
