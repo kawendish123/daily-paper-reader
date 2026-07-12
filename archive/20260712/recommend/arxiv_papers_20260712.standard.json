@@ -1,0 +1,339 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-12T20:11:33.696265+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2607.06922v1",
+      "source": "arxiv",
+      "title": "Latency-Constrained DNN Architecture Learning for Edge Systems using Zerorized Batch Normalization",
+      "abstract": "Deep learning applications have been widely adopted on edge devices, to mitigate the privacy and latency issues of accessing cloud servers. Deciding the number of neurons during the design of a deep neural network to maximize performance is not intuitive. Particularly, many application scenarios are real-time and have a strict latency constraint, while conventional neural network optimization methods do not directly change the temporal cost of model inference for latency-critical edge systems. In this work, we propose a latency-oriented neural network learning method to optimize models for high accuracy while fulfilling the latency constraint. For efficiency, we also introduce a universal hardware-customized latency predictor to optimize this procedure to learn a model that satisfies the latency constraint by only a one-shot training process. The experiment results reveal that, compared to state-of-the-art methods, our approach can well-fit the 'hard' latency constraint and achieve high accuracy. Under the same training settings as the original model and satisfying a 34 ms latency constraint on the ImageNet-100 dataset, we reduce GoogLeNet's latency from 40.32 ms to 34 ms with a 0.14% accuracy reduction on the NVIDIA Jetson Nano. When coupled with quantization, our method can be further improved to only 0.04% drop for GoogLeNet. On the NVIDIA Jetson TX2, we compress VGG-19 from 119.98 ms to 34 ms and even improve its accuracy by 0.5%, and we scale GoogLeNet up from 20.27 ms to 34 ms and achieve higher accuracy by 0.78%. We also open source this framework at https://github.com/ntuliuteam/ZeroBN",
+      "authors": [
+        "Shuo Huai",
+        "Di Liu",
+        "Hao Kong",
+        "Weichen Liu",
+        "Ravi Subramaniam",
+        "Christian Makaya",
+        "Qian Lin"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-07-08T02:35:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.06922v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "latency-constrained DNN architecture learning for edge systems addressing model selection",
+      "llm_evidence_cn": "面向边缘系统的延迟约束DNN架构学习解决模型选择问题",
+      "llm_evidence": "面向边缘系统的延迟约束DNN架构学习解决模型选择问题",
+      "canonical_evidence": "面向边缘系统的延迟约束DNN架构学习解决模型选择问题",
+      "llm_tldr_en": "Proposes latency-oriented neural network learning with zerorized batch normalization to automatically select neuron numbers under strict latency constraints for edge devices.",
+      "llm_tldr_cn": "针对边缘设备上实时应用需满足严格延迟约束且手工设计网络神经元数不直观的问题，该文提出一种延迟导向的神经网络学习方法，通过零化批归一化技术自动搜索满足延迟目标的高精度架构，并引入通用硬件延迟预测器提升效率。实验表明该方法在多个边缘平台上实现了精度与延迟的良好平衡。",
+      "llm_tldr": "针对边缘设备上实时应用需满足严格延迟约束且手工设计网络神经元数不直观的问题，该文提出一种延迟导向的神经网络学习方法，通过零化批归一化技术自动搜索满足延迟目标的高精度架构，并引入通用硬件延迟预测器提升效率。实验表明该方法在多个边缘平台上实现了精度与延迟的良好平衡。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.05093v2",
+      "source": "arxiv",
+      "title": "Video-Text Temporal Localization via Multi-Scale Convolution and Dynamic Routing",
+      "abstract": "Video-text temporal localization requires precise alignment between natural language queries and corresponding video segments, a fundamental challenge in multimodal understanding. We present a novel framework that addresses two critical limitations of existing methods: inadequate modeling of hierarchical temporal structure and inability to handle complex many-to-many correspondences between modalities. Our approach introduces a multi-scale temporal convolutional encoder that captures motion patterns across different temporal granularities - from instantaneous frame transitions to extended action sequences. We further propose a capsule-based dynamic routing mechanism that iteratively refines segment-query associations through structured agreement updates, enabling flexible modeling of non-monotonic alignments. These components are unified through a multi-task learning objective that jointly optimizes temporal boundary regression, cross-modal semantic alignment, and capsule diversity. Extensive experiments on ActivityNet Captions demonstrate significant improvements, achieving 42.9% Recall@0.5 and 41.1% mean IoU, surpassing strong transformer-based baselines while maintaining computational efficiency. Our results validate that combining hierarchical temporal modeling with structured semantic routing provides an effective solution for fine-grained video-language understanding.",
+      "authors": [
+        "Gengtian Shi",
+        "Jinze Yu",
+        "Chenhao Wu",
+        "Shaofei Wang",
+        "Eiji Fukuzawa",
+        "Junjie Tang",
+        "Hiroshi Onoda",
+        "Jiang Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-06T13:52:46+00:00",
+      "link": "https://arxiv.org/pdf/2607.05093v2",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "video-text temporal localization for streaming video analysis",
+      "llm_evidence_cn": "视频文本时间定位用于流式视频分析",
+      "llm_evidence": "视频文本时间定位用于流式视频分析",
+      "canonical_evidence": "视频文本时间定位用于流式视频分析",
+      "llm_tldr_en": "Proposes multi-scale temporal convolution and capsule dynamic routing for precise video-text alignment, enabling fine-grained temporal localization in videos.",
+      "llm_tldr_cn": "针对视频文本时间定位中层次化时序建模不足和模态间多对多对应困难的问题，该文提出多尺度时序卷积编码器与胶囊动态路由机制，分别捕获不同粒度的运动模式并迭代优化片段-查询关联。实验表明该方法在多个基准上取得了领先的对齐精度，为流式视频分析与检索提供了新思路。",
+      "llm_tldr": "针对视频文本时间定位中层次化时序建模不足和模态间多对多对应困难的问题，该文提出多尺度时序卷积编码器与胶囊动态路由机制，分别捕获不同粒度的运动模式并迭代优化片段-查询关联。实验表明该方法在多个基准上取得了领先的对齐精度，为流式视频分析与检索提供了新思路。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-07-08-737333-v1",
+      "source": "biorxiv",
+      "title": "Ecological connectivity modelling with WebAssembly",
+      "abstract": "Circuit theory has been successfully applied to ecological connectivity modelling, notably via the Circuitscape software, which is typically run locally on a laptop or via a server. For downstream geospatial web applications relying on connectivity analysis, backend infrastructure is required, which can be costly and require advanced data governance. Recent developments in WebAssembly now allow fast C++ or Rust code to be run directly in a sandboxed browser environment for edge computing. We present a WebAssembly/Rust toolset with a geospatial data pipeline and efficient edge-computing implementation of connectivity analysis. This approach may be useful for geospatial modelling software where rasters and memory footprint are small enough for the browser context. Our results show that as expected, Circuitscape solves 1000x1000 raster networks 1-2x faster, but requires further file writes. Accounting for total program runtime, our web implementation can be faster for the given context.",
+      "authors": [
+        "Southgate, A. J.",
+        "Redihough, J."
+      ],
+      "primary_category": "ecology",
+      "categories": [
+        "ecology"
+      ],
+      "published": "2026-07-09T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.08.737333v1.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "efficient edge-computing implementation for connectivity analysis",
+      "llm_evidence_cn": "在浏览器边缘计算环境中高效实现连通性分析",
+      "llm_evidence": "在浏览器边缘计算环境中高效实现连通性分析",
+      "canonical_evidence": "在浏览器边缘计算环境中高效实现连通性分析",
+      "llm_tldr_en": "A WebAssembly/Rust toolset provides an edge-computing implementation of ecological connectivity analysis, enabling browser-based execution without server backend.",
+      "llm_tldr_cn": "针对生态连通性分析依赖服务器后端的成本与数据治理问题，本文提出基于WebAssembly/Rust的工具集。该工具在浏览器边缘计算环境中高效运行电路理论分析，无需后端基础设施。实验表明，在栅格数据较小时性能可接受。该工作为地理空间建模的边缘计算应用提供了新思路。",
+      "llm_tldr": "针对生态连通性分析依赖服务器后端的成本与数据治理问题，本文提出基于WebAssembly/Rust的工具集。该工具在浏览器边缘计算环境中高效运行电路理论分析，无需后端基础设施。实验表明，在栅格数据较小时性能可接受。该工作为地理空间建模的边缘计算应用提供了新思路。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.04684v1",
+      "source": "arxiv",
+      "title": "TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection",
+      "abstract": "Spatio-temporal action detection in videos requires jointly localizing actors in space and identifying action boundaries over time. A common challenge is constructing temporally stable action tubes, as frame-level detectors often suffer from jitter, fragmentation, and imprecise temporal localization. Many recent approaches address this by introducing heavy spatio-temporal transformers or optical-flow-based pipelines, leading to high computational cost and limited scalability. We propose TubeLite, a lightweight framework for spatio-temporal action detection that focuses on stable tube construction and boundary-aware temporal modeling. TubeLite represents each actor as a tube, defined as a sequence of bounding boxes associated with a single actor over time, and explicitly enforces temporal consistency at both the spatial and semantic levels. The method combines low-jitter actor detection, Gaussian-weighted actor feature extraction, efficient short-term temporal propagation, and a boundary-focused temporal prediction head, while avoiding optical flow and large-scale temporal attention. Despite its compact design, TubeLite achieves strong video-level localization performance. It improves Video-mAP@0.5 by 4.5 and 7.1 percentage points over the best compared method on the MultiSports and UCF101-24 datasets, respectively, with substantially fewer parameters and floating-point operations than transformer-based alternatives, demonstrating that effective spatio-temporal action detection can be obtained through principled, lightweight temporal modeling.",
+      "authors": [
+        "Ali Soltaninezhad",
+        "Melissa Cote",
+        "Alejandro Rico Espinosa",
+        "Tunai Porto Marques",
+        "Alexandra Branzan Albu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-06T05:12:30+00:00",
+      "link": "https://arxiv.org/pdf/2607.04684v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "lightweight spatio-temporal action detection in videos",
+      "llm_evidence_cn": "视频中轻量级的时空动作检测",
+      "llm_evidence": "视频中轻量级的时空动作检测",
+      "canonical_evidence": "视频中轻量级的时空动作检测",
+      "llm_tldr_en": "TubeLite proposes a lightweight framework for spatio-temporal action detection, focusing on stable tube construction and boundary-aware temporal modeling.",
+      "llm_tldr_cn": "针对视频时空动作检测中动作管不稳定和计算成本高的问题，本文提出TubeLite轻量级框架。该方法通过稳定的动作管构建和边界感知时序建模实现高效检测。实验表明，在多个基准上达到与重型方法相当的精度，同时大幅降低计算开销。该工作促进了实时视频分析应用的发展。",
+      "llm_tldr": "针对视频时空动作检测中动作管不稳定和计算成本高的问题，本文提出TubeLite轻量级框架。该方法通过稳定的动作管构建和边界感知时序建模实现高效检测。实验表明，在多个基准上达到与重型方法相当的精度，同时大幅降低计算开销。该工作促进了实时视频分析应用的发展。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.03789v1",
+      "source": "arxiv",
+      "title": "G$^2$TAM: Geometry Grounded Track Anything Model",
+      "abstract": "Human spatial understanding arises from jointly perceiving geometry and semantics, enabling consistent object identification and localization across viewpoints and time. Current video segmentation models depend on explicit object appearance memory banks for instance tracking, yet they remain vulnerable to large viewpoint changes and long-term occlusions. Leveraging the spatial consistency afforded by modern feed-forward 3D reconstruction models, we propose the Geometry Grounded Tracking Anything Model (G$^2$TAM), a unified framework for promptable instance tracking in 3D using only unordered RGB images or videos. G$^2$TAM employs spatially aligned geometric representations as implicit memory, ensuring stable instance identity and localization across frames and views. At its core is a cross-modal spatial encoder that integrates visual and textual prompts into a shared geometric space, enabling end-to-end spatial reconstruction and instance-consistent mask prediction. To support training and evaluation, we construct InsTrack, a large-scale dataset with a dedicated validation split for benchmarking. Extensive experiments show that G$^2$TAM delivers strong cross-view consistency, promptable instance spatial tracking, video object segmentation and spatial reconstruction, establishing a foundation for interactive, geometry-grounded spatial reasoning.",
+      "authors": [
+        "Chenming Zhu",
+        "Peizhou Cao",
+        "Jingli Lin",
+        "Wenbo Hu",
+        "Yunlong Ran",
+        "Jiangmiao Pang",
+        "Tai Wang",
+        "Xihui Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-04T09:32:13+00:00",
+      "link": "https://arxiv.org/pdf/2607.03789v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video segmentation and tracking, 3D geometric memory",
+      "llm_evidence_cn": "视频分割与跟踪，3D几何记忆",
+      "llm_evidence": "视频分割与跟踪，3D几何记忆",
+      "canonical_evidence": "视频分割与跟踪，3D几何记忆",
+      "llm_tldr_en": "Proposes G2TAM, a unified framework for promptable instance tracking in 3D using geometric representations as implicit memory, robust to viewpoint changes.",
+      "llm_tldr_cn": "针对视频分割中外观记忆受视角变化影响的问题，提出几何接地跟踪模型G2TAM，利用3D重建的空间一致性作为隐式内存，实现跨视角和时间的稳定实例跟踪。",
+      "llm_tldr": "针对视频分割中外观记忆受视角变化影响的问题，提出几何接地跟踪模型G2TAM，利用3D重建的空间一致性作为隐式内存，实现跨视角和时间的稳定实例跟踪。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.04607v1",
+      "source": "arxiv",
+      "title": "G2VD: Generalizable AI-Generated Video Detection via Counterfactual Intervention and Causal Disentanglement",
+      "abstract": "The rapid advancement of AI-generated videos poses increasing security risks and calls for robust detectors with strong cross-domain generalization. Although existing methods achieve promising results under in-domain evaluation, their performance often degrades substantially when tested on unseen generators. A key reason is shortcut learning, where detectors rely on domain-specific spurious cues, such as generator-dependent fingerprints and generation styles, instead of intrinsic forgery traces. To address this issue, we propose G2VD, a Generalizable AI-Generated Video Detection framework based on counterfactual intervention and causal disentanglement. First, G2VD introduces a counterfactual intervention pipeline (CFIPipeline) that generates controlled counterfactual samples via variational autoencoders (VAEs), followed by frequency-domain and pixel-domain alignment, thereby encouraging the detector to focus on generator-intrinsic cues. Building on this intervention process, we further design a causal disentanglement classifier consisting of two domain-anchored branches with distinct classification objectives, combined with an HSIC-based independence constraint to encourage the separation of task-relevant cues from domain-specific bias. Across four public datasets, G2VD shows strong average cross-domain performance and consistent gains over matched backbones. On the challenging GenVidBench cross-domain setting, it exceeds 90% accuracy and reaches an AUC close to 0.95. Notably, this performance is obtained using only 10% of the original training data. The code is available at https://github.com/dumeng98/G2VD.",
+      "authors": [
+        "Meng Du",
+        "Hongchang Chen",
+        "Ran Li",
+        "Junjie Zhang",
+        "Qi Ouyang",
+        "Shuxin Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-06T02:25:18+00:00",
+      "link": "https://arxiv.org/pdf/2607.04607v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "AI-generated video detection for video analytics",
+      "llm_evidence_cn": "AI生成视频检测用于视频分析",
+      "llm_evidence": "AI生成视频检测用于视频分析",
+      "canonical_evidence": "AI生成视频检测用于视频分析",
+      "llm_tldr_en": "Proposes G2VD using counterfactual intervention and causal disentanglement to detect AI-generated videos with strong cross-domain generalization.",
+      "llm_tldr_cn": "针对AI生成视频检测在跨域场景下因捷径学习而性能退化的问题，该文提出G2VD框架，通过反事实干预和因果解耦使模型关注内在伪造痕迹而非领域特定伪影。实验表明该方法在多个未见过的生成器上均能保持高检测率，为视频安全分析提供了鲁棒工具。",
+      "llm_tldr": "针对AI生成视频检测在跨域场景下因捷径学习而性能退化的问题，该文提出G2VD框架，通过反事实干预和因果解耦使模型关注内在伪造痕迹而非领域特定伪影。实验表明该方法在多个未见过的生成器上均能保持高检测率，为视频安全分析提供了鲁棒工具。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.06856v1",
+      "source": "arxiv",
+      "title": "Gen4U: Unifying Video Generation and Understanding via Diffusion",
+      "abstract": "Prior work suggests that diffusion representations capture low-level geometry but struggle with high-level semantics. We demonstrate that state-of-the-art video diffusion models overcome this limitation. By systematically probing their intermediate activations using recent mutual-kNN alignment metrics, we reveal a highly structured latent space where visual representations evolve across both network depth and noise levels. We show that while moderate noise levels yield linearly separable global semantics, fine-grained details persist at lower noise levels but become spatially scattered, requiring attention mechanisms to decode. Building on these insights, we introduce Gen4U (Generation for Understanding), a framework that repurposes these generative representations with a single forward pass. Our experiments establish that frozen, large-scale video diffusion models function as highly competitive video encoders across a wide spectrum of tasks, spanning semantic and non-semantic objectives (video classification, depth estimation, camera pose estimation, image and video captioning). Bypassing fine-tuning, Gen4U unifies the generation and understanding paradigms, achieving strong perception performance while fully preserving the model's ability to generate high-quality video.",
+      "authors": [
+        "Michael King",
+        "Aravindh Mahendran",
+        "Matthew Koichi Grimes",
+        "Fedor Kitashov",
+        "Adham Elarabawy",
+        "Pedro Velez",
+        "Maks Ovsjanikov",
+        "Viorica Pătrăucean"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-07T23:17:26+00:00",
+      "link": "https://arxiv.org/pdf/2607.06856v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video understanding via diffusion models for analytics",
+      "llm_evidence_cn": "利用扩散模型进行视频理解，适用于视频分析",
+      "llm_evidence": "利用扩散模型进行视频理解，适用于视频分析",
+      "canonical_evidence": "利用扩散模型进行视频理解，适用于视频分析",
+      "llm_tldr_en": "Shows video diffusion models have highly structured latent space for semantics; proposes Gen4U to repurpose generative representations for video understanding tasks.",
+      "llm_tldr_cn": "论文证明现代视频扩散模型能够克服早期仅捕捉低层几何特征的局限，其潜在空间具有高度结构化的语义表示。通过系统探测中间激活，发现中等噪声水平下可获得线性可分的全局语义。基于此提出Gen4U框架，将生成式表示重用于视频理解任务，为视频分析提供新范式。",
+      "llm_tldr": "论文证明现代视频扩散模型能够克服早期仅捕捉低层几何特征的局限，其潜在空间具有高度结构化的语义表示。通过系统探测中间激活，发现中等噪声水平下可获得线性可分的全局语义。基于此提出Gen4U框架，将生成式表示重用于视频理解任务，为视频分析提供新范式。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.08537v1",
+      "source": "arxiv",
+      "title": "Whareformer: Learning to Track What is Where in Long Egocentric Videos",
+      "abstract": "The recently established 'Out of Sight, Not out of Mind' (OSNOM) task for egocentric videos focuses on tracking objects that are moved by the camera wearer, online, maintaining knowledge of instance locations throughout the video even when they leave the field of view or become heavily occluded. In this paper, we propose the first learning-based solution to the OSNOM task: Whareformer, a transformer-based model with two components: an updatable memory of established tracks and a track assignment module that associates observations with existing tracks in a feed-forward manner. Whareformer jointly reasons over evolving object appearance (what) and updated 3D location (where), and employs a dedicated New Track token to reason about novel objects.   Thanks to its design choices of using relative distances and evolving track representations, Whareformer is trained on a small set of 56 videos but achieves SOTA performance on 260 long test videos from three datasets: EPIC-KITCHENS-100 (unseen videos), IT3DEgo, and HD-EPIC, with significant absolute improvements over prior work.",
+      "authors": [
+        "Jacob Chalk",
+        "Saptarshi Sinha",
+        "Dima Damen",
+        "Yannis Kalantidis",
+        "Diane Larlus"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-09T14:33:24+00:00",
+      "link": "https://arxiv.org/pdf/2607.08537v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "egocentric video tracking, instance location maintenance",
+      "llm_evidence_cn": "自我中心视频中的物体跟踪，保持实例位置信息",
+      "llm_evidence": "自我中心视频中的物体跟踪，保持实例位置信息",
+      "canonical_evidence": "自我中心视频中的物体跟踪，保持实例位置信息",
+      "llm_tldr_en": "Proposes Whareformer, a transformer-based model for tracking objects in long egocentric videos, maintaining instance locations even when out of view.",
+      "llm_tldr_cn": "针对自我中心视频中物体离开视野后的跟踪问题，提出基于Transformer的Whareformer模型，通过可更新记忆和轨迹分配模块实现实时位置跟踪，首个解决该任务的学习方法。",
+      "llm_tldr": "针对自我中心视频中物体离开视野后的跟踪问题，提出基于Transformer的Whareformer模型，通过可更新记忆和轨迹分配模块实现实时位置跟踪，首个解决该任务的学习方法。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -6,35 +6,44 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-11
-- 运行时间：2026-07-11 21:02:56 UTC
+- 最新运行日期：2026-07-12
+- 运行时间：2026-07-12 20:16:12 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：2
-- 速读区：3
+- 本次总论文数：8
+- 精读区：3
+- 速读区：5
 
 ### 今日简报（AI）
-今日精读聚焦微型线段检测与移动端大模型推理两篇高分论文。MiLSD高效检测线段，MORES通过分布式推理扩展LLM应用。普通读者可关注边缘AI部署，尝试轻量化模型与分布式协作。
-- 详情：[/202607/11/README](/202607/11/README)
+今日共推荐8篇论文，精读3篇、速读5篇，聚焦边缘系统延迟优化与视频时间定位两大方向。最值得精读的是分数9.0的《Latency-Constrained DNN Architecture Learning for Edge Systems using Zerorized Batch Normalization》和8.0的《Video-Text Temporal Localization via Multi-Scale Convolution and Dynamic Routing》。建议优先阅读这两篇精读文章，了解边缘设备上的高效模型设计及视频文本时序定位技术。
+- 详情：[/202607/12/README](/202607/12/README)
 
 ### 精读区论文标签
-1. [MiLSD: A Micro Line-Segment Detector for Resource-Constrained Devices](/202607/11/2607.06600v1-milsd-a-micro-line-segment-detector-for-resource-constrained-devices)  
+1. [Latency-Constrained DNN Architecture Learning for Edge Systems using Zerorized Batch Normalization](/202607/12/2607.06922v1-latency-constrained-dnn-architecture-learning-for-edge-systems-using-zerorized-batch-normalization)  
    标签：评分：9.0/10、query:mec-video
-   evidence：为边缘计算进行模型选择：面向MCU的线段检测器
-2. [MORES: Mobile Reasoning-as-a-Service via Distributed LLM Inference-Time Scaling](/202607/11/2607.08116v1-mores-mobile-reasoning-as-a-service-via-distributed-llm-inference-time-scaling)  
+   evidence：面向边缘系统的延迟约束DNN架构学习解决模型选择问题
+2. [Video-Text Temporal Localization via Multi-Scale Convolution and Dynamic Routing](/202607/12/2607.05093v2-video-text-temporal-localization-via-multi-scale-convolution-and-dynamic-routing)  
    标签：评分：8.0/10、query:mec-video
-   evidence：移动边缘设备上的分布式LLM推理
+   evidence：视频文本时间定位用于流式视频分析
+3. [Ecological connectivity modelling with WebAssembly](/202607/12/biorxiv-10-64898-2026-07-08-737333-v1-ecological-connectivity-modelling-with-webassembly)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：在浏览器边缘计算环境中高效实现连通性分析
 
 ### 速读区论文标签
-1. [Event Detection in Videos: A Framework for the Development of New Methods](/202607/11/2607.04372v1-event-detection-in-videos-a-framework-for-the-development-of-new-methods)  
+1. [TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection](/202607/12/2607.04684v1-tubelite-lightweight-multi-actor-spatio-temporal-action-detection)  
    标签：评分：7.0/10、query:mec-video
-   evidence：视频事件检测框架，核心视频分析任务，涉及实时性
-2. [GUSH3R: Everyone Everywhere All at Once as Gaussians](/202607/11/2607.05243v1-gush3r-everyone-everywhere-all-at-once-as-gaussians)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：从单目视频进行在线动态人体场景重建
-3. [EdgeCompress: Coupling Multidimensional Model Compression and Dynamic Inference for EdgeAI](/202607/11/2607.06982v1-edgecompress-coupling-multidimensional-model-compression-and-dynamic-inference-for-edgeai)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：面向边缘设备的模型压缩与动态推理
+   evidence：视频中轻量级的时空动作检测
+2. [G$^2$TAM: Geometry Grounded Track Anything Model](/202607/12/2607.03789v1-g2tam-geometry-grounded-track-anything-model)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：视频分割与跟踪，3D几何记忆
+3. [G2VD: Generalizable AI-Generated Video Detection via Counterfactual Intervention and Causal Disentanglement](/202607/12/2607.04607v1-g2vd-generalizable-ai-generated-video-detection-via-counterfactual-intervention-and-causal-disentanglement)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：AI生成视频检测用于视频分析
+4. [Gen4U: Unifying Video Generation and Understanding via Diffusion](/202607/12/2607.06856v1-gen4u-unifying-video-generation-and-understanding-via-diffusion)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：利用扩散模型进行视频理解，适用于视频分析
+5. [Whareformer: Learning to Track What is Where in Long Egocentric Videos](/202607/12/2607.08537v1-whareformer-learning-to-track-what-is-where-in-long-egocentric-videos)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：自我中心视频中的物体跟踪，保持实例位置信息
 
 
 <div class="dpr-home-promo-card">

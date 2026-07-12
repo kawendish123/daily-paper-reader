@@ -1,0 +1,325 @@
+Title: TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection
+
+URL Source: https://arxiv.org/pdf/2607.04684v1
+
+Published Time: Tue, 07 Jul 2026 03:28:32 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection 
+
+Ali Soltaninezhad 1[0000 −0002 −1160 −4112] , Melissa Cote 1[0000 −0002 −5594 −977 X],Alejandro Rico Espinosa 1[0000 −0002 −4691 −011 X], Tunai Porto Marques 1[0000 −0003 −0850 −9912] , and Alexandra Branzan Albu 1[0000 −0001 −8991 −0999] 
+
+Electrical and Computer Engineering, University of Victoria, Victoria, BC, Canada 
+
+{alisoltaninezhad, mcote, arico, tunaip, aalbu}@uvic.ca 
+
+Abstract. Spatio-temporal action detection in videos requires jointly localizing actors in space and identifying action boundaries over time. A common challenge is constructing temporally stable action tubes, as frame-level detectors often suffer from jitter, fragmentation, and impre-cise temporal localization. Many recent approaches address this by intro-ducing heavy spatio-temporal transformers or optical-flow-based pipe-lines, leading to high computational cost and limited scalability. We propose TubeLite, a lightweight framework for spatio-temporal action detection that focuses on stable tube construction and boundary-aware temporal modeling. TubeLite represents each actor as a tube, defined as a sequence of bounding boxes associated with a single actor over time, and explicitly enforces temporal consistency at both the spatial and se-mantic levels. The method combines low-jitter actor detection, Gaussian-weighted actor feature extraction, efficient short-term temporal propa-gation, and a boundary-focused temporal prediction head, while avoid-ing optical flow and large-scale temporal attention. Despite its compact design, TubeLite achieves strong video-level localization performance. It improves Video-mAP@0.5 by 4.5 and 7.1 percentage points over the best compared method on the MultiSports and UCF101-24 datasets, re-spectively, with substantially fewer parameters and floating-point oper-ations than transformer-based alternatives, demonstrating that effective spatio-temporal action detection can be obtained through principled, lightweight temporal modeling. 
+
+Keywords: Spatio-temporal action detection (STAD) · Action tube lo-calization · Video understanding. 
+
+# 1 Introduction 
+
+Spatio-temporal action detection (STAD) aims to localize actors and track their actions over time in videos. It is a fundamental capability of video understand-ing systems for dynamic and typically unconstrained scenes, deployed in various applications such as surveillance, sports analytics, and onboard vision for au-tonomous platforms. Despite substantial progress, STAD remains challenging  
+
+> arXiv:2607.04684v1 [cs.CV] 6 Jul 2026 2A. Soltaninezhad et al.
+
+because models must jointly handle (i) spatial detection under heavy occlusion, motion blur, and appearance variability, (ii) temporal reasoning over long and dynamically changing video sequences, and (iii) multi-actor interactions that shape the semantics of actions. These demands make the STAD problem dis-tinct from both frame-level classification and short-range action recognition. Many recent STAD architectures require heavy 3D backbones, optical flow computation, or transformer stacks with quadratic complexity, yielding high training costs and making it difficult to process long sequences. Moreover, ex-isting frameworks typically rely on proposal-based pipelines or external tracking mechanisms, which introduce error cascades and reduce robustness in multi-actor scenes. In practical deployment scenarios, models must remain computationally efficient while still capturing the temporal structure necessary for precise action boundary identification. We observe that many errors in STAD pipelines arise not from insufficient visual capacity, but from the temporal fragmentation intro-duced by frame-independent detectors, noisy actor trajectories, and insufficient long-range temporal smoothing. This motivates an architecture that (i) uses lightweight but reliable spatial detection, (ii) extracts temporally coherent actor representations, (iii) models temporal evolution without expensive 3D reason-ing, and (iv) produces stable, temporally consistent actor tubes, i.e., sequences of bounding boxes (BBs) associated with a single actor over time. 
+
+1.1 Contributions 
+
+We propose TubeLite, a lean and efficient architecture for STAD that integrates reliable spatial detection, actor-centric feature extraction, and long-range tem-poral modeling within a single fully-differentiable framework (see Sec. 4.6 for a quantitative efficiency analysis). Our contributions are summarized as follows: (i) Lightweight spatial detector built on ConvNeXt [27] combined with a CenterNet-inspired detection head [10]. This provides high-quality actor boxes without expensive 3D convolutions or region proposal networks. (ii) Gaussian Region of Interest (ROI) tokenization with motion cues. We propose a differentiable actor-centric embedding mechanism, extending A 2-Nets [6] to in-corporate feature-level motion cues using a Gaussian-weighted region extractor, producing stable actor tokens without reliance on optical flow, 3D CNNs, or heavy temporal attention. (iii) Gated recurrent unit (GRU)-based tem-poral propagation for actor-centric smoothing. The GRU [7] propagates information through time, stabilizing actor representations and reducing tem-poral jitter compared to pure attention-based models. (iv) Temporal head for boundary-aware action detection. We design a multi-branch tempo-ral prediction head that outputs frame-level class scores, “actionness”, start/end boundaries, and distance-to-boundary regressions, drawing inspiration from tem-poral proposal networks [24, 25] while remaining actor-conditioned. (v) Tube-aware temporal regularization. We propose a tube-aware loss that promotes smooth, consistent actor boxes and action probabilities over time, enabling stable video-level detections without requiring extra labels or optical flow. TubeLite achieves a strong video-level performance on the MultiSports [20] and UCF101-24 [32] datasets, outperforming several heavier architectures while TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection 3
+
+running significantly faster. We show that carefully integrating lightweight tem-poral reasoning and stabilizing losses can close much of the gap between light-weight detectors and large STAD models. 
+
+# 2 Related Work 
+
+In this section, we first divide STAD approaches according to their number of stages. We then review the STAD literature according to the following topics: temporal stability, temporal boundary modeling, and lightweight architectures. Early methods used a two-stage pipeline, i.e., frame detection then linked into action tubes using tracking or post-hoc association [13–15], which was ef-fective but noise-sensitive and slow due to offline processing. Newer single-stage models (e.g., STCA [34], SlowFast [12], and transformer-based detectors such as TubeR [41] and MeMViT [36]) jointly handle spatial and temporal modeling via space-time convolutions or self-attention, achieving strong results on benchmarks such as UCF101-24 [32], AVA [14], and MultiSports [20]. However, their heavy backbones, global attention, or long temporal windows hinder fast inference. Maintaining stable predictions across frames in STAD is challenging due to detector jitter, occlusion, and crowded scenes. Several prior works addressed this indirectly via tube linking [14], attention-based propagation [12], or space–time aggregation in transformer layers [36,41]. Others used tracking-style mechanisms or motion cues, adding overhead; this motivates simpler consistency methods without heavy global operators or tracking modules. Accurate action start/end localization is critical in STAD, especially for short actions or densely annotated videos. Temporal action detectors like BSN [25], BMN [24], and GTAD [37] improved this with boundary-sensitive objectives. Re-cent models like ActionFormer [39] extend this to spatial–temporal settings using frame-level actionness, boundary logits, and distance estimates. Such boundary-aware designs enhance supervision for ambiguous transitions and improve ro-bustness to partial occlusion and rapid motion. High computational cost for long, high-resolution clips has motivated research on efficient designs. ConvNeXt [27] showed modern CNNs can match early trans-formers at lower cost, while TSM [23], X3D [11], and RTD-Net [33] improved efficiency via channel shifts, depthwise factorization, or anchor-free detection. In STAD, lightweight models are crucial for handling many frames and actors per clip, motivating approaches that preserve temporal coherence without expensive global modules or long-range transformers. 
+
+# 3 Method 
+
+TubeLite is designed around the notion that STAD fundamentally depends on the construction of accurate and temporally stable actor tubes. Unlike recent transformer-heavy pipelines, TubeLite emphasizes actor-centric reasoning with minimal computational overhead. The architecture integrates: (i) low-jitter de-tection, (ii) Gaussian-weighted motion-aware tokenization, (iii) lightweight tem-poral and relational propagation, and (iv) a boundary-focused temporal classi-4 A. Soltaninezhad et al.  
+
+> Fig. 1. Overview of the TubeLite framework for STAD. Top: frame-wise spatial pro-cessing, where short video clips are processed independently per frame using a 2D back-bone and a CenterNet-style detector. Detected actor boxes are temporally stabilized (TBS) and converted into compact actor tokens via Gaussian ROI tokenization that fuses appearance and motion cues. Bottom: actor-centric temporal reasoning, where fixed actor slots are associated across frames, propagated through time using actor-wise GRU modules, and enriched with frame-level global context via actor-context cross-attention with learned latent tokens. The resulting actor representations are used for tube-aware prediction of action classes and temporal boundaries across the clip.
+
+fication module. Fig. 1 provides an overview of the full architecture, illustrat-ing the main processing steps: frame-wise spacial processing (top, Sec. 3.1) and actor-centric temporal reasoning (bottom, Sec. 3.2). 
+
+Actor tube definition : In STAD, an actor tube is a temporally ordered sequence of spatial BBs corresponding to a single actor instance over a video segment. In TubeLite, tubes are represented using fixed actor slots , which serve as model-side proxies for actor instances within a short video clip. Formally, for actor slot k ∈ { 1, . . . , K }, a tube is represented as: 
+
+Tk = {bt,k }Tt=1 , bt,k ∈ [0 , 1] 4, (1) where bt,k denotes the normalized BB associated with slot k at frame t, and T
+
+is the number of frames in the input clip. A slot may correspond to a visible actor instance or remain inactive if fewer than K actors are present. Each tube is associated with a temporal action label and boundary annotations indicating the start and end of the action within the clip. TubeLite constructs tubes over short, overlapping clips and refines them through temporal stabilization and recurrent propagation, rather than explicit long-term identity tracking. 
+
+3.1 Frame-wise Spatial Processing Feature extraction and object detection: TubeLite processes video clips by extracting spatial features and actor candidates independently at each frame, TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection 5
+
+deferring temporal reasoning to later actor-centric modules. Given an input clip 
+
+X ∈ RT ×3×H×W , where H and W are the height and width of a frame, a shared 2D convolutional backbone ( ϕ) is applied frame-wise to obtain feature maps: 
+
+Ft = ϕ(Xt) ∈ RC×Hf ×Wf , (2) followed by a 1×1 projection ( Wproj ): 
+
+F ′ 
+
+> t
+
+= Wproj Ft ∈ RD×Hf ×Wf , (3) which aligns feature dimensionality across all subsequent modules, where D de-notes the shared embedding dimension used throughout TubeLite. This stage performs no temporal feature mixing, ensuring that early processing remains purely spatial and computationally lightweight. Actor candidates are localized from F ′ 
+
+> t
+
+using a modified CenterNet-style detector that predicts actor center heatmaps and BB geometry. Unlike the original formulation, TubeLite replaces the independent prediction heads with a shared convolutional tower that pro-duces a task-consistent intermediate representation ( Ut): 
+
+Ut = ψ(F ′ 
+
+> t
+
+), (4) where ψ(·) denotes the shared convolutional tower applied to projected frame-wise features. Shared towers have been explored in image-based detectors such as RetinaNet [26], but their role is particularly important in STAD, where in-consistencies in frame-level predictions can accumulate over time and lead to unstable actor tubes. Forcing heatmap estimation and box regression to rely on a common representation reduces frame-to-frame jitter and improves the tem-poral reliability of detected actor locations. Concretely, Ut feeds a heatmap head and a regression head; the top-K detections yield raw boxes bt,k that populate the actor tubes Tk. Rather than maximizing per-frame recall, the detector retains a fixed set of the K most temporally reliable actor candidates at each frame. These candidates serve as stable spatial anchors for subsequent tube construc-tion, temporal stabilization, and actor-centric reasoning. 
+
+Temporal box stabilization (TBS) : Per–frame detectors in videos often exhibit minor spatial fluctuations due to motion blur, partial occlusion, and heatmap noise. To obtain temporally consistent actor trajectories before tok-enization, we introduce a lightweight TBS step. TBS applies a standard linear temporal filter widely used in multi-object tracking [3], adopted here as a de-liberate lightweight design choice that requires no learned parameters. For each actor slot k at time t, a stabilized box ˜bt,k is derived from the raw prediction 
+
+bt,k as: ˜bt,k = λ b t,k + (1 − λ) bt−1,k + bt+1 ,k 
+
+2 . (5) The term bt,k denotes the detector output at frame t (normalized (x1, y 1, x 2, y 2)
+
+coordinates), while bt−1,k and bt+1 ,k provide short-range temporal support, lever-aging local temporal context without requiring additional learned parameters. The averaging term models a first-order motion prior, and the scalar λ ∈ [0 , 1] 
+
+balances responsiveness to instantaneous detections against temporal smooth-ness. The resulting ˜bt,k reduces high-frequency jitter, mitigates isolated dropouts, and provides a more stable spatial reference for the subsequent stage. The stabi-lized boxes ˜bt,k replace bt,k in tube Tk and define the Gaussian mask center ct,k 
+
+used to extract actor tokens zt,k .6 A. Soltaninezhad et al. 
+
+Gaussian ROI tokenization : This stage extracts compact, motion-sensi-tive actor descriptors. The design is inspired by Gaussian-based attention in A2-Nets [6], and extended to incorporate feature-level motion cues. Given a stabilized box ˜bt,k , we define a differentiable Gaussian mask over the feature map as: 
+
+Gt,k (x, y ) ∝ exp 
+
+
+
+− ∥(x, y ) − ct,k ∥2
+
+2σ2
+
+> g
+
+
+
+, (6) where (x, y ) indexes spatial locations on the feature map, ct,k ∈ R2 denotes the center of ˜bt,k expressed in feature-map coordinates, and σg controls the spatial extent of the Gaussian weighting. The proportionality symbol indicates that Gt,k 
+
+is normalized such that P 
+
+> x,y
+
+Gt,k (x, y ) = 1 .The appearance descriptor for actor slot k at time t (appearance token at,k ∈
+
+RD ) is computed by Gaussian-weighted pooling of the projected feature map: 
+
+at,k = X
+
+> x,y
+
+Gt,k (x, y ) F ′ 
+
+> t
+
+(: , x, y ), (7) where F ′ 
+
+> t
+
+(: , x, y ) ∈ RD denotes the feature vector at spatial location (x, y ).Short-term motion information is captured via residual features: 
+
+∆F ′ 
+
+> t
+
+= F ′ 
+
+> t
+
+− F ′
+
+> t−1
+
+, (8) where ∆F ′ 
+
+> t
+
+∈ RD×Hf ×Wf encodes temporal changes in feature activations be-tween consecutive frames. These residual features are aggregated using the same Gaussian mask: mt,k = X
+
+> x,y
+
+Gt,k (x, y ) ∆F ′ 
+
+> t
+
+(: , x, y ), (9) yielding a motion-sensitive token mt,k ∈ RD (without explicit optical flow). Appearance and motion tokens are adaptively fused through a lightweight gating mechanism: αt,k = sigmoid( W [at,k ; mt,k ]) , (10) where [at,k ; mt,k ] ∈ R2D denotes channel-wise concatenation, W ∈ R1×2D is a learned linear projection, and αt,k ∈ (0 , 1) is a scalar gate controlling the relative contribution of appearance and motion. The final actor token zt,k ∈ RD is computed as: 
+
+zt,k = αt,k at,k + (1 − αt,k ) mt,k , (11) producing a motion-aware descriptor that preserves spatial localization through Gaussian pooling while adapting to temporal change. 
+
+3.2 Actor-centric Temporal Reasoning Temporal propagation via actor-wise gated recurrent unit (GRU) : To enrich per-frame actor descriptors with temporal context, TubeLite applies a GRU [7] independently to each actor slot. Given a sequence of slot-wise tokens 
+
+{zt,k }Tt=1 , the GRU evolves a latent temporal state according to: 
+
+ht,k = GRU  zt,k , h t−1,k 
+
+, (12) where the recurrent update integrates the current actor token with its historical state, producing a temporally contextualized representation ht,k . This recurrent formulation models the temporal progression of each actor, such as gradual pose changes, repetitive motion patterns, and action onsets, through an actor-wise TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection 7                
+
+> Fig. 2. Actor-context cross-attention with latent context tokens. Cross-attention at a single frame t, where a fixed set of Kactor tokens zt,k ∈RDinteracts with a learned latent context token Ct∈RD.Ctis a learned parameter (not derived from image features) that provides a shared frame-level summary and modulates actor representa-tions. This operation is applied independently across the Tframes of the input clip.
+
+state evolution. Temporal propagation is performed independently for each ac-tor slot, enforcing a strong inductive bias that prioritizes intra-actor temporal coherence over cross-actor mixing at this stage. This separation reduces tempo-ral noise caused by nearby or transient actors and stabilizes tube evolution in crowded scenes, where early fusion of actor dynamics can lead to identity drift. Contextual and multi-actor cues are incorporated at later stages of the model, allowing TubeLite to retain lightweight temporal propagation while still cap-turing global structure when needed. In contrast to clip-level transformers such as TimeSformer [2], which apply full space-time self-attention, the actor-wise GRU introduces a computationally lightweight temporal model with several ad-vantages: (i) lower latency due to linear-time recurrence rather than quadratic attention, (ii) significantly fewer parameters while retaining expressive temporal memory, and (iii) an inherent bias toward temporal smoothness, which sup-presses frame-level noise and stabilizes evolving actor representations. The re-sulting sequence {ht,k } provides temporally enriched actor representations that are directly consumed by the subsequent interaction and prediction modules. 
+
+Actor-context cross-attention : To incorporate structured global context without the cost of full actor-actor or spatiotemporal self-attention, TubeLite in-troduces a lightweight actor-context cross-attention mechanism based on learned latent context tokens (Fig. 2). The design is inspired by cross-attention pooling in Vision Transformers [9] and the latent bottleneck formulation used in Perceiver-style architectures [17], but is applied strictly within each frame. For an input clip of T frames, we associate each frame t with a learned latent context token Ct ∈ R1×D and collect them as C ∈ RT ×1×D, with D being the shared embedding dimension. These context tokens are learned parameters that do not correspond to image patches or pixels; instead, they serve as compact latent variables that summarize the configuration of actors present in each frame. Each actor representation (here a D-dimensional token associated with actor slot 
+
+k at frame t) is given by zt,k ∈ RT ×K×D. A cross-attention block is applied independently at each frame: 
+
+(z′
+
+> t
+
+, C ′
+
+> t
+
+) = XAttn( zt, C t), (13) 8 A. Soltaninezhad et al. 
+
+where XAttn( ·) denotes a multi-head cross-attention operator. The context token 
+
+Ct attends over the set of actor tokens {zt,k }Kk=1 at the same frame, producing an updated context representation C′
+
+> t
+
+, while actor tokens are simultaneously modulated by feedback from Ct to yield updated actor representations z′
+
+> t
+
+.The attention weights are computed from similarity scores between the con-text token and actor embeddings, allowing Ct to aggregate a global summary of the actor configuration present at frame t. Conversely, actor tokens receive contextual information that reflects the overall scene configuration, improving robustness in crowded or ambiguous settings. This design provides three ad-vantages. First, it injects a shared frame-level context signal that anchors actor representations without explicit actor-actor attention. Second, it regularizes ac-tor tokens by allowing them to reference a common latent context rather than relying solely on localized evidence. Third, it enables efficient aggregation: at-tention is evaluated only between K actor tokens and a single latent token per frame, avoiding the quadratic cost of full self-attention. Importantly, this mod-ule performs no temporal attention: context tokens are frame-indexed and do not propagate across time. Temporal dependencies are modeled exclusively by the actor-wise GRU (see Eq. 12). The updated actor tokens z′ 
+
+> t
+
+are passed to the temporal prediction head, while the updated context tokens C′ 
+
+> t
+
+serve as auxiliary latent summaries used for boundary and action prediction. 
+
+Tube-aware temporal prediction : For each actor slot k ∈ { 1, . . . , K }
+
+at frame t ∈ { 1, . . . , T }, the temporally enriched representation ht,k ∈ RD is mapped to a set of frame-level temporal predictions that jointly describe what 
+
+action is occurring and where it begins and ends in time. Specifically, the tem-poral head produces, for each (t, k ) pair, class logits over the action label set, an actionness score indicating whether an action is present, start and end boundary logits, left and right temporal distance predictions, and a center-quality score reflecting proximity to the temporal center of the action. We adopt boundary-sensitive supervision strategies inspired by BSN [25], BMN [24], and TSP [1], and adapt them to an actor-centric, tube-based formu-lation. For each GT actor tube, its temporal extent is annotated by a start frame index s and an end frame index e, with 1 ≤ s ≤ e ≤ T . From these annotations, we derive dense frame-level supervisory signals for each actor–frame pair (t, k ),including: (i) an actionness indicator specifying whether frame t lies inside the action interval [s, e ]; (ii) start and end boundary targets encoding proximity to s
+
+and e; (iii) normalized left and right temporal distances to the boundaries; and (iv) a center-quality score that peaks at the temporal midpoint (s + e)/2 and de-cays toward the boundaries. Together, these signals encourage precise temporal localization rather than coarse segment classification. In addition to per-frame supervision, we enforce holistic alignment between predicted and GT action segments using a temporal Intersection-over-Union (tIoU) loss. For each clip, predicted start and end boundaries ˆs and ˆe are ob-tained by aggregating boundary logits across the K actor slots at each frame, while s and e denote the GT temporal boundaries. The tIoU loss is defined as: 
+
+LtIoU = 1 − tIoU(ˆ s, ˆe, s, e ), (14) TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection 9
+
+where tIoU( ·) measures the temporal overlap between the predicted interval 
+
+[ˆ s, ˆe] and the GT interval [s, e ]. This objective directly penalizes segment-level misalignment and promotes coherent tube-level boundary estimation. To further promote temporal stability in both localization and semantics, we introduce a lightweight tube-aware regularization. Let ˆbt,k ∈ [0 , 1] 4 denote the predicted BB for actor slot k at frame t, represented by normalized (x1, y 1, x 2, y 2)
+
+coordinates, and let ˆpt,k ∈ [0 , 1] denote the corresponding predicted actionness score. Temporal smoothness is encouraged via: 
+
+Ltube = 1
+
+T − 1
+
+> K
+
+X 
+
+> k=1
+> T−1
+
+X
+
+> t=1
+
+ ˆbt+1 ,k − ˆbt,k 1
+
++ λp |ˆpt+1 ,k − ˆpt,k |
+
+
+
+, (15) where ∥ · ∥ 1 denotes the ℓ1 norm and λp balances spatial and semantic smooth-ness. This regularizer reduces jitter, stabilizes tube geometry, and yields more consistent temporal action boundaries. All components of TubeLite are trained jointly in an end-to-end manner using a weighted multi-term objective that integrates spatial detection, set-based actor supervision, temporal boundary modeling, and tube-level regularization: 
+
+L = α1Ldet + α2Lset + α3Ltemp + α4Ltube , (16) where αi are weights, Ldet denotes the CenterNet-style detection losses, includ-ing focal loss for center heatmap prediction and regression losses for BB size and offsets [10, 26], Lset comprises the set-based actor supervision induced by Hun-garian matching [4] and Sinkhorn-based soft assignment [8], Ltemp aggregates the boundary-aware temporal losses (actionness, start/end boundaries, temporal dis-tance regression, center quality, and tIoU), inspired by prior boundary-sensitive temporal localization methods [1, 24, 25], and Ltube is the tube-aware temporal smoothing term defined in Eq. (15). All loss terms are computed on the same forward pass and optimized jointly, with fixed weights (see Sec. 4.3) chosen to balance spatial accuracy, temporal localization precision, and tube stability. 
+
+# 4 Experiments 
+
+This section presents the experimental evaluation of TubeLite on two established benchmarks for STAD: UCF101-24 [32] and MultiSports [20]. It describes the evaluation protocol and the datasets, gives implementation details, provides a quantitative comparison with the state of the art, a qualitative evaluation, a runtime analysis, and ends with an ablation study. 
+
+4.1 Evaluation Protocol 
+
+We adopt the standard STAD evaluation metrics used in prior work [14, 34, 41]. 
+
+Frame-level evaluation : Frame-mAP@0.5 measures spatial localization ac-curacy independently at each frame. This metric primarily reflects the quality of the detection head, Gaussian ROI token extraction, and short-term spatial consistency produced by the temporal propagation module. 
+
+Video-level evaluation : Video-mAP@0.5 evaluates full spatio-temporal tubes and is therefore sensitive to temporal segmentation quality. Following TubeR [41], predicted tubes are matched to GT tubes using spatio-temporal 10 A. Soltaninezhad et al. 
+
+IoU. This metric particularly highlights the contribution of TubeLite’s tempo-ral boundary estimation (start, end, distances) and tube-aware regularization, which discourage fragmented or inconsistent predictions. 
+
+4.2 Datasets 
+
+UCF101-24 [32] contains 24 action categories annotated with spatio-temporal tubes across approximately 3,200 videos. Following common practice [15,41], we use split 1 for training and evaluation. The dataset is characterized by rapid camera motion, significant scale variation, and temporally fragmented actions, making precise temporal boundary estimation challenging. MultiSports [20] pro-vides 3,200 densely annotated multi-actor videos spanning 66 action categories. The presence of multiple interacting actors per frame and fast motion dynamics makes it a demanding STAD benchmark. We follow the official split. Compared to UCF101-24, MultiSports places greater emphasis on robust actor association and temporal coherence across highly dynamic scenes. 
+
+4.3 Implementation Details Input processing : Videos are processed as clips of T = 16 224 ×224 frames with a temporal stride of 8. Motion cues derive from feature-level frame differences. 
+
+Backbone and detection : Spatial features are extracted using a Conv-NeXt-Tiny backbone [27] applied independently to each frame. A CenterNet-style detection head [10] predicts actor center heatmaps, BB sizes, and offsets from the projected feature maps. Following standard CenterNet practice, the heatmap head is initialized with a negative bias to suppress early false positives, and BB dimensions are regressed in log-space to improve numerical stability. We retain the top-K = 5 actor candidates per frame. This value corresponds to the maximum number of annotated actors in both UCF101-24 and MultiSports, ensuring full coverage without introducing redundant actor slots. 
+
+Set-based actor assignment : Since TubeLite predicts a fixed, unordered set of actor slots per frame, we employ set-based supervision following DETR-style bipartite matching [4]. For each frame, predicted actor slots are matched to GT actors using the Hungarian algorithm based on a weighted combination of classification confidence, bounding-box distance, and generalized IoU [29]. Only matched slot–actor pairs contribute to classification and localization losses; un-matched slots receive no box or class supervision. We also compute a differen-tiable soft assignment using Sinkhorn normalization [8], yielding graded corre-spondences between slots and GT actors. A lightweight temporal regularization encourages consistency of these soft assignments across adjacent frames, reduc-ing identity switches without explicit tracking. Actor-slot presence is supervised using a binary classification loss derived from the matching results. 
+
+Optimization and loss weighting : All components of TubeLite are trained end-to-end using the AdamW optimizer [28] with a learning rate of 1 × 10 −4 and weight decay of 1 × 10 −4. Automatic mixed-precision training is used to reduce memory usage and improve training throughput. Regarding the loss (Eq. 16), all weights are fixed and shared across datasets; detection and classification terms are emphasized to ensure stable actor localization and slot assignment ( α1TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection 11                                          
+
+> Method Stream Input Resolution V@0.5 ↑F@0.5 ↑
+> ROAD [30] RGB 300 ×300 0.00 3.90 MOC (K=11) [22] RGB 288 ×288 0.62 25.22 MOC (K=7) [22] RGB 288 ×288 0.77 22.51 YOWO [19] Two-stream 224 ×224 0.87 9.28 SlowOnly Det. [12] RGB short side 256 5.50 16.70 SlowFast Det. [12] Two-stream short side 256 9.65 27.72
+> TubeLite (ours) RGB 224 ×224 14.20 20.07
+
+Table 1. STAD task performance evaluation on MultiSports [20]. Best in bold font. 
+
+and α2 = 1), while temporal boundary and tube-smoothing losses are weighted more conservatively ( α3 and α4 = 0.1) to refine temporal structure without destabilizing spatial predictions. 
+
+4.4 Quantitative Evaluation 
+
+We compare TubeLite’s performance against a broad family of STAD approa-ches, including anchor-free RGB detectors (ROAD [30], YOWO [19]), multi-object tube trackers (MOC [22]), transformer-based pipelines (TubeR [41]), and two-stream architectures that leverage optical flow or heavy temporal modeling (2in1 [40], STEP [38], CFAD [21]). These methods represent the dominant de-sign philosophies for STAD, ranging from proposal-driven systems to deep trans-former encoders with large computational footprints. TubeLite, by contrast, uses a single RGB stream and a lightweight actor-centric temporal model, avoiding 3D convolutions, optical flow, and global self-attention. All compared results are taken from the original publications. Comparisons are conservative, as several methods use longer clip inputs or heavier backbones. For example, TubeR [41] uses 32-frame clips with a CSN-152 backbone, and two-stream methods such as CFAD [21] additionally use optical flow; TubeLite uses 16-frame RGB-only clips with a ConvNeXt-Tiny backbone. 
+
+Results on MultiSports : Table 1 reports results on MultiSports [20]. Tube-Lite obtains a frame-mAP@0.5 of 20.07, outperforming all prior RGB-only de-tectors and approaching the accuracy of significantly heavier SlowFast-based systems. More importantly, TubeLite achieves a video-mAP@0.5 of 14.20, a sub-stantial improvement over all compared methods, suggesting that its temporal stabilization, actorwise propagation, and boundary-aware head jointly reduce tube fragmentation, a persistent challenge on this benchmark. Unlike prior de-tectors that rely on multi-branch temporal aggregation or optical flow, TubeLite leverages stable Gaussian-based tokenization and actorwise temporal propaga-tion to maintain coherent motion patterns. 
+
+Results on UCF101-24 : Table 2 reports results on UCF101-24 [32]. De-spite using a lightweight ConvNeXt-Tiny backbone, TubeLite attains a frame-mAP@0.5 of 82.1 (second best), competitive with I3D- and CSN-based models that rely on substantially larger backbones and, in many cases, auxiliary flow streams. It provides the strongest video-level localization: a video-mAP@0.5 of 71.7, outperforming all prior RGB-stream and two-stream models by at least 7 p.p., including flow-augmented methods such as CFAD. This highlights the effectiveness of TubeLite’s boundary-aware temporal head and tube-aware regu-12 A. Soltaninezhad et al.                                            
+
+> Method Stream Backbone V@0.5 F@0.5 T-CNN [16] RGB C3D –41.4 TacNet [31] Two-stream VGG 52.9 72.1 ACT [18] Two-stream VGG 51.4 67.1 2in1 [40] Two-stream VGG 50.3 78.5 MOC [22] RGB DLA34 50.7 72.1 STEP [38] Two-stream I3D –75.0 I3D Det. [5] Two-stream I3D 59.9 76.3 TubeR [41] RGB CSN-152 58.4 83.2
+> CFAD [21] Two-stream I3D 64.6 72.5 TubeLite (ours) RGB ConvNeXt-T 71.7 82.1
+
+Table 2. STAD task performance evaluation on UCF101-24 [32]. Best in bold font. 
+
+Fig. 3. Sample STAD results on UCF101-24 (BasketballDunk action). Top: predicted actor BBs (red) match GT boxes (green) well. Bottom: prediction timeline (blue) above decision threshold (dashed line) during GT action interval (orange). 
+
+larization, which jointly improve temporal precision and reduce tube fragmenta-tion, a key weakness of proposal-based and transformer-based STAD pipelines. 
+
+4.5 Qualitative Evaluation 
+
+Fig. 3 shows representative TubeLite predictions on UCF101-24. The model produces temporally coherent tubes with stable spatial localization and well-aligned temporal boundaries. Predicted action scores remain above the decision threshold within the GT segment and rapidly decay outside the action interval. 
+
+4.6 Runtime Analysis 
+
+We evaluate the inference efficiency of TubeLite using 16-frame input clips. Ex-periments are conducted on an NVIDIA H100 GPU for a fair comparison with recent spatio-temporal action detection systems. On average, TubeLite processes a 16-frame clip in 0.058 s, corresponding to 17.10 clips/s or 273.6 frames/s. It requires 61.96 GFLOPs per forward pass and contains 15.65M parameters. Compared to transformer-heavy STAD frameworks, TubeLite is substantially more computationally efficient. For reference, TubeR [41] reports inference at 156 frames/s, requires approximately 240 GFLOPs per clip, and has 60M pa-rameters. Other representative STAD systems, including CFAD [21], operate at around 130 frames/s with over 40M parameters, while many existing state-of-the-art methods report throughput in the range of 40–53 frames/s. In terms of back-bone complexity, commonly used video models such as SlowFast-50 [12], X3D-TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection 13            
+
+> Model Variant V@0.5 F@0.5
+> TubeLite (Proposed) 71.7 82.1
+> w/o Actor-Wise GRU 69.3 79.7 w/o Actor-Context Cross-Attention 67.5 78.7 w/o Temporal Losses (no Ltemp )69.1 82.0
+> Table 3. Ablation study removing TubeLite’s components one at a time (UFC101-24).
+
+XL [11], and CSN-152 [35] require approximately 308, 290, and 342 GFLOPs per clip, respectively, about 5x more than TubeLite. 
+
+4.7 Ablation Study 
+
+We conduct an ablation study on UCF101-24 to assess the contribution of Tube-Lite’s core architectural components. Each variant removes a single module while keeping all other settings, training schedules, and evaluation protocols fixed. Performance is reported in Table 4.7 using video-mAP@0.5 (V@0.5) and frame-mAP@0.5 (F@0.5). Removing the actor-wise GRU results in a clear drop in both video- and frame-level performance, confirming the importance of explicit temporal propagation for stabilizing actor representations and modeling action evolution over time. Eliminating the actor–context cross-attention leads to the largest degradation, particularly in video-mAP, highlighting the role of frame-level latent context in disambiguating actor behavior and improving robustness in multi-actor scenes without relying on expensive actor–actor attention. In con-trast, removing tube-aware temporal supervision has little effect on frame-mAP but reduces video-mAP, indicating that boundary-focused and tube-level losses primarily enhance temporal coherence and segment-level localization rather than per-frame classification accuracy. Overall, this demonstrates that TubeLite’s per-formance gains arise from the complementary interaction of lightweight temporal propagation, structured actor–context reasoning, and tube-aware supervision. 
+
+# 5 Discussion and Conclusion 
+
+Limitations : TubeLite employs a clip-based inference strategy, processing short fixed-length windows (e.g., 16 frames) rather than operating strictly online. As a result, predictions at a given time step may leverage limited future context within the clip (e.g., for temporal stabilization and boundary estimation), which precludes true frame-by-frame deployment without look-ahead. Extending Tube-Lite to a strictly online setting would require modifying these temporal compo-nents to rely solely on past observations. In addition, the fixed actor-slot mech-anism simplifies association and ensures stable temporal modeling, but assumes a bounded number of actors per clip. Although appropriate for datasets such as UCF101-24 and MultiSports, scenarios with highly variable crowd density could benefit from a dynamic or memory-driven slot allocation strategy. TubeLite also relies on lightweight temporal propagation rather than heavy full-sequence self-attention or 3D convolution, which contributes significantly to computational efficiency; however, more expressive long-range temporal modeling could further benefit performance on activities involving extended temporal context. 
+
+Potential negative impact : As with all STAD systems, responsible and ethical deployment is essential, especially in settings involving surveillance or sensitive human activity monitoring. 14 A. Soltaninezhad et al. 
+
+Conclusion : Despite these constraints, TubeLite demonstrates that accurate and temporally stable action tubes can be produced with a compact architec-ture that avoids optical flow, heavy spatiotemporal attention, or large 3D back-bones. By combining Gaussian ROI tokenization, actor-wise GRU propagation, clip-level cross-attention, and boundary-aware temporal supervision, TubeLite achieves strong video-mAP on UCF101-24 and MultiSports while maintaining a small computational footprint. The results highlight a promising direction for efficient STAD: structured, localized temporal reasoning rather than global high-cost computation. Future work may integrate sparse long-range attention, dynamic actor-slot allocation, or memory-based identity mechanisms to extend TubeLite toward longer horizons and more crowded environments, while pre-serving its efficiency and modularity. 
+
+Acknowledgements This work was enabled by Archipelago Marine Research and NSERC Canada via the Alliance Grants program, and by support provided by the Digital Research Alliance of Canada. 
+
+# References 
+
+1. Alwassel, H., Giancola, S., et al.: TSP: Temporally-sensitive pretraining of video encoders for localization tasks. In: ICCV. pp. 3173–83 (2021) 2. Bertasius, G., Wang, H., et al.: Is space-time attention all you need for video understanding? In: ICLM (2021) 3. Bewley, A., Ge, Z., Ott, L., Ramos, F., Upcroft, B.: Simple online and realtime tracking. In: ICIP (2016) 4. Carion, N., Massa, F., et al.: End-to-end object detection with transformers. In: ECCV. pp. 213–29 (2020) 5. Carreira, J., Zisserman, A.: Quo vadis, action recognition? a new model and the kinetics dataset. In: CVPR. pp. 6299–308 (2017) 6. Chen, Y., Kalantidis, Y., et al.: A 2-Nets: Double attention networks. In: NeurIPS (2018) 7. Cho, K., Van Merriënboer, B., et al.: Learning phrase representations using rnn encoder-decoder for statistical machine translation. In: EMNLP (2014) 8. Cuturi, M.: Sinkhorn distances: Lightspeed computation of optimal transport. In: NeurIPS (2013) 9. Dosovitskiy, A., Beyer, L., et al.: An image is worth 16x16 words: Transformers for image recognition at scale. In: ICLR (2020) 10. Duan, K., Bai, S., et al.: CenterNet: Keypoint triplets for object detection. In: ICCV. pp. 6569–78 (2019) 11. Feichtenhofer, C.: X3D: Expanding architectures for efficient video recognition. In: CVPR. pp. 203–13 (2020) 12. Feichtenhofer, C., Fan, H., et al.: Slowfast networks for video recognition. In: ICCV. pp. 6202–11 (2019) 13. Gkioxari, G., Girshick, R., et al.: Contextual action recognition with R* CNN. In: ICCV. pp. 1080–8 (2015) 14. Gu, C., Sun, C., et al.: AVA: A video dataset of spatio-temporally localized atomic visual actions. In: CVPR. pp. 6047–56 (2018) 15. He, K., Gkioxari, G., et al.: Mask R-CNN. In: ICCV. pp. 2961–9 (2017) TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection 15 16. Hou, R., Chen, C., et al.: Tube convolutional neural network (T-CNN) for action detection in videos. In: ICCV. pp. 5822–31 (2017) 17. Jaegle, A., Gimeno, F., et al.: Perceiver: General perception with iterative atten-tion. In: ICML. pp. 4651–64. PMLR (2021) 18. Kalogeiton, V., Weinzaepfel, P., et al.: Action tubelet detector for spatio-temporal action localization. In: ICCV. pp. 4405–13 (2017) 19. Köpüklü, O., Wei, X., et al.: You only watch once: A unified CNN architecture for real-time spatiotemporal action localization. arXiv preprint arXiv:1911.06644 (2019) 20. Li, Y., Chen, L., et al.: Multisports: A multi-person video dataset of spatio-temporally localized sports actions. In: ICCV (2021) 21. Li, Y., Lin, W., et al.: CFAD: Coarse-to-fine action detector for spatiotemporal action localization. In: ECCV. pp. 510–27 (2020) 22. Li, Y., Wang, Z., et al.: Actions as moving points. In: ECCV. pp. 68–84 (2020) 23. Lin, J., Gan, C., et al.: TSM: Temporal shift module for efficient video understand-ing. In: CVPR. pp. 7083–93 (2019) 24. Lin, T., Liu, X., et al.: BMN: Boundary-matching network for temporal action proposal generation. In: ICCV. pp. 3889–98 (2019) 25. Lin, T., Zhao, X., et al.: BSN: Boundary sensitive network for temporal action proposal generation. In: ECCV. pp. 3–19 (2018) 26. Lin, T.Y., Goyal, P., et al.: Focal loss for dense object detection. In: ICCV. pp. 2980–8 (2017) 27. Liu, Z., Mao, H., et al.: A ConvNet for the 2020s. In: CVPR. pp. 11976–86 (2022) 28. Loshchilov, I., Hutter, F.: Decoupled weight decay regularization. In: ICLR (2019) 29. Rezatofighi, H., Tsoi, N., et al.: Generalized intersection over union: A metric and a loss for bounding box regression. In: CVPR. pp. 658–66 (2019) 30. Singh, G., Saha, S., et al.: Online real-time multiple spatiotemporal action locali-sation and prediction. In: ICCV. pp. 3637–46 (2017) 31. Song, L., Zhang, S., et al.: TACNet: Transition-aware context network for spatio-temporal action detection. In: CVPR. pp. 11987–95 (2019) 32. Soomro, K., Zamir, A.R., et al.: UCF101: A dataset of 101 human actions classes from videos in the wild. arXiv preprint arXiv:1212.0402 (2012) 33. Tan, M., Pang, R., et al.: EfficientDet: Scalable and efficient object detection. In: CVPR. pp. 10781–90 (2020) 34. Tian, Q., Miao, W., et al.: STCA: an action recognition network with spatio-temporal convolution and attention. Int. J. Multimed. Inf. Retr. 14 (1), 1 (2025) 35. Tran, D., Wang, H., et al.: A closer look at spatiotemporal convolutions for action recognition. In: CVPR. pp. 6450–9 (2018) 36. Wu, C.Y., Li, Y., et al.: MeMViT: Memory-augmented multiscale vision trans-former for efficient long-term video recognition. In: CVPR. pp. 13587–97 (2022) 37. Xu, M., Zhao, C., et al.: G-TAD: Sub-graph localization for temporal action de-tection. In: CVPR. pp. 10156–65 (2020) 38. Yang, X., Yang, X., et al.: STEP: Spatio-temporal progressive learning for video action detection. In: CVPR. pp. 264–72 (2019) 39. Zhang, C.L., Wu, J., et al.: ActionFormer: Localizing moments of actions with transformers. In: ECCV. pp. 492–510. Springer (2022) 40. Zhao, J., Snoek, C.G.: Dance with flow: Two-in-one stream action detection. In: CVPR. pp. 9935–44 (2019) 41. Zhao, J., Zhang, Y., et al.: TubeR: Tubelet transformer for video action detection. In: CVPR. pp. 13598–607 (2022)
