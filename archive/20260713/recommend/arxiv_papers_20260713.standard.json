@@ -1,0 +1,250 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-13T20:51:53.723552+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2607.09295v1",
+      "source": "arxiv",
+      "title": "Multi-Agent Reinforcement Learning for SLA-Aware Network Slicing in UAV-Enabled MEC",
+      "abstract": "Unmanned Aerial Vehicle (UAV)-enabled Mobile Edge Computing (MEC) offers flexible capacity provisioning for heterogeneous network slices, including Hyper-Reliable and Low-Latency Communication (HRLLC), Enhanced Mobile Broadband (eMBB), and Massive Machine-Type Communications (mMTC). However, guaranteeing slice-level Service-Level Agreements (SLAs) under dynamic user mobility, stochastic task arrivals, and constrained onboard energy and computing resources remains a fundamental challenge. This paper proposes a predictive multi-agent Reinforcement Learning (RL) framework that proactively maintains SLA stability in UAV-enabled MEC through coordinated trajectory control and computation resource allocation. A lightweight prediction module forecasts near-future user mobility, enabling UAVs to anticipate congestion and reposition before SLA violations occur. We design an SLA-aware reward function that explicitly penalizes both violation probability and duration across slices, alongside total energy consumption. UAV agents are trained using Multi-Agent Proximal Policy Optimization (MAPPO) with centralized training and decentralized execution, enabling scalable online decision-making. Event-driven simulations with realistic mobility traces demonstrate that the proposed framework significantly improves SLA stability compared with baselines while maintaining competitive energy efficiency and delay performance, approaching oracle-level performance with sufficiently accurate predictive information.",
+      "authors": [
+        "Mohammad Farhoudi",
+        "Zeinab Sasan",
+        "Masoud Shokrnezhad",
+        "Tarik Taleb"
+      ],
+      "primary_category": "cs.NI",
+      "categories": [
+        "cs.NI"
+      ],
+      "published": "2026-07-10T11:19:06+00:00",
+      "link": "https://arxiv.org/pdf/2607.09295v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "predictive multi-agent RL for SLA-aware network slicing in UAV-enabled MEC",
+      "llm_evidence_cn": "无人机移动边缘计算中面向SLA感知网络切分的多智能体强化学习",
+      "llm_evidence": "无人机移动边缘计算中面向SLA感知网络切分的多智能体强化学习",
+      "canonical_evidence": "无人机移动边缘计算中面向SLA感知网络切分的多智能体强化学习",
+      "llm_tldr_en": "Proposes a predictive multi-agent RL framework for SLA-aware network slicing in UAV-enabled MEC, coordinating trajectory control and resource allocation.",
+      "llm_tldr_cn": "该论文针对无人机移动边缘计算中动态用户移动性和随机任务到达带来的SLA保障挑战，提出一种预测性多智能体强化学习框架，通过协调轨迹控制和计算资源分配主动维持切片级SLA稳定。实验表明该方法在多种异构切片场景下有效提升了SLA满足率，为边缘计算中实时视频处理等应用提供了网络资源管理方案。",
+      "llm_tldr": "该论文针对无人机移动边缘计算中动态用户移动性和随机任务到达带来的SLA保障挑战，提出一种预测性多智能体强化学习框架，通过协调轨迹控制和计算资源分配主动维持切片级SLA稳定。实验表明该方法在多种异构切片场景下有效提升了SLA满足率，为边缘计算中实时视频处理等应用提供了网络资源管理方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.07046v1",
+      "source": "arxiv",
+      "title": "Voltron: Enabling Elastic Multi-Device Execution of LLM Inference for Empowered Edge Intelligence",
+      "abstract": "Large language models (LLMs) are widely used in intelligent services due to their remarkable capability in generative tasks. Typically, LLM-based services process the inference requests of the users in a centralized data center. Unfortunately, such centralized execution has limitations for end-users, such as increased response latency with communication overhead and privacy leakage risk. To alleviate the aforementioned limitations, there have been increasing pushes to execute LLM inference locally on user-end devices. However, the limited resources of a single edge device impose restrictions on achievable accuracy of LLMs. To overcome the issue, we first propose to leverage multiple user-end devices available at the edge for LLM inference, enabling the execution of larger models. Specifically, we propose Voltron, a novel on-device LLM inference framework that elastically utilizes multiple user-end devices for LLM inference execution while adapting to diverse real-world edge environments. In our evaluation, Voltron achieves up to 16.5% higher accuracy than state-of-the-art LLMs that can be executed on a single edge device, satisfying user QoS requirements.",
+      "authors": [
+        "Chanwoo Cho",
+        "Wooseok Kim",
+        "Yonglak Son",
+        "Young Seo Lee",
+        "Young Geun Kim"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-07-08T06:23:04+00:00",
+      "link": "https://arxiv.org/pdf/2607.07046v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "enables elastic multi-device execution of LLM inference at the edge",
+      "llm_evidence_cn": "支持在边缘端弹性多设备执行大语言模型推理",
+      "llm_evidence": "支持在边缘端弹性多设备执行大语言模型推理",
+      "canonical_evidence": "支持在边缘端弹性多设备执行大语言模型推理",
+      "llm_tldr_en": "Voltron proposes elastic multi-device execution of LLM inference across edge devices to reduce latency and preserve privacy.",
+      "llm_tldr_cn": "针对单一边缘设备资源有限导致大模型推理精度受限的问题，Voltron提出利用多个边缘设备协同执行推理。通过弹性任务划分和通信优化，在保证低延迟的同时提升了模型可用精度，减轻了隐私泄露风险。实验表明该方法在多种场景下优于集中式执行，为边缘智能系统的模型部署提供了新思路。",
+      "llm_tldr": "针对单一边缘设备资源有限导致大模型推理精度受限的问题，Voltron提出利用多个边缘设备协同执行推理。通过弹性任务划分和通信优化，在保证低延迟的同时提升了模型可用精度，减轻了隐私泄露风险。实验表明该方法在多种场景下优于集中式执行，为边缘智能系统的模型部署提供了新思路。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.04151v1",
+      "source": "arxiv",
+      "title": "Perceiving Better Moments: Cover Frame Reselection and Enhancement for Live Photos with the Live2K Dataset",
+      "abstract": "Modern smartphones capture Live Photos, short video bursts surrounding a still image, offering a dynamic and engaging photographic experience. However, the cover photo and video components are generated by two distinct imaging pipelines: the photo stream undergoes full computational photography processing, while the video stream is constrained by real-time efficiency and heavy compression. This intrinsic separation produces a substantial quality gap in resolution, color fidelity, and dynamic range between the cover photo and video frames. When users reselect an alternative frame from the video to replace an imperfect cover, the chosen frame often suffers from severe degradation, making direct replacement visually unsatisfactory. Restoring such frames requires simultaneous enhancement of spatial detail and color appearance, a task considerably more challenging than ordinary super-resolution or color enhancement. To address this, we define the Live Photo Cover Frame Reselection and Enhancement (LPRE) task, which leverages the intrinsic cues available within each Live Photo: the high-quality cover image as a structural and color reference, the user-reselected low-quality frame as the reconstruction target and several adjacent video frames providing temporal cues. Building upon this formulation, we construct Live2K, a real-world dataset of 2,042 Live Photos, and develop a unified one-stage baseline that integrates multi-frame fusion, guided color enhancement and super-resolution, establishing the first benchmark for Live Photo enhancement research.",
+      "authors": [
+        "Junyu Lou",
+        "Kai Chen",
+        "Weiyi You",
+        "Hui Zeng",
+        "Lei Zhang",
+        "Shuhang Gu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-05T07:37:41+00:00",
+      "link": "https://arxiv.org/pdf/2607.04151v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "cover frame reselection and enhancement for Live Photos, addressing real-time video processing",
+      "llm_evidence_cn": "实时视频处理中的封面帧重选与增强",
+      "llm_evidence": "实时视频处理中的封面帧重选与增强",
+      "canonical_evidence": "实时视频处理中的封面帧重选与增强",
+      "llm_tldr_en": "This work proposes cover frame reselection and enhancement for Live Photos, balancing real-time video constraints with quality.",
+      "llm_tldr_cn": "针对Live Photo中封面帧与视频流质量差距大的问题，提出封面帧重选与增强方法。利用实时视频处理约束下的压缩特性，设计增强网络提升所选帧的分辨率和色彩保真度，并构建Live2K数据集。实验证明该方法能显著改善用户重选封面帧的视觉体验，为移动端实时视频处理提供了实用技术。",
+      "llm_tldr": "针对Live Photo中封面帧与视频流质量差距大的问题，提出封面帧重选与增强方法。利用实时视频处理约束下的压缩特性，设计增强网络提升所选帧的分辨率和色彩保真度，并构建Live2K数据集。实验证明该方法能显著改善用户重选封面帧的视觉体验，为移动端实时视频处理提供了实用技术。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.09114v1",
+      "source": "arxiv",
+      "title": "Event Stream based Multi-Modal Video Anomaly Detection: A Benchmark Dataset and Algorithms",
+      "abstract": "Video anomaly detection (VAD) is critical for automated surveillance but remains fragile under challenging conditions such as illumination variations, fast motion, and complex backgrounds when relying solely on visible light videos. To address these limitations, we propose EVAD, an event enhanced VAD framework that jointly exploits conventional video and event streams captured by bio inspired event cameras. Event sensors asynchronously capture brightness changes with high temporal resolution, offering robustness to motion blur and extreme lighting, and providing motion salient cues complementary to video based visual information. To support multi modal VAD research, we construct a large scale visible event benchmark comprising 6.3 billion events and 376,368 video frames collected under diverse illumination levels, motion patterns, and background complexities, filling the gap of realistic and scalable datasets for event based anomaly detection. Building upon this dataset, we design a contrastive multi modal pretraining framework to learn discriminative event representations by aligning semantic embeddings across event streams, visible videos, and textual descriptions. An adaptive fusion module then dynamically integrates event based temporal cues with video based spatial semantics, improving robustness to environmental disturbances. Experiments on benchmarks and the proposed TJUTCM Pha dataset demonstrate that E VAD consistently outperforms methods, validating the effectiveness of event-based sensing for VAD in real world scenarios.",
+      "authors": [
+        "Peipei Zhu",
+        "Yueqing Niu",
+        "Lin Zhu",
+        "Guanchong Niu",
+        "Yang Yu",
+        "Zheng Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.MM"
+      ],
+      "published": "2026-07-10T05:58:52+00:00",
+      "link": "https://arxiv.org/pdf/2607.09114v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video anomaly detection using event and video streams",
+      "llm_evidence_cn": "使用事件流和视频流的视频异常检测",
+      "llm_evidence": "使用事件流和视频流的视频异常检测",
+      "canonical_evidence": "使用事件流和视频流的视频异常检测",
+      "llm_tldr_en": "EVAD proposes a multi-modal video anomaly detection framework combining event cameras and conventional video, with a large benchmark dataset.",
+      "llm_tldr_cn": "该论文针对传统视频异常检测在光照变化和快速运动下鲁棒性差的问题，提出EVAD框架。它联合使用传统视频和事件相机流，利用事件流的高时间分辨率和运动敏感性进行互补检测。同时构建了大规模可见光-事件视频异常检测基准数据集。实验表明该方法在多种挑战场景下显著优于纯视频方法，为实时监控提供了更可靠的方案。",
+      "llm_tldr": "该论文针对传统视频异常检测在光照变化和快速运动下鲁棒性差的问题，提出EVAD框架。它联合使用传统视频和事件相机流，利用事件流的高时间分辨率和运动敏感性进行互补检测。同时构建了大规模可见光-事件视频异常检测基准数据集。实验表明该方法在多种挑战场景下显著优于纯视频方法，为实时监控提供了更可靠的方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.07195v1",
+      "source": "arxiv",
+      "title": "DiffCVE: Diffusion-based Compressed Video Enhancement",
+      "abstract": "Perceptual quality enhancement of severely compressed videos remains challenging due to complex artifact patterns and substantial information loss. Recent diffusion models have demonstrated strong generative capability for visual restoration, but directly applying them to compressed video often ignores compression degradation characteristics and may introduce structure-inconsistent hallucinations. To address this issue, this paper presents a diffusion-based compressed video enhancement method, named DiffCVE. Coding Prior-enhanced Dual Conditioning (CPDC) branches are designed to jointly model compressed video and coding prior conditions, where coding priors including residuals and motion vectors provide complementary structural and motion guidance during the diffusion denoising process. To make the diffusion process aware of compression severity, a Compression Degradation Semantic Prompting (CDSP) mechanism is introduced to leverage QP-conditioned textual prompts together with LoRA fine-tuning. In addition, a Coding Prior-guided Weighted Fusion (CPWF) module is incorporated into the VAE decoder to fuse VAE encoder and coding prior encoder features with QP-predicted weights. Extensive experiments demonstrate the effectiveness of the proposed method in improving perceptual quality, especially under severe compression settings. The project page with enhanced video demonstrations is available at https://wqmaker.github.io/projects/DiffCVE/.",
+      "authors": [
+        "Wenqiang Xiao",
+        "Wenzhuo Ma",
+        "Junxi Zhang",
+        "Zhenzhong Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-08T09:30:18+00:00",
+      "link": "https://arxiv.org/pdf/2607.07195v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "diffusion-based compressed video enhancement for real-time processing",
+      "llm_evidence_cn": "基于扩散模型的压缩视频增强用于实时处理",
+      "llm_evidence": "基于扩散模型的压缩视频增强用于实时处理",
+      "canonical_evidence": "基于扩散模型的压缩视频增强用于实时处理",
+      "llm_tldr_en": "DiffCVE uses diffusion models with coding priors to enhance severely compressed videos, improving quality in real-time scenarios.",
+      "llm_tldr_cn": "针对压缩视频存在复杂伪影且信息丢失严重的问题，DiffCVE提出基于扩散模型的增强方法。通过编码先验增强双条件分支，结合残差和运动向量提供结构引导，在保持视频一致性的同时提升感知质量。实验表明该方法在多种压缩等级下优于现有方法，适用于实时视频处理场景。",
+      "llm_tldr": "针对压缩视频存在复杂伪影且信息丢失严重的问题，DiffCVE提出基于扩散模型的增强方法。通过编码先验增强双条件分支，结合残差和运动向量提供结构引导，在保持视频一致性的同时提升感知质量。实验表明该方法在多种压缩等级下优于现有方法，适用于实时视频处理场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.09318v1",
+      "source": "arxiv",
+      "title": "EcoKube: Simulating Carbon-Aware Scheduling Policies in Heterogeneous Edge-Cloud Environments",
+      "abstract": "Energy demand from cloud and edge computing is rising rapidly, with AI workloads further intensifying electricity use and associated carbon emissions. In hybrid edge-cloud settings, sustainability impact depends on time- and location-varying grid Carbon Intensity (CI), site Power Usage Effectiveness (PUE), and heterogeneous hardware characteristics. Existing carbon-aware work explores solutions such as temporal elasticity, spatio-temporal workload shifting, and carbon-aware placement across distributed sites. However, these solutions do not provide a consistent and reproducible workflow for evaluating sustainability-aware scheduling policies on heterogeneous, federated edge-cloud topologies. We present EcoKube: a configurable simulation framework for the reproducible evaluation of sustainability-aware scheduling policies in heterogeneous edge-cloud environments. The framework includes an event-driven deterministic simulator, policy hooks, and a heterogeneity-aware reference policy. We evaluate the framework with synthetic batch workloads, comparing the reference policy against the default Kubernetes scheduler, KEIDS, and TOPSIS/KCSS. The contribution is architectural and experimental: EcoKube provides a reproducible way to compare sustainability-aware policies before deployment.",
+      "authors": [
+        "Gonçalo Ferreira",
+        "Shashikant Ilager"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-07-10T11:57:42+00:00",
+      "link": "https://arxiv.org/pdf/2607.09318v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "simulating carbon-aware scheduling in heterogeneous edge-cloud environments",
+      "llm_evidence_cn": "在异构边缘-云环境中模拟碳感知调度策略",
+      "llm_evidence": "在异构边缘-云环境中模拟碳感知调度策略",
+      "canonical_evidence": "在异构边缘-云环境中模拟碳感知调度策略",
+      "llm_tldr_en": "Presents EcoKube, a configurable simulator for evaluating carbon-aware scheduling policies on heterogeneous edge-cloud topologies.",
+      "llm_tldr_cn": "该论文针对边缘-云环境中AI工作负载能效优化问题，提出EcoKube模拟器，支持异构、联邦边缘-云拓扑下的可持续性感知调度策略评估。为边缘计算平台的资源管理与调度提供了可复现的仿真工具。",
+      "llm_tldr": "该论文针对边缘-云环境中AI工作负载能效优化问题，提出EcoKube模拟器，支持异构、联邦边缘-云拓扑下的可持续性感知调度策略评估。为边缘计算平台的资源管理与调度提供了可复现的仿真工具。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

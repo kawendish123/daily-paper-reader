@@ -6,44 +6,42 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-12
-- 运行时间：2026-07-12 20:16:12 UTC
+- 最新运行日期：2026-07-13
+- 运行时间：2026-07-13 20:55:22 UTC
 - 运行状态：成功
-- 本次总论文数：8
-- 精读区：3
+- 本次总论文数：6
+- 精读区：1
 - 速读区：5
 
 ### 今日简报（AI）
-今日共推荐8篇论文，精读3篇、速读5篇，聚焦边缘系统延迟优化与视频时间定位两大方向。最值得精读的是分数9.0的《Latency-Constrained DNN Architecture Learning for Edge Systems using Zerorized Batch Normalization》和8.0的《Video-Text Temporal Localization via Multi-Scale Convolution and Dynamic Routing》。建议优先阅读这两篇精读文章，了解边缘设备上的高效模型设计及视频文本时序定位技术。
-- 详情：[/202607/12/README](/202607/12/README)
+今日精读1篇高分论文，速读5篇，聚焦无人机MEC网络切片与多设备LLM推理。
+
+最值得关注多智能体强化学习在SLA感知网络切片中的应用，以及弹性多设备LLM推理的Edge Intelligence方案。
+
+建议关注边缘计算与多模态异常检测的交叉进展，可深入研读精读论文的算法设计。
+- 详情：[/202607/13/README](/202607/13/README)
 
 ### 精读区论文标签
-1. [Latency-Constrained DNN Architecture Learning for Edge Systems using Zerorized Batch Normalization](/202607/12/2607.06922v1-latency-constrained-dnn-architecture-learning-for-edge-systems-using-zerorized-batch-normalization)  
+1. [Multi-Agent Reinforcement Learning for SLA-Aware Network Slicing in UAV-Enabled MEC](/202607/13/2607.09295v1-multi-agent-reinforcement-learning-for-sla-aware-network-slicing-in-uav-enabled-mec)  
    标签：评分：9.0/10、query:mec-video
-   evidence：面向边缘系统的延迟约束DNN架构学习解决模型选择问题
-2. [Video-Text Temporal Localization via Multi-Scale Convolution and Dynamic Routing](/202607/12/2607.05093v2-video-text-temporal-localization-via-multi-scale-convolution-and-dynamic-routing)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：视频文本时间定位用于流式视频分析
-3. [Ecological connectivity modelling with WebAssembly](/202607/12/biorxiv-10-64898-2026-07-08-737333-v1-ecological-connectivity-modelling-with-webassembly)  
-   标签：评分：8.0/10、query:mec-video
-   evidence：在浏览器边缘计算环境中高效实现连通性分析
+   evidence：无人机移动边缘计算中面向SLA感知网络切分的多智能体强化学习
 
 ### 速读区论文标签
-1. [TubeLite: Lightweight Multi-Actor Spatio-Temporal Action Detection](/202607/12/2607.04684v1-tubelite-lightweight-multi-actor-spatio-temporal-action-detection)  
+1. [Voltron: Enabling Elastic Multi-Device Execution of LLM Inference for Empowered Edge Intelligence](/202607/13/2607.07046v1-voltron-enabling-elastic-multi-device-execution-of-llm-inference-for-empowered-edge-intelligence)  
    标签：评分：7.0/10、query:mec-video
-   evidence：视频中轻量级的时空动作检测
-2. [G$^2$TAM: Geometry Grounded Track Anything Model](/202607/12/2607.03789v1-g2tam-geometry-grounded-track-anything-model)  
+   evidence：支持在边缘端弹性多设备执行大语言模型推理
+2. [Event Stream based Multi-Modal Video Anomaly Detection: A Benchmark Dataset and Algorithms](/202607/13/2607.09114v1-event-stream-based-multi-modal-video-anomaly-detection-a-benchmark-dataset-and-algorithms)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：使用事件流和视频流的视频异常检测
+3. [Perceiving Better Moments: Cover Frame Reselection and Enhancement for Live Photos with the Live2K Dataset](/202607/13/2607.04151v1-perceiving-better-moments-cover-frame-reselection-and-enhancement-for-live-photos-with-the-live2k-dataset)  
    标签：评分：6.0/10、query:mec-video
-   evidence：视频分割与跟踪，3D几何记忆
-3. [G2VD: Generalizable AI-Generated Video Detection via Counterfactual Intervention and Causal Disentanglement](/202607/12/2607.04607v1-g2vd-generalizable-ai-generated-video-detection-via-counterfactual-intervention-and-causal-disentanglement)  
+   evidence：实时视频处理中的封面帧重选与增强
+4. [DiffCVE: Diffusion-based Compressed Video Enhancement](/202607/13/2607.07195v1-diffcve-diffusion-based-compressed-video-enhancement)  
    标签：评分：6.0/10、query:mec-video
-   evidence：AI生成视频检测用于视频分析
-4. [Gen4U: Unifying Video Generation and Understanding via Diffusion](/202607/12/2607.06856v1-gen4u-unifying-video-generation-and-understanding-via-diffusion)  
+   evidence：基于扩散模型的压缩视频增强用于实时处理
+5. [EcoKube: Simulating Carbon-Aware Scheduling Policies in Heterogeneous Edge-Cloud Environments](/202607/13/2607.09318v1-ecokube-simulating-carbon-aware-scheduling-policies-in-heterogeneous-edge-cloud-environments)  
    标签：评分：6.0/10、query:mec-video
-   evidence：利用扩散模型进行视频理解，适用于视频分析
-5. [Whareformer: Learning to Track What is Where in Long Egocentric Videos](/202607/12/2607.08537v1-whareformer-learning-to-track-what-is-where-in-long-egocentric-videos)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：自我中心视频中的物体跟踪，保持实例位置信息
+   evidence：在异构边缘-云环境中模拟碳感知调度策略
 
 
 <div class="dpr-home-promo-card">
