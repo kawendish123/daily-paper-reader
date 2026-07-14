@@ -1,0 +1,375 @@
+Title: NanoVSR: Towards Real-Time Video Super-Resolution on Edge Devices
+
+URL Source: https://arxiv.org/pdf/2607.10495v1
+
+Published Time: Tue, 14 Jul 2026 02:01:54 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# NanoVSR: Towards Real-Time Video Super-Resolution on Edge Devices 
+
+Filip Pawlicki 1 , Marcel Kańduła 2 , Marcin Pucek 1 , and Kamil Dobies 1 
+
+> 1
+
+Gdańsk University of Technology, Faculty of Electronics, Telecommunications and Informatics, Department of Computer Architecture, Gdańsk, Poland 
+
+{s198371, s197893, s197875}@student.pg.edu.pl  
+
+> 2
+
+Gdańsk University of Technology, Faculty of Electronics, Telecommunications and Informatics, Department of Software Engineering, Gdańsk, Poland 
+
+s197677@student.pg.edu.pl 
+
+Abstract. Recent Video Super-Resolution (VSR) methods rely heavily on transformers and explicit optical flow, creating computational over-head and custom operations that hinder deployment on hardware acceler-ators like TensorRT. To address this, we introduce NanoVSR, a scalable, fully convolutional architecture designed for resource-constrained edge devices. Using structural reparameterization, NanoVSR collapses into standard convolutions during inference, ensuring seamless hardware com-patibility and negligible runtime overhead. Furthermore, despite lacking explicit motion compensation, it maintains competitive restoration qual-ity by implicitly learning spatio-temporal alignments through progres-sive training. Evaluated on the REDS4 benchmark, NanoVSR demon-strates an exceptional balance between accuracy and computational effi-ciency, significantly improving the trade-off for compact architectures. Our NanoVSR-644k baseline yields 28.64 dB PSNR while delivering 27.2 FPS on the NVIDIA Jetson Orin NX 16GB (25W), offering mas-sive speed gains over heavier models. The scaled NanoVSR-1.7M variant reaches 29.15 dB with a throughput of 19.58 FPS, providing superior, edge-optimized upscaling. Code is available at https://github.com/ filippawlicki/nanovsr .
+
+Keywords: Video Super-Resolution · Edge AI · Structural Reparame-terization 
+
+## 1 Introduction 
+
+Super-resolution (SR) is a fundamental challenge in computer vision aiming to reconstruct high-resolution (HR) images from low-resolution (LR) counterparts. While single image super-resolution focuses on recovering missing high-frequency details from a static image [8, 43], it is inherently limited by the absence of ex-ternal information. Video super-resolution (VSR) transcends this limitation by introducing the temporal dimension, leveraging the rich, redundant informa-tion scattered across consecutive frames to recover details that are physically arXiv:2607.10495v1 [cs.CV] 11 Jul 2026 2 F. Pawlicki et al. 
+
+absent in a single frame. The fundamental mechanism of VSR involves the ef-fective aggregation of this temporal data; however, because objects and cameras move, simply stacking neighboring frames results in ghosting and blurring. Con-sequently, the core challenge of VSR lies in finding effective methods for motion compensation. Recent studies [3, 18, 38] have produced architectures capable of achieving impressive visual quality, successfully recovering details and maintaining tem-poral consistency across frames. To achieve this high standard of restoration, contemporary methods typically employ very deep neural networks that process video sequences using bidirectional propagation. Crucially, they rely on sophis-ticated alignment modules, utilizing dense optical flow estimation or complex attention mechanisms to maximize information extraction from multiple frames and ensure correct alignment before reconstruction. However, achieving this impressive visual quality imposes a heavy demand on system resources due to the reliance on explicit motion compensation and deep feature extraction. While manageable on high-end GPUs, these architectures re-quire memory and processing power that far exceed the capabilities of typical edge devices. Consequently, when deployed on computationally constrained plat-forms, the execution overhead exceeds real-time limits, rendering them imprac-tical for applications where efficient processing is just as critical as restoration quality. To address these problems, we propose NanoVSR, a lightweight video super-resolution network explicitly optimized for edge platforms like the NVIDIA Jet-son. In the broader context of on-device AI, where real-time processing and strict resource constraints are paramount [39], our architecture draws inspiration from highly efficient, compute-bound architectures [13, 21, 28, 34]. We introduce a purely convolutional, bidirectional recurrent framework built upon structural reparameterization. This allows NanoVSR to train as a multi-branch network and mathematically collapse into an optimized stream of standard convolutions during inference. Furthermore, we entirely discard computationally expensive optical flow and traditional feature concatenation, opting instead for a direct ad-ditive propagation scheme. To compensate for the reduced architectural capacity and the lack of explicit alignment modules, we employ a progressive two-stage training method. The network is initially pre-trained on short video sequences to establish spatial feature extraction, and subsequently fine-tuned on extended sequences. This forces the bidirectional recurrent structure to implicitly learn residual motion and long-term dependencies, providing a solution that tightly balances real-time edge performance with the demand for high-quality video enhancement. Our main contributions are as follows: 
+
+– We propose NanoVSR, a highly efficient, purely convolutional VSR architec-ture explicitly designed for edge devices, eliminating the reliance on memory-intensive explicit alignment and custom CUDA operations. 
+
+– We introduce a direct additive propagation scheme for bidirectional recurrent VSR that avoids channel concatenation, reducing memory bandwidth and NanoVSR: Towards Real-Time VSR on Edge Devices 3
+
+enabling the full network - including temporal propagation - to collapse into a plain convolution stream via structural reparameterization. 
+
+– We conduct extensive experiments across standard benchmarks (REDS4, Vid4, Vimeo90K-T) and provide hardware-specific profiling on two NVIDIA Jetson Orin NX configurations (8GB/15W and 16GB/25W), demonstrating that NanoVSR delivers a highly competitive balance of restoration quality and inference throughput compared to existing baselines. 
+
+## 2 Related Work 
+
+In this section, we review the literature relevant to our proposed NanoVSR ar-chitecture. We first discuss the datasets commonly used for training and evaluat-ing video super-resolution models, highlighting the shift towards more complex motion profiles. Subsequently, we provide an overview of existing VSR method-ologies, ranging from traditional sliding-window networks to modern, computa-tionally intensive transformers. Finally, we situate our work within the context of efficient network design, specifically focusing on structural reparameterization and progressive training strategies. 
+
+2.1 Video Super-Resolution Datasets 
+
+The evaluation of Video Super-Resolution (VSR) algorithms heavily depends on datasets that accurately reflect real-world degradation and complex tempo-ral dynamics. Early works primarily relied on the Vid4 [19] and SPMCS [35] datasets. However, these benchmarks lack the diversity and motion complexity required to test the limits of modern deep learning architectures. To bridge this gap, larger and more challenging datasets have become the standard for both training and robust evaluation. Vimeo-90K [41] provides over 90,000 high-resolution video clips with diverse scenes, serving as a primary train-ing ground for most VSR networks. Concurrently, the REDS dataset [23], intro-duced during the NTIRE 2019 Challenge, offers complex sequences degraded by heavy motion blur and large displacements. In this paper, we establish a rigorous evaluation protocol by benchmarking our NanoVSR across three widely adopted test sets: the classic Vid4 for historical comparisons, the Vimeo-90K test set (often denoted as Vimeo-90K-T) for diverse motion profiles, and the challenging REDS4 split (comprising clips 000, 011, 015, and 020) for highly dynamic, com-plex scenes. This comprehensive testing ensures a fair, transparent, and realistic assessment of the critical trade-off between restoration quality and edge-device inference time. 
+
+2.2 Existing VSR Methods 
+
+VSR architectures have transitioned from traditional sliding-window CNNs to recurrent frameworks and, more recently, heavy attention-based transformers. 4 F. Pawlicki et al. 
+
+Sliding-Window and Alignment-Based CNNs. Early VSR models pro-cessed a local temporal window to reconstruct a central frame. Methods like VESPCN [1] and TOFlow [41] relied on explicit optical flow. To mitigate flow estimation errors, TDAN [36] and EDVR [38] introduced Deformable Convolu-tions (DCNs) [6, 44]. However, computing dense optical flow or DCN offsets for every frame imposes a severe computational bottleneck, rendering these methods unsuitable for real-time edge deployment. 
+
+Recurrent Architectures. Recurrent frameworks propagate latent features across the video sequence. Early models like FRVSR [27] and RLSP [10] strug-gled with long-term dependencies. This was largely overcome by BasicVSR [3] and its variants [3, 4], which use bidirectional propagation and flow-based align-ment. While more efficient, their reliance on sequential flow estimation ( e.g ., SPyNet [26]) leads to suboptimal inference speeds on constrained hardware. 
+
+Transformer-Based VSR. Vision transformers currently dominate VSR leaderboards. VRT [17] extracts features using mutual attention, while RVRT [18] employs guided self-attention. While RVRT sets the state-of-the-art (SOTA) in restoration quality, its sheer parameter count and quadratic attention complex-ity make it a computationally prohibitive model strictly confined to high-end GPUs. 
+
+Efficient VSR and Structural Reparameterization. Developing fast architectures for VSR remains underexplored due to the computational burden of temporal alignment. Existing attempts to streamline VSR by scaling down baselines ( e.g ., EDVR [38]), employing lighter attention ( e.g ., RVRT [18]), or using recurrent designs ( e.g ., RSDN [15]) still struggle to meet strict real-time constraints on embedded hardware. To address this, we draw inspiration from structural reparameterization [7], decoupling a rich multi-branch training topol-ogy from a minimalist single-branch inference architecture. 
+
+## 3 Methodology 
+
+In this section, we detail the structural design and optimization strategy of NanoVSR, our lightweight video super-resolution network. We first introduce the overall bidirectional recurrent architecture, designed to maximize inference throughput by entirely bypassing explicit motion compensation and custom CUDA operations (Sec. 3.1). Next, we delve into the core of our efficiency paradigm: the structural reparameterization technique [7] used to collapse a multi-branch training topology into a minimalist, single-branch inference model (Sec. 3.2). Finally, we describe the two-stage training protocol that enables our network to implicitly learn robust spatio-temporal alignments and achieve com-petitive restoration quality (Sec. 3.3). 
+
+3.1 Architecture Overview 
+
+Unlike recent heavyweight Video Super-Resolution (VSR) models that rely on explicit optical flow [3,27,38,41] or computationally expensive transformer-based NanoVSR: Towards Real-Time VSR on Edge Devices 5Bidirectional Propagation 
+
+> Feature extraction
+> (RepVGG Block)
+> Bilinear Upsampling
+> x4
+> Concat
+> Forward Net
+> (N RepVGG
+> Blocks)
+> +
+> Backward Net
+> (N RepVGG
+> Blocks)
+> 1x1 Conv2d
+> (Fusion)
+> PixelShuffle
+> Block
+> PixelShuffle
+> Block
+> 3x3 Conv2d
+> +
+> +
+
+Fig. 1: Detailed schematic of the NanoVSR architecture. LR input frames are embed-ded into a latent space and passed through a bidirectional recurrent structure built with reparameterizable blocks (see Fig. 2). Crucially, to minimize memory bandwidth, temporal propagation relies on element-wise addition instead of standard feature con-catenation. The refined features are bottlenecked and upsampled, with a global bilinear residual added to reconstruct the final HR sequence. 
+
+attention mechanisms [2, 9, 17, 18, 30], NanoVSR is designed as a purely convo-lutional, bidirectional recurrent network constructed exclusively from standard tensor operations. By explicitly avoiding custom CUDA modules like deformable convolutions and memory-intensive warping functions, NanoVSR ensures native ONNX [25] compatibility. This maximizes data throughput on edge devices by fully utilizing deep fusion optimizations provided by hardware accelerators ( e.g ., TensorRT [24]). The overall pipeline of NanoVSR is illustrated in Fig. 1. Given a sequence of low-resolution (LR) input frames x ∈ RT ×3×H×W , where T denotes the sequence length, the network processes the sequence through three main stages: shallow feature extraction, bidirectional temporal propagation, and high-resolution (HR) reconstruction. 
+
+Shallow Feature Extraction. Initially, the temporal dimension is folded into the batch dimension to process all frames independently and efficiently. A single feature extraction block maps the RGB input into a higher-dimensional latent space: 
+
+fi = Hext (xi), ∀i ∈ { 1, . . . , T }, (1) where fi ∈ RC×H×W represents the extracted features for the i-th frame, C is the number of feature channels, and Hext denotes our multi-branch extraction block (which will be detailed in Sec. 3.2). After this operation, the features are reshaped back to restore the temporal dimension. 
+
+Bidirectional Temporal Propagation. To aggregate temporal context without explicit motion compensation, we employ a bidirectional recurrent struc-ture. In standard recurrent architectures [3,10,15,27], hidden states are typically concatenated with input features. However, concatenation doubles the channel dimension, leading to a substantial increase in computational cost and heav-ily burdening memory bandwidth during subsequent convolutions. To mitigate this, NanoVSR employs a direct element-wise additive propagation scheme. The forward and backward hidden states, denoted as h→ 
+
+> i
+
+and h← 
+
+> i
+
+respectively, are 6 F. Pawlicki et al. 
+
+updated sequentially as follows: 
+
+h→ 
+
+> i
+
+= Hf orward 
+
+ fi + h→
+
+> i−1
+
+ , (2) 
+
+h← 
+
+> i
+
+= Hbackward 
+
+ fi + h←
+
+> i+1
+
+ , (3) where both Hf orward and Hbackward consist of a sequence of structural blocks configured with the LeakyReLU activation function. This additive formulation forces the network to implicitly learn residual motion representations, signifi-cantly reducing the memory footprint during inference while maintaining robust temporal coherence. The initial hidden states h→ 
+
+> 0
+
+and h←  
+
+> T+1
+
+are initialized as zero tensors. 
+
+Fusion and Reconstruction. For each time step i, the forward and back-ward hidden states are channel-wise concatenated and fused via a 1 × 1 convo-lution to bottleneck the channel dimension back to C:
+
+f f used i = Hf usion ([ h→ 
+
+> i
+
+, h ← 
+
+> i
+
+]) , (4) where [·, ·] denotes the channel-wise concatenation operator. The fused features are subsequently upsampled through a cascaded sub-pixel convolution module (PixelShuffle) [31] consisting of two progressive 2× spatial expansion stages. These stages are separated by PReLU [11] activations, before a final 3 × 3 convo-lution projects the refined representations back into the 3-channel RGB domain. To ease the learning process, preserve absolute spatial scale, and allow the core network to focus strictly on high-frequency detail synthesis, we employ a global residual connection. The final HR output ˆyi is generated by adding the network’s processed residual output to the upsampled LR input. To ensure maximum hardware efficiency and minimize latency, we substitute traditional bicubic upsampling with highly optimized bilinear interpolation for this base projection: 
+
+ˆyi = Hup (f f used i ) + Bilinear ↑4(xi). (5) 
+
+3.2 Structural Reparameterization for Inference 
+
+The fundamental bottleneck for neural network deployment on edge devices is not merely the parameter count, but the memory access cost and network frag-mentation, which severely limit hardware utilization [21]. While multi-branch ar-chitectures provide strong representational capacity and stable gradient flow dur-ing training [12, 33], they fragment memory access and introduce severe CUDA kernel launch overheads during inference. To resolve this disparity, NanoVSR is constructed utilizing structural reparameterization, allowing us to completely decouple the training topology from the deployment architecture. During the training phase, every fundamental building block operates as a multi-branch topology. The input features are processed via three parallel pathways: a 3 × 3 convolution, a 1 × 1 convolution, and an identity mapping, each immediately followed by a Batch Normalization (BN) layer [14]. Upon completing the training phase, the model is prepared for hardware de-ployment. Because convolution and batch normalization act as linear and affine NanoVSR: Towards Real-Time VSR on Edge Devices 7RepVGG Block (Training)   
+
+> Xt
+> 3x3 Conv2d BatchNorm
+> 1x1 Conv2d BatchNorm
+> Identity (BatchNorm)
+
++  
+
+> σ( Yt)Reparametrization
+> RepVGG Block (Deploy)
+> Xt
+> 3x3 Conv2d
+> Wfused , B fused
+> σ( Yt)
+
+Fig. 2: Diagram of the structural reparameterization process [7]. During training, the block utilizes a multi-branch topology ( 3 × 3, 1 × 1, and identity pathways) to ensure robust feature extraction. For deployment, Batch Normalization statistics are first ab-sorbed into their respective kernels. Finally, the parallel branches are mathematically fused into a single, dense 3 × 3 convolution, eliminating memory fragmentation and significantly accelerating inference. 
+
+transformations during inference, we apply a mathematically equivalent trans-formation to collapse the entire block. Following the standard reparameterization formulation, the parallel branches and their respective absorbed BN statistics are zero-padded, spatially aligned, and linearly fused into a single set of weights and biases. Consequently, the complex multi-branch topology completely vanishes during edge deployment, collapsing into a single, highly optimized 3 × 3 convolution, as visually depicted in Fig. 2. The inference forward pass is executed as a continuous stream of plain convolutions, completely eliminating memory fragmentation and making it perfectly suited for deep fusion optimizations provided by accelerators like TensorRT [24]. 
+
+3.3 Two-Stage Training Strategy 
+
+Training an implicit-alignment VSR network from scratch on long temporal se-quences is notoriously unstable. To prevent gradient instability and ensure con-vergence, we adopt a two-phase progressive curriculum strategy [37]. 
+
+Phase 1: Short-Sequence Pre-training. For the initial 50,000 iterations, the network is trained on 7-frame sequences from the Vimeo-90K dataset. This phase focuses on establishing robust spatial feature extraction and short-term temporal fusion. The limited motion in these clips prevents early gradient insta-bility, providing a solid initialization for the structural blocks. 
+
+Phase 2: Long-Sequence Fine-tuning. Subsequently, we seamlessly switch the training corpus to the REDS dataset and expand the temporal window to 30 continuous frames for the remaining 100,000 iterations. We employ a sliding window approach to sample these sequences. This phase is crucial for develop-8 F. Pawlicki et al. 
+
+ing the network’s long-term recurrence capabilities, allowing the bidirectional hidden states to propagate information across complex motion trajectories. 
+
+Optimization Details. The network is trained for 150,000 iterations using a global batch size of 12 and spatial patches of size 256 × 256 . We optimize the model end-to-end using the Charbonnier penalty [5] ( ϵ = 1 ×10 −6) and the Adam optimizer [16] ( β1 = 0 .9, β 2 = 0 .99 ). A single Cosine Annealing scheduler [20] governs the learning rate across both phases, decaying from 3×10 −4 to 1×10 −7.To maintain high throughput and memory efficiency, we utilize Automatic Mixed Precision (AMP) [22] with the BFloat16 format and gradient clipping with a maximum L2 norm of 0.5 throughout the training process. Data augmentation includes geometric transformations (flips, rotations, temporal reversal) and the CutBlur strategy [42]. 
+
+## 4 Experiments 
+
+This section evaluates NanoVSR across several standard benchmarks. Our anal-ysis focuses on two primary dimensions: image reconstruction fidelity, quantified by PSNR and SSIM metrics, and hardware-specific efficiency on edge devices. 
+
+4.1 Experimental Setup 
+
+The models are trained according to the progressive curriculum strategy detailed in Sec. 3.3 using the Vimeo-90K and REDS datasets. To ensure a rigorous and unbiased evaluation, the four sequences (000, 011, 015, 020) that comprise the REDS4 benchmark were strictly excluded from the training set. Performance is evaluated on three standard benchmarks: REDS4, Vid4, and Vimeo90K-T. In accordance with established video super-resolution literature, for the REDS4 dataset, we report Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index (SSIM) [40] metrics calculated in the RGB color space. For the Vid4 and Vimeo90K-T benchmarks, metrics are computed on the luminance channel (Y-channel) after converting the network’s RGB output. All models are evaluated at a spatial upsampling factor of 4×.Quantitative evaluation and inference benchmarks are conducted on a sin-gle NVIDIA H100 GPU. To ensure a fair and direct comparison, the inference latency for all baseline methods was re-evaluated on our hardware using FP32 precision. For the edge deployment analysis, we utilize two configurations of the NVIDIA Jetson Orin NX: an 8GB variant restricted to a 15W TDP and a 16GB variant operating at a 25W TDP. All models are exported via ONNX and com-piled into optimized execution engines using NVIDIA TensorRT 10.3.0.30 [24]. To maximize performance on these edge platforms, we employ FP16 precision and a chunk-based execution pattern with a temporal window of 15 frames (T = 15 ), ensuring efficient bidirectional context aggregation within the devices memory and power constraints. NanoVSR: Towards Real-Time VSR on Edge Devices 9
+
+Table 1: Quantitative comparison on Vid4, REDS4, and Vimeo90K-T. Runtime is measured in ms/frame. Metrics are reported as PSNR (dB) / SSIM. For baseline meth-ods, results on the REDS4 [23] benchmark reflect models trained on the REDS dataset, whereas results on Vid4 [19] and Vimeo90K-T [41] correspond to models trained on Vimeo-90K. These separate evaluations have been merged into this single table.                                                            
+
+> Model Params Runtime Vid4 [19] REDS4 [23] Vimeo90K-T [41] (ms) (Y-channel) (RGB) (Y-channel)
+> NanoVSR-226k 226k 1.910 25.26 / 0.7252 28.23 / 0.8057 34.31 / 0.9130 NanoVSR-644k 644k 2.982 26.05 / 0.7761 28.64 / 0.8215 35.00 / 0.9226 NanoVSR-1.7M 1.7M 4.268 26.44 / 0.7964 29.15 / 0.8364 35.49 / 0.9294 NanoVSR-5.4M 5.4M 8.547 26.76 / 0.8089 29.73 / 0.8526 35.85 / 0.9335 EDVR-M [38] 3.3M 27.343 27.10 / 0.8186 30.53 / 0.8699 37.09 / 0.9446 BasicVSR [3] 6.2M 15.160 27.24 / 0.8251 31.42 / 0.8909 37.18 / 0.9450 IconVSR [3] 8.7M 28.881 27.39 / 0.8279 31.67 / 0.8948 37.47 / 0.9476 RVRT [18] 10.8M 47.867 27.99 / 0.8462 32.75 / 0.9113 38.15 / 0.9527 EDVR-L [38] 20.6M 73.994 27.35 / 0.8264 31.09 / 0.8800 37.61 / 0.9489
+> Frame 055, Clip 015 LR(x4) BasicVSR [3] EDVR-M [38] RVRT [18]
+> NanoVSR-644k NanoVSR-1.7M NanoVSR-5.4M GT
+
+Fig. 3: Qualitative comparison on REDS4 [23] dataset. Left: full frame, Right: magni-fied patches. 
+
+4.2 Quantitative Results 
+
+We evaluate NanoVSR against several state-of-the-art VSR baselines on the Vid4, REDS4, and Vimeo90K-T benchmarks. Our analysis considers both restora-tion quality (PSNR, SSIM) and computational efficiency, including parameter count and runtime per frame for a 180 × 320 input. As detailed in Tab. 1, NanoVSR exhibits a significant speed advantage over existing methods, delivering high performance while maintaining sharp recon-struction quality. While heavyweight transformer models like RVRT [18] achieve the highest PSNR, they incur substantial inference delay ( ∼ 48 ms), making them unsuitable for real-time applications on edge devices. In contrast, our ultra-lightweight variant, NanoVSR-226k, operates with an inference time of just 1.91 ms, providing remarkable efficiency gains. Striking the optimal bal-ance between speed and quality, our flagship NanoVSR-644k baseline achieves 28.64 dB on REDS4 requiring only 2.98 ms per frame, directly rivaling signifi-cantly heavier architectures. Furthermore, scaling up to the NanoVSR-1.7M vari-ant yields a competitive 29.15 dB PSNR on the challenging REDS4 benchmark while still maintaining a low runtime of 4.268 ms per frame. This demonstrates 10 F. Pawlicki et al.        
+
+> Frame 038, Clip walk LR(x4) BasicVSR [3] EDVR-M [38] RVRT [18]
+> NanoVSR-644k NanoVSR-1.7M NanoVSR-5.4M GT
+> Fig. 4: Qualitative comparison on Vid4 [19] dataset. Left: full frame, Right: magnified patches.
+
+that NanoVSR can deliver solid restoration quality at a fraction of the com-putational cost of traditional architectures. Qualitative results for the REDS4 dataset are illustrated in Fig. 3, demonstrating that our models effectively re-cover sharp details comparable to much larger architectures. Visual comparisons on the Vid4 benchmark, specifically for text-heavy scenes (see Fig. 4), reveal that NanoVSR performs on par with significantly heavier models. In this context, both lightweight and state-of-the-art models exhibit only average restoration quality, highlighting the persistent challenge of alpha-numeric reconstruction in motion-heavy sequences. 
+
+4.3 Efficiency Analysis 
+
+To demonstrate the real-world applicability and scalability of our method on embedded hardware, we conduct an extensive efficiency analysis across two con-figurations of the NVIDIA Jetson Orin NX: an 8GB variant restricted to a 15W TDP and a 16GB variant operating at a 25W TDP. Our evaluation focuses on inference latency and throughput (FPS) for processing a temporal window of T = 15 frames at two different input resolutions: 180 × 320 and 270 × 480 .All models are compiled and optimized using the TensorRT 10.3 execution en-gine. Since both devices were operated at their maximum performance profiles and memory consumption remained consistently within hardware limits due to static engine optimization, we prioritize throughput as the primary metric for edge-device viability. The results, summarized in Tab. 2, clearly validate our hardware-aware design principles. Heavyweight architectures, represented here by BasicVSR [3], struggle to maintain real-time performance on edge devices, achieving not even 4 FPS for a 270 × 480 input sequence. Furthermore, they demand significantly more resources, which poses a severe bottleneck on embedded platforms. In contrast, NanoVSR transforms the VSR task into a highly optimized pro-cess. Our ultra-lightweight variant, NanoVSR-226k, meets stringent streaming constraints, delivering almost 44 FPS on 180 × 320 inputs and nearly 20 FPS on 
+
+270 ×480 inputs on Jetson Orin NX (16GB). Delivering an exceptional efficiency-NanoVSR: Towards Real-Time VSR on Edge Devices 11                                                                            
+
+> Table 2: Efficiency scalability across NVIDIA Jetson Orin NX configurations. We compare average inference latency per frame (ms) and throughput (FPS) between the 8GB variant (15W TDP) and the 16GB variant (25W TDP). All models are compiled via TensorRT with a temporal window of T= 15 .
+> Orin NX (8GB) Orin NX (16GB) Model Resolution Runtime FPS Runtime FPS (ms) (ms)
+> NanoVSR-226k 180 ×320 42.46 23.55 22.80 43.86
+> 270 ×480 95.15 10.51 51.14 19.55 NanoVSR-644k 180 ×320 62.04 16.12 36.77 27.20
+> 270 ×480 139.03 7.19 77.99 12.82 NanoVSR-1.7M 180 ×320 86.46 11.57 51.06 19.58
+> 270 ×480 196.40 5.09 112.77 8.87 NanoVSR-5.4M 180 ×320 190.71 5.24 115.50 8.66
+> 270 ×480 427.95 2.34 263.82 3.79 BasicVSR [3] 180 ×320 229.28 4.36 124.37 8.04
+> 270 ×480 528.38 1.89 289.13 3.46
+
+to-quality ratio, our flagship baseline, NanoVSR-644k, achieves a remarkable ∼27 FPS on 180 ×320 inputs. Even our scaled NanoVSR-1.7M model maintains com-petitive edge performance, demonstrating that our architecture scales elegantly without exceeding the strict hardware limits inherent to edge computing. 
+
+4.4 Model Scaling Analysis 
+
+To evaluate the scalability of the proposed architecture, we investigate the re-lationship between the number of parameters and the restoration quality on the challenging REDS4 dataset. As illustrated in Fig. 5, we scale the network capacity from an ultra-lightweight 22k parameters up to 9.6M parameters by progressively adjusting the number of temporal propagation blocks and internal feature channels. 
+
+Initial Capacity Gains. The performance trajectory exhibits steep initial gains in the low-parameter regime. Scaling the network from the NanoVSR-22k variant to the NanoVSR-644k baseline yields a substantial improvement of 1.02 dB (from 27.62 dB to 28.64 dB). As the architectural capacity increases beyond the 1M parameter mark, the network continues to improve visual fidelity steadily, reaching 29.73 dB for the 5.4M variant. 
+
+Performance Saturation. However, scaling the architecture from the Nano-VSR-5.4M to the NanoVSR-9.6M variant yields diminishing returns. Despite a near two-fold increase in parameter count, it provides only a marginal PSNR im-provement of 0.17 dB, effectively plateauing at 29.90 dB. This saturation point 12 F. Pawlicki et al. 0 1.0M 2.0M 3.0M 4.0M 5.0M 6.0M 7.0M 8.0M 9.0M 10.0M 
+
+> Number of Parameters
+> 28.0
+> 28.5
+> 29.0
+> 29.5
+> 30.0
+> Restoration Quality (PSNR on REDS4)
+> NanoVSR-22k
+> NanoVSR-31k
+> NanoVSR-48k
+> NanoVSR-226k
+> NanoVSR-644k
+> NanoVSR-1.7M
+> NanoVSR-5.4M
+> NanoVSR-9.6M
+
+Model Scaling: Parameters vs. PSNR 
+
+Fig. 5: Model scaling analysis on the REDS4 [23] dataset. The plot illustrates the trade-off between the number of parameters and restoration quality (PSNR). While scaling up the architecture consistently improves performance, the curve demonstrates diminishing returns beyond 5.4M parameters. 
+
+indicates that while the NanoVSR topology can easily scale to achieve higher-quality reconstructions, our baseline (NanoVSR-644k) strikes the most practical balance between computational efficiency and restoration quality, making it the definitive choice for practical edge deployment. 
+
+4.5 Ablation Studies 
+
+To explore the effectiveness of different architectural design choices, we conduct ablation studies on the REDS4, Vid4, and Vimeo90K-T datasets. Due to the sub-stantial computational cost of video training, all ablations were conducted using our highly efficient NanoVSR-226k variant. We empirically observed that these design insights and relative performance improvements transfer consistently to our larger flagship model, NanoVSR-644k. 
+
+The impact of structural reparameterization. In NanoVSR, we utilize structural reparameterization to decouple the training topology from the infer-ence architecture. As shown in Tab. 3, the baseline NanoVSR-226k and its non-fused counterpart, NanoVSR-226k-NOFUSE, achieve mathematically identical restoration quality. However, executing the parameter fusion reduces the total parameter count from 245k to 226k and nearly halves the inference time (from 3.471 ms to 1.910 ms). Conversely, NanoVSR-226k-SINGLE, which is trained NanoVSR: Towards Real-Time VSR on Edge Devices 13 
+
+Table 3: Comprehensive ablation study on the NanoVSR architecture. We evaluate the impact of structural reparameterization (-NOFUSE, -SINGLE), curriculum pre-training (-NOPRET), and explicit motion alignment (-SPYNET). Runtime is measured in milliseconds per frame for a 180 × 320 input on an NVIDIA H100 GPU. Restoration quality is reported as PSNR (dB) / SSIM.                                  
+
+> Model Params Runtime Vid4 [19] REDS4 [23] Vimeo90K-T [41] (ms) (Y-channel) (RGB) (Y-channel)
+> NanoVSR-226k (Reference) 226k 1.910 25.26 / 0.7252 28.23 / 0.8057 34.31 / 0.9130 NanoVSR-226k-NOFUSE 245k 3.471 25.26 / 0.7252 28.23 / 0.8057 34.31 / 0.9130 NanoVSR-226k-SINGLE 226k 1.885 25.25 / 0.7296 28.13 / 0.8027 34.25 / 0.9134 NanoVSR-226k-NOPRET 226k 1.887 25.17 / 0.7271 28.23 / 0.8054 34.21 / 0.9130 NanoVSR-226k-SPYNET 1.7M 3.953 25.95 / 0.7701 29.44 / 0.8460 34.85 / 0.9220
+
+from scratch as a strict single-branch architecture, suffers a noticeable degra-dation in overall reconstruction fidelity, dropping by 0.1 dB PSNR on REDS4. While the lower-capacity SINGLE variant yields a marginally higher SSIM on Vid4, this is a known mathematical consequence of its constrained capacity. As reflected by the PSNR drop, the restricted single-branch topology biases the network toward lower-frequency predictions. While this smoothing effect can inadvertently inflate SSIM scores on specific datasets, the model lacks the rep-resentational power to reconstruct the fine, high-frequency structural details captured by our multi-branch reference architecture. This confirms that the rich multi-branch training phase is essential for learning robust representations. 
+
+The impact of curriculum pre-training. Our two-stage progressive train-ing scheme is evaluated by comparing the NanoVSR-226k model against Nano-VSR-226k-NOPRET, which is trained exclusively on REDS, omitting the Vimeo-90K phase. While both models reach an identical PSNR on REDS4, the pre-trained variant naturally performs better on Vimeo90K-T due to prior exposure. For zero-shot generalization on the external Vid4 dataset, skipping this initial phase leads to a PSNR drop from 25.26 dB to 25.17 dB. Although NanoVSR-226k-NOPRET yields a marginally higher SSIM here (0.7271 vs. 0.7252), the overall metrics demonstrate that initial exposure on diverse sequences improves overall generalization and restoration quality. 
+
+The impact of explicit alignment. We analyze the architectural trade-off of omitting explicit motion compensation by introducing NanoVSR-226k-SPYNET. This variant shares the identical core architecture and is trained un-der the same progressive curriculum, with the sole addition of an integrated SPyNet [26] module. As indicated in Tab. 3, explicit alignment significantly boosts the restoration fidelity, yielding a substantial gain of 1.21 dB over Nano-VSR-226k on REDS4. However, this performance surge incurs severe compu-tational penalties. The total parameter count inflates to over 1.7M (of which approximately 1.5M belong strictly to the SPyNet estimator), and the inference time more than doubles to 3.953 ms per frame. Given the strict power and in-ference speed constraints inherent to edge devices, the NanoVSR architecture intentionally foregoes explicit optical flow. 14 F. Pawlicki et al. 
+
+## 5 Limitations and Societal Impact 
+
+While NanoVSR achieves a highly competitive efficiency-quality balance, it in-herits limitations inherent to implicit-alignment architectures. The absence of explicit optical flow means the network may occasionally struggle to reconstruct high-frequency textures in the presence of extreme, non-rigid local motions. Fur-thermore, because bidirectional propagation requires a temporal look-ahead win-dow ( T = 15 ), the model introduces a slight buffering delay, making it unsuitable for strict frame-by-frame real-time applications without degrading to a unidirec-tional mode. From a societal perspective, our focus on extreme computational efficiency democratizes access to high-quality video processing and significantly mitigates the environmental footprint of deploying deep models at scale [29,32]. It can also extend the usable lifecycle of legacy low-resolution camera hardware, reducing electronic waste. However, enhancing low-resolution footage is inherently dual-use and could inadvertently facilitate non-consensual surveillance. It is crucial to emphasize that super-resolution algorithms probabilistically synthesize miss-ing high-frequency details rather than recovering true signals; therefore, outputs must be treated as plausible enhancements rather than factual, identifiable ev-idence. We advocate for deploying VSR technologies within bounded, consent-driven domains such as media restoration, video conferencing, and broadcasting, while establishing robust ethical guidelines against unverified monitoring. 
+
+## 6 Conclusion 
+
+In this work, we presented NanoVSR, a highly efficient and fully convolutional architecture tailored for rapid video super-resolution on edge devices with lim-ited resources. By moving away from costly optical flow estimation and heavy attention mechanisms, we demonstrated that robust spatial and temporal align-ments can be effectively learned through a progressive curriculum training strat-egy. Furthermore, the integration of structural reparameterization allows our bidirectional recurrent network to collapse into a streamlined sequence of stan-dard convolutions during inference. This design choice ensures seamless hardware compatibility with accelerators like TensorRT and drastically minimizes execu-tion latency. Evaluations on standard benchmarks, including REDS4, Vid4, and Vimeo90K-T, confirm that NanoVSR successfully redefines the trade-off between accuracy and efficiency for compact models. Our ultra-lightweight variant, NanoVSR-226k, achieves unprecedented inference speeds, delivering 43.8 FPS on an NVIDIA Jetson Orin NX (25W). Simultaneously, our flagship NanoVSR-644k baseline maintains a real-time throughput of 27.2 FPS while providing superior restora-tion quality. For high-performance scenarios, the scaled NanoVSR-1.7M variant reaches 29.15 dB on REDS4 with an H100 processing time of just 4.27 ms per frame. By significantly reducing parameter count without compromising visual fidelity, NanoVSR offers a highly practical and scalable solution for local edge NanoVSR: Towards Real-Time VSR on Edge Devices 15 
+
+applications. We hope our optimized approach encourages further research into sustainable and globally accessible video enhancement technologies. 
+
+## Acknowledgements 
+
+The calculations were carried out using the computers of the Centre of Infor-matics Tricity Academic Supercomputer & Network. The research was supported in part by project “Cloud Artificial Intelligence Service Engineering (CAISE) platform to create universal and smart services for various application areas”, No. KPOD.05.10-IW.10-0005/24, as part of the Euro-pean IPCEI-CIS program, financed by NRRP (National Recovery and Resilience Plan) funds. 
+
+## References 
+
+1. Caballero, J., Ledig, C., Aitken, A., Acosta, A., Totz, J., Wang, Z., Shi, W.: Real-time video super-resolution with spatio-temporal networks and motion compen-sation. In: 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). pp. 2848–2857 (2017). https://doi.org/10.1109/CVPR.2017.304 
+
+2. Cao, J., Li, Y., Zhang, K., Van Gool, L.: Video super-resolution transformer (2023), arXiv preprint arXiv:2106.06847 3. Chan, K.C., Wang, X., Yu, K., Dong, C., Loy, C.C.: BasicVSR: The search for essential components in video super-resolution and beyond. In: 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 4945–4954 (2021). https://doi.org/10.1109/CVPR46437.2021.00491 
+
+4. Chan, K.C., Zhou, S., Xu, X., Loy, C.C.: BasicVSR++: Improving video super-resolution with enhanced propagation and alignment. In: 2022 IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition (CVPR). pp. 5962–5971 (2022). 
+
+https://doi.org/10.1109/CVPR52688.2022.00588 
+
+5. Charbonnier, P., Blanc-Feraud, L., Aubert, G., Barlaud, M.: Two deterministic half-quadratic regularization algorithms for computed imaging. In: Proceedings of 1st International Conference on Image Processing. vol. 2, pp. 168–172 (1994). 
+
+https://doi.org/10.1109/ICIP.1994.413553 
+
+6. Dai, J., Qi, H., Xiong, Y., Li, Y., Zhang, G., Hu, H., Wei, Y.: Deformable con-volutional networks. In: 2017 IEEE International Conference on Computer Vision (ICCV). pp. 764–773 (2017). https://doi.org/10.1109/ICCV.2017.89 
+
+7. Ding, X., Zhang, X., Ma, N., Han, J., Ding, G., Sun, J.: RepVGG: Making VGG-style convnets great again. In: 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 13728–13737 (2021). https://doi.org/10. 1109/CVPR46437.2021.01352 
+
+8. Dong, C., Loy, C.C., He, K., Tang, X.: Image super-resolution using deep convolu-tional networks. IEEE Transactions on Pattern Analysis and Machine Intelligence 
+
+38 (2), 295–307 (2016). https://doi.org/10.1109/TPAMI.2015.2439281 
+
+9. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., Houlsby, N.: An image is worth 16x16 words: Transformers for image recognition at scale. In: International Conference on Learning Representations (2021) 16 F. Pawlicki et al. 10. Fuoli, D., Gu, S., Timofte, R.: Efficient video super-resolution through recurrent latent space propagation. In: 2019 IEEE/CVF International Conference on Com-puter Vision Workshop (ICCVW). pp. 3476–3485 (2019). https://doi.org/10. 1109/ICCVW.2019.00431 
+
+11. He, K., Zhang, X., Ren, S., Sun, J.: Delving deep into rectifiers: Surpassing human-level performance on imagenet classification. In: 2015 IEEE International Confer-ence on Computer Vision (ICCV). pp. 1026–1034 (2015). https://doi.org/10. 1109/ICCV.2015.123 
+
+12. He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image recognition. In: 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). pp. 770–778 (2016). https://doi.org/10.1109/CVPR.2016.90 
+
+13. Howard, A., Sandler, M., Chen, B., Wang, W., Chen, L.C., Tan, M., Chu, G., Vasudevan, V., Zhu, Y., Pang, R., Adam, H., Le, Q.: Searching for MobileNetV3. In: 2019 IEEE/CVF International Conference on Computer Vision (ICCV). pp. 1314–1324 (2019). https://doi.org/10.1109/ICCV.2019.00140 
+
+14. Ioffe, S., Szegedy, C.: Batch normalization: Accelerating deep network training by reducing internal covariate shift. In: Bach, F., Blei, D. (eds.) Proceedings of the 32nd International Conference on Machine Learning. Proceedings of Machine Learning Research, vol. 37, pp. 448–456. PMLR, Lille, France (07–09 Jul 2015) 15. Isobe, T., Jia, X., Gu, S., Li, S., Wang, S., Tian, Q.: Video super-resolution with recurrent structure-detail network. In: Vedaldi, A., Bischof, H., Brox, T., Frahm, J.M. (eds.) Computer Vision – ECCV 2020. pp. 645–660. Springer International Publishing, Cham (2020) 16. Kingma, D.P., Ba, J.: Adam: A method for stochastic optimization. In: Interna-tional Conference on Learning Representations (ICLR) (2015) 17. Liang, J., Cao, J., Fan, Y., Zhang, K., Ranjan, R., Li, Y., Timofte, R., Van Gool, L.: VRT: A video restoration transformer. IEEE Transactions on Image Processing 
+
+33 , 2171–2182 (2024). https://doi.org/10.1109/TIP.2024.3372454 
+
+18. Liang, J., Fan, Y., Xiang, X., Ranjan, R., Ilg, E., Green, S., Cao, J., Zhang, K., Timofte, R., Van Gool, L.: Recurrent video restoration transformer with guided deformable attention. In: Proceedings of the 36th International Conference on Neu-ral Information Processing Systems. NIPS ’22, Curran Associates Inc., Red Hook, NY, USA (2022) 19. Liu, C., Sun, D.: On bayesian adaptive video super resolution. IEEE Transactions on Pattern Analysis and Machine Intelligence 36 (2), 346–360 (2014). https:// doi.org/10.1109/TPAMI.2013.127 
+
+20. Loshchilov, I., Hutter, F.: SGDR: Stochastic gradient descent with warm restarts. In: International Conference on Learning Representations (2017) 21. Ma, N., Zhang, X., Zheng, H.T., Sun, J.: ShuffleNet V2: Practical guidelines for efficient CNN architecture design. In: Computer Vision – ECCV 2018. pp. 122–138. Springer International Publishing, Cham (2018) 22. Micikevicius, P., Narang, S., Alben, J., Diamos, G., Elsen, E., Garcia, D., Ginsburg, B., Houston, M., Kuchaiev, O., Venkatesh, G., Wu, H.: Mixed precision training. In: International Conference on Learning Representations (2018) 23. Nah, S., Baik, S., Hong, S., Moon, G., Son, S., Timofte, R., Lee, K.M.: NTIRE 2019 challenge on video deblurring and super-resolution: Dataset and study. In: 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW). pp. 1996–2005 (2019). https://doi.org/10.1109/CVPRW.2019.00251 
+
+24. NVIDIA Corporation: NVIDIA TensorRT (2017), https://developer.nvidia. com/tensorrt , last accessed 2026-06-25 NanoVSR: Towards Real-Time VSR on Edge Devices 17 25. ONNX Contributors: ONNX: Open neural network exchange (2017), https:// github.com/onnx/onnx , last accessed 2026-06-25 26. Ranjan, A., Black, M.J.: Optical flow estimation using a spatial pyramid network. In: 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). pp. 2720–2729 (2017). https://doi.org/10.1109/CVPR.2017.291 
+
+27. Sajjadi, M.S.M., Vemulapalli, R., Brown, M.: Frame-recurrent video super-resolution. In: 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 6626–6634 (2018). https://doi.org/10.1109/CVPR.2018.00693 
+
+28. Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., Chen, L.C.: MobileNetV2: In-verted residuals and linear bottlenecks. In: 2018 IEEE/CVF Conference on Com-puter Vision and Pattern Recognition (CVPR). pp. 4510–4520. IEEE Computer Society, Los Alamitos, CA, USA (Jun 2018). https://doi.org/10.1109/CVPR. 2018.00474 
+
+29. Schwartz, R., Dodge, J., Smith, N.A., Etzioni, O.: Green AI. Commun. ACM 
+
+63 (12), 54–63 (Nov 2020). https://doi.org/10.1145/3381831 
+
+30. Shi, S., Gu, J., Xie, L., Wang, X., Yang, Y., Dong, C.: Rethinking alignment in video super-resolution transformers. In: Proceedings of the 36th International Con-ference on Neural Information Processing Systems. NIPS ’22, Curran Associates Inc., Red Hook, NY, USA (2022) 31. Shi, W., Caballero, J., Huszár, F., Totz, J., Aitken, A.P., Bishop, R., Rueckert, D., Wang, Z.: Real-time single image and video super-resolution using an efficient sub-pixel convolutional neural network. In: 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). pp. 1874–1883 (2016). https://doi. org/10.1109/CVPR.2016.207 
+
+32. Strubell, E., Ganesh, A., McCallum, A.: Energy and policy considerations for deep learning in NLP. In: Korhonen, A., Traum, D., Màrquez, L. (eds.) Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics. pp. 3645–3650. Association for Computational Linguistics, Florence, Italy (Jul 2019). 
+
+https://doi.org/10.18653/v1/P19-1355 
+
+33. Szegedy, C., Liu, W., Jia, Y., Sermanet, P., Reed, S., Anguelov, D., Erhan, D., Vanhoucke, V., Rabinovich, A.: Going deeper with convolutions. In: 2015 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). pp. 1–9 (2015). 
+
+https://doi.org/10.1109/CVPR.2015.7298594 
+
+34. Tan, M., Le, Q.: EfficientNet: Rethinking model scaling for convolutional neural networks. In: Chaudhuri, K., Salakhutdinov, R. (eds.) Proceedings of the 36th International Conference on Machine Learning. Proceedings of Machine Learning Research, vol. 97, pp. 6105–6114. PMLR (09–15 Jun 2019) 35. Tao, X., Gao, H., Liao, R., Wang, J., Jia, J.: Detail-revealing deep video super-resolution. In: 2017 IEEE International Conference on Computer Vision (ICCV). pp. 4482–4490 (2017). https://doi.org/10.1109/ICCV.2017.479 
+
+36. Tian, Y., Zhang, Y., Fu, Y., Xu, C.: TDAN: Temporally-deformable alignment network for video super-resolution. In: 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 3357–3366 (2020). https://doi. org/10.1109/CVPR42600.2020.00342 
+
+37. Wang, X., Chen, Y., Zhu, W.: A survey on curriculum learning. IEEE Transactions on Pattern Analysis and Machine Intelligence 44 (9), 4555–4576 (2022). https: //doi.org/10.1109/TPAMI.2021.3069908 
+
+38. Wang, X., Chan, K.C., Yu, K., Dong, C., Loy, C.C.: EDVR: Video restoration with enhanced deformable convolutional networks. In: 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW). pp. 1954–1963 (2019). https://doi.org/10.1109/CVPRW.2019.00247 18 F. Pawlicki et al. 39. Wang, X., Tang, Z., Guo, J., Meng, T., Wang, C., Wang, T., Jia, W.: Empowering edge intelligence: A comprehensive survey on on-device ai models. ACM Comput. Surv. 57 (9) (Apr 2025). https://doi.org/10.1145/3724420 
+
+40. Wang, Z., Bovik, A., Sheikh, H., Simoncelli, E.: Image quality assessment: from error visibility to structural similarity. IEEE Transactions on Image Processing 
+
+13 (4), 600–612 (2004). https://doi.org/10.1109/TIP.2003.819861 
+
+41. Xue, T., Chen, B., Wu, J., Wei, D., Freeman, W.T.: Video enhancement with task-oriented flow. International Journal of Computer Vision 127 (8), 1106–1125 (2019). 
+
+https://doi.org/10.1007/s11263-018-01144-2 
+
+42. Yoo, J., Ahn, N., Sohn, K.A.: Rethinking data augmentation for image super-resolution: A comprehensive analysis and a new strategy. In: 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 8372–8381 (2020). https://doi.org/10.1109/CVPR42600.2020.00840 
+
+43. Zhang, Y., Li, K., Li, K., Wang, L., Zhong, B., Fu, Y.: Image super-resolution using very deep residual channel attention networks. In: Ferrari, V., Hebert, M., Sminchisescu, C., Weiss, Y. (eds.) Computer Vision – ECCV 2018. pp. 294–310. Springer International Publishing, Cham (2018) 44. Zhu, X., Hu, H., Lin, S., Dai, J.: Deformable convnets v2: More deformable, better results. In: 2019 IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion (CVPR). pp. 9300–9308 (2019). https://doi.org/10.1109/CVPR.2019.00953

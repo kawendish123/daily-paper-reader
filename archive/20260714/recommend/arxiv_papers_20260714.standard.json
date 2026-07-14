@@ -1,0 +1,366 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-14T21:34:00.509527+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2607.08770v1",
+      "source": "arxiv",
+      "title": "LongE2V: Long-Horizon Event-based Video Reconstruction, Prediction, and Frame Interpolation with Video Diffusion Models",
+      "abstract": "Recovering high-quality video from sparse event streams is a challenging task. Regression methods often blur textures, while existing generative models struggle with long-term stability. We propose LongE2V, a novel approach that leverages pre-trained video diffusion priors to jointly handle event-based video reconstruction, prediction, and frame interpolation. By fine-tuning a foundational video model, our approach achieves high data efficiency and superior perceptual quality. We introduce Autoregressive Unrolling and Adaptive Context Switching to mitigate temporal drift in extremely long sequences. We also propose Reencoding Alignment with Cross Residual Correction to ensure precise bidirectional consistency during frame interpolation. Furthermore, Event Voxel Density Augmentation ensures robustness across varying sensor resolutions. Extensive experiments on real-world benchmarks demonstrate that LongE2V outperforms state-of-the-art methods across all three tasks, exhibiting exceptional temporal coherence and zero-shot generalization. Project page: https://cdfan0627.github.io/LongE2V-page/",
+      "authors": [
+        "Cheng-De Fan",
+        "Chun-Wei Tuan Mu",
+        "Chen-Wei Chang",
+        "Chin-Yang Lin",
+        "Kun-Ru Wu",
+        "Yu-Chee Tseng",
+        "Yu-Lun Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-09T17:59:52+00:00",
+      "link": "https://arxiv.org/pdf/2607.08770v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "event-based video reconstruction and prediction for long sequences",
+      "llm_evidence_cn": "基于事件的长序列视频重建与预测",
+      "llm_evidence": "基于事件的长序列视频重建与预测",
+      "canonical_evidence": "基于事件的长序列视频重建与预测",
+      "llm_tldr_en": "LongE2V leverages pre-trained video diffusion priors to jointly perform event-based video reconstruction, prediction, and frame interpolation, with novel techniques to mitigate temporal drift in long sequences.",
+      "llm_tldr_cn": "从稀疏事件流恢复高质量视频是一项挑战，现有回归方法模糊纹理，生成模型不稳定。本文提出LongE2V，利用预训练视频扩散模型同时处理事件视频重建、预测和帧插值。引入自回归展开和自适应上下文切换以缓解长时间漂移，并通过重编码对齐与交叉残差校正确保双向一致性。该方法在长序列上实现了高数据效率和卓越感知质量，推动了事件相机流式视频分析的发展。",
+      "llm_tldr": "从稀疏事件流恢复高质量视频是一项挑战，现有回归方法模糊纹理，生成模型不稳定。本文提出LongE2V，利用预训练视频扩散模型同时处理事件视频重建、预测和帧插值。引入自回归展开和自适应上下文切换以缓解长时间漂移，并通过重编码对齐与交叉残差校正确保双向一致性。该方法在长序列上实现了高数据效率和卓越感知质量，推动了事件相机流式视频分析的发展。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.10495v1",
+      "source": "arxiv",
+      "title": "NanoVSR: Towards Real-Time Video Super-Resolution on Edge Devices",
+      "abstract": "Recent Video Super-Resolution (VSR) methods rely heavily on transformers and explicit optical flow, creating computational overhead and custom operations that hinder deployment on hardware accelerators like TensorRT. To address this, we introduce NanoVSR, a scalable, fully convolutional architecture designed for resource-constrained edge devices. Using structural reparameterization, NanoVSR collapses into standard convolutions during inference, ensuring seamless hardware compatibility and negligible runtime overhead. Furthermore, despite lacking explicit motion compensation, it maintains competitive restoration quality by implicitly learning spatio-temporal alignments through progressive training. Evaluated on the REDS4 benchmark, NanoVSR demonstrates an exceptional balance between accuracy and computational efficiency, significantly improving the trade-off for compact architectures. Our NanoVSR-644k baseline yields 28.64 dB PSNR while delivering 27.2 FPS on the NVIDIA Jetson Orin NX 16GB (25W), offering massive speed gains over heavier models. The scaled NanoVSR-1.7M variant reaches 29.15 dB with a throughput of 19.58 FPS, providing superior, edge-optimized upscaling. Code is available at https://github.com/filippawlicki/nanovsr.",
+      "authors": [
+        "Filip Pawlicki",
+        "Marcel Kańduła",
+        "Marcin Pucek",
+        "Kamil Dobies"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-11T22:01:26+00:00",
+      "link": "https://arxiv.org/pdf/2607.10495v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "real-time video super-resolution on edge devices",
+      "llm_evidence_cn": "边缘设备上的实时视频超分辨率",
+      "llm_evidence": "边缘设备上的实时视频超分辨率",
+      "canonical_evidence": "边缘设备上的实时视频超分辨率",
+      "llm_tldr_en": "NanoVSR is a fully convolutional architecture for real-time video super-resolution on resource-constrained edge devices, using structural reparameterization for efficient inference.",
+      "llm_tldr_cn": "现有视频超分辨率方法依赖变换器和光流，难以部署在边缘设备。本文提出NanoVSR，全卷积架构，利用结构重参数化在推理时折叠为标准卷积，实现实时超分辨率。即便没有显式运动补偿，通过渐进训练隐式学习时空对齐。在REDS4上展示了竞争性恢复质量和极低延迟，适合实时视频分析中的边缘部署。",
+      "llm_tldr": "现有视频超分辨率方法依赖变换器和光流，难以部署在边缘设备。本文提出NanoVSR，全卷积架构，利用结构重参数化在推理时折叠为标准卷积，实现实时超分辨率。即便没有显式运动补偿，通过渐进训练隐式学习时空对齐。在REDS4上展示了竞争性恢复质量和极低延迟，适合实时视频分析中的边缘部署。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.11356v1",
+      "source": "arxiv",
+      "title": "Benchmarking Edge Inference Strategies for Deep Learning Models in Industrial Machine Vision",
+      "abstract": "Edge deployment is often the preferred solution for industrial machine vision systems when low latency, data security, or limited connectivity are critical requirements. Several frameworks are available to optimise inference on edge devices; however, relatively few studies have systematically compared their inference-time performance under industrial deployment conditions.   In this work, we present a comparative study of four widely used approaches for machine vision inference in industrial settings: plain PyTorch, ONNX Runtime, OpenVINO, and TensorRT. The evaluation focuses on inference time, covers several CPU- and GPU-based hardware platforms, and includes both conventional convolutional neural networks and a transformer-based vision model. For the hardware platforms and models evaluated, the results show that OpenVINO achieves the lowest inference time on CPUs, while TensorRT achieves the lowest inference time on GPUs. However, TensorRT does not outperform plain PyTorch for the transformer-based model considered in this study.",
+      "authors": [
+        "Miguel Gomez Fernandez",
+        "David Castro Boga",
+        "Roi Mendez-Rial",
+        "Eric Lopez-Lopez"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-13T10:18:29+00:00",
+      "link": "https://arxiv.org/pdf/2607.11356v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "benchmarks edge inference strategies for model selection",
+      "llm_evidence_cn": "基准测试边缘推理策略以进行模型选择",
+      "llm_evidence": "基准测试边缘推理策略以进行模型选择",
+      "canonical_evidence": "基准测试边缘推理策略以进行模型选择",
+      "llm_tldr_en": "Systematically compares PyTorch, ONNX Runtime, OpenVINO, and TensorRT for machine vision inference on edge devices, providing actionable guidance for model selection.",
+      "llm_tldr_cn": "针对工业机器视觉中边缘部署的推理策略，本文系统比较了四种主流框架（PyTorch、ONNX Runtime、OpenVINO、TensorRT）在不同CPU和GPU平台上的推理时间。实验覆盖CNN和Transformer模型，揭示了不同框架的优劣，为边缘计算中的模型选择提供了实证依据。",
+      "llm_tldr": "针对工业机器视觉中边缘部署的推理策略，本文系统比较了四种主流框架（PyTorch、ONNX Runtime、OpenVINO、TensorRT）在不同CPU和GPU平台上的推理时间。实验覆盖CNN和Transformer模型，揭示了不同框架的优劣，为边缘计算中的模型选择提供了实证依据。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.10109v1",
+      "source": "arxiv",
+      "title": "Adaptive Model Compression (AMC): Saliency-Driven Resource Allocation for Ultra-Low-Power Transformer Inference",
+      "abstract": "Deploying large-scale transformer models on resource-constrained edge devices remains a challenge due to the high energy and memory overhead inherent in static inference, which processes simple and complex tokens with uniform intensity. To address this, we propose Adaptive Model Compression (AMC), a saliency-driven framework that dynamically allocates hardware resources based on token importance. By implementing a multi-tier architecture, our system identifies critical high-saliency information for full-precision processing while aggressively reducing the rank and bit-width of less significant data. Experimental results demonstrate that AMC achieves a 59.2% reduction in system energy and a 2.24x increase in throughput on 45nm CMOS hardware. This approach effectively extends the battery life of mobile devices by utilizing high-definition compute only where necessary, maintaining robust performance with a marginal 3.6% accuracy trade-off.",
+      "authors": [
+        "Jiayin Hu",
+        "Kai Yuan",
+        "Vanessa Hu",
+        "Xuetao Yin",
+        "Jianhua Li",
+        "Sean Suchter"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.AI",
+        "cs.AR",
+        "cs.LG"
+      ],
+      "published": "2026-07-11T04:05:26+00:00",
+      "link": "https://arxiv.org/pdf/2607.10109v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "saliency-driven resource allocation for edge device inference",
+      "llm_evidence_cn": "面向边缘设备的显著性驱动资源分配",
+      "llm_evidence": "面向边缘设备的显著性驱动资源分配",
+      "canonical_evidence": "面向边缘设备的显著性驱动资源分配",
+      "llm_tldr_en": "Adaptive Model Compression (AMC) uses saliency to dynamically allocate hardware resources for ultra-low-power transformer inference on edge devices, achieving 59.2% energy reduction and 2.24x throughput gain.",
+      "llm_tldr_cn": "针对大型Transformer模型在资源受限边缘设备上部署困难的问题，提出自适应模型压缩（AMC）框架，通过显著性驱动的多级架构，动态分配硬件资源：对高显著性的令牌进行全精度处理，对低显著性令牌降低秩和位宽。实验表明，AMC在边缘设备上实现了59.2%的系统能耗降低和2.24倍的吞吐量提升，为边缘计算中的模型选择与压缩提供了有效方案。",
+      "llm_tldr": "针对大型Transformer模型在资源受限边缘设备上部署困难的问题，提出自适应模型压缩（AMC）框架，通过显著性驱动的多级架构，动态分配硬件资源：对高显著性的令牌进行全精度处理，对低显著性令牌降低秩和位宽。实验表明，AMC在边缘设备上实现了59.2%的系统能耗降低和2.24倍的吞吐量提升，为边缘计算中的模型选择与压缩提供了有效方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.10098v1",
+      "source": "arxiv",
+      "title": "DynaFilter: Cloud-driven Dynamic Filtering for Satellite Edge Intelligence",
+      "abstract": "Modern satellite edge systems, including those performing remote sensing tasks such object detection and tracking, are characterized by severely limited bandwidth and intermittent connections, making continuous data transmission to the cloud impractical. Existing edge-cloud systems, however, either require heavy pre-processing before analysis, for instance, full decompression of imagery data, or transmit all compressed data regardless of relevance. To address these challenges, we design DynaFilter, a dynamic filtering technique that enables satellite edge devices to perform selective region-of-interest (RoI) inference directly in the compressed-domain, without full decompression. Our key insight is that low-level compression syntax, specifically DC coefficients/AC energy in JPEG images and motion vectors in video streams, exhibits strong correlations with high-level semantic queries. By establishing a precise mapping between cloud query semantics and multimodal compressed-domain features, DynaFilter enables the edge to identify and transmit only relevant data associated to RoIs. Extensive evaluations show that DynaFilter reduces the total volume of pixel data for decoding and subsequent inference by 1.6x-7.1x for images, and achieves 92.0% bandwidth savings for video streams compared to state-of-the-art baselines. Furthermore, it decreases energy consumption by 43.1-88.6% on target devices and achieves a 1.6x-3.0x speedup in inference latency.",
+      "authors": [
+        "Ziyang Zhang",
+        "Jie Liu",
+        "Luca Mottola"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-11T03:28:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.10098v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "dynamic filtering for satellite edge intelligence",
+      "llm_evidence_cn": "卫星边缘智能的动态过滤",
+      "llm_evidence": "卫星边缘智能的动态过滤",
+      "canonical_evidence": "卫星边缘智能的动态过滤",
+      "llm_tldr_en": "Designs DynaFilter for selective region-of-interest inference in compressed domain on satellite edge devices, avoiding full decompression and reducing bandwidth.",
+      "llm_tldr_cn": "本文针对卫星边缘系统带宽有限且链接间歇的问题，提出DynaFilter动态过滤技术。边缘设备在压缩域内直接进行感兴趣区域推理，无需完全解压。利用DC系数等低级语法实现高效选择。在遥感目标检测跟踪任务中显著降低传输数据量，同时保持高精度。适用于边缘视频分析中的选择性处理。",
+      "llm_tldr": "本文针对卫星边缘系统带宽有限且链接间歇的问题，提出DynaFilter动态过滤技术。边缘设备在压缩域内直接进行感兴趣区域推理，无需完全解压。利用DC系数等低级语法实现高效选择。在遥感目标检测跟踪任务中显著降低传输数据量，同时保持高精度。适用于边缘视频分析中的选择性处理。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.09081v1",
+      "source": "arxiv",
+      "title": "Adaptive Latent Trajectory Anchoring for Action Segmentation Dataset Condensation",
+      "abstract": "Dataset condensation for action segmentation synthesizes compact, informative representations of long, untrimmed video datasets. The existing approach relies on Variational Autoencoders and an iterative latent optimization; it is computationally expensive and suffers from over-smoothed reconstructions and rigid temporal constraints. This paper proposes to shift the condensation paradigm from optimization-based inversion to deterministic latent mapping. By leveraging Denoising Diffusion Implicit Models, we represent action segments as continuous trajectories anchored by sparse latent points in the noise manifold. To maximize representational efficiency, we introduce an adaptive allocation mechanism that dynamically redistributes the anchoring budget based on segment-wise reconstruction difficulty. Extensive experiments demonstrate that our framework significantly outperforms state-of-the-art methods in segmentation performance across common datasets. Notably, our approach achieves performance parity with real data training while maintaining a condensation ratio of 2.4\\% on Breakfast dataset.",
+      "authors": [
+        "Artheme Gauthier-Villar",
+        "Guodong Ding",
+        "Angela Yao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-10T04:00:26+00:00",
+      "link": "https://arxiv.org/pdf/2607.09081v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "action segmentation for video datasets",
+      "llm_evidence_cn": "视频动作分割任务",
+      "llm_evidence": "视频动作分割任务",
+      "canonical_evidence": "视频动作分割任务",
+      "llm_tldr_en": "Proposes adaptive latent trajectory anchoring using diffusion models for action segmentation dataset condensation, improving efficiency and representational quality.",
+      "llm_tldr_cn": "现有动作分割数据集浓缩方法基于变分自编码器和迭代优化，计算昂贵且重建过平滑。本文提出基于去噪扩散隐式模型的自适应潜在轨迹锚定方法，通过稀疏潜在点表示连续轨迹，并引入自适应分配机制动态调整锚点位置，提高了浓缩效率和表示质量。实验表明该方法在保持高保真度的同时显著降低计算开销，为视频分析中的数据压缩提供了新范式。",
+      "llm_tldr": "现有动作分割数据集浓缩方法基于变分自编码器和迭代优化，计算昂贵且重建过平滑。本文提出基于去噪扩散隐式模型的自适应潜在轨迹锚定方法，通过稀疏潜在点表示连续轨迹，并引入自适应分配机制动态调整锚点位置，提高了浓缩效率和表示质量。实验表明该方法在保持高保真度的同时显著降低计算开销，为视频分析中的数据压缩提供了新范式。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.10394v1",
+      "source": "arxiv",
+      "title": "CSI-Assisted Edge SLAM Testbed Platform for 5G Connected Unmanned Autonomous Vehicles",
+      "abstract": "The evolution from 5G towards 6G reinforces interest in connected robotics, where mobile robots offload compute-intensive tasks to edge servers over ultra-reliable low-latency communication (URLLC) links. Simultaneous localization and mapping (SLAM), a fundamental yet demanding robotics function, is increasingly considered for edge deployment within mobile edge computing (MEC) frameworks. In parallel, integrated sensing and communications (ISAC) enables the use of radio channel information, such as channel state information (CSI), as an additional sensing modality in radio-based SLAM. In this paper, we design and implement a CSI-assisted Edge SLAM testbed integrating a custom unmanned ground vehicle (UGV), a ROS2-based SLAM framework, and a 5G Open Radio Access Network (O-RAN) system. The proposed architecture provides an end-to-end, cross-layer view of ROS2 sensor data streaming over 5G, explicitly enabling CSI exposure and integration into the SLAM pipeline. We analyze ROS2 DDS communication, RTPS packetization, and 5G user-plane transport, and discuss mechanisms for CSI extraction and delivery via O-RAN components. The platform enables realistic experimentation with communication-aware SLAM and reveals key challenges related to latency, data streaming, synchronization, and cross-system integration, providing insights for future 6G-enabled robotic platforms.",
+      "authors": [
+        "Boris Radovanovic",
+        "Sasa Talosi",
+        "Srdjan Sobot",
+        "Dejan Vukobratovic"
+      ],
+      "primary_category": "cs.NI",
+      "categories": [
+        "cs.NI",
+        "cs.RO"
+      ],
+      "published": "2026-07-11T16:50:54+00:00",
+      "link": "https://arxiv.org/pdf/2607.10394v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Edge SLAM testbed within mobile edge computing framework for 5G connected vehicles",
+      "llm_evidence_cn": "在移动边缘计算框架内为5G连接车辆构建边缘SLAM测试平台",
+      "llm_evidence": "在移动边缘计算框架内为5G连接车辆构建边缘SLAM测试平台",
+      "canonical_evidence": "在移动边缘计算框架内为5G连接车辆构建边缘SLAM测试平台",
+      "llm_tldr_en": "Designs and implements a CSI-assisted Edge SLAM testbed integrating UGV, ROS2-based SLAM, and MEC, leveraging ISAC for enhanced sensing.",
+      "llm_tldr_cn": "针对5G连接机器人将计算任务卸载到边缘服务器的需求,设计和实现了CSI辅助边缘SLAM测试平台,结合无人地面车辆、ROS2 SLAM框架和移动边缘计算,利用集成感知与通信技术增强定位与建图能力,验证了MEC在机器人SLAM中的有效性。",
+      "llm_tldr": "针对5G连接机器人将计算任务卸载到边缘服务器的需求,设计和实现了CSI辅助边缘SLAM测试平台,结合无人地面车辆、ROS2 SLAM框架和移动边缘计算,利用集成感知与通信技术增强定位与建图能力,验证了MEC在机器人SLAM中的有效性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "mobile edge computing",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-07-07-736939-v1",
+      "source": "biorxiv",
+      "title": "InsectDCT: A generalized pipeline for detection, taxonomic classification, and tracking of insects in camera-trap recordings",
+      "abstract": "Automated monitoring of insect pollinators in natural environments with insect camera traps and trained deep learning algorithms provides novel data for insect ecological studies. However, efficient and accurate image recognition analysis of the recorded images or videos is challenging, particularly for images containing small insects against complex backgrounds with diverse vegetation communities. Even when insects can be detected in images, identifying their taxonomy remains difficult, particularly in footage with low image resolution, light conditions, and distances from the plants, and in cases where insects appear blurry or only partially visible. In this work, we present InsectDCT, an AI-based pipeline for automated detection, hierarchical classification, and tracking of insects in footage of natural vegetation tested in different environments. The InsectDCT pipeline consists of three levels: insect Detection and localization, hierarchical taxonomic Classification, and spatio-temporal Tracking. In the first stage, insects are detected in time-lapse images or video recordings using the You Only Look Once (YOLO11) object detection architecture. Detection performance is improved using motion-enhanced images, which improve robustness in cluttered and 3 dimensional environments. The detector is trained on an extensive dataset that contains more than 60,000 images collected using camera traps deployed across a wide range of plant families and floral habitats. In the second stage, detected insects are classified using a hierarchical taxonomy-aware classification framework that covers 80 taxonomic groups. Classification is performed at multiple taxonomic levels, including order, family, and genus/species, allowing coarse and fine-grained ecological analyzes while accounting for varying levels of visual ambiguity. In the third stage, a multi-object tracking module is applied to high temporal-resolution image sequences and video data to associate detections of the same individual across time. InsectDCT code and all datasets are made publicly available.",
+      "authors": [
+        "Bjerge, K.",
+        "Wogram, S. F. A.",
+        "Serra-Marin, P. E.",
+        "Sakhiashvili, O.",
+        "Hoye, T. T."
+      ],
+      "primary_category": "ecology",
+      "categories": [
+        "ecology"
+      ],
+      "published": "2026-07-10T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.07.736939v1.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "AI pipeline for insect detection and tracking in camera-trap videos",
+      "llm_evidence_cn": "相机陷阱视频中昆虫检测与跟踪的AI管道",
+      "llm_evidence": "相机陷阱视频中昆虫检测与跟踪的AI管道",
+      "canonical_evidence": "相机陷阱视频中昆虫检测与跟踪的AI管道",
+      "llm_tldr_en": "InsectDCT presents a generalized AI pipeline for detection, taxonomic classification, and tracking of insects in camera-trap recordings, addressing challenges like small size and complex backgrounds.",
+      "llm_tldr_cn": "自动监测昆虫传粉者需要高效准确的视频分析，但相机陷阱视频中小昆虫、复杂背景和低分辨率带来挑战。本文提出InsectDCT，一个通用的AI管道，用于昆虫检测、分类和跟踪。通过深度学习模型处理低质量图像，实现了在野外环境中的稳健识别，为生态视频分析提供了自动化工具。",
+      "llm_tldr": "自动监测昆虫传粉者需要高效准确的视频分析，但相机陷阱视频中小昆虫、复杂背景和低分辨率带来挑战。本文提出InsectDCT，一个通用的AI管道，用于昆虫检测、分类和跟踪。通过深度学习模型处理低质量图像，实现了在野外环境中的稳健识别，为生态视频分析提供了自动化工具。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-07-09-733739-v1",
+      "source": "biorxiv",
+      "title": "Optimizing automated classification for zooplankton in coastal conditions: the impact of model selection, imaging instruments, and colour information",
+      "abstract": "The advancement in deep learning techniques has made Convolutional Neural Networks (CNNs) a powerful tool for the fully automated classification of zooplankton images. In this study, we systematically investigate how network selection, colour information and differences in imaging instruments affect the classification of zooplankton images by comparing multiple state-of-the-art CNNs on images of zooplankton and marine snow from the in situ Continuous Particle Imaging and Classification Sensor (CPICS), Video Plankton Recorder (VPR), In Situ Ichtyoplankton Imaging System (ISIIS), and the on-board Plankton Imager (Pi-10). With differences between models of 7.8 to 19% in F1 score, we find that model selection strongly affects the classification performance, with EfficientNetV2S showing the most reliable overall performance. Moreover, differences between model architectures are largest for the least abundant classes (<100 labeled images), which implies that when these are present, careful model selection is most beneficial. The high image quality of the Pi-10 strongly increases the performance for the least abundant classes compared to the other instruments. In addition, we find a significant correlation (r = 0.597) between ImageNet the performance and F1-score on zooplankton images, which implies that more generally, a model that performs well on ImageNet will perform well for zooplankton classification. Colour information increases the F1-score of the best performing classifier with 2.8%, but provides a stronger benefit (25% F1-score) for classes with <100 images. The overall performance increase of colour information is less than expected and questions the advantage of recording colour information for zooplankton.",
+      "authors": [
+        "Hovenkamp, P. D. L.",
+        "van Walraven, L.",
+        "Ollevier, A.",
+        "van Oevelen, D.",
+        "van der Stappen, A. F."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-07-13T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.09.733739v1.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "model selection for classification of zooplankton images",
+      "llm_evidence_cn": "模型选择在浮游动物图像分类中的影响",
+      "llm_evidence": "模型选择在浮游动物图像分类中的影响",
+      "canonical_evidence": "模型选择在浮游动物图像分类中的影响",
+      "llm_tldr_en": "Investigates model selection for zooplankton classification, comparing multiple CNNs and imaging instruments, showing up to 19% F1 difference.",
+      "llm_tldr_cn": "本文系统研究了模型选择、颜色信息和成像仪器对浮游动物自动分类的影响。通过对比多种CNN在四个成像仪器上的表现，发现模型选择对F1分数影响高达19%。结果强调了根据具体仪器和任务选择合适模型的重要性，为部署分类系统提供了指导。",
+      "llm_tldr": "本文系统研究了模型选择、颜色信息和成像仪器对浮游动物自动分类的影响。通过对比多种CNN在四个成像仪器上的表现，发现模型选择对F1分数影响高达19%。结果强调了根据具体仪器和任务选择合适模型的重要性，为部署分类系统提供了指导。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

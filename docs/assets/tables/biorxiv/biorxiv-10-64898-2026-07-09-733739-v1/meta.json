@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "tables": [
+    {
+      "url": "assets/tables/biorxiv/biorxiv-10-64898-2026-07-09-733739-v1/table-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 1632,
+      "height": 1117,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/biorxiv/biorxiv-10-64898-2026-07-09-733739-v1/table-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 1716,
+      "height": 1821,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/biorxiv/biorxiv-10-64898-2026-07-09-733739-v1/table-003.webp",
+      "caption": "",
+      "page": 0,
+      "index": 3,
+      "width": 840,
+      "height": 973,
+      "label": "Table"
+    }
+  ]
+}

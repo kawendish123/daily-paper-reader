@@ -6,42 +6,49 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-13
-- 运行时间：2026-07-13 20:55:22 UTC
+- 最新运行日期：2026-07-14
+- 运行时间：2026-07-14 21:40:04 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：1
+- 本次总论文数：9
+- 精读区：4
 - 速读区：5
 
 ### 今日简报（AI）
-今日精读1篇高分论文，速读5篇，聚焦无人机MEC网络切片与多设备LLM推理。
-
-最值得关注多智能体强化学习在SLA感知网络切片中的应用，以及弹性多设备LLM推理的Edge Intelligence方案。
-
-建议关注边缘计算与多模态异常检测的交叉进展，可深入研读精读论文的算法设计。
-- 详情：[/202607/13/README](/202607/13/README)
+今日精读两篇高分论文，分别聚焦事件相机视频重建与边缘设备实时超分。  
+最值得关注方向：事件相机视频生成（LongE2V）与边缘超分辨率（NanoVSR），均获9.0分评价。  
+建议优先精读这两篇，再速读边缘智能与SLAM相关论文以拓展视野。
+- 详情：[/202607/14/README](/202607/14/README)
 
 ### 精读区论文标签
-1. [Multi-Agent Reinforcement Learning for SLA-Aware Network Slicing in UAV-Enabled MEC](/202607/13/2607.09295v1-multi-agent-reinforcement-learning-for-sla-aware-network-slicing-in-uav-enabled-mec)  
+1. [LongE2V: Long-Horizon Event-based Video Reconstruction, Prediction, and Frame Interpolation with Video Diffusion Models](/202607/14/2607.08770v1-longe2v-long-horizon-event-based-video-reconstruction-prediction-and-frame-interpolation-with-video-diffusion-models)  
    标签：评分：9.0/10、query:mec-video
-   evidence：无人机移动边缘计算中面向SLA感知网络切分的多智能体强化学习
+   evidence：基于事件的长序列视频重建与预测
+2. [NanoVSR: Towards Real-Time Video Super-Resolution on Edge Devices](/202607/14/2607.10495v1-nanovsr-towards-real-time-video-super-resolution-on-edge-devices)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：边缘设备上的实时视频超分辨率
+3. [Benchmarking Edge Inference Strategies for Deep Learning Models in Industrial Machine Vision](/202607/14/2607.11356v1-benchmarking-edge-inference-strategies-for-deep-learning-models-in-industrial-machine-vision)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：基准测试边缘推理策略以进行模型选择
+4. [Adaptive Model Compression (AMC): Saliency-Driven Resource Allocation for Ultra-Low-Power Transformer Inference](/202607/14/2607.10109v1-adaptive-model-compression-amc-saliency-driven-resource-allocation-for-ultra-low-power-transformer-inference)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：面向边缘设备的显著性驱动资源分配
 
 ### 速读区论文标签
-1. [Voltron: Enabling Elastic Multi-Device Execution of LLM Inference for Empowered Edge Intelligence](/202607/13/2607.07046v1-voltron-enabling-elastic-multi-device-execution-of-llm-inference-for-empowered-edge-intelligence)  
+1. [DynaFilter: Cloud-driven Dynamic Filtering for Satellite Edge Intelligence](/202607/14/2607.10098v1-dynafilter-cloud-driven-dynamic-filtering-for-satellite-edge-intelligence)  
    标签：评分：7.0/10、query:mec-video
-   evidence：支持在边缘端弹性多设备执行大语言模型推理
-2. [Event Stream based Multi-Modal Video Anomaly Detection: A Benchmark Dataset and Algorithms](/202607/13/2607.09114v1-event-stream-based-multi-modal-video-anomaly-detection-a-benchmark-dataset-and-algorithms)  
+   evidence：卫星边缘智能的动态过滤
+2. [CSI-Assisted Edge SLAM Testbed Platform for 5G Connected Unmanned Autonomous Vehicles](/202607/14/2607.10394v1-csi-assisted-edge-slam-testbed-platform-for-5g-connected-unmanned-autonomous-vehicles)  
    标签：评分：7.0/10、query:mec-video
-   evidence：使用事件流和视频流的视频异常检测
-3. [Perceiving Better Moments: Cover Frame Reselection and Enhancement for Live Photos with the Live2K Dataset](/202607/13/2607.04151v1-perceiving-better-moments-cover-frame-reselection-and-enhancement-for-live-photos-with-the-live2k-dataset)  
+   evidence：在移动边缘计算框架内为5G连接车辆构建边缘SLAM测试平台
+3. [Adaptive Latent Trajectory Anchoring for Action Segmentation Dataset Condensation](/202607/14/2607.09081v1-adaptive-latent-trajectory-anchoring-for-action-segmentation-dataset-condensation)  
    标签：评分：6.0/10、query:mec-video
-   evidence：实时视频处理中的封面帧重选与增强
-4. [DiffCVE: Diffusion-based Compressed Video Enhancement](/202607/13/2607.07195v1-diffcve-diffusion-based-compressed-video-enhancement)  
+   evidence：视频动作分割任务
+4. [InsectDCT: A generalized pipeline for detection, taxonomic classification, and tracking of insects in camera-trap recordings](/202607/14/biorxiv-10-64898-2026-07-07-736939-v1-insectdct-a-generalized-pipeline-for-detection-taxonomic-classification-and-tracking-of-insects-in-camera-trap-recordings)  
    标签：评分：6.0/10、query:mec-video
-   evidence：基于扩散模型的压缩视频增强用于实时处理
-5. [EcoKube: Simulating Carbon-Aware Scheduling Policies in Heterogeneous Edge-Cloud Environments](/202607/13/2607.09318v1-ecokube-simulating-carbon-aware-scheduling-policies-in-heterogeneous-edge-cloud-environments)  
+   evidence：相机陷阱视频中昆虫检测与跟踪的AI管道
+5. [Optimizing automated classification for zooplankton in coastal conditions: the impact of model selection, imaging instruments, and colour information](/202607/14/biorxiv-10-64898-2026-07-09-733739-v1-optimizing-automated-classification-for-zooplankton-in-coastal-conditions-the-impact-of-model-selection-imaging-instruments-and-colour-information)  
    标签：评分：6.0/10、query:mec-video
-   evidence：在异构边缘-云环境中模拟碳感知调度策略
+   evidence：模型选择在浮游动物图像分类中的影响
 
 
 <div class="dpr-home-promo-card">
