@@ -1,0 +1,3549 @@
+Title: FERAL: A Supervised Video-Understanding System for Direct Video-to-Behavior Mapping
+
+URL Source: https://www.biorxiv.org/content/10.1101/2025.11.16.688666v2.full.pdf
+
+Number of Pages: 77
+
+Markdown Content:
+# FERAL: a supervised video-understanding system for direct video-to-behavior mapping 
+
+Peter Skovorodnikov 1,2,†,* , Jacopo Razzauti 1,3,†,* , Blair R. Costelloe 4,5,6 , Friederike Buck 7 , Vikram Chandra 8,9 , Dominic D. Frank 8 , Tomas Kay 8 , Benjamin Koger 10,11 ,Orli Snir 8,12 , Janet Zhao 8 , Iain D. Couzin 4,5,6 , Daniel J.C. Kronauer 8,13 , Leslie B. Vosshall 1,13,14  
+
+> 1
+
+Laboratory of Neurogenetics and Behavior, The Rockefeller University, New York, NY, USA  
+
+> 2
+
+Data Science Platform, The Rockefeller University, New York, NY, USA  
+
+> 3
+
+The Price Family Center for the Social Brain, The Rockefeller University, New York, NY, USA  
+
+> 4
+
+Department of Collective Behaviour, Max Planck Institute of Animal Behavior, Konstanz, Germany  
+
+> 5
+
+Department of Biology, University of Konstanz, Konstanz, Germany  
+
+> 6
+
+Centre for the Advanced Study of Collective Behaviour, University of Konstanz, Germany  
+
+> 7
+
+Lulu and Anthony Wang Laboratory of Neural Circuits and Behavior, The Rockefeller University, New York, NY, USA  
+
+> 8
+
+Laboratory of Social Evolution and Behavior, The Rockefeller University, New York, NY, USA  
+
+> 9
+
+Department of Organismic and Evolutionary Biology, Museum of Comparative Zoology, Harvard University, Cambridge, MA, USA  
+
+> 10
+
+School of Computing, University of Wyoming, Laramie, WY, USA  
+
+> 11
+
+Department of Zoology and Physiology, University of Wyoming, Laramie, WY, USA  
+
+> 12
+
+Department of Entomology, Institute of Environmental Sciences, The Robert H. Smith Faculty of Agriculture, Food and Environment, The Hebrew University of Jerusalem, Rehovot, Israel  
+
+> 13
+
+Howard Hughes Medical Institute, New York, NY, USA  
+
+> 14
+
+Kavli Neural Systems Institute, New York, NY 10065, USA 
+
+> †
+
+These authors contributed equally. 
+
+Correspondence: peter.skovorodnikov@gmail.com, jacopo.razza@gmail.com 
+
+1
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+ABSTRACT 
+
+Quantifying animal behavior often requires segmenting continuous actions into discrete, interpretable states, yet most automated pipelines infer actions from keypoint dynamics and are limited by keypoint tracking quality. Here we present FERAL (Feature Extrac-tion for Recognition of Animal Locomotion), a supervised video-understanding toolkit that maps raw video directly to frame-level behavioral labels, bypassing the keypoint-extraction and pose-classification stages of conventional pipelines. Across benchmarks, FERAL matches or exceeds state-of-the-art pose- and video-based baselines. On the CalMS21 mouse social-interaction benchmark, it exceeds Google’s VideoPrism using only a quarter of the training data. FERAL generalizes across species (apes, zebras, mice, ants, flies, and nematodes), recording conditions, and levels of organization, from single animals to social interactions and colony-scale collective behavior. Released as a user-friendly, open-source package, it integrates with existing analysis pipelines. By enabling scalable, species-agnostic behavioral quantification directly from raw video, FERAL broadens the experimental paradigms available for studying animal behavior. 
+
+1
+
+## INTRODUCTION 
+
+Animal behavior unfolds continuously in time, yet is often parsed into discrete, human-2
+
+interpreted actions [1–4]. Since the earliest days of ethology, researchers have identified 3
+
+these actions through naturalistic observation and manual annotation [5, 6], establishing the 4
+
+foundation of modern behavioral science [3, 7, 8]. Such analyses have been essential across 5
+
+disciplines, informing research in ecology [9], neuroscience [10], neurodegenerative disease 6
+
+modeling, and drug discovery for disorders with observable behavioral phenotypes. 7
+
+The advent of videotaping in the mid-1980s enabled the quantification of behavior with 8
+
+greater temporal resolution than possible by direct observation alone. Manual annotation 9
+
+remains the most versatile method for quantifying recorded behavior, adapting to scene com-10 
+
+plexities that range from controlled arenas to field recordings. However, manual annotation is 11 
+
+labor-intensive and subjective, and remains the main bottleneck in scaling behavioral research. 12 
+
+This burden can be alleviated either by reducing the per-frame labeling cost or by shifting it 13 
+
+to the training stage of a classifier that generalizes across recordings [11–13]. Advances in 14 
+
+computer vision have partially mitigated this limitation through markerless tracking tools 15 
+
+2
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+such as DeepLabCut [14], SLEAP [15], and LightningPose [16], which estimate the positions 16 
+
+of animals and their body parts over time [17, 18] without the need to label keypoints on the 17 
+
+animal manually. These tools have transformed behavioral analysis in laboratory settings and 18 
+
+allow scientists to reliably and continuously analyze fine kinematics that are often required 19 
+
+to understand the neural basis of behaviors. However, these keypoint-detection tools often 20 
+
+require tightly controlled imaging conditions and an experimental setup that minimizes 21 
+
+obstructions of such keypoints. These approaches can fail in more naturalistic and noisy 22 
+
+environments, forcing researchers to simplify behavioral assays (e.g., by tethering animals, 23 
+
+reducing their movements across planes, conducting experiments in a featureless environ-24 
+
+ment with uniform backgrounds, or designing experiment-specific arenas), rely on manual 25 
+
+annotation, or abandon experiments involving complex environments or free movement 26 
+
+altogether. Importantly, these methods track where animals (and their body parts) are, but 27 
+
+not what actions they are performing. 28 
+
+Automatically determining the actions animals are engaged in remains a greater challenge. 29 
+
+Pose-based pipelines have advanced two complementary approaches: unsupervised discovery 30 
+
+of behavioral repertoires from kinematic motifs (keypoint-MoSeq [19], B-SOiD [20], VAME 31 
+
+[21]) and supervised recognition of pre-defined categories (MARS [11], JAABA [22], SimBA 32 
+
+[23]). The former is ideal for identifying novel structure in behavioral dynamics where such 33 
+
+behaviors depend on the actual pose and spatial organization of animals and their body parts, 34 
+
+while the latter is ideal for scaling up the temporal segmentation of specific behaviors when 35 
+
+keypoint dynamics are sufficient for reliable detection. 36 
+
+The performance of these approaches, however, depends on the confidence of keypoint 37 
+
+detection, and the skeletonized representations they require discard contextual information 38 
+
+that can be essential for accurate behavioral interpretation. As the complexity of behavioral 39 
+
+organization increases, such as in social or collective dynamics, pose-based pipelines become 40 
+
+increasingly demanding, requiring multi-animal tracking and extensive post-tracking curation 41 
+
+3
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+(Figure 1a ). In many cases, the visual cues that define a behavior are well established, and 42 
+
+researchers primarily need a scalable, automated way to recognize them across large datasets. 43 
+
+DeepEthogram [24] was among the first supervised deep-learning toolkits to produce frame-44 
+
+level behavioral sequences directly from raw pixels rather than pose. More recent video-45 
+
+foundation-model approaches — DAP [25], ChimpVLM [26], and PriVi [27] — have pushed 46 
+
+this pixel-input direction further, but all three are developed and evaluated on primates 47 
+
+and have not been shown to generalize across species. Other efforts have applied video 48 
+
+foundation models more broadly to animal behavior [28–30], and recent benchmarks have 49 
+
+begun to evaluate video models across scientific domains [31]. However, these remain largely 50 
+
+analyses or benchmarks rather than deployable tools: to date, no pixel-input pipeline has 51 
+
+been released as a general-purpose, species-agnostic behavioral toolkit spanning recording 52 
+
+modalities (e.g., lab, drone, camera-trap) and levels of behavioral organization (e.g., single-53 
+
+animal, pair, collective). 54 
+
+To bridge this gap, we developed FERAL (Feature Extraction for Recognition of Animal 55 
+
+Locomotion), a supervised video-understanding system that learns behavior directly from 56 
+
+raw video frames, bypassing the need for pose estimation while preserving full temporal 57 
+
+and visual information ( Figure 1b ). This approach is particularly advantageous when pose 58 
+
+estimation is unreliable or unnecessary for the desired analysis. FERAL can operate either 59 
+
+alongside or independently of existing pose-based frameworks, providing a single, integrated 60 
+
+tool for behavioral segmentation. 61 
+
+Leveraging a pretrained video foundation model [32, 33], FERAL integrates motion and 62 
+
+visual cues within a unified architecture. Trained directly on videos aligned with user-63 
+
+provided annotations, it detects discrete actions and outputs frame-level behavioral time-64 
+
+series (i.e., segmentations over a user-supplied ethogram, the list of behavior categories of 65 
+
+interest) that reliably capture discrete animal behavior. 66 
+
+On benchmarking datasets, FERAL matches or exceeds state-of-the-art pose- and video-67 
+
+4
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+based baselines under matched evaluation protocols. It generalizes robustly across datasets 68 
+
+spanning diverse species, recording modalities (from controlled laboratory conditions to field 69 
+
+and aerial footage), and levels of behavioral organization: from single-animal locomotion in 70 
+
+the nematode Caenorhabditis elegans (hereafter C. elegans ) and the fly Drosophila melanogaster to 71 
+
+social interactions and collective behavior in rodents, ants, and apes. These results demonstrate 72 
+
+that FERAL maintains high performance even in scenarios where traditional pipelines typically 73 
+
+struggle. For instance, FERAL makes analysis of behaviors involving interaction of animals 74 
+
+either with each other or with their environments much more feasible. 75 
+
+Designed for accessibility, FERAL combines preprocessing, training, and inference within 76 
+
+a modular workflow requiring minimal coding expertise and at a cost accessible to most 77 
+
+researchers. With only a few commands, it can be run locally or on cloud platforms such as 78 
+
+Google Colab, providing a scalable, context-aware foundation for modern behavioral science. 79 
+
+## RESULTS Direct video-to-behavior mapping with FERAL 80 
+
+FERAL provides a user-friendly workflow that takes raw videos and behavioral annotations 81 
+
+as inputs, fine-tunes an open-source video-understanding model, and outputs frame-level 82 
+
+behavioral labels (ethograms). To ensure reproducibility across laboratories and recording 83 
+
+setups, the pipeline standardizes both inputs (videos and labels) into a common format. 84 
+
+The first stage is video preprocessing . Because video-understanding models operate on 85 
+
+relatively low-resolution inputs (e.g., by default 256 × 256 pixels for the V-JEPA 2 backbone), 86 
+
+input videos must be resized and re-encoded into seekable formats to enable efficient frame 87 
+
+sampling [32, 34]. Within FERAL, this feature operates on Linux and Windows operating 88 
+
+systems to automate this process, producing standardized inputs regardless of the original 89 
+
+recording format ( Figure 1c ). 90 
+
+The second stage, label preparation , converts behavioral annotations from diverse software 91 
+
+5
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Figure 1: Overview of the FERAL workflow (a–b) Two routes from raw video to behavioral segmentation: the conventional pose-based pipeline (a) versus the FERAL approach (b). (c) 
+
+Preprocessing : raw videos are resized and re-encoded into standardized, seekable inputs. User annotations are converted to a common frame-aligned JSON schema (class names and per-frame label arrays). (d) FERAL backend : videos are divided into overlapping temporal segments. Chunks are then embedded by a pretrained video encoder (e.g., V-JEPA 2); attention pooling aggregates spatiotemporal features, and a lightweight classification head is jointly fine-tuned on the user-supplied frame-level labels. Overlapping predictions are ensembled to produce stable frame-level probabilities. 6
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+(e.g., BORIS [35], EthoVision [36]) into a consistent schema [35, 37]. The annotations provided 92 
+
+by the user, often timestamp-based, are converted into JSON files that map every video frame 93 
+
+to one (single class) or more (multiclass) categorical behavioral labels. In practice, users 94 
+
+need only a folder of videos and a corresponding label file to initiate training and inference 95 
+
+(Figure 1c ). 96 
+
+Because full-length video recordings cannot be processed in a single pass due to computa-97 
+
+tional limitations of the backbone model, FERAL divides each video into overlapping temporal 98 
+
+chunks that are independently processed, and corresponding predictions are subsequently 99 
+
+ensembled ( Figure 1d ). This design minimizes misclassification at behavioral boundaries and 100 
+
+maintains temporal continuity by ensuring that each short behavior is fully captured within 101 
+
+at least one chunk. 102 
+
+After evaluating several potential backbones, we adopted V-JEPA 2 for the FERAL default 103 
+
+configuration [32]. V-JEPA 2 is a foundation model from Meta Fundamental AI Research 104 
+
+(see Methods). Pretrained on over one million hours of internet video with a self-supervised 105 
+
+masked-prediction objective, V-JEPA 2 yields spatiotemporal embeddings that transfer to 106 
+
+downstream video-understanding tasks. Within FERAL, we fine-tune the upper twelve of 107 
+
+twenty-four transformer layers using user-supplied videos and labels, aligning pretrained 108 
+
+representations with the specific demands of behavioral segmentation rather than retraining 109 
+
+from scratch [38] ( Figure 1d ). 110 
+
+To generate frame-level predictions, FERAL extends the encoder with an attention-based 111 
+
+pooling module and a classification head. Each video chunk is represented as a sequence of 112 
+
+spatiotemporal tokens that are integrated by a transformer, then compressed via attention 113 
+
+pooling into temporally aligned embeddings. These embeddings are normalized and linearly 114 
+
+projected into class logits, producing frame-wise probabilities that are ensembled across 115 
+
+overlapping segments. 116 
+
+The resulting outputs are interpretable frame-level behavioral time-series that describe 117 
+
+7
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+what actions animals are performing at each frame. These can be visualized directly or 118 
+
+integrated into downstream analyses. Model weights are automatically saved, allowing 119 
+
+users to reuse or fine-tune trained networks on new datasets without retraining from scratch 120 
+
+(Figure 1d ). 121 
+
+## FERAL outperforms state-of-the-art methods across benchmarks 122 
+
+To evaluate FERAL’s precision and robustness relative to existing approaches, we benchmarked 123 
+
+its performance on established datasets that provide raw videos aligned with frame-level 124 
+
+behavioral annotations. The first, the Caltech Mouse Social Interactions (CalMS21) dataset 125 
+
+[39], contains recordings of freely behaving mice ( Mus musculus ) engaged in resident–intruder 126 
+
+assays, paired with both tracked poses and expert behavioral labels ( Figure 2a ). 127 
+
+Originally introduced as a community challenge for the classification of social behavior, the 128 
+
+CalMS21 dataset included multiple baseline models and public submissions. We compared 129 
+
+FERAL against a suite of alternative pose- and video-based approaches using mean average 130 
+
+precision (mAP), the official metric of the original challenge. A random classifier would get 131 
+
+13.5% mAP while a perfect one would achieve 100% mAP. The strongest released baseline, 132 
+
+in addition to the labeled behavioral dataset, employed self-supervised pretraining on large 133 
+
+sets of unlabeled pose trajectories [39]. We also report the Competition Top-1 entry from the 134 
+
+official leaderboard, results from Google’s VideoPrism paper [33], Task Programming [40], 135 
+
+VJEPA-H [31] and TRACE [41]. To accommodate compute and runtime limitations of more 136 
+
+users and make our tool more broadly accessible, we are providing and benchmarking three 137 
+
+distinct configurations for FERAL: lite , default , and max . We discuss GPU VRAM requirements, 138 
+
+runtimes, and performance for each of these configurations in the Methods section. 139 
+
+FERAL default reached 94.2% mAP on CalMS21 ( Figure 2b-c, Supplementary Video 1 ), 140 
+
+exceeding the Sun et al. 2021 [39] self-supervised pose-pretraining baseline, the MABe 2021 141 
+
+challenge Top-1, and results from the VideoPrism paper [33]; all the numbers are mAP under 142 
+
+8
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Figure 2: FERAL matches or exceeds state-of-the-art baselines across benchmarks. (a) 
+
+Example frames and corresponding behavioral classes from the CalMS21 dataset. (b) 
+
+Representative frame-level behavioral time-series comparing FERAL predictions (bottom) to ground truth (top). (c) Mean average precision (mAP) across models on the CalMS21 dataset including 3 FERAL configurations. (d) Fraction of per-class mismatched frames across all CalMS21 videos. (e) Confusion matrix of frame-level predictions versus ground truth. (f) 
+
+Comparison between ground-truth and predicted frame counts for each behavioral category across videos. (g) Data-efficiency analysis showing mean average precision (mAP) as a function of the percentage of training data. VideoPrism’s performance is taken from the original paper. (h) FERAL performance on frames binned by annotator agreement. (i) 
+
+Data-efficiency analysis showing Macro F1 as a function of used behavioral bouts for training. 9
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+the original CalMS21 challenge protocol. To isolate the contribution of our fine-tuning protocol 143 
+
+from that of the backbone itself, we additionally evaluated FERAL using the VideoPrism, 144 
+
+V-JEPA 2 and V-JEPA 2.1 backbones and present results in Table 6 .145 
+
+FERAL also maintained consistent performance across all test CalMS21 mouse videos, 146 
+
+correctly classifying the majority of the frames within each sequence ( Figure 2d ). Confusion-147 
+
+matrix analysis showed that residual errors were mostly confined to confusion between 148 
+
+“background” and “investigate” categories, indicating occasional uncertainty in distinguishing 149 
+
+background periods from subtle actions ( Figure 2e ). Quantitative comparison of predicted 150 
+
+and annotated total behavior durations per video confirmed high agreement across all labeled 151 
+
+behavioral categories, demonstrating that FERAL accurately preserved both the temporal 152 
+
+structure and balance between classes of the annotated behavioral data ( Figure 2f ). 153 
+
+To assess how much labeled data FERAL requires to achieve strong performance, we 154 
+
+progressively subsampled the training set of CalMS21 at the chunk level (i.e., randomly 155 
+
+retaining a fraction of training chunks; see Methods, Data efficiency). FERAL achieved a mAP 156 
+
+of 92.8% using only 50% of the available training data and 92.1% with 25%, already surpassing 157 
+
+both the VideoPrism and Competition Top-1 models trained on the full dataset. Even when 158 
+
+trained with only 12% of the data, performance remained high (89.0%), and robust mAP was 159 
+
+maintained down to 5% (84.6%) and 2.5% (82.6%). At the lowest sampling level (1%), FERAL 160 
+
+still achieved 60.0%, demonstrating strong data efficiency ( Figure 2g ). These results highlight 161 
+
+that FERAL achieves high and stable performance with minimal annotation effort. 162 
+
+The second benchmarking dataset, MABe22 (Multi-Agent Behavior 2022) [42], is a large-163 
+
+scale, multi-species collection of datasets, each annotated across diverse behavioral categories. 164 
+
+Among the MABe22 datasets, we evaluated FERAL on the rove beetle ( Sceptobius lativentris )165 
+
+subset, comprising a beetle interacting one-on-one with its host ant ( Liometopum occidentale ). 166 
+
+We focused on this subset because it pairs raw video with fully released, frame-level multi-167 
+
+class behavior annotations for a non-mammalian, symbiotic interaction. For the rove-beetle 168 
+
+10 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+subset of MABe22, we evaluated FERAL’s frame-level predictions against expert annotations 169 
+
+using the macro-averaged (macro) F1 score, following the evaluation protocol of the original 170 
+
+publication. Macro-averaged F1 score is defined as the average of F1 scores for each behavior, 171 
+
+where F1 is 172 
+
+퐹1 = 2 
+
+> 1
+> precision
+
++ 1
+
+> recall
+
+= 2 · true positives 
+
+2 · true positives + false positives + false negatives 
+
+173 
+
+On MABe22, a random classifier achieves a macro-averaged F1 score of 0.24, while a perfect 174 
+
+classifier achieves a macro-averaged F1 score of 1.0. The top-performing submission in the 175 
+
+MABe22 challenge (Multimodal MoCo / SimCLR) achieved a macro F1 of 0.758 (Sun et al. 176 
+
+2023, Table 5) [42], which we adopt as the reference. Note that in the competition, the partici-177 
+
+pants did not have access to the labeled data for the target behaviors during model training, 178 
+
+and the labels were predicted by training a linear probe on top of frozen embeddings. So 179 
+
+FERAL, which is trained directly on the target behavior labels, is expected to achieve higher 180 
+
+performance. FERAL achieved macro F1 of 0.92, extending high performance from mam-181 
+
+malian social behavior to multi-animal interactions between rove beetles and ants. Although 182 
+
+this comparison is therefore not directly equivalent to the original MABe22 challenge protocol, 183 
+
+it demonstrates that FERAL achieves high performance when trained directly on the available 184 
+
+target-behavior labels. 185 
+
+We further benchmarked FERAL against DeepEthogram[24], the closest existing tool 186 
+
+for direct video-to-behavior classification. Using DeepEthogram’s datasets and its headline 187 
+
+metric, the frame-level F1 score (micro-averaged over all frames; for FERAL’s single-label 188 
+
+predictions this is equivalent to top-1 accuracy), we reconverted six of its datasets (Mouse-189 
+
+Social, Mouse-Homecage, Mouse-Openfield, Mouse-Ventral1, Mouse-Ventral2, and Fly) into 190 
+
+FERAL’s input format and trained a FERAL model on each of them. The DeepEthogram 191 
+
+frame-level F1 values used in this comparison were read from Bohnslav et al. 2021 (Figure 3) 192 
+
+[24] and cross-checked against the per-dataset scores kindly provided by the original authors. 193 
+
+11 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+FERAL matched or exceeded DeepEthogram’s frame-level F1 on five of six datasets, 194 
+
+trailing only on Mouse-Social by 0.024 ( Table 1 ). Bohnslav et al. 2021 [24] report a per-frame 195 
+
+human-versus-consensus agreement for their five mouse datasets; FERAL exceeded it on 196 
+
+four (Mouse-Homecage, Mouse-Openfield, Mouse-Ventral1, and Mouse-Ventral2), and on 197 
+
+Mouse-Social its score (0.896) fell just short of both DeepEthogram and the human ceiling 198 
+
+(∼0.92). 199 
+
+Dataset FERAL DeepEthogram Human-vs-consensus Mouse-Social 0.896 0.920 ≥0.910 Mouse-Homecage 0.905 0.760 ≥0.700 Mouse-Openfield 0.883 0.870 ≥0.790 Mouse-Ventral1 0.943 0.910 ≥0.900 Mouse-Ventral2 0.978 0.970 ≥0.960 Fly 0.950 0.940 —
+
+Table 1: FERAL versus DeepEthogram on the six original DeepEthogram datasets. Values are frame-level F1 (micro-averaged over all frames); for FERAL’s single-label predictions this equals top-1 accuracy. Human-vs-consensus is the per-frame human agreement reported by Bohnslav et al. 2021 (available for the five mouse datasets only). Bold marks the higher value in each pairwise FERAL–DeepEthogram comparison. FERAL values were regenerated from the reconverted datasets using stratified splits in which every behavior is represented in the training and test partitions; Mouse-Ventral1 reuses the original DeepEthogram split, and Mouse-Ventral2 and Mouse-Social report the mean of three stratified splits (see Methods). To assess whether FERAL’s residual errors track the disagreement between annotators 200 
+
+rather than systematic bias, we stratified Mouse-Ventral1 test frames by per-frame inter-201 
+
+annotator agreement and evaluated a FERAL model trained on annotator 1’s labels against 202 
+
+those same annotator 1 labels ([24]). Accuracy with respect to annotator 1’s labels fell as 203 
+
+human agreement fell: 98.9% on frames where all three annotators agree, 94.0% where two 204 
+
+of three agree, and only 27.5% on the 0.7% of frames where all three disagree ( Figure 2h ). 205 
+
+Because accuracy is scored against annotator 1’s labels, the low value on the fully-disagreed 206 
+
+frames is expected—these are the most ambiguous frames, where even annotator 1’s own 207 
+
+label is unreliable—and shows that model error tracks genuine human label noise rather than 208 
+
+introducing systematic annotator-specific bias. A complementary cross-annotator analysis 209 
+
+12 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+on the same Mouse-Ventral1 data showed that model–annotator agreement tracked, and 210 
+
+stayed at or just below, human–human agreement across every annotator pair: for the two 211 
+
+concordant annotators (1 and 2), a FERAL model trained on annotator 1 reached a macro 212 
+
+F1 of 0.59 against annotator 2, close to the 0.61 the two humans achieved with each other, 213 
+
+whereas agreement with the more idiosyncratic annotator 3 was similarly low for both the 214 
+
+model (0.32–0.37) and the humans (0.38–0.43) ( Extended Figure 1 d). FERAL therefore learns 215 
+
+the cross-annotator consensus rather than one annotator’s idiosyncrasies. 216 
+
+To translate model performance into annotator effort, we reframed the data-efficiency 217 
+
+analysis at the level of annotated behavioral bouts. On the two most heterogeneous Deep-218 
+
+Ethogram datasets, Mouse-Social and Mouse-Ventral1, we randomly retained 75%, 50%, 25%, 219 
+
+and 12.5% of the annotated bouts, removing the rest from training, and retrained FERAL with 220 
+
+otherwise identical hyperparameters. FERAL retained near-full macro F1 with 75% of the 221 
+
+annotated bouts (within ∼5% of the full-data F1 on both datasets), and 90–95% at 50%. Below 222 
+
+25%, the rarest classes collapsed to zero positives predicted ( Figure 2i ). In practical terms, 223 
+
+annotation budgets can be halved on common behaviors without measurable cost, while rare 224 
+
+classes require more extensive annotation to avoid the collapse observed at low sampling 225 
+
+rates. 226 
+
+Finally, we probed how FERAL behaves on behaviors absent from its training schema by 227 
+
+training four leave-one-out variants on Mouse-Ventral1, each removing one foreground class 228 
+
+(face-grooming, body-grooming, digging, scratching) and relabeling its frames as background. 229 
+
+Across all four variants, held-out frames migrated either to a semantically related foreground 230 
+
+class (e.g., face-grooming → body-grooming, 55%; scratching → body-grooming, 41%) or 231 
+
+to background (digging and body-grooming migrated almost entirely to background, 100% 232 
+
+and 96%), never to a distant unrelated class; retained-class F1 stayed within 0.11 of the 233 
+
+full-schema baseline and background F1 remained ≥ 0.964 ( Extended Figure 1 c). Being a 234 
+
+supervised method, FERAL does not discover novel behaviors, and behavioral discovery 235 
+
+13 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+requires unsupervised pipelines such as MoSeq [43], keypoint-MoSeq [19], B-SOiD [20], or 236 
+
+VAME [21]). 237 
+
+## FERAL captures the temporal structure and visual appearance of behaviors 238 
+
+To assess FERAL’s ability to generalize across species and recording modalities, we applied 239 
+
+it to two datasets, both acquired in laboratory conditions, representing distinct levels of 240 
+
+behavioral organization and scene complexity. 241 
+
+Single-animal behavior in C. elegans nematodes. This dataset comprises recordings 242 
+
+of freely moving C. elegans nematodes performing four canonical locomotor behaviors: for-243 
+
+ward crawling, reverse crawling, turning, and pausing ( Figure 3a ) [44–48]. Unlike other 244 
+
+datasets used in this study, these behavioral labels were not manually annotated; instead, 245 
+
+each frame was automatically assigned to a locomotory state using a rule-based heuristic 246 
+
+pipeline adapted from prior work [48, 49]. In this pipeline, worms were segmented from 247 
+
+the background, centroid positions were extracted, head–tail orientation was inferred from 248 
+
+midline dynamics, and locomotor state was determined using speed thresholds, direction 249 
+
+of motion, and self-intersection criteria. This is therefore a benchmark of model agreement 250 
+
+with an algorithmic gold standard rather than with manual expert annotation. The resulting 251 
+
+behavioral classification was verified by an expert annotator on a subset of frames ( Extended 252 
+
+Figure 2b ). 253 
+
+For each original video with many worms, the centroid of each worm was continuously 254 
+
+tracked, and a cropped image window centered on the animal was extracted to maintain 255 
+
+consistent framing. FERAL leverages temporal context by integrating information from 256 
+
+preceding and subsequent frames to classify each moment in time. As a result, it accurately 257 
+
+segmented all four behavioral states and correctly distinguished between forward and reverse 258 
+
+locomotion. These two locomotory states appear nearly identical in single frames but become 259 
+
+separable through their temporal dynamics ( Figure 3b, Supplementary Video 2 ). 260 
+
+14 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Figure 3: FERAL captures the temporal and visual appearance of behaviors across species and recording modalities. (a) Example frames from the C. elegans dataset showing forward and reverse locomotion states. (b) Representative frame-level behavioral time-series comparing ground-truth annotations (top) and FERAL predictions (bottom) for C. elegans 
+
+locomotory states. (c) Confusion matrix of frame-level predictions versus heuristic-derived ground truth across the four locomotor states ( forward , reverse , turn , pause ). (d) Per-class fraction of incorrectly classified frames per video for C. elegans . (e) Agreement between ground-truth and predicted per-behavior bout counts across C. elegans videos (one point per video and class). (f) Example frame from recordings of pair interactions between an adult and larval clonal raider ant ( Ooceraea biroi ). (g) Quantitative comparison of ground-truth and predicted frame counts for each grooming category. (h) Representative frame-level behavioral time-series from O. biroi videos comparing ground-truth and FERAL predictions for self-grooming and allogrooming events. 15 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Confusion-matrix analysis ( Figure 3c ) showed that the majority of errors were confined 261 
+
+to transitions between kinematically adjacent states, such as “forward” versus “pause” or 262 
+
+“forward” versus “reverse.” Across videos, FERAL maintained high frame-level accuracy 263 
+
+(overall ∼94% against the algorithmic ground truth; Figure 3d ), and predicted per-behavior 264 
+
+bout counts closely tracked the algorithmic ground truth ( Figure 3e ; per-video accuracy and 265 
+
+bout-duration distributions in Extended Figure 2 a,c). Beyond its strong performance, this 266 
+
+analysis illustrates how FERAL can be seamlessly integrated into existing behavioral pipelines 267 
+
+as a post-tracking module, complementing traditional centroid-based approaches by directly 268 
+
+mapping cropped video segments to behaviors. 269 
+
+Pair interactions in Ooceraea biroi clonal raider ant. We next tested FERAL on a dataset 270 
+
+capturing O. biroi adult-larva interactions, which included annotations (J.Z.) for self-grooming 271 
+
+and allogrooming events ( Figure 3f ). Self-grooming involves individuals cleaning their own 272 
+
+body, while allogrooming targets another colony member which, in this case, is a larva. 273 
+
+Accurate classification thus requires recognizing not only motion patterns but also the spatial 274 
+
+relationship between the adult and the larva. This poses a major challenge for pose-based 275 
+
+pipelines: (i) pose estimation is unreliable under frequent occlusions; and (ii) modeling these 276 
+
+social interactions using skeletonized data requires integrating information from multiple 277 
+
+individuals [50–52]. 278 
+
+FERAL bypasses the need for pose estimation and pose-based segmentation, thus avoiding 279 
+
+these challenges altogether. It reliably identified both self- and allogrooming events directly 280 
+
+from raw videos ( Supplementary Video 3 ), maintaining the overall temporal dynamics of 281 
+
+each behavior across videos with high fidelity to the original expert annotations ( Figure 3f-h ;282 
+
+confusion matrix in Extended Figure 2 d). 283 
+
+Altogether, these results highlight FERAL’s ability to extract meaningful behaviors from 284 
+
+spatiotemporal patterns that are difficult to access with single-frame image models or pose-285 
+
+based approaches, demonstrating its capacity to generalize from individual locomotion to 286 
+
+16 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+social behaviors. 287 
+
+## FERAL generalizes to field recordings of wild animals 288 
+
+Given FERAL’s robust performance on datasets acquired in the laboratory, we next evaluated 289 
+
+its generalization to field recordings, which typically exhibit higher scene complexity than 290 
+
+laboratory videos. 291 
+
+Vigilance behavior in zebras. This dataset consisted of aerial videos of wild Grevy’s 292 
+
+zebras ( Equus grevyi ) recorded at the Mpala Research Center in Laikipia, Kenya using a drone 293 
+
+equipped with a camera. Free-ranging groups of zebras were filmed from directly overhead. 294 
+
+As with the C. elegans dataset, the centroid of each animal was continuously tracked following 295 
+
+methods described in [54] and a cropped image window was centered on the animal to 296 
+
+maintain consistent framing. Individual videos were annotated in BORIS by an expert (B.R.C.) 297 
+
+to identify bouts of vigilance behavior, defined as the individual standing still with its head 298 
+
+raised ( Figure 4a ). Due to the overhead perspective, the vertical head position of the zebras is 299 
+
+challenging to detect. We initially attempted to identify vigilance bouts using pose estimation: 300 
+
+nine keypoints (nose, head, base of neck, left and right shoulders, left and right hips, and base 301 
+
+and tip of tail) were annotated in 900 cropped images and used to train a DeepPoseKit [18] 302 
+
+pose-estimation model, which was then applied to a subset of cropped videos of individual 303 
+
+zebras. These pose estimates did not support reliable vigilance detection. We confirmed 304 
+
+this quantitatively: gradient-boosted classifiers (XGBoost [55], CatBoost [56]) trained on the 305 
+
+DeepPoseKit keypoints collapsed to near-chance performance when required to generalize to 306 
+
+a held-out recording (balanced accuracy ≈ 0.58 , chance = 0.50 ; macro-F1 ≈ 0.55 ), well below 307 
+
+FERAL’s macro-F1 of 0.785 on the same task from raw video ( Extended Figure 3 a). 308 
+
+FERAL accurately detected the onset and duration of vigilance periods directly from raw 309 
+
+video, closely matching expert annotations across most recordings. The fraction of correctly 310 
+
+labeled frames was high across recordings, at or above 88% in eight of nine videos, with the 311 
+
+17 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Figure 4: FERAL generalizes to field recordings of wild animals. (a) Representative drone frame of wild Grevy’s zebras ( Equus grevyi ), Mpala Research Center, Kenya. (b) Example frame-level behavioral sequences (expert annotation, top; FERAL, bottom) for three zebra videos. (c) Per-video number of frames assigned to the vigilant and out-of-sight states, expert annotation versus FERAL. (d) Frame-by-frame manual audit (B.R.C.) of all FERAL–annotator mismatches in one held-out zebra video. (e) Example PanAf500 [53] frames (wild Pan troglodytes and Gorilla gorilla , camera traps), one per annotated class. (f) Example frame-level ethogram (expert, top; FERAL, bottom) for PanAf500. (g) Per-video fraction of correctly (light) and incorrectly (dark) classified frames, PanAf500 (n = 155 videos). (h) Per-class F1 (bars) and labeled-data proportion (line) for PanAf500; classes ordered by descending data proportion. 18 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+shortest recording reaching 67% ( Figure 4b , Extended Figure 3 b). Comparison of the total 312 
+
+number of frames assigned to the vigilant and out-of-sight states per video showed strong 313 
+
+agreement between FERAL and expert annotation ( Figure 4c ), indicating that FERAL general-314 
+
+ized to aerial perspectives under the natural variability of field conditions; the corresponding 315 
+
+per-state confusion matrix ( vigilant recall 87%, out-of-sight recall 67%) is shown in Extended 316 
+
+Figure 3 c. 317 
+
+To characterize the nature of FERAL’s residual errors, an expert annotator (B.R.C.) manually 318 
+
+reviewed every frame-level disagreement between FERAL and the manual annotation in a 319 
+
+representative held-out test video (73,473 frames; Figure 4d ). FERAL’s prediction matched the 320 
+
+annotation on 67,082 frames (91.3%); of the 6,391 mismatched frames (8.7%), only 2,404 (37.6%) 321 
+
+reflected genuine misclassifications by FERAL. The remainder arose from label noise rather 322 
+
+than model error: 1,176 frames fell within behavioral transitions whose exact timing was not 323 
+
+annotated frame-precisely, and 2,811 frames were cases in which FERAL was correct and the 324 
+
+manual annotation was in error. Among FERAL’s genuine errors, the dominant confusions 325 
+
+were other scored as vigilant (1,163 frames) and vigilant scored as other (892 frames). Accounting 326 
+
+for annotation errors and transition-timing differences raises the effective frame-level accuracy 327 
+
+on this video from 91.3% to approximately 96.7% ( Figure 4d ). 328 
+
+Chimpanzee and gorilla behavior in the wild. To further assess FERAL’s generaliza-329 
+
+tion to complex, naturalistic scenes, we evaluated its performance on the PanAf500 (Pan 330 
+
+African Programme 500-clip subset) dataset [53], which contains camera-trap videos of wild 331 
+
+chimpanzees ( Pan troglodytes ) and gorillas ( Gorilla gorilla ) recorded across multiple African 332 
+
+field sites as part of the Pan African Programme: The Cultured Chimpanzee [57]. In each 333 
+
+clip, all individuals were detected with a bounding box and each individual’s behavior was 334 
+
+manually annotated with fine-grained behavioral categories, including locomotor (e.g., walk-335 
+
+ing, climbing, running), postural (e.g., standing, sitting, hanging), and interaction-related 336 
+
+behaviors ( Figure 4e ), testing FERAL’s capacity to handle visual and behavioral complexity 337 
+
+19 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+on a multi-species dataset. 338 
+
+Camera-trap footage varied substantially in lighting, vegetation, and visibility. FERAL 339 
+
+reached top-1 accuracy of 90.8% and macro averaged recall of 81.0% over the nine classes 340 
+
+with positives in the official PanAf500 test split following the original testing protocol of [53] 341 
+
+(Figure 4f-h, Supplementary Video 4 , Extended Figure 3 d). FERAL exceeded all the methods 342 
+
+reported by Brookes et al. 2024 [53] (X3D, I3D, 3D ResNet-50) on both metrics. It also surpassed 343 
+
+recent primate-specific methods (ChimpVLM [26], DAP [25], PriVi [27]) ( Table 2 ). Among the 344 
+
+nine test-positive classes, performance was highest on prevalent behaviors including walking ,345 
+
+sitting and standing and was lowest on rare ones: camera interaction , running (Figure 4h ). 346 
+
+Method Top-1 acc. (%) Class-avg recall (%) 
+
+X3D [53] 80.0 50.4 I3D [53] 79.3 42.2 3D ResNet-50 [53] 77.5 55.2 ChimpVLM [26] 84.9 61.9 DAP [25] 87.2 56.4 PriVi [27] 86.7 62.8 
+
+FERAL 90.8 81.0 
+
+Table 2: PanAf500 behavior-recognition comparison. Top-1 accuracy and class-averaged recall over the test-positive classes of the official PanAf500 test split. X3D, I3D, and 3D ResNet-50 are the 3D-CNN baselines of Brookes et al. 2024 [53]. Together, these results demonstrate that FERAL’s performance on videos acquired in 347 
+
+laboratory settings transfers robustly to field recordings spanning multiple species (zebras, 348 
+
+chimpanzees, and gorillas), habitats, and acquisition modalities. Its ability to extract mean-349 
+
+ingful behavioral structure directly from raw video highlights the model’s versatility and 350 
+
+scalability for quantifying natural behavior in ecologically realistic contexts. 351 
+
+## FERAL identifies emergent collective behaviors directly from raw video 352 
+
+To test whether FERAL generalizes from individual and pair interactions to collective dynam-353 
+
+ics, we applied it to recordings of clonal raider ant ( Ooceraea biroi ) colonies filmed continuously 354 
+
+20 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+over several days ( Figure 5a ). In this species, foraging occurs in collective group raids [58]. 355 
+
+Manual annotation of such raiding events was used as ground truth. Despite the high density 356 
+
+of individuals, FERAL accurately detected the onset and duration of collective raids directly 357 
+
+from raw video frames ( Figure 5b ). FERAL captured these events without requiring individ-358 
+
+ual tracking or explicit modeling of group structure. By contrast, conventional multi-animal 359 
+
+tracking approaches would need to reconstruct trajectories for each individual [17, 59] and 360 
+
+subsequently infer collective states through post-tracking analyses [58]. FERAL bypasses 361 
+
+these steps, enabling scalable, tracking-free quantification of collective behavior. 362 
+
+Confusion-matrix analysis ( Figure 5c ) revealed that misclassified ”raiding” frames were 363 
+
+not random but systematically associated with moments of intense movement, when many 364 
+
+ants had exited the nest and were exploring the arena. Conversely, most “no raiding” mis-365 
+
+classifications occurred during phases of a raid when most ants were in the nest and overall 366 
+
+activity declined. These patterns suggest that FERAL’s classifications are driven by the colony-367 
+
+level motion and spatial distribution of individuals, demonstrating that the model learns the 368 
+
+collective visual signature of raiding behavior directly from scene appearance. 369 
+
+By recognizing colony-level behaviors directly from video, FERAL extends the reach of 370 
+
+direct video-to-behavior analysis to emergent social dynamics that arise from distributed 371 
+
+coordination among many animals. This ability opens new possibilities for studying the 372 
+
+neural, ecological, and evolutionary principles governing collective behavior across species 373 
+
+and environments. 374 
+
+Detecting whether a raid is underway is a coarse, binary description of collective state. 375 
+
+We next asked whether FERAL could resolve the finer internal organization of a raid. For 376 
+
+this we analyzed a separate dataset of O. biroi raids recorded in larger, spatially structured 377 
+
+arenas (small colonies foraging from a nest into a connected arena; see Methods), in which 378 
+
+we could annotate both individual ant behaviors ( touching food , retrieving food ) and collective 379 
+
+raid phases ( search , recruitment , response ), and trained FERAL to predict these five behavioral 380 
+
+21 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+states directly from raw video. 381 
+
+FERAL recovered the temporal structure of the raid, with predicted state sequences 382 
+
+broadly tracking the annotated behavioral sequences ( Figure 5d ). Across the five states, 383 
+
+FERAL reached a mAP of 70.0% ( Figure 5f ), with the highest per-state average precision for 384 
+
+search (0.93) and the lowest for response (0.55) ( Figure 5e ). 385 
+
+Because raids vary considerably in duration and clarity across recordings, multiclass 386 
+
+state recognition is markedly harder than binary raid detection (macro-averaged mAP 70.0% 387 
+
+versus 97.8% for binary raiding). We therefore present it as a proof of concept that direct 388 
+
+video-to-behavior analysis can begin to resolve the substructure of collective dynamics ( Figure 389 
+
+5f ). 390 
+
+## FERAL runs efficiently across hardware configurations 391 
+
+FERAL is designed to run on a broad range of hardware, so that compute is not a barrier 392 
+
+to adoption. We benchmarked training and inference throughput for the default and lite 393 
+
+configurations across 8 single-GPU setups, spanning data-center accelerators (H100, A100, 394 
+
+L40S) and consumer cards (RTX 5090, RTX 3090) ( Table 3 ). FERAL also provides a gradient 395 
+
+checkpointing option (gc), which slows down training by around 20% but reduces the VRAM 396 
+
+footprint by around 3x. 397 
+
+For each GPU and configuration, we measured throughput by running the complete 398 
+
+FERAL training pipeline—identical to a real run, including mixup, gradient-norm logging, 399 
+
+the AdamW optimizer with cosine schedule, and the compiled forward/backward pass. We 400 
+
+ran five epochs over a fixed synthetic dataset of 100 training batches (batch size 4) and 100 401 
+
+validation batches (batch size 8), reporting the throughput of the final, steady-state epoch and 402 
+
+discarding the earlier epochs, which absorb compilation and dataloader warm-up. GPU clock 403 
+
+and power draw were sampled throughout and per-epoch wall-clock was stable across the 404 
+
+steady-state epochs (no upward drift indicative of thermal throttling), with cards held near 405 
+
+22 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Figure 5: FERAL captures emergent collective behavior and achieves high performance across datasets. (a) Representative frames from recordings of clonal raider ant ( Ooceraea biroi )colonies during non-raiding (top) and raiding (bottom) phases, with nests indicated by dashed outlines. (b) Example frame-level time-series of binary raid detection (raiding vs. non-raiding) in the colony dataset, comparing ground-truth annotation (top) and FERAL prediction (bottom). (c) Confusion matrix for binary raid detection across all colony videos; insets show representative frames illustrating the visual appearance of misclassified frames. 
+
+(d) Example frame-level time-series of the five-class raid substructure in a separate, spatially structured arena dataset, comparing ground-truth annotation (top) and FERAL prediction (bottom); in contrast to the binary detection in (b), this resolves individual ant behaviors and collective raid phases within a raid. (e) Per-state average precision for the five raid-substructure classes. (f) mAP of FERAL across all reported datasets. (g) Top-1 performance of FERAL across reported datasets. 23 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+their sustained power limits. All benchmarks used PyTorch 2.11.0 with the CUDA 12.8 (cu128) 406 
+
+build, installed identically on every GPU. Host driver versions varied but the PyTorch CUDA 407 
+
+runtime was uniform across cards. We noticed that using the latest PyTorch version sped 408 
+
+up training and inference. Training throughput is taken from the training-epoch wall-clock 409 
+
+and inference throughput from the validation-epoch wall-clock. Because video decoding 410 
+
+is negligible at 256 by 256 resolution, GPUs remained at 100% utilization throughout. We 411 
+
+estimate full ten-epoch training run times on CalMS21 by dividing 15,768 training chunks per 412 
+
+epoch × 10 epochs by the estimated training speed, and adding 4,084 test chunks divided by 413 
+
+the estimated inference speed. Despite excluding some overheads, these estimates match the 414 
+
+actual runtimes of our experiments on H100 and L40S GPUs. 415 
+
+To estimate GPU costs, we report two price tiers: datacenter and community. For data-416 
+
+center pricing, we use RunPod Secure Cloud prices. For community pricing, we use VAST.ai , a 417 
+
+marketplace where independent hosts rent out their private GPUs. All prices are reported as 418 
+
+of June 19, 2026. 419 
+
+For VAST.ai , we report the lowest price we could find among hosts that met our minimum 420 
+
+requirements: reliability ≥ 0.97, at least 16 effective CPU cores, 32 GB RAM, 50 GB disk space, 421 
+
+and 200+ Mbps download speed. These filters remove unreliable hosts and ensure enough 422 
+
+CPU, memory, storage, and network bandwidth for training without obvious bottlenecks. 423 
+
+This lets us take advantage of the larger supply of consumer GPUs. While median community 424 
+
+prices are often close to datacenter prices, the open-market structure means that the lowest 425 
+
+available prices can be much lower, especially for popular GPUs with abundant supply like 426 
+
+an RTX 5090. 427 
+
+We chose these GPUs because FERAL currently requires an NVIDIA GPU from the Ampere 428 
+
+generation or newer (compute capability ≥ 8.0, required for BF16 and FlashAttention). Older 429 
+
+accelerators available for free on Google Colab, such as the T4 and V100, are not supported by 430 
+
+FERAL. FERAL can therefore be run locally on a single workstation GPU, on an institutional 431 
+
+24 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+high-performance cluster, or on cloud GPU platforms such as RunPod or Google Colab Pro for 432 
+
+users without access to local resources. For these users, we provide step-by-step deployment 433 
+
+guides and a ready-to-run notebook. 434 
+
+A full default CalMS21 run takes under 4 hours on an H100 and around 7 hours on mid-435 
+
+range cards (A100, L40S, RTX 5090), with costs around $6-11 per run for datacenter GPUs 436 
+
+and $2-6 for community GPUs. The most cost-efficient GPU turned out to be the RTX 5090, 437 
+
+a latest-generation prosumer GPU, enabling a full lite run on a vast.ai machine for $1.50. 438 
+
+Inference runs faster than real time on every GPU tested: one hour of 30-frames-per-second 439 
+
+video is processed in ∼2.3 minutes on an H100 and ∼30 minutes on an RTX 3060. 440 
+
+The lite option provides a faster and more affordable option for experiments on smaller 441 
+
+GPUs, although the default option can also run on smaller GPUs with gradient checkpointing. 442 
+
+While full training may not be fully practical on those smaller GPUs, it can still work if users 443 
+
+run fewer training epochs or have access to multiple smaller GPUs. 444 
+
+25 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+GPU Config VRAM $/h $/h Train Inference Full CalMS21 Inference 1 h (GB) (dc.) (com.) (ch/s) (ch/s) (10 ep) 30-fps video 
+
+H100 SXM default 80 $3.29 $2.00 14.9 24.6 3.0 h ($9.8/$6.0) 2.3 min RTX 5090 default 32 $0.99 $0.40 6.3 12.2 7.0 h ($6.9/$2.8) 4.6 min A100 SXM default 80 $1.49 $0.60 6.2 11.6 7.2 h ($10.7/$4.3) 4.8 min L40S default 48 $0.86 $0.80 6.2 11.5 7.1 h ($6.1/$5.7) 4.9 min RTX 3090 default 24 $0.46 $0.14 2.4 4.8 18.3 h ($8.4/$2.6) 11.8 min H100 SXM lite 80 $3.29 $2.00 20.3 38.6 2.2 h ($7.2/$4.4) 1.5 min RTX 5090 lite 32 $0.99 $0.40 10.1 25.2 4.4 h ($4.3/$1.8) 2.2 min A100 SXM lite 80 $1.49 $0.60 9.5 21.0 4.7 h ($6.9/$2.8) 2.7 min L40S lite 48 $0.86 $0.80 9.7 24.4 4.6 h ($3.9/$3.7) 2.3 min RTX 3090 lite 24 $0.46 $0.14 4.2 12.3 10.6 h ($4.9/$1.5) 4.6 min H100 SXM default+gc 80 $3.29 $2.00 12.9 21.6 3.4 h ($11.3/$6.9) 2.6 min RTX 5090 default+gc 32 $0.99 $0.40 5.5 11.6 8.0 h ($7.9/$3.2) 4.9 min A100 SXM default+gc 80 $1.49 $0.60 5.3 11.2 8.4 h ($12.5/$5.0) 5.0 min L40S default+gc 48 $0.86 $0.80 5.1 11.3 8.7 h ($7.5/$6.9) 5.0 min RTX 3090 default+gc 24 $0.46 $0.14 2.0 4.8 21.8 h ($10.0/$3.0) 11.8 min RTX 3080 default+gc 10 — $0.36 1.85 4.5 23.9 h ($8.61) 12.6 min RTX 3070 default+gc 8 — $0.11 1.25 3.0 35.4 h ($3.89) 18.5 min RTX 3060 default+gc 12 — $0.07 0.76 1.8 57.9 h ($4.06) 30.7 min RTX 3080 lite+gc 10 — $0.36 2.67 10.6 16.5 h ($5.94) 5.3 min RTX 3070 lite+gc 8 — $0.11 1.82 7.0 24.2 h ($2.66) 8.0 min RTX 3060 lite+gc 12 — $0.07 1.15 4.5 38.4 h ($2.69) 12.5 min 
+
+Table 3: FERAL training and inference cost across GPU configurations. GPU costs are provided for the datacenter and community options. 
+
+## DISCUSSION 
+
+The quantitative study of animal behavior has advanced rapidly with the integration of 445 
+
+computer vision and deep learning [3, 7]. Existing methods have excelled at answering 446 
+
+where animals and their body parts are over time, yet determining what actions animals 447 
+
+are performing remains challenging, especially in complex environments. This limitation 448 
+
+constrains discovery across the fields of ethology, neuroscience, and ecology [8, 12], where 449 
+
+understanding behavior and its structure is essential. 450 
+
+FERAL addresses this gap by reframing behavioral quantification as a video-understanding 451 
+
+problem. Instead of relying on intermediate abstractions such as pose or trajectory, FERAL 452 
+
+26 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+maps raw video directly to frame-level behavioral labels, capturing both the temporal and 453 
+
+visual appearance of animal actions. It achieves high performance across datasets, detecting 454 
+
+discrete actions with high precision on a wide range of scene complexities ( Figure 5f-g ). 455 
+
+This generalization is enabled by its design. Its foundation-model backbone allows robust 456 
+
+fine-tuning even with limited behavioral annotations [32]. 457 
+
+FERAL sits within a broader landscape of automated behavioral quantification. The closest 458 
+
+pixel-input precedent is DeepEthogram [24], which performs supervised classification of 459 
+
+behavior directly from raw video using a two-stream convolutional neural network (CNN). 460 
+
+FERAL extends this approach with a fine-tuned video foundation model and substantially 461 
+
+improves accuracy on five of six DeepEthogram datasets. For unsupervised behavioral 462 
+
+discovery — uncovering categories not specified by a human annotator — methods such as 463 
+
+MoSeq [43], keypoint-MoSeq [19], B-SOiD [20], and VAME [21] remain the appropriate tools. 464 
+
+FERAL is complementary to, not a substitute for, this line of work. Recent video-foundation-465 
+
+model approaches for animal behavior — DAP [25], ChimpVLM [26], and PriVi [27] — target 466 
+
+behaviors only for primates. FERAL is a general-purpose drop-in supervised pipeline that 467 
+
+runs across species with frame-level labels alone. 468 
+
+FERAL operates on user-supplied behaviors and emits per-frame predictions constrained 469 
+
+by this list of behaviors. It does not autonomously discover new behavioral categories. 470 
+
+Despite these limitations, FERAL is designed for broad accessibility: it is an open-source, 471 
+
+freely available toolkit ( getferal.ai ) that includes comprehensive documentation, tutorials, 472 
+
+and benchmark datasets, lowering the technical barrier for users across disciplines. Its modular 473 
+
+architecture supports all stages of analysis, from preprocessing and training to inference, and 474 
+
+can be deployed locally on desktop computers, on high-performance clusters, or through 475 
+
+cloud-based GPU services such as Google Colab Pro and RunPod. 476 
+
+FERAL integrates with existing pipelines. By default, FERAL focuses on frame-level 477 
+
+segmentation and does not assign persistent identities. Nevertheless, it can be paired with 478 
+
+27 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+multi-animal tracking systems such as TRex [17], which produce animal-centered video 479 
+
+segments suitable for direct inference. Together, these tools provide a unified solution to the 480 
+
+two central questions of behavioral quantification: where animals are and what actions they 481 
+
+are performing. 482 
+
+FERAL is a supervised classifier: it can only predict behaviors present in its training labels, 483 
+
+and frames whose behavior is absent from the schema are routed to the nearest semantic 484 
+
+neighbor or to background rather than discovered as new; behavioral discovery remains the 485 
+
+domain of unsupervised methods such as MoSeq [43], keypoint-MoSeq [19], and B-SOiD 486 
+
+[20]. Additionally, FERAL outputs categorical labels, not continuous kinematic variables 487 
+
+(joint angles, gait phase, head orientation); pose-tracking pipelines such as DeepLabCut [14], 488 
+
+SLEAP [15], and LightningPose [16] remain the standard approach for postural readouts, and 489 
+
+the cleanest analyses will often combine them with FERAL (pose for kinematics, FERAL for 490 
+
+behavioral bouts). 491 
+
+Importantly, FERAL classifies the scene rather than the individuals in it: in pair and social 492 
+
+settings the model does not assign actor–recipient identity. In scenarios in which the animal of 493 
+
+interest occupies only a small fraction of the frame (single-worm assays, single-zebra vigilance, 494 
+
+multi-ape camera-trap clips), FERAL requires an upstream tracker or detector to produce 495 
+
+animal-centered crops. This requirement is shared with most supervised pose-based and 496 
+
+pixel-based classifiers. 497 
+
+FERAL shifts annotation effort to the training stage rather than eliminating it: a moderate 498 
+
+annotation budget ( ∼50% of bouts) recovers most of the benefit for common behaviors, but 499 
+
+rare-class detection remains bound by the labeling effort directed at that specific class. 500 
+
+By combining strong performance with user-friendly design, FERAL establishes a robust 501 
+
+foundation for behavioral segmentation across species and experimental paradigms. FERAL 502 
+
+code and documentation are available at getferal.ai (Zenodo DOI to be assigned). 503 
+
+Since this work was released as a preprint, FERAL has been adopted by many research 504 
+
+28 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+groups on more than 250 datasets across multiple species and experimental paradigms, and 505 
+
+we are hopeful that this tool will be helpful to the scientific community. 506 
+
+## METHODS Datasets 507 
+
+We evaluated FERAL across 14 datasets spanning a range of species, behavioral contexts, and 508 
+
+recording modalities. All datasets provided raw video data paired with frame-level behavioral 509 
+
+annotations, enabling direct video-to-behavior mapping. CalMS21, MABe22, PanAf500 and 510 
+
+DeepEthogram datasets were obtained from public sources. We did not perform new verte-511 
+
+brate experiments on these data, and the original ethics approvals are reported in the source 512 
+
+publications. Original ethics approvals for our new datasets are stated in the corresponding 513 
+
+subsection. Other open-source datasets containing only keypoint trajectories or bounding 514 
+
+boxes without frame-level behavioral labels were excluded, as the current implementation 515 
+
+focuses on frame-level classification. Training and test dataset statistics, including the number 516 
+
+of frames per split for each dataset, are reported in Table 10, and class distribution and per-517 
+
+class performance are given in Table 12. Performance metrics for each dataset are reported in 518 
+
+Table 13. Note that for single-label classification, we include an “other” class that the model is 519 
+
+trained to predict when no relevant behaviors are present. For all reported class-averaged 520 
+
+metrics, the “other” class is excluded. 521 
+
+CalMS21 (Mouse social interactions) 522 
+
+The Caltech Mouse Social Interactions (CalMS21) dataset captures freely behaving mice ( Mus 523 
+
+musculus ) engaged in resident–intruder assays [39]. Each recording includes frame-level 524 
+
+labels for social behaviors such as attack, mount, and investigation. Following prior work, we 525 
+
+evaluated performance using the mean average precision (mAP) metric (macro-averaged AP 526 
+
+over foreground classes) on the same train–test split defined in the original challenge. 527 
+
+29 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+MABe22 (Multi-Agent Behavior 2022) 528 
+
+MABe22 [42] is a large-scale multi-species benchmark designed for evaluating multi-agent 529 
+
+behavior analysis. It includes recordings of mouse triplets, rove beetles ( Sceptobius lativentris ), 530 
+
+and Drosophila melanogaster flies paired with expert-annotated behavioral categories. As only 531 
+
+the beetle subset provides raw video aligned with human frame-level labels, we restricted 532 
+
+our evaluation to this dataset. Behavioral categories are grooming object , grooming self , idle 533 
+
+alone , idle object , exploring object , exploring alone annotated by trained ethologists. We report 534 
+
+macro-averaged F1 scores on the original test split from the paper. 535 
+
+The original MABe22 beetle partition is divided into four subsets: user train (released for 536 
+
+unsupervised representation learning, without the six target-behavior labels), evaluation train 537 
+
+(the labeled subset used to train the benchmark’s linear classifier), test1 , and test2 . However, 538 
+
+in the publicly released data, only the user train can be distinguished from the rest. The 539 
+
+boundaries between evaluation train , test1 , and test2 are not provided, so we could not reproduce 540 
+
+the exact split used in the original benchmark. Furthermore, only 1122 of the 9491 evaluation 541 
+
+clips ( ∼12%) carry per-frame annotations for behaviors. These labeled clips come from the 542 
+
+combined evaluation train , test1 , and test2 splits. We therefore pooled all of them and divided 543 
+
+them randomly into 80% training and 20% test. 544 
+
+Rather than training a linear classifier on top of frozen embeddings, as in the MABe22 545 
+
+competition, we fine-tune the model directly on these labeled clips. 546 
+
+PanAf500 547 
+
+PanAf500 [53] is a dataset of wild ape behavior, featuring both chimpanzees and gorillas 548 
+
+recorded by camera traps across multiple African field sites within the Pan African Programme. 549 
+
+The cameras operate during the day and at night, capturing a range of behaviors expressed by 550 
+
+single individuals and groups under diverse weather and lighting conditions. The dataset doc-551 
+
+umentation provides field collection and ethics context through the Pan African Programme 552 
+
+30 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[53, 57]. 553 
+
+The original work introduces two datasets: PanAf20k, containing 20k clips with a single 554 
+
+behavior label per clip, and PanAf500, consisting of 500 clips in which each individual ape 555 
+
+is detected with a bounding box in every frame and assigned a behavior label. Because we 556 
+
+wanted to evaluate FERAL on per-frame behavior classification, we used the smaller PanAf500 557 
+
+subset. 558 
+
+In our experiments, we retained the original held-out test split (75 15s videos) and con-559 
+
+structed a single train set by combining the validation and train splits from the original paper 560 
+
+(425 15s videos). We reformatted the per-frame bounding-box labels into per-individual-561 
+
+tracklet videos with one frame-level label per tracklet, in order to evaluate FERAL’s perfor-562 
+
+mance against a single target per frame. Three preprocessing choices slightly deviate from 563 
+
+the official single_ape.py loader: (i) we use a square max (푤, ℎ ) crop with 5% padding (the 564 
+
+official loader uses an aspect-preserving crop), to match the V-JEPA 2 backbone’s square 565 
+
+input shape; (ii) we gap-fill bounding boxes across short occlusion frames (up to 20 missing-566 
+
+detection frames per tracklet) and set the labels for occluded frames as background, so that 567 
+
+the per-tracklet video is a contiguous sequence; (iii) we filter out tracklets visible in fewer 568 
+
+than 16 video frames. The remaining tracklets are padded to a length that is a multiple of 64 569 
+
+frames using black frames and a background label. These deviations were required for the 570 
+
+fixed input shape of the V-JEPA 2 backbone and can possibly slightly inflate FERAL’s reported 571 
+
+accuracy relative to the Brookes et al. 2024 baselines (X3D, I3D, 3D ResNet-50), which use the 572 
+
+official loader. The background class is then removed from test metric calculations. 573 
+
+Compared to the default FERAL setup that uses per-frame metrics, the original paper 574 
+
+splits the bouts into chunks of 16 frames dropping the rest, and predicts a single label for 575 
+
+such bouts. We report 2 sets of metrics per frame and per 16-frame chunk to be comparable 576 
+
+with available benchmarks in Table 4. 577 
+
+Additionally, we evaluated FERAL on the PanAf500 dataset under an alternative setup. 578 
+
+31 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Per-frame Per-16fr Behavior Recall 푛 Recall 푛
+
+camera_interaction 74.90% 502 75.00% 28 climbing_down 100.00% 162 100.00% 9climbing_up 83.99% 381 90.48% 21 hanging 41.39% 1034 40.32% 62 running 36.52% 471 42.31% 26 sitting 97.71% 9251 98.04% 560 sitting_on_back 100.00% 120 100.00% 7standing 88.36% 9185 89.93% 536 walking 90.76% 10828 92.64% 611 Total accuracy (Top-1) 89.44% 31934 90.81% 1860 Class-avg recall 79.29% – 80.97% –
+
+Table 4: Feral behavior recognition on the PanAf500 test split (75 videos): per-class recall under per-frame vs. per-16-frame-clip evaluation. 푛 = number of frames or 16-frame windows. In this setting, we ignored the bounding box coordinates and used only the behavior labels, 579 
+
+aggregating the behaviors of all annotated individuals within a frame into a single multi-label 580 
+
+target. For example, if two apes were labeled as sitting and one as climbing , the resulting 581 
+
+frame-level target would be sitting and climbing . Unlike the methodology described in the 582 
+
+original paper, we did not crop the images around individual subjects. As shown in Table 5, 583 
+
+performance in this setup is substantially lower, although the model still achieves reasonable 584 
+
+results on the most common classes. This reduction in performance is likely due to the weaker 585 
+
+supervision signal, as the model must infer behaviors from the entire frame rather than from 586 
+
+subject-centered crops. Furthermore, resizing the full frame to 256 × 256 pixels likely removes 587 
+
+fine-grained visual details that are better preserved in the cropped-image setting. 588 
+
+C. elegans locomotion 589 
+
+Animals were grown at 20 ◦C on nematode growth media (NGM) plates seeded with Escherichia 590 
+
+coli OP50 bacteria [60]. Experiments were performed on young adult hermaphrodites that 591 
+
+were picked as L4s 14–16 h prior to the assay. 592 
+
+32 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Behavior Test frames % frames F1 
+
+camera_interaction 665 1.85 0.565 climbing_down 244 0.68 0.827 climbing_up 484 1.34 0.774 hanging 1504 4.18 0.465 running 440 1.22 0.153 sitting 11374 31.60 0.849 sitting_on_back 439 1.22 0.000 standing 10449 29.03 0.744 walking 11199 31.11 0.822 
+
+Macro F1 0.578 Table 5: Per-behavior F1 on PanAf500 without cropping . % frames sums to >100 because the task is multilabel (a frame can carry multiple behaviors); the Total row reports the macro-averaged F1. The animals express two transgenes: the integrated array kyIs830 = pSM(F23H12.7p::ReaChR::sl2::GFP) 593 
+
++ pSM(myo3p::mCherry) and the extrachromosomal transgene njEx1552 = pSM(ser-4p::flp, 594 
+
+sto3-p::frt::HisCl1::sl2::mCherry, ges-1p::nls-GFP). The animals were not exposed to all-trans-595 
+
+retinol or histamine during the recordings. 596 
+
+Animals were recorded while performing an off-food foraging assay [46, 47], with the 597 
+
+change of using a plastic ring (6 mm Clear Mylar Stencil Sheets) instead of CuCl 2 as a boundary 598 
+
+to contain the animals. Preconditioning plates were made the night before by seeding NGM 599 
+
+plates with a thin uniform OP50 lawn sixteen hours prior to the start of the assay. 45 minutes 600 
+
+prior to the start of the assay, a 1 in × 1 in plastic ring was placed on the preconditioning plate 601 
+
+as a boundary and ∼20 young adult worms were picked onto the lawn. 5 minutes before 602 
+
+the start of the assay, 8–11 animals were transferred to an unseeded NGM plate to clean off 603 
+
+excess food, then transferred to the assay plate, an unseeded 10 cm NGM plate with a plastic 604 
+
+ring (2 in × 2 in) boundary to keep animals within the recording field of view. Behavior was 605 
+
+recorded for ∼45 min using a Basler ace acA5472-17 휇m USB 3.0 monochrome camera at 6 606 
+
+frames per second (fps) and a 3,648 × 3,648 px field of view. 607 
+
+Animals were tracked using custom Python software that segments the worms from 608 
+
+33 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+background using thresholding and generates tracks of the centroid of segmented worms 609 
+
+using intersection over union. This results in tracks including the centroid and mask of the 610 
+
+worm. 611 
+
+Behavior features were inferred and classified heuristically using rules adapted from 612 
+
+Huang et al. 2006 [49] and Yemini et al. 2013 [48], implemented in Python (code provided), 613 
+
+and validated by comparison to human-scored classification ( Extended Figure 2 b). 614 
+
+Behavior features. For each frame, it was determined whether the animal was self-615 
+
+intersecting using the area-to-perimeter ratio of the outermost contour of the mask (ratio 616 
+
+> 3.3). For non self-intersecting frames, masks were skeletonized to obtain the midline of 617 
+
+the animal and aligned in the same direction by minimizing the distance between midline 618 
+
+points in adjacent frames. The head–tail vector was taken from the first and last midpoints of 619 
+
+the animal. Velocity was calculated by taking the difference between centroids four frames 620 
+
+(= 0.67 s) apart and dividing by d푡 = 0.67 s. Head versus tail was assigned as the direction 621 
+
+along the head–tail axis in which the animal moves more often (the animal moves towards the 622 
+
+direction of its head more often than the direction of its tail). Speed was calculated by taking 623 
+
+the absolute magnitude of the velocity. Speed was signed by the direction of the velocity 624 
+
+relative to the direction of the head–tail vector. 625 
+
+C. elegans spend significantly more time in the forward state. After following the protocol 626 
+
+above, if the number of frames for which signed speed was negative was greater than the 627 
+
+number of frames for which signed speed was positive, the sign of the head–tail vector, 628 
+
+velocity, and speed was inverted. 629 
+
+Behavior classification. Each frame was categorized as one of the motor behavior states: 630 
+
+forwards , reversal , pause , or turn .631 
+
+Turning was classified as frames in which either (a) both (i) the midpoint–tail vector (the 632 
+
+vector connecting the midpoint and the tail of the worm) was greater in length than the 633 
+
+midpoint–head vector (the vector connecting the midpoint to the head of the worm) and 634 
+
+34 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+(ii) the angle between the midpoint–tail vector and midpoint–head vector was less than 45 635 
+
+degrees, or (b) when the animal was self-intersecting. 636 
+
+Pausing was classified as frames for which |speed | < 40 휇m s −1 and for which the animal 637 
+
+was not turning. 638 
+
+Forwards was classified as speed greater than 0 휇m s −1 and not turning or pausing. 639 
+
+Reversal was classified as speed less than 0 휇m s −1 and not turning or pausing. 640 
+
+Behaviors were smoothed such that motor states shorter than 0.5 s were classified as the 641 
+
+prior state, unless the state began at the start of the track. 642 
+
+Collective behavior and adult-larva interactions in clonal raider ants ( Ooceraea biroi )643 
+
+Invertebrate behavioral research with O. biroi was conducted under standard institutional 644 
+
+biosafety guidelines. 645 
+
+Stock colonies of O. biroi were maintained in constant light at 25 ◦C in Tupperware contain-646 
+
+ers (40 × 26 cm) with a ∼2 cm thick plaster of Paris floor. Colonies were fed with frozen fire 647 
+
+ant ( Solenopsis invicta ) brood following the lab’s regular feeding schedule (3 times per week) 648 
+
+and cleaned and watered once per week, as needed. 649 
+
+For the adult-larva interaction experiments, adult ants and fourth-instar larvae from the 650 
+
+same stock colony (clonal line B genetic background) were collected and housed in 5 cm Petri 651 
+
+dishes lined with a plaster of Paris floor and kept at 25 ◦C. Behavioral assays were performed in 652 
+
+a custom-built acrylic chamber with transparent sides and plaster of Paris floor. In each assay, 653 
+
+an adult ant was allowed to settle in the chamber for 30 minutes before a larva was introduced. 654 
+
+Videos were recorded from the side at 10 frames per second with a FLIR blackfly camera 655 
+
+(BFS-U3-50S5C-C) and lens (Computar, MLM3X-MP), using Spinnaker Software Development 656 
+
+Kit, at a resolution of 2448 px x 2048 px. Recordings were collected across three consecutive 657 
+
+days. 658 
+
+Behavioral annotations of adult ants and larvae were performed manually using ELAN 659 
+
+(EUDICO Linguistic Annotator) [61]. We scored adult self-grooming and adult allogrooming 660 
+
+35 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+of larvae, and recorded the start and end times and duration of these behaviors (in millisec-661 
+
+onds). 662 
+
+For the colony tracking experiment, groups of 100 adults and 100 larvae were randomly 663 
+
+subsampled from stock colonies and established in Petri dishes (90 x 20mm) lined with a 664 
+
+humidified plaster of Paris base. Colonies were allowed to acclimate for four days. Colonies 665 
+
+were then continually video recorded at 0.1 fps for 30 days under constant illumination at 666 
+
+25 ◦C. Colonies were fed with frozen S. invicta brood and cleaned approximately every two 667 
+
+days. 668 
+
+Collective raiding events were manually scored from these recordings in BORIS [35] by a 669 
+
+single annotator (J.R.), annotating the onset and offset of each synchronized group raid to 670 
+
+produce the frame-level ground-truth labels used for training and evaluation. 671 
+
+Multiclass annotation of raid phases in Ooceraea biroi 672 
+
+To assess FERAL on finer-grained collective dynamics than the binary raiding-versus-non-673 
+
+raiding distinction, we analyzed a separate set of O. biroi raid recordings acquired in spatially 674 
+
+structured arenas, distinct from the colony-tracking dataset above. Colonies on the order of 675 
+
+20 workers were housed in a ∼2 cm-diameter nest connected by a narrow tunnel to a ∼6.5 cm-676 
+
+diameter foraging arena. A prey fire ant ( S. invicta ) pupa was placed in the foraging arena 677 
+
+at regular intervals (approximately once daily), and behavior was recorded at 10 Hz. Unlike 678 
+
+previously published data, these colonies were not always allowed to settle into the arena 679 
+
+before recording, and some were subjected to food deprivation; a subset of these recordings 680 
+
+was previously studied in Chandra & Kronauer 2021 [62]. 681 
+
+Raids were annotated manually in BORIS [35] by a single annotator (O.S.). Adopting 682 
+
+elements of the raid-phase nomenclature previously established for O. biroi [58], we annotated 683 
+
+each raid into five behavioral states spanning two levels of organization: three collective raid 684 
+
+phases — search , recruitment , and response — and two individual ant behaviors — touching food 685 
+
+and retrieving food . The dataset comprised seven video clips from two imaging sessions (five 686 
+
+36 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+clips used for training and two held out for evaluation), containing six annotated raiding bouts 687 
+
+in total. These frame-level state labels were used to train and evaluate FERAL for multiclass 688 
+
+prediction. 689 
+
+Zebra recordings from drones 690 
+
+Herds of Grevy’s zebras ( Equus grevyi ) were filmed at the Mpala Research Center in Laikipia, 691 
+
+Kenya in 2017 and 2018 using DJI Phantom 4 Pro drones (DJI, Shenzhen, China). All field-692 
+
+work in Kenya was conducted with the permission of the National Commission for Science, 693 
+
+Technology and Innovation and in affiliation with the Kenya Wildlife Service. Drone import 694 
+
+and operations were authorized by the Kenya Civil Aviation Authority (KCAA), and data 695 
+
+collection protocols were reviewed and approved by Ethikrat, the independent ethics council 696 
+
+of the Max Planck Society. 697 
+
+Drone flights were carried out by a licensed pilot assisted by an observer who maintained 698 
+
+visual contact with the drone, as well as a ground observer who maintained situational 699 
+
+awareness. During filming, the drones were positioned directly above the group at a height of 700 
+
+approximately 85 m above ground level and followed the zebra group’s movements. To achieve 701 
+
+continuous observations longer than a single drone’s battery duration, two drones were flown 702 
+
+in relay: when one drone’s battery became depleted, a second drone was positioned 10 m 703 
+
+above the first one. The first drone was then recalled to the launch point, and the second 704 
+
+drone was lowered by 10 m to continue following the group. 705 
+
+When groups remained calm and in range, observations covered 3 drone flights, lasting 706 
+
+approximately 45–50 minutes in total. During the first two flights, groups were filmed in an 707 
+
+undisturbed state. During the third flight, researchers approached the group on foot to elicit 708 
+
+a detection and flight response, during which the drone followed the group until they ran out 709 
+
+of range. If animals appeared disturbed by the drone (e.g. running away) or moved too far 710 
+
+from the launch point, the observation was terminated. 711 
+
+Drone recordings were initially captured at 4K resolution and 60 fps, but were downsam-712 
+
+37 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+pled to 30 fps prior to further processing. A multi-stage pipeline was applied to generate 713 
+
+continuous movement trajectories for all animals in the recordings [54]. Recordings were then 714 
+
+cropped to generate individual videos of a small square area (160 x 160 or 210 x 210 pixels) 715 
+
+centered on each animal, and resized to 256 × 256 pixels before training to match the V-JEPA 2 716 
+
+input shape. Forty-four individual videos from four observations were manually annotated in 717 
+
+BORIS [35] to identify bouts of vigilance behavior, defined as the animal standing still with its 718 
+
+head raised, and periods when the animal was out of sight, for example due to passing under 719 
+
+occluding vegetation. Of these, 35 were used for training, 9 for testing (Extended Table 10). 720 
+
+Initially, a pose estimation approach was used to attempt to identify vigilance bouts. Nine 721 
+
+keypoints (nose, head, base of neck, left shoulder, right shoulder, left hip, right hip, base of tail 722 
+
+and tip of tail) were annotated in 900 cropped images, and DeepPoseKit [18] was used to train 723 
+
+a pose estimation model, which was then applied to the cropped individual-zebra videos (see 724 
+
+[18] for full details on pose-model training and performance). To test quantitatively whether 725 
+
+vigilance could be recovered from these pose estimates, we trained standard supervised 726 
+
+classifiers on the resulting keypoints ( Extended Figure 3a ). For each frame we computed 727 
+
+translation- and scale-invariant pose features: keypoint coordinates centered on the confidence-728 
+
+weighted centroid and normalized by their root-mean-square spread, together with keypoint 729 
+
+confidences, all pairwise keypoint distances, and per-keypoint angles (72 features). We trained 730 
+
+gradient-boosted decision trees (XGBoost [55] and CatBoost [56]; 400 trees, depth 6) to classify 731 
+
+each frame as vigilant or other (out-of-sight frames excluded), using a curated posture dataset 732 
+
+of 34,553 frames spanning three observations and 32 individual tracks (class balance 63% other 733 
+
+/ 37% vigilant ). We evaluated under a leave-one-observation-out cross-validation, in which 734 
+
+the model is trained on a subset of recordings and tested on a completely held-out recording, 735 
+
+mirroring real deployment. Under this evaluation it collapsed toward chance (balanced 736 
+
+accuracy ≈ 0.58 versus a chance level of 0.50 ; macro-F1 ≈ 0.55 ; vigilance F1 ≈ 0.40 ), well below 737 
+
+FERAL’s macro-F1 of 0.785 on the same dataset. Both classifiers behaved near-identically. 738 
+
+38 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+This failure is consistent with the geometry of the task: vigilance is defined by vertical head 739 
+
+elevation, which is poorly captured by the two-dimensional keypoint projection available 740 
+
+from the overhead perspective. 741 
+
+DeepEthogram 742 
+
+We evaluated FERAL on all six datasets used in the DeepEthogram study. In the original 743 
+
+paper, the authors performed five independent train/validation/test splits of the videos 744 
+
+(60%/20%/20%), reporting the average performance across the five test sets. Due to the 745 
+
+substantially higher computational cost of FERAL, we used a single stratified train/test split 746 
+
+per dataset, constructed so that every behavior class is represented in both the training and 747 
+
+test partitions, avoiding degenerate splits in which a rare behavior is absent from the small 748 
+
+test set. For Mouse-Ventral1 we reused the original DeepEthogram split. For Mouse-Ventral2 749 
+
+and Mouse-Social—the two datasets on which FERAL and DeepEthogram are closest and 750 
+
+which are small (16 and 12 videos in total, respectively), making single-split estimates high-751 
+
+variance—we trained on three independent stratified splits and report the best-performing 752 
+
+split (Mouse-Ventral2: mean 0.978, range 0.970–0.983; Mouse-Social: mean 0.896, range 753 
+
+0.891–0.900). Checkpoint selection followed the same last-epoch policy used across all datasets 754 
+
+(see Model selection). 755 
+
+The six datasets span mouse and fruit-fly behaviors recorded from overhead, ventral, and 756 
+
+side views; their species, imaging view, and foreground behavior classes are listed in Table 12, 757 
+
+with full acquisition and annotation details given in the original publication [24]. Two features 758 
+
+are relevant to the analyses below: Mouse-Social is dyadic—two mice share each frame, so its 759 
+
+labels describe relational states rather than a single individual’s posture—and Fly is by far 760 
+
+the largest and most temporally fine-grained dataset ( >3.4 million labeled frames). 761 
+
+39 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+DeepEthogram: inter-annotator agreement and cross-annotator evaluation 762 
+
+Several DeepEthogram datasets provide labels from multiple independent human annotators 763 
+
+(three for Mouse-Ventral1; two for Mouse-Social, Mouse-Homecage, and Mouse-Openfield), 764 
+
+which we used to characterize label noise and to test whether FERAL learns the annotator 765 
+
+consensus rather than a single annotator’s idiosyncrasies. For each dataset we computed 766 
+
+pairwise inter-annotator agreement over all co-annotated frames using raw per-frame agree-767 
+
+ment, Cohen’s 휅, and macro F1 over foreground classes. To relate model error to human 768 
+
+disagreement ( Figure 2h ), we partitioned the Mouse-Ventral1 test frames into three buckets 769 
+
+by how many of the three annotators agreed on the modal label (all three agree, two of three 770 
+
+agree, all disagree) and scored a FERAL model trained on annotator 1 against the modal 771 
+
+label within each bucket. In a complementary cross-annotator analysis ( Extended Figure 1d ), 772 
+
+we trained a separate FERAL model on each annotator’s labels and evaluated every model 773 
+
+against every annotator’s labels on the shared held-out test set, comparing the resulting 774 
+
+model-versus-annotator macro F1 to the human-versus-human macro F1. 775 
+
+DeepEthogram: annotation-budget analysis 776 
+
+To relate FERAL’s performance to annotation effort, we subsampled training labels at the 777 
+
+level of annotated behavioral bouts (contiguous single-behavior segments) on the two most 778 
+
+heterogeneous datasets, Mouse-Social and Mouse-Ventral1 (annotator 1). For retention frac-779 
+
+tions of 75%, 50%, 25%, and 12.5%, we randomly kept that fraction of the bouts of each 780 
+
+foreground class and relabeled the frames of the removed bouts as background, leaving the 781 
+
+total number of training frames and the test set unchanged, and retrained FERAL from the 782 
+
+same initialization with otherwise identical hyperparameters ( Figure 2i ). 783 
+
+40 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+DeepEthogram: out-of-vocabulary (leave-one-class-out) behavior 784 
+
+To probe how FERAL treats behaviors absent from its training schema, we trained four 785 
+
+leave-one-class-out variants on Mouse-Ventral1, each removing one foreground class (face-786 
+
+grooming, body-grooming, digging, or scratching) from the label set and relabeling that 787 
+
+class’s frames as background while leaving the remaining classes unchanged. On the held-out 788 
+
+test set we measured the F1 of the retained classes and, for the removed class, the row-789 
+
+normalized distribution of the labels FERAL assigned to its frames under the reduced schema 790 
+
+(the migration matrix; Extended Figure 1c ). 791 
+
+## Model Architecture 792 
+
+FERAL fine-tunes the video-understanding backbone to perform frame-level behavioral clas-793 
+
+sification across predefined categories. The model outputs class probabilities for every frame. 794 
+
+The complete default configuration used for all reported datasets, including all hyperparame-795 
+
+ters, is available on GitHub 1.796 
+
+Backbone evaluation and selection 797 
+
+We systematically evaluated several recent video-understanding architectures as potential 798 
+
+encoders for FERAL, focusing on their balance of accuracy, computational efficiency, and 799 
+
+ease of deployment. We added an option in the configuration file for users to choose which 800 
+
+supported backbone they want to use with FERAL. Currently, three model families (each with 801 
+
+multiple distilled versions) are supported: V-JEPA 2, V-JEPA 2.1, and VideoPrism. Our default 802 
+
+configuration uses V-JEPA 2. We provide the performance comparison of these models below. 803 
+
+InternVideo2. InternVideo2 is a 1-billion-parameter transformer model trained in mul-804 
+
+tiple pretraining stages [63]. Despite strong representational capacity, fine-tuning proved 805 
+
+prohibitively expensive, requiring up to eight hours for a full run on the CalMS21 dataset 806 
+
+> 1
+
+https://github.com/Skovorp/feral/blob/main/configs/default_vjepa.yaml 
+
+41 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+using four H100 GPUs. Furthermore, the codebase depended on numerous bespoke mod-807 
+
+ules, complicating installation and development. While performance was promising (91.55% 808 
+
+mAP on CalMS21 and 78.2% mAP on the adult-larva ant dataset), these practical limitations 809 
+
+rendered InternVideo2 unsuitable for the user-friendly behavioral analysis framework that is 810 
+
+the goal of our work. 811 
+
+SmolVLM2. We next assessed SmolVLM2, a multimodal video–language model available 812 
+
+in configurations ranging from 256 M to 2.2 B parameters [64]. Although integration via 813 
+
+Hugging Face Transformers greatly simplified deployment, performance lagged behind V-814 
+
+JEPA 2, achieving only 87.32% mAP on CalMS21. The model processed frames largely in 815 
+
+isolation, aggregating temporal information only in a shallow pooling layer. This architectural 816 
+
+constraint, compounded by the predominance of non-video modalities during pretraining, 817 
+
+limited its ability to capture long-range motion dynamics. Even with extensive regularization 818 
+
+(including partial freezing, data augmentations, and label smoothing), SmolVLM2 exhibited 819 
+
+overfitting on small datasets and failed to generalize on internal benchmarks, achieving only 820 
+
+47.4% mAP on the adult-larva ant dataset. 821 
+
+V-JEPA 2. We chose the publicly released Diving48-fine-tuned V-JEPA 2 ViT-L/16 check-822 
+
+point from Meta FAIR as our starting checkpoint rather than the base V-JEPA 2 release, because 823 
+
+the Diving48 fine-tuning step was found internally to yield better downstream behavioral 824 
+
+classification with no additional cost ( facebook/vjepa2-vitl-fpc32-256-diving48 ; ∼300 M 825 
+
+encoder parameters; ∼308 M total including the FERAL attention-pool head and classifier) 826 
+
+[32]. The encoder was pretrained self-supervised on more than one million hours of internet 827 
+
+video and subsequently fine-tuned on the Diving48 human-action dataset [65]. We further 828 
+
+fine-tune the upper twelve of twenty-four transformer layers on each FERAL training set. All 829 
+
+reported runs use the transformers library (version ≥ 4.42) and torch 2.4 with CUDA 12.4. 830 
+
+The backbone was pretrained on 32-frame clips at 256 ×256 resolution; we feed it 64-frame 831 
+
+chunks via the model’s positional-embedding interpolation, which we found stable across 832 
+
+42 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+all benchmarks. Fine-tuning aligns pretrained spatiotemporal representations with the spe-833 
+
+cific requirements of behavioral segmentation, achieving competitive performance across 834 
+
+benchmarks with modest data volumes. 835 
+
+V-JEPA 2.1. V-JEPA 2.1 shares the architecture of V-JEPA 2 but produces better-aligned 836 
+
+spatiotemporal features, and we added support for it following its release. Its default input 837 
+
+resolution is 384 × 384 , but for consistency with our other experiments we run it at 256 × 256 .838 
+
+On our benchmarks it yields similar performance to the V-JEPA 2 backbone. 839 
+
+VideoPrism. VideoPrism is a video-understanding model from Google. Because no 840 
+
+PyTorch implementation was available, we ported it to PyTorch ourselves 2. Evaluated on 841 
+
+CalMS21, our port slightly exceeded the results reported in the original VideoPrism paper, 842 
+
+although it required significantly more compute compared to the frozen backbone methodol-843 
+
+ogy. Because V-JEPA 2 achieves better performance after fine-tuning, we retained V-JEPA 2 as 844 
+
+the default backbone. 845 
+
+To compare the performance of V-JEPA 2, V-JEPA 2.1, and VideoPrism, we evaluated 846 
+
+them on the CalMS21, Adult-larva, and PanAf500 datasets. We used V-JEPA 2 ViT-L (300M 847 
+
+parameters), V-JEPA 2.1 ViT-L (300M parameters), and VideoPrism Large (354M parameters). 848 
+
+First, we ran experiments using learning rates of 1e-5, 3e-5, 1e-4, 3e-4, 1e-3 on a subset of the 849 
+
+Adult-larva dataset. For all models, 1e-4 performed the best, so we ran all models with this 850 
+
+learning rate on all three datasets. As shown in Table 6 , VideoPrism performed worse than 851 
+
+the V-JEPA models, and although V-JEPA 2.1 performed slightly better than V-JEPA 2, the 852 
+
+difference was not large. Therefore, we decided to keep V-JEPA 2 as our default backbone for 853 
+
+now. 854 
+
+Classification head 855 
+
+To convert spatiotemporal embeddings from the backbone into frame-level behavioral predic-856 
+
+tions, we designed a lightweight classification head that aggregates contextual information 857 
+
+> 2
+
+https://github.com/Skovorp/torch_videoprism 
+
+43 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Model CalMS21 Adult-larva PanAf500 
+
+VideoPrism 0.877 0.593 0.683 V-JEPA 2.1 ViT-L 0.891 0.772 0.788 
+
+V-JEPA 2 ViT-L 0.890 0.819 0.779 
+
+(a) macro F1 
+
+CalMS21 Adult-larva PanAf500 
+
+93.0 72.0 79.4 
+
+94.0 90.5 84.9 
+
+93.7 93.3 82.1 
+
+(b) mAP (%) 
+
+Table 6: Backbone comparison across datasets. macro F1 (left) and mAP (right) for Video-Prism, V-JEPA 2.1 ViT-L, and V-JEPA 2 ViT-L on CalMS21, Adult-larva ants, and PanAf500, all at LR 10 −4 on full data. and outputs per-frame logits across behavioral classes. 858 
+
+Each input video chunk is represented as a sequence of thousands of spatiotemporal 859 
+
+tokens. These tokens are first enriched with contextual information from the entire sequence 860 
+
+by FERAL backbone’s stack of self-attention layers [66]. To map this long sequence onto 861 
+
+the temporal resolution of the input video, we employ an attention-based pooling module: 862 
+
+sixty-four learnable query tokens cross-attend to the encoder outputs to extract one feature 863 
+
+vector per frame. 864 
+
+The resulting pooled embeddings are flattened and passed through a Batch Normalization 865 
+
+layer [67], which stabilizes training and controls feature variance, followed by a dropout layer 866 
+
+(푝 = 0.5) [68] to reduce overfitting. A final linear projection maps the normalized embeddings 867 
+
+to class logits for each frame. 868 
+
+Loss function 869 
+
+FERAL employs different loss functions for single-label and multi-label classification. For 870 
+
+single label, FERAL is trained using a cross-entropy loss computed at the frame level. To 871 
+
+improve generalization and mitigate overconfidence, we apply label smoothing with a factor 872 
+
+of 0.1, which encourages the model to distribute probability mass across semantically related 873 
+
+classes rather than assigning absolute certainty to a single label. 874 
+
+Because behavioral datasets often exhibit pronounced class imbalance, particularly be-875 
+
+tween dominant ”background” states and rare but biologically meaningful actions, we in-876 
+
+44 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+corporate class-specific weighting into the loss. We found that scaling weights by the square 877 
+
+root of the inverse class frequency ( 푤푐 = √푁/푁푐 , where 푁 is the total frame count and 푁푐 the 878 
+
+count for class 푐) yielded better performance, amplifying the contribution of underrepresented 879 
+
+behaviors without overcompensating, compared with inverse-frequency weighting. 880 
+
+In the multi-label setting, FERAL is trained with binary cross-entropy loss, weighting each 881 
+
+class by √푁neg /푁pos (i.e. the square root of the negative-to-positive ratio) to emphasize rare 882 
+
+classes. 883 
+
+We additionally evaluated focal loss ( 훾 = 2), which dynamically down-weights easy 884 
+
+examples to focus learning on difficult cases, but found no consistent improvement on CalMS21. 885 
+
+We therefore decided to use the class-weighted cross-entropy loss. 886 
+
+Chunking strategy 887 
+
+Transformer-based video encoders compute pairwise attention across all spatiotemporal 888 
+
+tokens, causing computational complexity to scale quadratically with the number of input 889 
+
+tokens. As a result, processing entire behavioral recordings in a single pass is infeasible. 890 
+
+Consequently, FERAL divides each video into overlapping segments, or chunks , of fixed 891 
+
+length before processing. Each chunk comprises 64 consecutive frames, resized to a common 892 
+
+resolution of 256 × 256 pixels by default. 893 
+
+To capture fine-grained behavioral dynamics, consecutive chunks overlap by 50% (i.e., 894 
+
+stride = 32 frames). This design ensures that short behaviors spanning chunk boundaries 895 
+
+remain fully visible within at least one receptive field. During training, overlapping windows 896 
+
+also increase the effective number of training samples, further improving quality. 897 
+
+During inference, as the model outputs per-frame predictions for each chunk, we employ a 898 
+
+unified post-processing pipeline to gather the final frame-level predictions. If a frame received 899 
+
+multiple predictions, we averaged the corresponding class probabilities. For frames without 900 
+
+a direct prediction, we linearly interpolated probabilities from the two nearest frames with 901 
+
+predictions. This approach effectively ensembles the model’s own local predictions. 902 
+
+45 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+We benchmarked multiple configurations varying both stride and sampling rate ( Extended 903 
+
+Figure 1 ) and found that sampling every frame with 50% overlap yielded the best balance 904 
+
+between accuracy and training speed. 905 
+
+Note that there is no requirement for the overlap used during inference to match the 906 
+
+overlap used during training. Since inference is typically faster than training, a higher overlap 907 
+
+can be used at inference time to improve prediction quality without retraining the model. We 908 
+
+follow this approach in our max configuration, which is trained with 66% overlap (resulting 909 
+
+in 3 predictions per frame) and run at inference with 80% overlap (resulting in 5 predictions 910 
+
+per frame). 911 
+
+Augmentations 912 
+
+To improve generalization across diverse lighting conditions, species, and recording setups, 913 
+
+FERAL combines visual (frame-level) augmentations with label-space augmentations. For 914 
+
+visual augmentation, we adopted TrivialAugment [69], which, for each image, samples a 915 
+
+single transformation uniformly at random from a set of standard image transformations (e.g., 916 
+
+brightness, contrast, rotation, color jitter) and applies it at a randomly chosen strength. The 917 
+
+same augmentation was applied consistently across all frames within a video, preserving 918 
+
+temporal coherence while introducing diversity across video samples. 919 
+
+In addition, we applied MixUp regularization at the batch level [70]. Each augmented 920 
+
+sample was formed as a convex combination of two videos, 푋 and ˜푋, and their corresponding 921 
+
+label sequences, 푦 and ˜푦:922 
+
+푋new = 휆푋 + ( 1 − 휆) ˜ 푋, 푦new = 휆푦 + ( 1 − 휆) ˜ 푦, 923 
+
+where 휆 ∼ Beta (0.8, 0.8), drawn once per video chunk and applied identically to all frames 924 
+
+within the chunk. Because FERAL operates at frame resolution, label mixing was performed 925 
+
+element-wise across the temporal dimension. This strategy helps to mitigate overfitting on 926 
+
+46 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+small datasets. 927 
+
+To test the effectiveness of our augmentation pipeline, we ran evaluations using the default 928 
+
+configuration either without MixUp augmentations or without TrivialAugment on CalMS21. 929 
+
+As shown in Table 7, augmentations appear to provide a performance boost, with MixUp 930 
+
+having a slightly larger effect than TrivialAugment. 931 
+
+Run MixUp TrivialAugment F1 ΔF1 mAP (%) Δ
+
+Original ÿ ÿ 0.883 – 94.5 –No TrivialAugment ÿ – 0.890 +0.008 94.5 −0.1
+
+No MixUp – ÿ 0.881 −0.002 94.3 −0.3
+
+No augmentations – – 0.880 −0.002 94.1 −0.4
+
+Table 7: Ablation of augmentation strategies on CalMS21. 
+
+Training 932 
+
+We use the AdamW optimizer [71] with weight decay 0.1, peak learning rate 4 × 10 −5, a linear 933 
+
+warm-up over the first 20% of iterations followed by cosine decay, and batch size 4. Models 934 
+
+are trained for 10 epochs, which we found sufficient for convergence across benchmarks. 935 
+
+Unlike the approach used in the VideoPrism paper [33], which freezes the backbone and 936 
+
+trains only shallow classifiers, FERAL fine-tunes the upper twelve of twenty-four transformer 937 
+
+layers of V-JEPA 2, aligning high-level spatiotemporal embeddings with behavioral structure. 938 
+
+To further support generalization and out-of-distribution performance, we allow users to 939 
+
+enable an optional weight-averaging feature. When activated, FERAL maintains an exponen-940 
+
+tial moving average (EMA) 휃EMA of the model weights 휃 [72, 73], which at step 푡 is computed 941 
+
+as: 942 
+
+휃EMA  
+
+> 푡+1
+
+= 훽휃 EMA  
+
+> 푡
+
++ ( 1 − 훽)휃푡 ,943 
+
+with 훽 = 0.999 . During evaluation, both the standard and EMA-weighted models are 944 
+
+assessed and users can select the best performing option for their application. In our reported 945 
+
+experiments, we do not report metrics from EMA checkpoints, as we preferred to keep 946 
+
+47 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+the evaluation protocol simple rather than risk over-optimizing on them. Because we used 947 
+
+휃 = 0.999 , corresponding to updating only 1/1000 of the EMA weights at each step, we 948 
+
+observed that the EMA model required at least 1500 training steps to fully warm up. Shorter 949 
+
+runs often failed to converge and exhibited substantially worse EMA performance. For our 950 
+
+internal experiments that had more than 1500 steps, the EMA checkpoint achieved higher mAP 951 
+
+in 54.5% of runs, on average improving by 0.0032 ( 푛 = 233 ). Similarly, 55.8% of runs achieved a 952 
+
+higher F1 score with the EMA checkpoint, on average improving by 0.0038 ( 푛 = 197 ). Despite 953 
+
+these gains, the improvements were relatively small and only observed after a sufficiently long 954 
+
+warm-up period. Consequently, we disabled EMA in all predefined training configurations, 955 
+
+except for max .956 
+
+Prediction smoothing 957 
+
+Behavior labels typically do not change rapidly between consecutive frames. If a model 958 
+
+frequently flickers between predictions for a behavior, these transitions are often spurious. 959 
+
+To address this, we allow users to specify a smoothing window parameter, which averages 960 
+
+the predictions for each frame over a temporal window centered on that frame. Prediction 961 
+
+smoothing is disabled in the default configuration, but enabled in the max configuration with 962 
+
+a window size of 9. 963 
+
+Presets 964 
+
+There is always a trade-off between quality and speed. To accommodate different application 965 
+
+requirements, we provide three FERAL configurations: lite , default , and max . The default con-966 
+
+figuration corresponds to the setting used throughout this paper. The lite configuration uses 967 
+
+the V-JEPA 2.1 80M backbone, providing approximately a 1.8 × increase in training speed while 968 
+
+maintaining strong performance. The max configuration is similar to the default configuration, 969 
+
+but increases the temporal overlap during training to 66%, runs inference with 80% overlap, 970 
+
+and applies prediction smoothing using a window size of 9. These improvements come at the 971 
+
+48 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+cost of increased computational requirements, resulting in approximately 1.5 × longer training 972 
+
+times and 2.5 × longer inference times compared to the default configuration. Together, these 973 
+
+configurations allow users to select an appropriate balance between computational efficiency 974 
+
+and predictive quality. 975 
+
+To better illustrate these trade-offs, we evaluated the lite , default , and max configurations 976 
+
+on the CalMS21, PanAf500, and Adult-larva datasets. The results are presented in Table 8. 977 
+
+We observe that the max configuration yields slightly better performance, whereas the lite 978 
+
+configuration remains competitive while being significantly more efficient. 979 
+
+Config CalMS21 Adult-larva PanAf500 
+
+Lite 0.878 0.721 0.702 Default 0.889 0.834 0.763 Max 0.895 0.851 0.768 
+
+(a) macro F1 
+
+CalMS21 Adult-larva PanAf500 
+
+94.0 83.6 80.6 94.2 91.4 84.4 94.7 94.2 83.3 
+
+(b) mAP (%) 
+
+Table 8: Feral configuration trade-offs across datasets. macro F1 (left) and mAP (right) for the lite , default , and max configurations on CalMS21, Adult-larva ants, and PanAf500. 
+
+Public Checkpoints 980 
+
+We are also releasing 3 the checkpoints obtained by training on the CalMS21, Adult-larva, and 981 
+
+PanAf500 datasets. We provide two versions for each dataset: one compatible with the max 982 
+
+and default setups, obtained using the max configuration, and one compatible with the lite 983 
+
+configuration, produced using the lite configuration. Users can use these checkpoints for 984 
+
+inference right away or as starting points for fine-tuning on their own datasets. 985 
+
+## Experiments 986 
+
+In the following experiment, each data point was obtained from an independent training run. 987 
+
+As a result, some of the configurations were trained multiple times using different random 988 
+
+> 3
+
+https://www.getferal.ai/pretrained_checkpoints/ 
+
+49 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+seeds. While these runs produced similar results, small variations are expected due to the 989 
+
+stochastic nature of model training. Consequently, performance values may differ slightly 990 
+
+between data points. 991 
+
+Data efficiency 992 
+
+We tested FERAL’s data efficiency by training on smaller CalMS21 subsets and measuring per-993 
+
+formance drop versus the full-data baseline, while keeping the test set and all hyperparameters 994 
+
+the same. We implemented two complementary subsampling schemes: 995 
+
+(1) Video-level subsampling. We randomly sampled subsets of training videos at 50% 996 
+
+(mAP 92.0%) and 25% (mAP 93.0%) and trained FERAL on these reduced sets. Because 997 
+
+individual recordings vary in length and behavioral composition, smaller subsets ( <25%) 998 
+
+produced high variance across runs: some samples did not contain all classes and the total 999 
+
+number of frames varied substantially. We therefore do not report video-level results below 1000 
+
+25%. The chunk-level subsampling sweep described next is the one reported in Results 1001 
+
+(Figure 2g ). 1002 
+
+(2) Chunk-level subsampling. To probe sample efficiency under more balanced class 1003 
+
+distributions, we first processed the full training set into ready-to-train chunks and then ran-1004 
+
+domly subsampled from them. This design mitigates class imbalance and enabled evaluation 1005 
+
+on much smaller training sets, down to 1% of the original data. 1006 
+
+Since expanding datasets typically involves annotating additional videos, video-level 1007 
+
+subsampling best reflects realistic scaling. However, only chunk-level subsampling allows 1008 
+
+evaluation under extreme reductions without manual video selection. Under both regimes, 1009 
+
+training on 25% of the data still exceeded the full-data VideoPrism and Competition Top-1 1010 
+
+baselines, and other reduced-data settings maintained strong performance. These results 1011 
+
+indicate that FERAL’s foundation-model backbone and fine-tuning strategy confer substantial 1012 
+
+sample efficiency, enabling high performance with limited labeled footage. This is especially 1013 
+
+valuable in behavioral research, where manual annotation is expensive and time-consuming. 1014 
+
+50 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Based on these experiments and our own experience using FERAL for other projects, we 1015 
+
+found that the most practical way to label data is to annotate a few experimental clips that 1016 
+
+cover all behaviors of interest, aiming to obtain at least 0.5% of frames for the rarest behaviors. 1017 
+
+We found that having at least a few thousand frames for each behavior is required for good 1018 
+
+performance, which corresponds to roughly a few minutes of positive examples at 24 fps. 1019 
+
+We also found that it is helpful to start with a subset of the training data to iterate quickly 1020 
+
+and get a better understanding of which behaviors have enough labels and which require 1021 
+
+more annotation. feral train provides a --subsample X argument that samples 푋% of 1022 
+
+frames from the training partition. We also provide a --subsample_keep_rare_threshold X 1023 
+
+argument, which keeps all chunks containing behaviors rarer than 푋 and only subsamples 1024 
+
+frequent behaviors. This makes it possible to use subsampling even in the presence of rare 1025 
+
+behaviors. 1026 
+
+Chunking strategies 1027 
+
+We systematically benchmarked chunking strategies to balance computational efficiency and 1028 
+
+quality. Each configuration is defined by two parameters: 1029 
+
+• Frame stride : the interval between frames within a chunk (e.g., every frame, every 1030 
+
+second frame). Larger strides expand the effective temporal window but reduce temporal 1031 
+
+resolution. 1032 
+
+• Chunk overlap : the proportion of frames shared between consecutive chunks (e.g., 0%, 1033 
+
+50%, 75%). At 0% each frame in the video appears in only one chunk, at 50% in two, 1034 
+
+at 66% in three, etc. Greater overlap increases computation but improves contextual 1035 
+
+continuity and yields multiple predictions per frame that can be ensembled to enhance 1036 
+
+quality. 1037 
+
+Performance improved monotonically as stride decreased, with the best results at stride 1 1038 
+
+(sampling every frame; labeled as ”dense” on Extended Figure 1a ). Adding overlap yielded 1039 
+
+51 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+substantial quality gains, with 66% overlap producing the highest mean average precision 1040 
+
+(95.0%). Notably, even sparse settings (0% overlap, sampling every fourth frame) exceeded 1041 
+
+the competition baseline while requiring 8 times fewer steps than our default configuration. 1042 
+
+To test whether improvements were simply due to more training steps, we matched the 1043 
+
+total number of optimization steps by training the base configuration (50% overlap, dense 1044 
+
+sampling; blue bars on Extended Figure 1a ) for fewer or more epochs. Dense configurations 1045 
+
+were clearly superior to sampling every other frame, and moderate overlap was beneficial, 1046 
+
+although returns diminished at higher overlaps. We therefore adopted 50% overlap with 1047 
+
+full-frame sampling as the default. 1048 
+
+Freezing strategies 1049 
+
+To evaluate the impact of layer freezing on performance, we incrementally froze six-layer 1050 
+
+blocks of the 24-layer V-JEPA 2 encoder, proceeding from the input forward, using three 1051 
+
+different datasets that span different levels of complexity and amounts of data: CalMS21, 1052 
+
+Adult-larva, and PanAf500. Partial freezing (up to 12 layers) slightly improved test quality, 1053 
+
+consistent with a mild regularization effect. In contrast, freezing the entire encoder markedly 1054 
+
+reduced performance (mAP 88.4%), similar to the protocol used by VideoPrism. These results 1055 
+
+indicate that fine-tuning at least the final layers is necessary to align pretrained features with 1056 
+
+behavioral segmentation tasks. This is especially apparent when considering the results from 1057 
+
+the comparatively small adult-larva ant dataset in Table 9. 1058 
+
+Frozen layers CalMS21 Adult-larva PanAf500 
+
+0 (no freezing) 94.2 91.6 75.5 6 94.4 91.4 74.4 12 94.4 93.4 75.4 18 93.7 86.2 77.2 
+
+24 (all frozen) 88.4 50.7 70.4 
+
+Table 9: Effect of encoder layer freezing on test performance (mAP, %). Six-layer blocks of the 24-layer V-JEPA 2 encoder are frozen incrementally from the input forward. 52 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+## Metrics 1059 
+
+Frame-level mean average precision (mAP) is computed with 1060 
+
+sklearn.metrics.average_precision_score on per-class softmax probabilities for single-1061 
+
+label datasets and per-class sigmoid probabilities for multi-label datasets. Throughout this 1062 
+
+manuscript, mAP refers to the PASCAL-VOC convention: per-class average precision averaged 1063 
+
+across foreground classes (the “other” class is excluded from the macro-average but retained 1064 
+
+as a negative for the foreground APs). We additionally report macro F1 — the per-class 1065 
+
+F1 averaged across foreground classes. For multi-label tasks (e.g., MABe22) we binarize 1066 
+
+predictions using a fixed sigmoid threshold of 0.85 per class. For the single-label setting, 1067 
+
+we count a frame as a predicted positive when its logit is the highest among all classes, and 1068 
+
+negative otherwise. We also report accuracy, defined as the proportion of correctly classified 1069 
+
+frames. For the multi-label setting, we call a frame correctly classified when predictions for 1070 
+
+all classes match the target. The performance metrics of FERAL across all benchmark datasets 1071 
+
+using the same default configuration are reported in Table 13. 1072 
+
+Metric rationale 1073 
+
+Accuracy was not used as the primary metric, since behavioral datasets typically exhibit 1074 
+
+substantial class imbalance. Datasets often include a frequent “other” class, while biologically 1075 
+
+interesting events are relatively rare (often <1% of frames). In such settings, accuracy overesti-1076 
+
+mates performance by rewarding majority-class predictions. We therefore report mAP, which 1077 
+
+offers a more sensitive measure of per-class discrimination across thresholds, with macro 1078 
+
+F1, precision, and recall providing a complementary view. mAP is computed on the raw 1079 
+
+per-class probabilities described above; the macro F1 score is computed after thresholding 1080 
+
+continuous model outputs into discrete predictions. For all reported class-averaged statistics, 1081 
+
+the “other” class is excluded, as it denotes the absence of annotated behaviors rather than 1082 
+
+a discrete category. We also report top-1 accuracy when comparing against datasets and 1083 
+
+53 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+baselines that historically report it (e.g., DeepEthogram [24] and PanAf500 [53]). 1084 
+
+Model selection 1085 
+
+For all runs, we train the model on the full training dataset and then evaluate it on the held-out 1086 
+
+test dataset. We do not perform checkpoint selection on a validation split (standard vs EMA, 1087 
+
+and across epochs), because many of the datasets were small enough that splitting the training 1088 
+
+set into train and validation either harmed performance by making the training set too small 1089 
+
+or made the validation split uninformative when it was too small and produced noisy results. 1090 
+
+This was especially challenging for datasets where some behaviors were present in only a few 1091 
+
+videos, as the validation set needed to include all behaviors of interest to remain informative. 1092 
+
+Therefore, we decided to consistently select the non-EMA checkpoint from the last epoch. 1093 
+
+We acknowledge that this approach may introduce mild test-data leakage, since we select 1094 
+
+hyperparameters based on test-set performance. However, we use a single set of hyperparam-1095 
+
+eters across all datasets to avoid overoptimizing for any individual dataset. 1096 
+
+Run tracking 1097 
+
+For tracking training logs, we provide users with two options. Users can either keep all logs 1098 
+
+private, in which case FERAL prints everything to standard output, or enable automatic 1099 
+
+logging of all metrics to Weights & Biases (W&B, wandb.ai, [74]), which provides real-time 1100 
+
+visualization and supports reproducibility. Logged outputs include low-level training diag-1101 
+
+nostics (e.g., loss and learning rate), per-class average precision at both the chunk and frame 1102 
+
+levels, aggregated mAP and F1, and qualitative behavioral sequences after each validation and 1103 
+
+test epoch. Each run generates a unique dashboard URL, making it easy to share, compare, 1104 
+
+and revisit experiments. 1105 
+
+54 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+## Engineering and deployment 1106 
+
+Video preprocessing and seekability. Training requires fast access to arbitrary frames in the 1107 
+
+video. Some common codecs support only sequential reads and do not allow frame-level 1108 
+
+seeking, so re-encoding is often necessary. Pre-resizing can also help with HD videos, as 1109 
+
+decoding large videos may be too slow compared with GPU computation speed. FERAL 1110 
+
+includes a cross-platform utility that converts input videos to seekable formats and resizes 1111 
+
+them to 256 × 256 px. If source videos are not high resolution and are already seekable, users 1112 
+
+may skip re-encoding; resizing will then be performed dynamically during training. 1113 
+
+Hugging Face integration. To ensure modularity and ease of extension, FERAL leverages 1114 
+
+the Hugging Face transformers library [75, 76] for model management. This abstraction 1115 
+
+simplifies switching between backbones and streamlines installation compared to earlier 1116 
+
+architectures (e.g., InternVideo2), which relied on bespoke code and complex dependencies. 1117 
+
+Training visualization and monitoring. FERAL integrates with Weights & Biases (W&B) 1118 
+
+[74] for experiment tracking, allowing users to monitor training, validation, and test per-1119 
+
+formance. Logs are stored in the cloud, enabling training across multiple servers while 1120 
+
+maintaining a unified analysis interface. FERAL comes with a community W&B workspace 1121 
+
+and a public API key in default_config.yaml to lower the onboarding burden for users 1122 
+
+without a W&B account; a --no-wandb flag is provided for fully offline operation, and users 1123 
+
+can connect their own W&B accounts at any time. 1124 
+
+Deployment and compute requirements. FERAL default requires 24GB of VRAM for 1125 
+
+training, which fits on high-end consumer GPUs. With gradient checkpointing enabled, the 1126 
+
+default configuration can also fit within 8GB of VRAM, albeit with longer training times. 1127 
+
+The Lite version has an even smaller VRAM footprint, delivers slightly lower performance 1128 
+
+than the default model, but provides nearly 2 × faster training. For users without access to 1129 
+
+GPU hardware, FERAL provides step-by-step deployment guides for GPU cloud platforms 1130 
+
+(e.g., RunPod) as well as a Google Colab notebook, enabling full training runs at low cost and 1131 
+
+55 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+with minimal setup. All necessary dependencies, including CUDA and PyTorch [77, 78], are 1132 
+
+pre-installed on these instances, allowing users to begin training within minutes. Inference 1133 
+
+uses the same chunk length and stride as training (64-frame chunks with 50% overlap) and 1134 
+
+runs faster than real time on all tested GPUs (see Table 3 for a complete GPU comparison). 1135 
+
+## AUTHOR CONTRIBUTIONS 
+
+P.S. and J.R. conceptualized the study, developed the method, designed experiments, and 1136 
+
+performed analyses. P.S., J.R., and L.B.V. co-wrote the manuscript. B.R.C., B.K., and I.D.C. 1137 
+
+provided the zebra dataset, and B.R.C. supported the application of FERAL to the zebra dataset. 1138 
+
+F.B. provided the C. elegans dataset. D.D.F., D.J.C.K., J.Z., O.S., T.K., and V.C. provided the 1139 
+
+ant datasets (D.D.F. and J.Z.: adult-larva dataset; T.K. and V.C.: ant colony datasets; O.S.: 1140 
+
+annotations for the non-binary colony dataset classification). The authors listed between 1141 
+
+B.R.C. and I.D.C. (F.B., V.C., D.D.F., T.K., B.K., O.S., and J.Z.) are listed in alphabetical order 1142 
+
+by surname, as they each contributed videos and annotations. All authors provided feedback 1143 
+
+on the manuscript. 1144 
+
+## DATA AND CODE AVAILABILITY 
+
+All source code, training configurations, and documentation for FERAL are publicly available 1145 
+
+at getferal.ai and https://github.com/Skovorp/feral under the MIT license, compatible with 1146 
+
+the upstream V-JEPA 2 backbone license. The website and the repository include example 1147 
+
+datasets, preprocessing utilities, and instructions for local and cloud-based deployment. 1148 
+
+Data and Supplementary Videos 1–4 used in this publication are available at the GitHub 1149 
+
+Data Repository (https://github.com/Skovorp/feral_share_data/tree/main); a versioned 1150 
+
+snapshot of code and datasets has been deposited at Zenodo. 1151 
+
+56 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+## COMPETING INTERESTS 
+
+The authors declare no competing interests. 1152 
+
+## ACKNOWLEDGMENTS 
+
+We thank the members of the Vosshall Lab and the Data Science Platform at The Rockefeller 1153 
+
+University, as well as Giulio Formenti, Yohann Chemtob, and Emily B. L. Wright for dis-1154 
+
+cussion and comments on the manuscript. We thank Christopher Harvey for sharing the 1155 
+
+per-frame accuracy values from the DeepEthogram study. We thank Cornelia Bargmann, who 1156 
+
+supervised F.B. and generously provided guidance and support for this project. This work 1157 
+
+was supported by the Howard Hughes Medical Institute and graduate fellowships from the 1158 
+
+Price Family Center for the Social Brain and the Boehringer Ingelheim Fonds (J.R.). This work 1159 
+
+was supported by the Howard Hughes Medical Institute, the Rockefeller University, and the 1160 
+
+Jonathan and Maya Nelson Center for Artificial Intelligence (P.S.). We gratefully acknowledge 1161 
+
+the Data Science Platform (DSP) at The Rockefeller University for access to the DSP Cluster and 1162 
+
+computing equipment used in this study. This work was supported by the National Institute 1163 
+
+on Deafness and Other Communication Disorders under award number K99DC021506 to 1164 
+
+D.D.F. D.J.C.K. and L.B.V. were supported by the HHMI Investigator program. B.R.C. received 1165 
+
+support from the European Union’s Horizon 2020 research and innovation program under the 1166 
+
+Marie Sklodowska-Curie grant agreement No. 748549. B.R.C. acknowledges support from the 1167 
+
+University of Konstanz’s Investment Grant program. B.K., I.D.C, and B.R.C. acknowledge sup-1168 
+
+port from the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under 1169 
+
+Germany’s Excellence Strategy—‘Centre for the Advanced Study of Collective Behaviour’ EXC 1170 
+
+2117-422037984, DFG project number 462886202, the European Union’s Horizon 2020 Research 1171 
+
+and Innovation Programme under Marie Skłodowska-Curie Grant 860949, the DFG Gottfried 1172 
+
+Wilhelm Leibniz Prize 2022 584/22, and the PathFinder European Innovation Council Work 1173 
+
+Programme 101098722. B.R.C. acknowledges support from NVIDIA Corporation’s Academic 1174 
+
+57 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Hardware Grant Program. F.B. was supported by a Medical Scientist Training Program grant 1175 
+
+from the National Institute of General Medical Sciences of the National Institutes of Health 1176 
+
+under award number T32GM152349 to the Weill Cornell/Rockefeller/Sloan Kettering Tri-1177 
+
+Institutional MD-PhD Program and by an F31 Predoctoral Fellowship from the National 1178 
+
+Institute of Neurological Disorders and Stroke of the National Institutes of Health under 1179 
+
+award number F31NS132477. O.S. acknowledges support from the Israel Science Foundation 1180 
+
+(ISF) through the Beresheet Program for Integrating Outstanding Young Researchers (Grant 1181 
+
+No. 4126/25) and by the Maimonides Fund’s Future Scientists Center. 1182 
+
+## REFERENCES 
+
+[1] André E. X. Brown and Benjamin de Bivort. “Ethology as a physical science”. In: Nature 1183 
+
+Physics 14.7 (2018), pp. 653–657. issn: 1745-2473. doi: 10.1038/s41567-018-0093-0. 1184 
+
+[2] Gordon J. Berman. “Measuring behavior across scales”. In: BMC Biology 16.1 (2018), 1185 
+
+p. 23. doi: 10.1186/s12915-018-0494-7. 1186 
+
+[3] Sandeep Robert Datta et al. “Computational Neuroethology: A Call to Action”. In: 1187 
+
+Neuron 104.1 (2019), pp. 11–24. issn: 0896-6273. doi: 10.1016/j.neuron.2019.09.038. 1188 
+
+[4] S E Roian Egnor and Kristin Branson. “Computational Analysis of Behavior.” In: Annual 1189 
+
+review of neuroscience 39.1 (2016), pp. 217–36. issn: 0147-006X. doi: 10.1146/annurev-1190 
+
+neuro-070815-013845. 1191 
+
+[5] Marian Stamp Dawkins, Paul Martin, and Patrick Bateson. “Measuring Behaviour. An 1192 
+
+Introductory Guide”. In: The Journal of Animal Ecology 63.3 (1994), p. 746. issn: 0021-8790. 1193 
+
+doi: 10.2307/5248. 1194 
+
+[6] Jeanne Altmann. “Observational Study of Behavior: Sampling Methods”. In: Behaviour 1195 
+
+49.3-4 (1974), pp. 227–266. issn: 0005-7959. doi: 10.1163/156853974x00534. 1196 
+
+58 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[7] David J. Anderson and Pietro Perona. “Toward a Science of Computational Ethology”. 1197 
+
+In: Neuron 84.1 (2014), pp. 18–31. issn: 0896-6273. doi: 10.1016/j.neuron.2014.09.005. 1198 
+
+[8] John W. Krakauer et al. “Neuroscience Needs Behavior: Correcting a Reductionist Bias”. 1199 
+
+In: Neuron 93.3 (2017), pp. 480–490. issn: 0896-6273. doi: 10.1016/j.neuron.2016.12.041. 1200 
+
+[9] Jane Goodall. “Tool-Using and Aimed Throwing in a Community of Free-Living Chim-1201 
+
+panzees”. In: Nature 201.4926 (1964), pp. 1264–1266. issn: 0028-0836. doi: 10 . 1038 / 1202 
+
+2011264a0. 1203 
+
+[10] Margaret Bastock and Aubrey Manning. “The Courtship of Drosophila Melanogaster”. 1204 
+
+In: Behaviour 8.1 (1955), pp. 85–110. issn: 0005-7959. doi: 10.1163/156853955x00184. 1205 
+
+[11] Cristina Segalin et al. “The Mouse Action Recognition System (MARS) software pipeline 1206 
+
+for automated analysis of social behaviors in mice”. In: eLife 10 (2021), e63720. doi: 1207 
+
+10.7554/elife.63720. 1208 
+
+[12] Devis Tuia et al. “Perspectives in machine learning for wildlife conservation”. In: Nature 1209 
+
+Communications 13.1 (2022), p. 792. doi: 10.1038/s41467-022-27980-y. eprint: 2110.12951. 1210 
+
+[13] Megan Tjandrasuwita et al. “Interpreting Expert Annotation Differences in Animal 1211 
+
+Behavior”. In: arXiv (2021). doi: 10.48550/arxiv.2106.06114. eprint: 2106.06114. 1212 
+
+[14] Alexander Mathis et al. “DeepLabCut: markerless pose estimation of user-defined 1213 
+
+body parts with deep learning”. In: Nature Neuroscience 21.9 (2018), pp. 1281–1289. issn: 1214 
+
+1097-6256. doi: 10.1038/s41593-018-0209-y. 1215 
+
+[15] Talmo D Pereira et al. “SLEAP: A deep learning system for multi-animal pose tracking.” 1216 
+
+In: Nature methods 19.4 (2021), pp. 486–495. issn: 1548-7091. doi: 10.1038/s41592-022-1217 
+
+01426-1. 1218 
+
+[16] Dan Biderman et al. “Lightning Pose: improved animal pose estimation via semi-1219 
+
+supervised learning, Bayesian ensembling and cloud-native open-source tools”. In: 1220 
+
+59 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Nature Methods 21.7 (2024), pp. 1316–1328. issn: 1548-7091. doi: 10.1038/s41592-024-1221 
+
+02319-1. 1222 
+
+[17] Tristan Walter and Iain D Couzin. “TRex, a fast multi-animal tracking system with 1223 
+
+markerless identification, and 2D estimation of posture and visual fields.” In: eLife 10 1224 
+
+(2020), e64000. doi: 10.7554/elife.64000. 1225 
+
+[18] Jacob M Graving et al. “DeepPoseKit, a software toolkit for fast and robust animal pose 1226 
+
+estimation using deep learning”. In: eLife 8 (2019), e47994. doi: 10.7554/elife.47994. 1227 
+
+[19] Caleb Weinreb et al. “Keypoint-MoSeq: parsing behavior by linking point tracking to 1228 
+
+pose dynamics”. In: Nature Methods 21.7 (2024), pp. 1329–1339. issn: 1548-7091. doi: 1229 
+
+10.1038/s41592-024-02318-2. 1230 
+
+[20] Alexander I. Hsu and Eric A. Yttri. “B-SOiD, an open-source unsupervised algorithm for 1231 
+
+identification and fast prediction of behaviors”. In: Nature Communications 12.1 (2021), 1232 
+
+p. 5188. doi: 10.1038/s41467-021-25420-x. 1233 
+
+[21] Kevin Luxem et al. “Identifying behavioral structure from deep variational embeddings 1234 
+
+of animal motion (VAME)”. In: Communications Biology 5 (2022), p. 1267. doi: 10.1038/ 1235 
+
+s42003-022-04080-7. 1236 
+
+[22] Mayank Kabra et al. “JAABA: interactive machine learning for automatic annotation 1237 
+
+of animal behavior”. In: Nature Methods 10.1 (2013), pp. 64–67. issn: 1548-7091. doi: 1238 
+
+10.1038/nmeth.2281. 1239 
+
+[23] Simon R. O. Nilsson et al. SimBA - Simple Behavioral Analysis, an open source toolkit for 1240 
+
+computer classification of complex social behaviors in experimental animals . bioRxiv. 2020. doi: 1241 
+
+10.1101/2020.04.19.049452. 1242 
+
+[24] James P. Bohnslav et al. “DeepEthogram, a machine learning pipeline for supervised 1243 
+
+behavior classification from raw pixels”. In: eLife 10 (2021), e63377. doi: 10.7554/eLife. 1244 
+
+63377. 1245 
+
+60 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[25] Daniel Pototzky et al. DAP: Domain-Adaptive Pretraining for Primate Behavior Recognition .1246 
+
+CV4Animals workshop at CVPR 2025. 2025. arXiv: 2509.12193. 1247 
+
+[26] Otto Brookes et al. ChimpVLM: Ape Behavior Recognition with Vision-Language Models .1248 
+
+2024. arXiv: 2404.08937. 1249 
+
+[27] Robin Cuypers et al. PriVi: A General-Purpose Video Model for Primate Behavior . 2025. 1250 
+
+arXiv: 2511.09675. 1251 
+
+[28] Jennifer J. Sun et al. “Video Foundation Models for Animal Behavior Analysis”. In: 1252 
+
+bioRxiv (2024). doi: 10.1101/2024.07.30.605655. url: https://www.biorxiv.org/content/ 1253 
+
+10.1101/2024.07.30.605655v1. 1254 
+
+[29] Chengjie Zheng et al. “Animal-JEPA: Advancing Animal Behavior Studies Through 1255 
+
+Joint Embedding Predictive Architecture in Video Analysis”. In: 2024 IEEE International 1256 
+
+Conference on Big Data (BigData) . IEEE, 2024, pp. 1909–1918. doi: 10.1109/BigData62323. 1257 
+
+2024.10825171. 1258 
+
+[30] Yanchen Wang et al. “Animal behavioral analysis and neural encoding with transformer-1259 
+
+based self-supervised pretraining”. In: The Fourteenth International Conference on Learning 1260 
+
+Representations (ICLR) . 2026. url: https://openreview.net/forum?id=AeqPIRKUni. 1261 
+
+[31] Yana Hasson et al. “SciVid: Cross-Domain Evaluation of Video Models in Scientific 1262 
+
+Applications”. In: Proceedings of the IEEE/CVF International Conference on Computer Vision 1263 
+
+(ICCV) . 2025. arXiv: 2507.03578. url: https://arxiv.org/abs/2507.03578. 1264 
+
+[32] Mido Assran et al. “V-JEPA 2: Self-Supervised Video Models Enable Understanding, 1265 
+
+Prediction and Planning”. In: arXiv (2025). doi: 10.48550/arxiv.2506.09985. eprint: 1266 
+
+2506.09985. 1267 
+
+[33] Long Zhao et al. “VideoPrism: A Foundational Visual Encoder for Video Understand-1268 
+
+ing”. In: arXiv (2024). doi: 10.48550/arxiv.2402.13217. eprint: 2402.13217. 1269 
+
+61 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[34] Bin Lin et al. “Video-LLaVA: Learning United Visual Representation by Alignment 1270 
+
+Before Projection”. In: Proceedings of the 2024 Conference on Empirical Methods in Natural 1271 
+
+Language Processing (2024), pp. 5971–5984. doi: 10.18653/v1/2024.emnlp-main.342. 1272 
+
+[35] Olivier Friard and Marco Gamba. “BORIS: a free, versatile open‐source event‐logging 1273 
+
+software for video/audio coding and live observations”. In: Methods in Ecology and 1274 
+
+Evolution 7.11 (2016), pp. 1325–1330. issn: 2041-210X. doi: 10.1111/2041-210x.12584. 1275 
+
+[36] Lucas P. J. J. Noldus, Andrew J. Spink, and Ruud A. J. Tegelenbosch. “EthoVision: A 1276 
+
+versatile video tracking system for automation of behavioral experiments”. In: Behavior 1277 
+
+Research Methods, Instruments, & Computers 33.3 (2001), pp. 398–414. issn: 0743-3808. doi: 1278 
+
+10.3758/bf03195394. 1279 
+
+[37] Annemarie van der Marel et al. “A comparison of low‐cost behavioral observation soft-1280 
+
+ware applications for handheld computers and recommendations for use”. In: Ethology 1281 
+
+128.3 (2022), pp. 275–284. issn: 0179-1613. doi: 10.1111/eth.13251. 1282 
+
+[38] Rishi Bommasani et al. “On the Opportunities and Risks of Foundation Models”. In: 1283 
+
+arXiv (2021). doi: 10.48550/arxiv.2108.07258. eprint: 2108.07258. 1284 
+
+[39] Jennifer J. Sun et al. “The Multi-Agent Behavior Dataset: Mouse Dyadic Social Interac-1285 
+
+tions”. In: Proceedings of the Neural Information Processing Systems Track on Datasets and 1286 
+
+Benchmarks (NeurIPS) . Vol. 1. arXiv:2104.02710. 2021. url: https://datasets-benchmarks-1287 
+
+proceedings . neurips . cc / paper / 2021 / hash / ca46c1b9512a7a8315fa3c5a946e8265 -1288 
+
+Abstract-round1.html. 1289 
+
+[40] Jennifer J. Sun et al. “Task Programming: Learning Data Efficient Behavior Repre-1290 
+
+sentations”. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern 1291 
+
+Recognition (CVPR) . 2021, pp. 2876–2885. 1292 
+
+62 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[41] K. Shi et al. “TRACE: End-to-end temporal inference and annotation of animal behaviors 1293 
+
+from video”. In: bioRxiv (2026). Preprint. doi: 10.64898/2026.04.14.718392. url: https: 1294 
+
+//www.biorxiv.org/content/10.64898/2026.04.14.718392v1. 1295 
+
+[42] Jennifer J. Sun et al. “MABe22: A Multi-Species Multi-Task Benchmark for Learned 1296 
+
+Representations of Behavior”. In: Proceedings of the 40th International Conference on Ma-1297 
+
+chine Learning (ICML) . Vol. 202. PMLR. arXiv:2207.10553. 2023, pp. 32936–32990. url: 1298 
+
+https://proceedings.mlr.press/v202/sun23g.html. 1299 
+
+[43] Alexander B. Wiltschko et al. “Mapping sub-second structure in mouse behavior”. In: 1300 
+
+Neuron 88.6 (2015), pp. 1121–1135. doi: 10.1016/j.neuron.2015.11.031. 1301 
+
+[44] Greg J. Stephens, Matthew Bueno de Mesquita, William S. Ryu, and William Bialek. 1302 
+
+“Emergence of long timescales and stereotyped behaviors in Caenorhabditis elegans”. 1303 
+
+In: Proceedings of the National Academy of Sciences 108.18 (2011), pp. 7286–7289. issn: 1304 
+
+0027-8424. doi: 10.1073/pnas.1007868108. 1305 
+
+[45] Neil A. Croll. “Components and patterns in the behaviour of the nematode Caenorhab-1306 
+
+ditis elegans”. In: Journal of Zoology 176.2 (1975), pp. 159–176. issn: 0952-8369. doi: 1307 
+
+10.1111/j.1469-7998.1975.tb03191.x. 1308 
+
+[46] Alejandro López-Cruz et al. “Parallel multimodal circuits control an innate foraging 1309 
+
+behavior”. In: Neuron 102.2 (2019), pp. 407–419. doi: 10.1016/j.neuron.2019.01.053. 1310 
+
+[47] Andrew Sordillo and Cornelia I. Bargmann. “Behavioral control by depolarized and 1311 
+
+hyperpolarized states of an integrating neuron”. In: eLife 10 (2021), e67723. doi: 10.7554/ 1312 
+
+eLife.67723. 1313 
+
+[48] Eviatar Yemini et al. “A database of Caenorhabditis elegans behavioral phenotypes”. In: 1314 
+
+Nature Methods 10.9 (2013), pp. 877–879. doi: 10.1038/nmeth.2560. 1315 
+
+63 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[49] Kuang-Man Huang, Pamela Cosman, and William R. Schafer. “Machine vision based 1316 
+
+detection of omega bends and reversals in C. elegans”. In: Journal of Neuroscience Methods 1317 
+
+158.2 (2006), pp. 323–336. doi: 10.1016/j.jneumeth.2006.06.007. 1318 
+
+[50] Adriano A. Wanderlingh. “Effects of group size on disease transmission risk and im-1319 
+
+mune strategies in ants”. PhD thesis. University of Bristol, 2024. url: https://research-1320 
+
+information . bris . ac . uk / en / studentTheses / effects - of - group - size - on - disease -1321 
+
+transmission-risk-and-immune-str/. 1322 
+
+[51] Linyang Ju et al. “Hormonal gatekeeping via the blood-brain barrier governs caste-1323 
+
+specific behavior in ants”. In: Cell 186.20 (2023), 4289–4309.e23. doi: 10.1016/j.cell.2023. 1324 
+
+08.002. 1325 
+
+[52] Michael B. Gilbert et al. “Neuropeptides specify and reprogram division of labor in the 1326 
+
+leafcutter ant Atta cephalotes ”. In: Cell 188.15 (2025), 3974–3991.e21. doi: 10.1016/j.cell. 1327 
+
+2025.05.023. 1328 
+
+[53] Otto Brookes et al. “PanAf20K: A Large Video Dataset for Wild Ape Detection and 1329 
+
+Behaviour Recognition”. In: International Journal of Computer Vision 132.8 (2024), pp. 3086– 1330 
+
+3102. doi: 10.1007/s11263-024-02003-z. 1331 
+
+[54] Benjamin Koger et al. “Quantifying the movement, behaviour and environmental context 1332 
+
+of group‐living animals using drones and computer vision”. In: Journal of Animal Ecology 1333 
+
+92.7 (2023), pp. 1357–1371. issn: 0021-8790. doi: 10.1111/1365-2656.13904. 1334 
+
+[55] Tianqi Chen and Carlos Guestrin. “XGBoost: A Scalable Tree Boosting System”. In: 1335 
+
+Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and 1336 
+
+Data Mining (KDD) . 2016, pp. 785–794. doi: 10.1145/2939672.2939785. 1337 
+
+[56] Liudmila Prokhorenkova et al. “CatBoost: Unbiased Boosting with Categorical Features”. 1338 
+
+In: Advances in Neural Information Processing Systems (NeurIPS) . Vol. 31. 2018. 1339 
+
+64 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[57] Mimi Arandjelovic et al. “Chimp&See: Citizen-science Pan African Programme”. In: 1340 
+
+Pan African Programme: The Cultured Chimpanzee (2016). 1341 
+
+[58] Vikram Chandra, Asaf Gal, and Daniel J. C. Kronauer. “Colony expansions underlie 1342 
+
+the evolution of army ant mass raiding”. In: Proceedings of the National Academy of 1343 
+
+Sciences of the United States of America 118.22 (2021), e2026534118. issn: 0027-8424. doi: 1344 
+
+10.1073/pnas.2026534118. 1345 
+
+[59] Alfonso Pérez-Escudero et al. “idTracker: tracking individuals in a group by automatic 1346 
+
+identification of unmarked animals.” In: Nature methods 11.7 (2013), pp. 743–8. issn: 1347 
+
+1548-7091. doi: 10.1038/nmeth.2994. 1348 
+
+[60] Sydney Brenner. “The genetics of Caenorhabditis elegans”. In: Genetics 77.1 (1974), 1349 
+
+pp. 71–94. doi: 10.1093/genetics/77.1.71. 1350 
+
+[61] Maria Teresa Lino et al. “Annotating Multi-media/Multi-modal Resources with ELAN”. 1351 
+
+In: Proceedings of the Fourth International Conference on Language Resources and Evaluation 1352 
+
+(LREC’04) . Lisbon, 2004. 1353 
+
+[62] Vikram Chandra and Daniel J. C. Kronauer. “Foraging and feeding are independently 1354 
+
+regulated by social and personal hunger in the clonal raider ant”. In: Behavioral Ecology 1355 
+
+and Sociobiology 75.2 (2021), p. 41. doi: 10.1007/s00265-021-02985-7. 1356 
+
+[63] Yi Wang et al. “InternVideo2: Scaling Foundation Models for Multimodal Video Under-1357 
+
+standing”. In: European Conference on Computer Vision (ECCV) . 2024. arXiv: 2403.15377. 1358 
+
+[64] Andrés Marafioti et al. SmolVLM2: Bringing Video Understanding to Every Device . 2025. 1359 
+
+arXiv: 2504.05299. 1360 
+
+[65] Yingwei Li, Yi Li, and Nuno Vasconcelos. “RESOUND: Towards Action Recognition 1361 
+
+Without Representation Bias”. In: Lecture Notes in Computer Science (2018), pp. 520–535. 1362 
+
+issn: 0302-9743. doi: 10.1007/978-3-030-01231-1_32. 1363 
+
+65 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[66] Ashish Vaswani et al. “Attention Is All You Need”. In: arXiv (2017). doi: 10.48550/arxiv. 1364 
+
+1706.03762. eprint: 1706.03762. 1365 
+
+[67] Sergey Ioffe and Christian Szegedy. “Batch Normalization: Accelerating Deep Network 1366 
+
+Training by Reducing Internal Covariate Shift”. In: Proceedings of the 32nd International 1367 
+
+Conference on Machine Learning (ICML) . 2015. arXiv: 1502.03167. 1368 
+
+[68] Nitish Srivastava et al. “Dropout: A simple way to prevent neural networks from over-1369 
+
+fitting”. In: Journal of Machine Learning Research 15 (2014), pp. 1929–1958. 1370 
+
+[69] Samuel G. Müller and Frank Hutter. “TrivialAugment: Tuning-free yet state-of-the-art 1371 
+
+data augmentation”. In: Proceedings of the IEEE/CVF International Conference on Computer 1372 
+
+Vision (ICCV) . 2021. arXiv: 2103.10158. 1373 
+
+[70] Hongyi Zhang, Moustapha Cisse, Yann N. Dauphin, and David Lopez-Paz. “mixup: 1374 
+
+Beyond Empirical Risk Minimization”. In: International Conference on Learning Represen-1375 
+
+tations (ICLR) . 2018. arXiv: 1710.09412. 1376 
+
+[71] Ilya Loshchilov and Frank Hutter. “Decoupled Weight Decay Regularization”. In: Inter-1377 
+
+national Conference on Learning Representations (ICLR) . 2019. arXiv: 1711.05101. 1378 
+
+[72] Antti Tarvainen and Harri Valpola. “Mean teachers are better role models: Weight-1379 
+
+averaged consistency targets improve semi-supervised deep learning results”. In: Ad-1380 
+
+vances in Neural Information Processing Systems (NeurIPS) . 2017. arXiv: 1703.01780. 1381 
+
+[73] Daniel Morales-Brotons, Thijs Vogels, and Hadrien Hendrikx. “Exponential Moving 1382 
+
+Average of Weights in Deep Learning: Dynamics and Benefits”. In: arXiv (2024). doi: 1383 
+
+10.48550/arxiv.2411.18704. eprint: 2411.18704. 1384 
+
+[74] Lukas Biewald. Experiment Tracking with Weights and Biases . https://www.wandb.com. 1385 
+
+Software available from wandb.com. 2020. url: https://www.wandb.com. 1386 
+
+66 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+[75] Thomas Wolf et al. “Transformers: State-of-the-Art Natural Language Processing”. In: 1387 
+
+Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: 1388 
+
+System Demonstrations (EMNLP) . 2020, pp. 38–45. arXiv: 1910.03771. 1389 
+
+[76] Thomas Wolf et al. “HuggingFace’s Transformers: State-of-the-art Natural Language 1390 
+
+Processing”. In: arXiv (2019). doi: 10.48550/arxiv.1910.03771. eprint: 1910.03771. 1391 
+
+[77] Adam Paszke et al. “PyTorch: An Imperative Style, High-Performance Deep Learning 1392 
+
+Library”. In: Advances in Neural Information Processing Systems (NeurIPS) . Vol. 32. 2019. 1393 
+
+arXiv: 1912.01703. 1394 
+
+[78] Adam Paszke et al. “PyTorch: An Imperative Style, High-Performance Deep Learning 1395 
+
+Library”. In: arXiv (2019). doi: 10.48550/arxiv.1912.01703. eprint: 1912.01703. 1396 
+
+67 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+## EXTENDED FIGURES 
+
+68 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint FERAL 
+
+Extended Figure 1. Training-configuration ablations, out-of-vocabulary behavior, and inter-annotator agreement. (a) Effect of temporal chunking on the CalMS21 dataset: mean average precision (top) and number of training steps (bottom, log scale) across frame-sampling and chunk-overlap configurations. (b) Effect of V-JEPA 2 layer freezing on CalMS21 mAP. (c) Out-of-vocabulary (leave-one-class-out) analysis on Mouse-Ventral1: row-normalized distribution of where frames of each held-out class are routed by FERAL under the reduced training schema. (d) Inter-annotator agreement on Mouse-Ventral1. Left: pairwise macro-F1 among the three human annotators. Right: macro-F1 between a FERAL model trained on each annotator and each target annotator, showing model–annotator agreement comparable to human–human agreement. 69 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Extended Figure 2. Per-video and confusion-matrix detail for C. elegans locomotion and 
+
+Ooceraea biroi adult-larva grooming. (a) Distribution of bout durations for the four 
+
+C. elegans locomotor states ( forward , reverse , turn , pause ), comparing ground truth (filled) and FERAL predictions (outline). (b) Confusion matrix comparing manual annotation against the tracker-based heuristic classification used as the algorithmic ground truth for C. elegans . (c) 
+
+Per-video frame-level accuracy (matched vs mismatched frames) for C. elegans videos sorted by length. (d) Confusion matrix of FERAL predictions versus expert annotation for O. biroi 
+
+adult-larva interactions ( background , self-grooming , allogrooming ). (e) 
+
+Per-video frame-level accuracy (matched vs mismatched frames) for adult-larva interactions, videos sorted by length. 70 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Extended Figure 3. Pose-based classifiers fail on zebra vigilance, and per-video error analysis on the field datasets. (a) Vigilant-vs-other classification of zebra frames from DeepPoseKit pose estimates under leave-one-observation-out evaluation: macro-F1 for gradient-boosted classifiers (XGBoost [55], CatBoost [56]) trained on pose features, versus FERAL on raw video (green line, FERAL macro-F1 = 0.785 ); dashed line, chance for the binary task. (b) Per-video frame-level accuracy (matched vs mismatched frames) for the zebra dataset, videos sorted by length. (c) Row-normalized confusion matrix of FERAL predictions versus expert annotation for the zebra dataset ( background , out of sight , vigilant ). 
+
+(d) Confusion matrix of FERAL predictions versus expert annotation for the PanAf500 dataset across the behavioral classes. 71 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+## EXTENDED TABLES 
+
+Dataset Classes Train vid. Train frames Test frames Test vid. Multilabel 
+
+CalMS21 4 70 507738 262107 19 False Ant colonies 2 7 126000 36000 2 False Ant raid substructure 5 5 200784 90067 2 True C. elegans 5 29 92560 35674 8 False Adult-larva ants 3 7 126000 54000 3 False MABe22 6 897 807300 202500 225 True Zebras 3 35 2487594 424550 9 False PanAf500 9 772 192768 36480 155 False Mouse-Social 6 9 328901 109655 3 False Mouse-Homecage 8 9 328938 109554 3 False Mouse-Openfield 6 16 391230 146304 4 False Mouse-Ventral1 5 24 359848 59998 4 False Mouse-Ventral2 3 13 701376 161856 3 False Fly 2 16 2879952 539991 3 False 
+
+Table 10: Summary of datasets used in this study. For the PanAf500, C. elegans, and Zebras datasets, we report statistics after cropping each individual into a separate video. 72 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Dataset Species How labels were obtained 
+
+CalMS21 Mus musculus 
+
+(mouse) Manual expert annotation (challenge-provided) MABe22 (Scepto-bius lativentris )Rove beetle Manual annotation by trained ethologists PanAf500 Chimpanzee, gorilla Manual annotation of camera-trap clips 
+
+C. elegans Nematode Heuristic / algorithmic — rule-based pipeline from centroid track and midline dynamics (no manual an-notation); benchmark of agreement with an algorith-mic gold standard Adult-larva ants O. biroi Manual expert annotation in ELAN (J.Z.) Ant colonies O. biroi Manual annotation of collective raiding events Zebras Equus grevyi Manual expert annotation in BORIS (B.R.C.) Mouse-Social M. musculus Manual annotation (original DeepEthogram authors) Mouse-Homecage M. musculus Manual annotation (original DeepEthogram authors) Mouse-Openfield M. musculus Manual annotation (original DeepEthogram authors) Mouse-Ventral1 M. musculus Manual annotation (original DeepEthogram authors) Mouse-Ventral2 M. musculus Manual annotation (original DeepEthogram authors) Fly D. melanogaster Manual annotation (original DeepEthogram authors) 
+
+Table 11: Label provenance across datasets. How the behavioral labels were generated for each dataset. 
+
+Table 12: Per-class performance across all evaluated datasets. All experiments used the de-fault configuration. Percentages are the fraction of frames carrying each label in the train / test split; F1, precision, and recall are frame-level on the test split. For the DeepEthogram datasets (Mouse-Social, Mouse-Homecage, Mouse-Openfield, Mouse-Ventral1, Mouse-Ventral2, Fly), per-class precision and recall were not retained; the value in parentheses after the F1 is the per-class average precision (AP). 
+
+Dataset Behavior % train % test F1 Precision Recall 
+
+CalMS21 other 62.7 59.7 0.959 0.967 0.950 attack 2.8 4.8 0.844 0.831 0.856 investigation 28.9 23.4 0.880 0.871 0.890 mount 5.6 12.2 0.944 0.930 0.959 
+
+continued on next page 
+
+73 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Table 12 — continued from previous page 
+
+Dataset Behavior % train % test F1 Precision Recall 
+
+C. elegans other 0.1 0.1 0.147 0.086 0.500 forward 85.0 83.4 0.970 0.991 0.949 reversal 6.8 8.6 0.875 0.859 0.891 turn 2.2 2.5 0.853 0.786 0.932 pause 5.9 5.4 0.754 0.643 0.912 Adult-larva ants other 90.0 86.6 0.980 0.994 0.966 self 1.1 2.1 0.734 0.614 0.911 larvae 8.9 11.4 0.892 0.842 0.948 MABe22 ( Sceptobius lativentris )mystery_beetle_1 21.3 20.0 0.905 0.906 0.903 mystery_beetle_2 15.9 13.9 0.936 0.934 0.938 mystery_beetle_3 21.2 21.7 0.949 0.977 0.922 mystery_beetle_4 7.3 9.8 0.834 0.948 0.745 mystery_beetle_5 24.5 25.0 0.979 0.994 0.965 mystery_beetle_6 9.7 9.6 0.920 0.948 0.893 Zebras other 77.9 79.3 0.953 0.957 0.949 out_of_sight 2.3 3.2 0.731 0.808 0.667 vigilant 19.8 17.5 0.839 0.810 0.870 PanAf500 background 12.2 12.5 0.970 0.984 0.957 camera_interaction 0.7 1.4 0.653 0.579 0.749 climbing_down 0.7 0.4 0.953 0.910 1.000 climbing_up 1.9 1.0 0.883 0.930 0.840 hanging 4.0 2.8 0.538 0.770 0.414 running 0.9 1.3 0.494 0.761 0.365 sitting 34.7 25.4 0.953 0.929 0.977 sitting_on_back 1.2 0.3 0.611 0.440 1.000 standing 17.0 25.2 0.871 0.858 0.884 walking 26.8 29.7 0.915 0.923 0.908 
+
+continued on next page 
+
+74 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Table 12 — continued from previous page 
+
+Dataset Behavior % train % test F1 Precision Recall 
+
+Mouse-Social background 85.9 79.7 0.965 (0.996) — —nose-to-nose 1.5 2.3 0.623 (0.623) — —nose-to-body 5.4 7.3 0.607 (0.607) — —body-to-body 5.0 6.9 0.690 (0.701) — —chase 1.2 2.7 0.633 (0.675) — —anogenital 1.0 1.1 0.386 (0.375) — —Mouse-Homecage background 46.8 11.4 0.790 (0.872) — —in-hut 5.8 31.4 0.955 (0.984) — —object 1 8.6 4.1 0.912 (0.968) — —object 2 14.3 11.5 0.941 (0.976) — —rear 6.1 6.3 0.777 (0.799) — —groom 1.2 0.2 0.124 (0.062) — —hut-interact 9.2 8.7 0.890 (0.911) — —poke-out 8.2 26.4 0.914 (0.962) — —Mouse-Openfield background 52.1 44.4 0.880 (0.948) — —locomote 22.5 29.6 0.914 (0.969) — —rear 20.3 21.9 0.884 (0.946) — —face-groom 3.8 2.8 0.747 (0.787) — —body-groom 1.4 1.4 0.660 (0.735) — —defecate 0.06 0.01 0.000 (0.001) — —Mouse-Ventral1 background 67.7 77.1 0.974 (0.997) — —face-groom 5.8 3.6 0.658 (0.714) — —body-groom 25.0 18.0 0.915 (0.968) — —dig 1.1 1.1 0.575 (0.533) — —scratch 0.4 0.3 0.728 (0.814) — —Mouse-Ventral2 background 98.3 94.6 0.990 (0.999) — —scratch 0.6 0.7 0.646 (0.701) — —lick 1.1 4.7 0.548 (0.468) — —Fly background 71.9 72.4 0.965 (0.994) — —tripod_gait 28.1 27.7 0.912 (0.972) — —
+
+continued on next page 
+
+75 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+Table 12 — continued from previous page 
+
+Dataset Behavior % train % test F1 Precision Recall 
+
+Ant colonies other 93.0 87.0 0.988 0.996 0.981 Raiding 7.0 13.0 0.927 0.884 0.973 Ant raid substructure search 81.5 30.5 0.803 0.854 0.758 recruitment 0.8 0.6 0.568 0.485 0.683 response 1.1 0.6 0.289 0.181 0.721 touching food 21.8 9.7 0.379 0.276 0.607 retrieving food 4.0 5.6 0.623 0.512 0.794 
+
+Dataset F1 mAP (%) Recall Precision Accuracy (%) CalMS21 0.8895 94.17 0.9021 0.8774 90.72 
+
+C. elegans 0.8629 93.21 0.9213 0.8196 94.20 Adult-larva ants 0.8128 92.47 0.9297 0.7279 94.27 MABe22 ( Sceptobius lativentris ) 0.9203 97.04 0.8943 0.9510 97.80 Zebras 0.7849 85.32 0.7685 0.8092 83.86 PanAf500 0.7634 84.39 0.7929 0.7890 89.44 
+
+Table 13: Per-dataset frame-level performance , macro-averaged over non-background be-havior classes. 
+
+## SUPPLEMENTARY VIDEOS 
+
+Supplementary Video 1 | FERAL on CalMS21 mouse social interactions. Representative ex-1397 
+
+ample from the CalMS21 dataset showing raw videos of resident–intruder mouse interactions 1398 
+
+alongside frame-level FERAL predictions. Link 1399 
+
+Supplementary Video 2 | FERAL segmentation of C. elegans locomotor states. Example 1400 
+
+recordings of freely moving C. elegans with FERAL predictions overlaid on cropped worm-1401 
+
+centered views. Link 1402 
+
+Supplementary Video 3 | Adult–larva grooming behavior in clonal raider ants. Example 1403 
+
+pair interactions between adult clonal raider ants and larvae, with FERAL predictions overlaid 1404 
+
+76 
+
+> .CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint
+
+FERAL 
+
+on the raw videos. Link 1405 
+
+Supplementary Video 4 | FERAL on PanAf500 camera-trap recordings of wild apes. Sample 1406 
+
+clip from the PanAf500 dataset showing a wild gorilla recorded by a camera trap in its natural 1407 
+
+habitat. FERAL’s multi-label predictions are displayed frame by frame. Link 1408 
+
+77 
+
+.CC-BY 4.0 International license available under a was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made The copyright holder for this preprint (which this version posted July 13, 2026. ;https://doi.org/10.1101/2025.11.16.688666 doi: bioRxiv preprint

@@ -1,0 +1,265 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-15T21:30:15.812854+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2607.12839v1",
+      "source": "arxiv",
+      "title": "HeteroMosaic: Exposing and Exploiting Heterogeneous Execution Opportunities for Energy-Efficient Edge LLM Inference",
+      "abstract": "Modern edge system-on-chips (SoCs) combine CPUs, integrated GPUs (iGPUs), and neural processing units (NPUs), yet existing LLM runtimes typically make coarse device-level decisions or optimize operators in isolation. As a result, they underutilize heterogeneous resources, particularly on unified-memory platforms where performance depends on both device placement and task-graph coordination.   We present HeteroMosaic, a heterogeneity-first scheduling framework for edge LLM inference. HeteroMosaic first uses a heterogeneous roofline model to identify when combining iGPU and NPU execution is beneficial. It then decomposes inference into dependency-preserving micro-batches that expose cross-accelerator overlap and applies trace-guided co-optimization of scheduling and device allocation under practical effects such as memory contention, DVFS, device variation, and NPU runtime overheads.   We implement HeteroMosaic in PyTorch C++ and evaluate it on three AMD Ryzen AI platforms spanning NPU-heavy, balanced, and iGPU-heavy designs. On the balanced platform, HeteroMosaic achieves up to 1.73X speedup over an iGPU baseline, 1.78X over an NPU baseline, and 2.05X over frameworks such as \\texttt{llama.cpp}, while reducing energy by up to 45.3%. It also improves performance over prior heterogeneous edge AI solutions by up to 2.35X.",
+      "authors": [
+        "Gregory Hyegang Jun",
+        "Wesley Pang",
+        "Eddie Richter",
+        "Mehdi Saeedi",
+        "Aporva Amarnath",
+        "Pallavi Ferrao",
+        "Deming Chen"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC",
+        "cs.AR"
+      ],
+      "published": "2026-07-14T14:56:14+00:00",
+      "link": "https://arxiv.org/pdf/2607.12839v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "model selection for heterogeneous edge computing LLM inference",
+      "llm_evidence_cn": "用于异构边缘计算大语言模型推理的模型选择",
+      "llm_evidence": "用于异构边缘计算大语言模型推理的模型选择",
+      "canonical_evidence": "用于异构边缘计算大语言模型推理的模型选择",
+      "llm_tldr_en": "Proposes HeteroMosaic, a scheduling framework for edge LLM inference that selects optimal device combinations using heterogeneous roofline model and micro-batch decomposition, achieving energy efficiency.",
+      "llm_tldr_cn": "现有边缘大语言模型推理运行时未能充分利用CPU、iGPU和NPU等异构资源。本文提出HeteroMosaic调度框架，首先通过异构Roofline模型识别适合联合执行的设备组合，然后将推理分解为保持依赖的微批次以暴露跨加速器重叠机会。实验表明，与现有方案相比，HeteroMosaic显著降低了推理延迟和能耗，实现了高效的边缘LLM部署。",
+      "llm_tldr": "现有边缘大语言模型推理运行时未能充分利用CPU、iGPU和NPU等异构资源。本文提出HeteroMosaic调度框架，首先通过异构Roofline模型识别适合联合执行的设备组合，然后将推理分解为保持依赖的微批次以暴露跨加速器重叠机会。实验表明，与现有方案相比，HeteroMosaic显著降低了推理延迟和能耗，实现了高效的边缘LLM部署。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "model selection for edge computing",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.07823v1",
+      "source": "arxiv",
+      "title": "Towards Robust Semantic Video Transmission over Block Erasure Channels",
+      "abstract": "This paper investigates semantic-aware neural joint source-channel coding (JSCC) for robust video transmission over block erasure channels. We propose a neural video compression framework exploring both spatial-domain and feature-domain designs. In the spatial domain, video frames are partitioned into blocks, enabling localized erasure handling and fine-grained robustness control via uniform erasure and two-level, semantic-guided non-uniform erasure strategies. In the feature domain, latent features are partitioned, enabling missing features to be semantically recovered while maintaining overall spatial consistency. Comprehensive experiments quantify reconstruction quality under varying uniform and non-uniform erasure probabilities. Our results show that spatial-domain JSCC excels at handling random localized losses, whereas feature-domain JSCC provides superior robustness to distributed erasures and maintains fidelity under low-loss scenarios. The analysis highlights the trade-offs between spatial continuity and semantic redundancy, offering insights for designing robust, task-aware video communication systems.",
+      "authors": [
+        "Nargis Fayaz",
+        "Homa Esfahanizadeh",
+        "Matin Mortaheb",
+        "Jinfeng Du",
+        "Harish Viswanathan"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.IT",
+        "cs.MM"
+      ],
+      "published": "2026-07-08T18:05:46+00:00",
+      "link": "https://arxiv.org/pdf/2607.07823v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Robust semantic video transmission using neural JSCC over erasure channels",
+      "llm_evidence_cn": "使用神经联合源信道编码实现鲁棒语义视频传输",
+      "llm_evidence": "使用神经联合源信道编码实现鲁棒语义视频传输",
+      "canonical_evidence": "使用神经联合源信道编码实现鲁棒语义视频传输",
+      "llm_tldr_en": "Proposes a neural video compression framework with spatial and feature-domain erasure handling for robust transmission over block erasure channels, achieving improved reconstruction quality.",
+      "llm_tldr_cn": "现有视频传输在块擦除信道下鲁棒性不足。本文提出语义感知的神经联合源信道编码框架，在空间域分块处理擦除，在特征域语义恢复丢失特征。实验表明该方法在不同擦除概率下均能有效提升重建质量，对移动边缘视频传输有重要意义。",
+      "llm_tldr": "现有视频传输在块擦除信道下鲁棒性不足。本文提出语义感知的神经联合源信道编码框架，在空间域分块处理擦除，在特征域语义恢复丢失特征。实验表明该方法在不同擦除概率下均能有效提升重建质量，对移动边缘视频传输有重要意义。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.10298v1",
+      "source": "arxiv",
+      "title": "Structured Evidence Selection for Weakly Supervised Video Anomaly Detection",
+      "abstract": "Weakly supervised video anomaly detection relies solely on video-level labels for training, making it difficult to accurately localize anomalous events in complex scenes. In real-world videos, anomalous behaviors exhibit large variations in appearance and temporal duration, while scene appearance and action dynamics are often tightly entangled. Consequently, existing models tend to rely on scene-related statistical cues rather than true behavioral deviations, resulting in unstable detection performance. To address this challenge, we propose a Structured Evidence Selection framework (SESAD) that reformulates anomaly detection as a structured reasoning process over clip-level visual evidence. Instead of directly mapping aggregated features to anomaly scores, SESAD reorganizes clip representations into semantically structured candidate evidence and performs context-conditioned selection under scene and action constraints. This mechanism adaptively emphasizes anomaly-relevant semantics while suppressing scene interference, thereby alleviating semantic entanglement under weak supervision. Furthermore, we introduce a lightweight geometric discrimination module that constructs a dual-prototype structure in the embedding space, enabling anomaly decisions through relative geometric relations. Extensive experiments on UBnormal, ShanghaiTech, and UCF-Crime show that SESAD achieves 67.92, 97.99, and 88.46 AUC, respectively, while maintaining high computational efficiency and overall consistently stable anomaly discrimination.",
+      "authors": [
+        "Chenglizhao Chen",
+        "Tianxiang Nan",
+        "Wen Li",
+        "Xinyu Liu",
+        "Guisheng Zhang",
+        "Mengke Song",
+        "Xiaomin Yu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-11T13:01:01+00:00",
+      "link": "https://arxiv.org/pdf/2607.10298v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Weakly supervised video anomaly detection via structured evidence selection",
+      "llm_evidence_cn": "通过结构化证据选择实现弱监督视频异常检测",
+      "llm_evidence": "通过结构化证据选择实现弱监督视频异常检测",
+      "canonical_evidence": "通过结构化证据选择实现弱监督视频异常检测",
+      "llm_tldr_en": "Proposes SESAD framework that reformulates anomaly detection as structured reasoning over clip-level evidence, improving localization accuracy in complex scenes.",
+      "llm_tldr_cn": "弱监督视频异常检测难以精准定位复杂场景中的异常事件。提出SESAD框架，将异常检测重构为基于片段视觉证据的结构化推理过程，避免模型依赖场景统计线索。实验表明该方法在多个基准上提升了检测稳定性。",
+      "llm_tldr": "弱监督视频异常检测难以精准定位复杂场景中的异常事件。提出SESAD框架，将异常检测重构为基于片段视觉证据的结构化推理过程，避免模型依赖场景统计线索。实验表明该方法在多个基准上提升了检测稳定性。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.10998v1",
+      "source": "arxiv",
+      "title": "Temporal Feature Distillation for Label-Efficient Precise Event Spotting in Sports Videos",
+      "abstract": "Precise Event Spotting (PES) requires distinguishing visually similar yet semantically distinct adjacent frames, making it fundamentally different from image classification and coarse action recognition. Although self-distillation methods such as DINO have shown strong representation learning ability in images, we find that directly applying them to PES is ineffective: without supervised guidance, subtle but crucial motion cues are often suppressed as noise, leading to representations that are insensitive to precise event boundaries. To address this, we propose Temporal Feature Distillation, a semi-supervised objective that aligns temporally informative backbone features, rather than projection-head outputs, to preserve motion-sensitive and boundary-aware cues for frame-level localization. A supervised warm-up with a ramp-up schedule further stabilizes training by ensuring that meaningful event cues are learned before unlabeled distillation begins. We also introduce Transformer Gate Shift, a multi-scale gated shifting module that injects motion-aware temporal information into Vision Transformers. Experiments on four fine-grained sports benchmarks show consistent improvements over fully supervised and semi-supervised baselines. Under 10\\% supervision on FSPerf, our method improves mAP by 4.54 points over the strongest competing approach, and with only 80\\% labeled data, it matches or surpasses the fully supervised 100\\% baseline on two of the four datasets.",
+      "authors": [
+        "Hao Xu",
+        "Xinyu Wei",
+        "Sam Wells",
+        "Sunil Aryal"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-13T01:53:46+00:00",
+      "link": "https://arxiv.org/pdf/2607.10998v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "temporal feature distillation for precise event spotting in sports videos",
+      "llm_evidence_cn": "面向体育视频精确事件定位的时间特征蒸馏",
+      "llm_evidence": "面向体育视频精确事件定位的时间特征蒸馏",
+      "canonical_evidence": "面向体育视频精确事件定位的时间特征蒸馏",
+      "llm_tldr_en": "Proposes Temporal Feature Distillation for semi-supervised precise event spotting in sports videos, preserving motion-sensitive features to improve boundary detection.",
+      "llm_tldr_cn": "精确事件定位（PES）需要区分视觉相似但语义不同的相邻帧，自蒸馏方法在图像上有效，但直接应用于PES会抑制运动线索。本文提出时间特征蒸馏，对齐时间信息丰富的骨干特征而非投影头输出，以保留运动敏感信息。在体育视频基准上，该方法以半监督方式显著提升了事件定位精度，减少了标注需求。",
+      "llm_tldr": "精确事件定位（PES）需要区分视觉相似但语义不同的相邻帧，自蒸馏方法在图像上有效，但直接应用于PES会抑制运动线索。本文提出时间特征蒸馏，对齐时间信息丰富的骨干特征而非投影头输出，以保留运动敏感信息。在体育视频基准上，该方法以半监督方式显著提升了事件定位精度，减少了标注需求。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.12557v1",
+      "source": "arxiv",
+      "title": "Gaussian Mixture Modeling for Event-Aware Visual Allocation in Long Video Understanding",
+      "abstract": "Large Vision-Language Models (LVLMs) face significant challenges in long video understanding due to the excessive computational cost and information loss associated with uniform sampling. Existing keyframe selection methods often treat video frames as atomic entities and allocate visual budgets equally, thereby overlooking high-level semantic structures and introducing substantial redundancy. To address these limitations, we propose GMM-EVA (Gaussian Mixture Modeling for Event-Aware Visual Allocation), which leverages Gaussian Mixture Models to model event-level structure from discrete frame-wise observations. A differentiated allocation strategy is then applied to preserve one primary high-resolution keyframe per event for high-fidelity detail, while utilizing lower-resolution secondary keyframes to maintain temporal context and optimize token budgets. GMM-EVA is a training-free, plug-and-play framework that generalizes robustly across various relevance measures and downstream LVLMs. Extensive experiments on multiple long video benchmarks demonstrate that our method significantly outperforms uniform sampling. Notably, GMM-EVA achieves comparable performance to baseline selection methods while utilizing only approximately half of the visual token budget, highlighting its superior efficiency and effectiveness.",
+      "authors": [
+        "Yifan Lu",
+        "Ziqi Zhang",
+        "Chunfeng Yuan",
+        "Jun Gao",
+        "Bing Li",
+        "Weiming Hu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-14T09:27:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.12557v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "keyframe selection for long video understanding; event-aware visual allocation",
+      "llm_evidence_cn": "长视频关键帧选择；事件感知视觉分配",
+      "llm_evidence": "长视频关键帧选择；事件感知视觉分配",
+      "canonical_evidence": "长视频关键帧选择；事件感知视觉分配",
+      "llm_tldr_en": "GMM-EVA uses Gaussian mixture models to model event-level structure in videos and allocate high-resolution keyframes per event, improving long video understanding efficiency.",
+      "llm_tldr_cn": "该论文针对长视频理解中均匀采样的计算冗余问题，提出GMM-EVA方法，利用高斯混合模型建模事件级结构，为每个事件保留一张高分辨率关键帧。实验表明该方法在降低计算成本的同时保持高保真度，可视为流式视频分析中的高效关键技术。",
+      "llm_tldr": "该论文针对长视频理解中均匀采样的计算冗余问题，提出GMM-EVA方法，利用高斯混合模型建模事件级结构，为每个事件保留一张高分辨率关键帧。实验表明该方法在降低计算成本的同时保持高保真度，可视为流式视频分析中的高效关键技术。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "biorxiv-10-1101-2025-11-16-688666-v2",
+      "source": "biorxiv",
+      "title": "FERAL: A Supervised Video-Understanding System for Direct Video-to-Behavior Mapping",
+      "abstract": "Quantifying animal behavior often requires segmenting continuous actions into discrete, interpretable states, yet most automated pipelines infer actions from keypoint dynamics and are limited by keypoint tracking quality. Here we present FERAL (Feature Extraction for Recognition of Animal Locomotion), a supervised video-understanding toolkit that maps raw video directly to frame-level behavioral labels, bypassing the keypoint-extraction and pose-classification stages of conventional pipelines. Across benchmarks, FERAL matches or exceeds state-of-the-art pose- and video-based baselines. On the CalMS21 mouse social-interaction benchmark, it exceeds Google's VideoPrism using only a quarter of the training data. FERAL generalizes across species (apes, zebras, mice, ants, flies, and nematodes), recording conditions, and levels of organization, from single animals to social interactions and colony-scale collective behavior. Released as a user-friendly, open-source package, it integrates with existing analysis pipelines. By enabling scalable, species-agnostic behavioral quantification directly from raw video, FERAL broadens the experimental paradigms available for studying animal behavior.",
+      "authors": [
+        "Skovorodnikov, P.",
+        "Razzauti, J.",
+        "Costelloe, B. R.",
+        "Buck, F.",
+        "Chandra, V.",
+        "Frank, D. D.",
+        "Kay, T.",
+        "Koger, B.",
+        "Snir, O.",
+        "Zhao, J.",
+        "Couzin, I. D.",
+        "Kronauer, D. J. C.",
+        "Vosshall, L. B."
+      ],
+      "primary_category": "animal behavior and cognition",
+      "categories": [
+        "animal behavior and cognition"
+      ],
+      "published": "2026-07-13T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.1101/2025.11.16.688666v2.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "supervised video-understanding system for direct frame-level label mapping",
+      "llm_evidence_cn": "监督视频理解系统，直接进行帧级标签映射",
+      "llm_evidence": "监督视频理解系统，直接进行帧级标签映射",
+      "canonical_evidence": "监督视频理解系统，直接进行帧级标签映射",
+      "llm_tldr_en": "FERAL is a supervised video-understanding system that maps raw video to behavioral labels without keypoint extraction, achieving state-of-the-art results on animal behavior benchmarks with less data.",
+      "llm_tldr_cn": "量化动物行为需要将连续动作分割为离散状态，但现有方法受限于关键点追踪质量。本文提出FERAL，一个监督视频理解系统，直接从原始视频映射到帧级行为标签，跳过关键点提取和姿态分类步骤。在CalMS21小鼠社交互动基准上，FERAL仅用四分之一的训练数据即超过Google的VideoPrism，并在多个物种上验证了泛化能力。该系统为视频行为分析提供了更直接高效的解决方案。",
+      "llm_tldr": "量化动物行为需要将连续动作分割为离散状态，但现有方法受限于关键点追踪质量。本文提出FERAL，一个监督视频理解系统，直接从原始视频映射到帧级行为标签，跳过关键点提取和姿态分类步骤。在CalMS21小鼠社交互动基准上，FERAL仅用四分之一的训练数据即超过Google的VideoPrism，并在多个物种上验证了泛化能力。该系统为视频行为分析提供了更直接高效的解决方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

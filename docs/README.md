@@ -6,49 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-14
-- 运行时间：2026-07-14 21:40:04 UTC
+- 最新运行日期：2026-07-15
+- 运行时间：2026-07-15 21:35:26 UTC
 - 运行状态：成功
-- 本次总论文数：9
-- 精读区：4
-- 速读区：5
+- 本次总论文数：6
+- 精读区：2
+- 速读区：4
 
 ### 今日简报（AI）
-今日精读两篇高分论文，分别聚焦事件相机视频重建与边缘设备实时超分。  
-最值得关注方向：事件相机视频生成（LongE2V）与边缘超分辨率（NanoVSR），均获9.0分评价。  
-建议优先精读这两篇，再速读边缘智能与SLAM相关论文以拓展视野。
-- 详情：[/202607/14/README](/202607/14/README)
+1) 今日共处理6篇论文，精读2篇（最高9.0分）聚焦边缘LLM推理与鲁棒视频传输，速读4篇覆盖视频异常检测、体育事件定位及长视频理解。
+2) 最值得关注的方向：边缘端异构执行优化（HeteroMosaic）和块擦除信道下的鲁棒语义视频传输。
+3) 建议优先精读两篇高分论文，尤其关注边缘AI能效提升与实际部署方案。
+- 详情：[/202607/15/README](/202607/15/README)
 
 ### 精读区论文标签
-1. [LongE2V: Long-Horizon Event-based Video Reconstruction, Prediction, and Frame Interpolation with Video Diffusion Models](/202607/14/2607.08770v1-longe2v-long-horizon-event-based-video-reconstruction-prediction-and-frame-interpolation-with-video-diffusion-models)  
+1. [HeteroMosaic: Exposing and Exploiting Heterogeneous Execution Opportunities for Energy-Efficient Edge LLM Inference](/202607/15/2607.12839v1-heteromosaic-exposing-and-exploiting-heterogeneous-execution-opportunities-for-energy-efficient-edge-llm-inference)  
    标签：评分：9.0/10、query:mec-video
-   evidence：基于事件的长序列视频重建与预测
-2. [NanoVSR: Towards Real-Time Video Super-Resolution on Edge Devices](/202607/14/2607.10495v1-nanovsr-towards-real-time-video-super-resolution-on-edge-devices)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：边缘设备上的实时视频超分辨率
-3. [Benchmarking Edge Inference Strategies for Deep Learning Models in Industrial Machine Vision](/202607/14/2607.11356v1-benchmarking-edge-inference-strategies-for-deep-learning-models-in-industrial-machine-vision)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：基准测试边缘推理策略以进行模型选择
-4. [Adaptive Model Compression (AMC): Saliency-Driven Resource Allocation for Ultra-Low-Power Transformer Inference](/202607/14/2607.10109v1-adaptive-model-compression-amc-saliency-driven-resource-allocation-for-ultra-low-power-transformer-inference)  
+   evidence：用于异构边缘计算大语言模型推理的模型选择
+2. [Towards Robust Semantic Video Transmission over Block Erasure Channels](/202607/15/2607.07823v1-towards-robust-semantic-video-transmission-over-block-erasure-channels)  
    标签：评分：8.0/10、query:mec-video
-   evidence：面向边缘设备的显著性驱动资源分配
+   evidence：使用神经联合源信道编码实现鲁棒语义视频传输
 
 ### 速读区论文标签
-1. [DynaFilter: Cloud-driven Dynamic Filtering for Satellite Edge Intelligence](/202607/14/2607.10098v1-dynafilter-cloud-driven-dynamic-filtering-for-satellite-edge-intelligence)  
+1. [Structured Evidence Selection for Weakly Supervised Video Anomaly Detection](/202607/15/2607.10298v1-structured-evidence-selection-for-weakly-supervised-video-anomaly-detection)  
    标签：评分：7.0/10、query:mec-video
-   evidence：卫星边缘智能的动态过滤
-2. [CSI-Assisted Edge SLAM Testbed Platform for 5G Connected Unmanned Autonomous Vehicles](/202607/14/2607.10394v1-csi-assisted-edge-slam-testbed-platform-for-5g-connected-unmanned-autonomous-vehicles)  
+   evidence：通过结构化证据选择实现弱监督视频异常检测
+2. [Temporal Feature Distillation for Label-Efficient Precise Event Spotting in Sports Videos](/202607/15/2607.10998v1-temporal-feature-distillation-for-label-efficient-precise-event-spotting-in-sports-videos)  
    标签：评分：7.0/10、query:mec-video
-   evidence：在移动边缘计算框架内为5G连接车辆构建边缘SLAM测试平台
-3. [Adaptive Latent Trajectory Anchoring for Action Segmentation Dataset Condensation](/202607/14/2607.09081v1-adaptive-latent-trajectory-anchoring-for-action-segmentation-dataset-condensation)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：视频动作分割任务
-4. [InsectDCT: A generalized pipeline for detection, taxonomic classification, and tracking of insects in camera-trap recordings](/202607/14/biorxiv-10-64898-2026-07-07-736939-v1-insectdct-a-generalized-pipeline-for-detection-taxonomic-classification-and-tracking-of-insects-in-camera-trap-recordings)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：相机陷阱视频中昆虫检测与跟踪的AI管道
-5. [Optimizing automated classification for zooplankton in coastal conditions: the impact of model selection, imaging instruments, and colour information](/202607/14/biorxiv-10-64898-2026-07-09-733739-v1-optimizing-automated-classification-for-zooplankton-in-coastal-conditions-the-impact-of-model-selection-imaging-instruments-and-colour-information)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：模型选择在浮游动物图像分类中的影响
+   evidence：面向体育视频精确事件定位的时间特征蒸馏
+3. [Gaussian Mixture Modeling for Event-Aware Visual Allocation in Long Video Understanding](/202607/15/2607.12557v1-gaussian-mixture-modeling-for-event-aware-visual-allocation-in-long-video-understanding)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：长视频关键帧选择；事件感知视觉分配
+4. [FERAL: A Supervised Video-Understanding System for Direct Video-to-Behavior Mapping](/202607/15/biorxiv-10-1101-2025-11-16-688666-v2-feral-a-supervised-video-understanding-system-for-direct-video-to-behavior-mapping)  
+   标签：评分：7.0/10、query:mec-video
+   evidence：监督视频理解系统，直接进行帧级标签映射
 
 
 <div class="dpr-home-promo-card">
