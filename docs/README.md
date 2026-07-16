@@ -6,40 +6,47 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-15
-- 运行时间：2026-07-15 21:35:26 UTC
+- 最新运行日期：2026-07-16
+- 运行时间：2026-07-16 20:16:53 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：2
+- 本次总论文数：9
+- 精读区：5
 - 速读区：4
 
 ### 今日简报（AI）
-1) 今日共处理6篇论文，精读2篇（最高9.0分）聚焦边缘LLM推理与鲁棒视频传输，速读4篇覆盖视频异常检测、体育事件定位及长视频理解。
-2) 最值得关注的方向：边缘端异构执行优化（HeteroMosaic）和块擦除信道下的鲁棒语义视频传输。
-3) 建议优先精读两篇高分论文，尤其关注边缘AI能效提升与实际部署方案。
-- 详情：[/202607/15/README](/202607/15/README)
+今日精读聚焦视频理解与轻量化视觉语言模型，两篇高分论文（9分）分别提出聚焦语义记忆和免注意力令牌压缩方案。最值得关注的是流式视频理解的语义记忆优化，以及高效视觉语言模型的令牌降维方法。普通读者可优先精读这两篇论文，探索如何平衡视频处理中的速度与精度。
+- 详情：[/202607/16/README](/202607/16/README)
 
 ### 精读区论文标签
-1. [HeteroMosaic: Exposing and Exploiting Heterogeneous Execution Opportunities for Energy-Efficient Edge LLM Inference](/202607/15/2607.12839v1-heteromosaic-exposing-and-exploiting-heterogeneous-execution-opportunities-for-energy-efficient-edge-llm-inference)  
+1. [FOLIO: Focused Semantic Memory for Streaming Video Understanding](/202607/16/2607.13298v1-folio-focused-semantic-memory-for-streaming-video-understanding)  
    标签：评分：9.0/10、query:mec-video
-   evidence：用于异构边缘计算大语言模型推理的模型选择
-2. [Towards Robust Semantic Video Transmission over Block Erasure Channels](/202607/15/2607.07823v1-towards-robust-semantic-video-transmission-over-block-erasure-channels)  
+   evidence：在线流式视频理解的聚焦语义记忆系统
+2. [Attention-Free and Lightweight Token Reduction for Efficient Vision-Language Models](/202607/16/2607.13500v1-attention-free-and-lightweight-token-reduction-for-efficient-vision-language-models)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：面向边缘设备的令牌缩减
+3. [GHR-VLM: Making Zero-Shot Transit Video Analytics Realizable with Grounded Hybrid Reasoning](/202607/16/2607.13569v1-ghr-vlm-making-zero-shot-transit-video-analytics-realizable-with-grounded-hybrid-reasoning)  
+   标签：评分：9.0/10、query:mec-video
+   evidence：针对零样本公交视频分析的接地混合推理框架，采用边缘云设计，直接契合移动边缘计算在视频分析中的应用
+4. [HeteroMosaic: Exposing and Exploiting Heterogeneous Execution Opportunities for Energy-Efficient Edge LLM Inference](/202607/16/2607.12839v2-heteromosaic-exposing-and-exploiting-heterogeneous-execution-opportunities-for-energy-efficient-edge-llm-inference)  
    标签：评分：8.0/10、query:mec-video
-   evidence：使用神经联合源信道编码实现鲁棒语义视频传输
+   evidence：面向能效边缘LLM推理的异构调度框架，直接涉及边缘计算和边缘模型选择
+5. [Active Beyond-Diagonal RIS Empowered Heterogeneous Edge Computing: A Distributional Reinforcement Learning Approach](/202607/16/2607.13160v1-active-beyond-diagonal-ris-empowered-heterogeneous-edge-computing-a-distributional-reinforcement-learning-approach)  
+   标签：评分：8.0/10、query:mec-video
+   evidence：主动BD-RIS赋能的异构移动边缘计算
 
 ### 速读区论文标签
-1. [Structured Evidence Selection for Weakly Supervised Video Anomaly Detection](/202607/15/2607.10298v1-structured-evidence-selection-for-weakly-supervised-video-anomaly-detection)  
+1. [Prompting-MammAlps: Fine-Grained Text-to-Video Retrieval for Camera-Trap Data](/202607/16/2607.09876v1-prompting-mammalps-fine-grained-text-to-video-retrieval-for-camera-trap-data)  
    标签：评分：7.0/10、query:mec-video
-   evidence：通过结构化证据选择实现弱监督视频异常检测
-2. [Temporal Feature Distillation for Label-Efficient Precise Event Spotting in Sports Videos](/202607/15/2607.10998v1-temporal-feature-distillation-for-label-efficient-precise-event-spotting-in-sports-videos)  
+   evidence：视频检索方法，与视频分析相关
+2. [Differentiable Proxy Learning for Adaptive Quantization Control in H.264 Video Coding](/202607/16/2607.10478v1-differentiable-proxy-learning-for-adaptive-quantization-control-in-h264-video-coding)  
    标签：评分：7.0/10、query:mec-video
-   evidence：面向体育视频精确事件定位的时间特征蒸馏
-3. [Gaussian Mixture Modeling for Event-Aware Visual Allocation in Long Video Understanding](/202607/15/2607.12557v1-gaussian-mixture-modeling-for-event-aware-visual-allocation-in-long-video-understanding)  
+   evidence：自适应量化控制用于实时视频处理
+3. [Lightweight Multi-Scale Anomaly Detection for Resource-Constrained Edge Devices](/202607/16/2607.12599v1-lightweight-multi-scale-anomaly-detection-for-resource-constrained-edge-devices)  
    标签：评分：7.0/10、query:mec-video
-   evidence：长视频关键帧选择；事件感知视觉分配
-4. [FERAL: A Supervised Video-Understanding System for Direct Video-to-Behavior Mapping](/202607/15/biorxiv-10-1101-2025-11-16-688666-v2-feral-a-supervised-video-understanding-system-for-direct-video-to-behavior-mapping)  
-   标签：评分：7.0/10、query:mec-video
-   evidence：监督视频理解系统，直接进行帧级标签映射
+   evidence：面向资源受限边缘设备的轻量级异常检测
+4. [Efficient and Privacy Aware Edge Cloud Collaborative Inference for Large Language Models](/202607/16/2607.13093v1-efficient-and-privacy-aware-edge-cloud-collaborative-inference-for-large-language-models)  
+   标签：评分：6.0/10、query:mec-video
+   evidence：边缘云协同推理框架用于延迟关键任务
 
 
 <div class="dpr-home-promo-card">

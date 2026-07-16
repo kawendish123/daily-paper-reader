@@ -1,0 +1,1197 @@
+Title: FOLIO: Focused Semantic Memory for Streaming Video Understanding
+
+URL Source: https://arxiv.org/pdf/2607.13298v1
+
+Published Time: Thu, 16 Jul 2026 00:25:32 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+# FOLIO : Focused Semantic Memory for Streaming Video Understanding 
+
+Haoyang Fan 1 Dhruv Parikh 1 Anvitha Ramachandran 1 Sameh Gobriel 2
+
+Nilesh Jain 2 Rajgopal Kannan 3 Viktor Prasanna 11University of Southern California (USC), Los Angeles, CA, USA 
+
+> 2
+
+Intel Labs, USA 
+
+> 3
+
+DEVCOM Army Research Office 
+
+> {haoyangf,dhruvash,alramach,prasanna}@usc.edu {sameh.gobriel,nilesh.jain}@intel.com rajgopal.kannan.civ@army.mil
+
+Abstract 
+
+In online streaming video understanding, a video stream continues to arrive and queries may be issued at any time. Because streaming frames grow without bound, the system must continuously compress and retain information from the observed video prefix while future frames and future queries remain unknown. The core challenge is deciding what infor-mation to retain and how to organize the maintained history: as this history grows with the stream, memory cost increases and many redundant visual details are retained, whereas later queries often depend on specific entities, actions, and their temporal changes. To address this challenge, we in-troduce FOLIO , a training-free focused semantic memory system that records important parts of the stream in higher detail while keeping surrounding context compact. As the stream arrives, FOLIO updates memory at the segment level, guided by a dynamic focus state, combining a short-term visual buffer with a long-term semantic memory organized around observed entities and linked to a visual-evidence cache. At query time, lightweight hybrid retrieval combines direct matching over the structured memory with semantic query expansion. FOLIO achieves state-of-the-art perfor-mance, reaching 82.0/69.1 Perception/Backward accuracy on OVO-Bench with Qwen3-VL-8B and 74.5 overall accu-racy on StreamingBench, while substantially reducing the cost of maintaining streaming memory by reserving detailed records for focused entities and storing surrounding context compactly. 
+
+1. Introduction 
+
+Video-LLMs have made rapid progress on offline video un-derstanding through stronger backbones, video instruction tuning, and long-context modeling [ 3, 11 , 23 , 30 , 38 , 43 , 51 ,54 , 80 , 81 , 85 ], but offline evaluation assumes the model can inspect the complete video before answering. Stream-ing video understanding instead exposes an online setting in which a video stream arrives over time and users may issue single- or multi-turn queries at any moment. This set-ting arises in applications such as autonomous driving [ 46 ], robotic assistance [ 4], and AR/wearable agents [ 13 ], where a system must interpret the scene while it is still unfolding. At query time, the model can only answer from the observed prefix, while future frames and future queries remain unavail-able. Because streaming frames grow without bound, the sys-tem must continuously compress and retain information from the observed video prefix rather than relying on full-video inspection. Recent benchmarks [ 18 , 31 , 40 , 66 , 68 ] make this constraint explicit through real-time perception, back-ward tracing, and contextual multi-turn interaction, where a model must answer about information that may no longer be visible. Recent work addresses this challenge by improving how visual history is retained, compressed, or sched-uled: recent-window baselines [ 44 ], token/cache compres-sion [ 8, 9, 21 , 25 , 48 , 56 , 63 , 71 , 78 ], scene/event/hierarchi-cal memories [ 29 , 35 , 58 , 60 , 74 ], and proactive dialogue systems [ 5 , 10 , 12 , 26 , 49 , 55 , 69 , 73 , 83 ]. These meth-ods avoid retaining all incoming frames by compressing or scheduling visual inputs, but their memory units are typically frames, tokens, caches, windows, scenes, or events. First, the maintained history continues to grow with the stream, so memory writing and later retrieval can become costly even after raw frames are compressed. Second, later queries are often sparse and target-specific, depending on particular entities, actions, events, and their changes over time rather than the entire stream. Third, retained history is often orga-nized around frames, windows, or events, which can scatter target-related information across time and force query-time 1arXiv:2607.13298v1 [cs.CV] 14 Jul 2026 FOLIO : Focused Semantic Memory for Streaming Video Understanding 
+
+Focus-guided writing with hybrid short-term and long-term semantic memory sample from StreamingBench SQA (569 sec video) 
+
+1 Streaming Video & Memory Writing 
+
+Causal observation            
+
+> t= 40 st= 120 st= 272 st= 352 s
+> writer fires
+> time
+> •keyframe selection •memory writing (both fire per chunk, in sequence; subset shown here)
+
+Adaptive keyframe selection (chunk = 8 s, up to 4 frames)      
+
+> t= 196s ( visual change low ) t= 200s ( OCR change ) t= 228s ( action change )
+
+Memory Writer (VLM, writer at t = 224s) Selected keyframes + focus state → detailed / compact object records 
+
+Focus State (dynamic)               
+
+> priorities (top-k, at t= 224s):
+> ○Ma L. 0.94
+> ○Fan Z.D. 0.91
+> ○Scoreboard 0.87
+> ¼Paddle 0.62
+> ¼Ping pong ball 0.48
+> ¼Table 0.40
+
+Current Scene Concepts (aggregated, at t = 224 s) 
+
+• players in foreground, holding paddles 
+
+• scoreboard visible at bottom-left 
+
+• Olympic rings + TOKYO 2020 sign 
+
+• rally in progress; serve → return 
+
+2 FOLIO Long-term Semantic Memory (Object Ledger) 
+
+Persistent Object Ledger (the memory unit is the object)      
+
+> Name Aliases Attributes Location chain Action chain
+> ○
+
+Ma L. Long      
+
+> Player
+> Ma Long
+> black shirt with “Ma Long CHN”, paddle, mask
+> front of table →
+> behind table →
+> bench (break)
+> serve →
+> return →
+> wipe / drink
+> ○
+
+Fan Z.D. Zhengdong      
+
+> Player
+> Fan Zhengdong
+> blue shirt with “Fan Z.D. CHN”, paddle
+> foreground →
+> far side of court →
+> table
+> receive →
+> serve →
+> rally
+> ○
+
+Scoreboard    
+
+> screen/text
+> leaderboard OCR text, score dis-play, player names FAN, MA
+> bottom-left →
+> bottom-center
+> [SCORES] FAN:0 |MA:1
+> →
+> FAN:3 |MA:1
+> ¼
+
+Paddle TT paddle red rubber, black handle     
+
+> held by both players held →
+> stroke →
+> wiped
+> ¼
+
+Ping pong TT ball white, round over table → 
+
+> on table
+> bounces, served, returned
+> ¼
+
+Table TT table red and white, with net  
+
+> center of court (static)
+> ready →
+> in use
+
+Object Chains / Structured View                                  
+
+> Location chain: Scoreboard: bottom-left →bottom-center ;Ma L.: table →bench ;Fan Z.D.: foreground →table
+> Action chain: Ma L. serves →Fan Z.D. receives →Ma L. rallies →Fan Z.D. serves
+> Relations: Ma L. ↔Fan Z.D. ( opponents ), Ma L., Fan Z.D. – Paddle ( holds ), Paddle – Ping pong ( strikes )
+> Focus tier: ○focus ¼support
+
+3 Lightweight Hybrid Retrieval & Answering 
+
+Q3 @ t = 228 s How much game score has the opponent of the person mentioned in the last question scored now ?
+
+Options: A. 2 B. 3 C. 1 D. 8 
+
+Question Router (semantic parse) 
+
+Target: score (integer) 
+
+Anchors: opponent , person in last question 
+
+Verbs: scored 
+
+Temporal: now = causal prefix up to t = 228s 
+
+Turn-state: Q2.subject = Ma Long 
+
+Candidates: A.2 B.3 C.1 D.8 
+
+Object Evidence Routing 
+
+From Ledger 
+
+Resolve opponent(Ma Long) 
+
+= Fan Z.D. (relations graph) Latest [SCORES] :
+
+MA:1 | FAN:3 | MA:1 | FAN:0 
+
+⇒ FAN = 3
+
+From Evidence Cache 
+
+Cached Scoreboard frames, 
+
+t ≤ 228s    
+
+> t= 228s t= 200s
+
+Answer Generator 
+
+Fan Zhengdong’s current score is 3. Selected: B. 3 ¥ correct 
+
+Why FOLIO is different 
+
+Prior token / KV memory 
+
+á Compress visual tokens or maintain windowed KV cache. 
+
+• hard to retrieve by semantics 
+
+• hard to track an object across long horizons 
+
+• no explicit entity identity 
+
+examples: QueryStream, FluxMem, ReKV, InfiniPot-V 
+
+Prior event memory 
+
+ Segment the stream into events and summarize each event. 
+
+• loses fine-grained object state 
+
+• collapses entities into an event blob 
+
+• visual evidence not addressable per object 
+
+examples: OASIS, StreamForest, EventMemAgent 
+
+FOLIO (Ours) 
+
+[ Hybrid memory: short-term visual context + long-term struc-tured semantic memory (entity-centered). 
+
+• focus state guides write detail (focus vs compact) 
+
+• entity identity, aliases, loca-tion/action chains, relations 
+
+• recoverable keyframe evidence per entity 
+
+• question time: lightweight hybrid retrieval 
+
+4 Interaction-conditioned focus for multi-turn streams 
+
+Q1 @ t = 14 s
+
+“Who is preparing to serve the ball now?” 
+
+turn-state: subj. = – 
+
+Focus after Q1:     
+
+> •Ma L. (focus, 0.94)
+> •Paddle (support, 0.62)
+> •Ping pong ball (support, 0.48)
+> •Table (context, 0.40)
+
+Q2 @ t = 202 s
+
+“Score of the person from Q1 now?” 
+
+turn-state: subj. = Ma L. 
+
+Focus after Q2:        
+
+> •Scoreboard (focus, ↑OCR)
+> •Ma L. (focus, retained)
+> •[SCORES] MA:1 (evidence)
+> •Paddle (support)
+
+Q3 @ t = 228 s
+
+“Score of the opponent 
+
+of the person from Q2?” 
+
+turn-state: subj. = Fan Z.D. 
+
+Focus after Q3:        
+
+> •Fan Z.D. (focus, ↑shifted)
+> •Scoreboard (focus)
+> •[SCORES] FAN:3 (evidence)
+> •Ma L. (support, demoted)
+> Previous-turn question terms boost matched-object focus scores; the next chunk’s memory writer receives the boosted state and writes richer detail for question-referenced entities.
+
+Figure 1. FOLIO overview. A training-free focused semantic memory system for streaming video understanding. (1) Online segment-by-segment keyframe selection provides visual evidence for focus-guided memory writing. (2) A hybrid memory combines a short-term visual buffer with a long-term semantic memory linked to a visual-evidence cache. (3) At query time, FOLIO uses lightweight hybrid retrieval to link the query to relevant memory and evidence. (4) In multi-turn settings, previous-turn queries update the focus state for subsequent memory writes. 
+
+retrieval to reconstruct the relevant temporal chain, adding latency and retrieval noise. Multi-turn interaction further amplifies these issues, because later queries are asked over a longer horizon and may return to targets or events introduced several turns earlier. To address these issues, we introduce FOLIO , a training-free focused semantic memory system for streaming video understanding (Fig. 1). The key idea is focused memory con-struction: important entities, actions, and events are recorded with richer details, while surrounding context is kept com-pact. As the stream arrives, FOLIO updates a hybrid memory at the segment level, guided by a dynamic focus state. The hybrid memory combines a short-term visual buffer, which keeps recent observations available, with a long-term seman-tic memory implemented as an entity-centered structured memory. The long-term memory stores target states, loca-tions, relations, and associated events over time, and links these semantic records to a visual-evidence cache so that rel-evant frames can be recovered when needed. At query time, 
+
+FOLIO uses lightweight hybrid retrieval, combining direct matching over the structured memory with semantic query expansion. Since multi-turn queries often revolve around the same entities or actions, previous turns update the focus state so that later memory construction can continue tracking targets under discussion. FOLIO improves both accuracy and memory-writing efficiency on OVO-Bench and Stream-ingBench, especially on queries that require long-horizon grounding, multi-turn reference resolution, or filtering out visually plausible distractors. Our contributions are: • We formulate online memory construction for streaming video understanding as deciding what information to retain and how to organize the maintained history before future queries are known. • We introduce a training-free focused semantic memory system whose dynamic focus state prioritizes entities and actions for richer memory updates, keeps surrounding con-text compact, and raises the priority of targets mentioned in previous turns for multi-turn query streams. • We design a hybrid memory and retrieval pipeline that combines a short-term visual buffer, a long-term entity-centered semantic memory, a visual-evidence cache, and lightweight hybrid retrieval with semantic query expan-sion. • We validate FOLIO on OVO-Bench and StreamingBench, showing improved accuracy while substantially reducing the cost of maintaining streaming memory. 22. Related Work 
+
+Video-LLMs and long-video understanding. Video-LLMs [ 2, 3, 11 , 23 , 24 , 30 , 38 , 51 , 52 , 54 , 62 , 75 , 81 , 85 ] and long-video systems [ 1, 17 , 27 , 37 , 41 – 43 , 45 , 47 , 53 , 59 , 80 ]typically assume access to the full video or query before selecting evidence; FOLIO writes memory online from the observed prefix. 
+
+Streaming video understanding and interaction. Stream-ing benchmarks [ 18 , 31 , 40 , 66 , 68 , 70 , 73 ] and online/proactive/streaming-reasoning systems [ 5 , 6, 10 , 12 ,14 , 16 , 19 , 20 , 26 , 32 – 34 , 36 , 49 , 50 , 55 , 57 , 61 , 65 , 69 , 77 ,79 , 82 , 83 ] study online observation, when to speak, and streaming reasoning. These systems ask how to process streams efficiently, how to align training with streaming in-ference, or when a model should respond. FOLIO is comple-mentary: it asks what information should be retained, how it should be organized, and how interaction should affect later memory construction. 
+
+Memory, retrieval, and compression for streaming video. 
+
+Prior work retains history through visual-token, feature, or KV-cache compression [ 7– 9 , 21 , 25 , 39 , 48 , 56 , 63 , 67 ,71 , 76 , 78 ] or recent frame windows [ 44 ]. Another fam-ily organizes history into temporal, scene, event, or hier-archical memories: OASIS maintains short and medium visual windows plus an on-demand hierarchical event for-est; StreamForest builds a persistent event-memory forest; EventMemAgent adds adaptive tool use over event-centric memory; and Vista, Event-VStream, and related systems use scene or event units as the online memory abstrac-tion [15, 29, 35, 58, 60, 74, 84]. 
+
+Our difference. Token and cache methods preserve com-putational state, while scene and event memories preserve temporal units. FOLIO instead organizes long-term semantic memory around observed entities, accumulating their states, locations, relations, actions, and associated events over time while linking records to a visual-evidence cache. The focus state further decides which entities or actions receive richer memory updates during online writing, and previous turns can update the same focus state for later stream segments. At query time, FOLIO uses lightweight hybrid retrieval, com-bining direct matching over the structured memory with semantic query expansion when direct matching is insuffi-cient. This keeps retrieval tied to the structured memory, while remaining complementary to recent visual context and event-level history. A full discussion of all four areas is in Appendix C. 
+
+3. Method 
+
+3.1. Problem Setup and Online Memory Construc-tion 
+
+Online streaming video understanding considers a video that unfolds over time, with queries issued at arbitrary times dur-ing the stream. Let V = {ft}t≥1 be the video stream. At query time tr , the system can use only the observed prefix 
+
+V≤tr . We write the r-th query as qr = ( ur , Yr , t r ), where 
+
+ur is the natural-language query and Yr = {y1 
+
+> r
+
+, . . . , y Kr }
+
+denotes the answer options when available. In multi-turn streams, the dialogue history before this query is Hr−1 =
+
+⟨(q1, a 1), . . . , (qr−1, a r−1)⟩. An online answer must there-fore be generated from the observed prefix and the previ-ous dialogue history, without using future frames or future queries. For online memory construction, we follow common streaming video protocols and view the observed video as a segment stream [ 29 , 50 , 60 ]. As frames arrive, the memory system buffers a fixed-duration set of frames as the next segment and updates memory once that segment has arrived. This resembles offline video chunking in form, but differs in workflow: each segment is formed and processed online as the stream unfolds, before the complete video is avail-able. Let C1: T = ⟨C1, . . . , C T ⟩ denote the ordered segment stream, where each segment Ci is a contiguous chunk of frames. After processing the segment prefix C1: i, a memory-based streaming system maintains an online memory state 
+
+Mi. Here, segment-level construction refers to the online update granularity, not to a requirement that the long-term memory be stored as a flat bank of segment notes. Under this setup, FOLIO instantiates a focused semantic memory system (Fig. 2). It maintains an online memory 
+
+Mi and an online focus state Fi through a segment-level writing loop. Once segment Ci has arrived, FOLIO selects keyframes Ki from that segment. Given the previous mem-ory Mi−1 and focus state Fi−1, it assigns writing levels: selected entities and actions receive higher-detail records, while surrounding context is written compactly. Based on the selected keyframes and writing levels, a writer VLM gen-erates structured records, which are merged into persistent memory chains. The writer VLM is only responsible for record generation; writing-level assignment, entity merging, and focus-state updates are handled by the memory system. Algorithm 1 summarizes this online construction loop. 
+
+3.2. Focus State for Memory Writing 
+
+After the writer VLM generates records for segment Ci and the memory system merges them into Mi, FOLIO updates a focus score pi(o) for each observed entity or action o. The update uses the previous focus score, evidence observed in the current segment, and interaction signals from previous turns: 
+
+pi(o) = clip [0 ,1] 
+
+ γp i−1(o) + α⊤ϕ+ 
+
+> i
+
+(o) − β⊤ϕ− 
+
+> i
+
+(o) .
+
+(1) The positive features ϕ+ 
+
+> i
+
+(o) capture visibility, reappearance, state or location change, event participation, and, in multi-turn settings, interaction relevance from previous turns. The negative features ϕ− 
+
+> i
+
+(o) capture disappearance and static 30s  8s  16s  24s  32s  40s  48s  54s  60s 
+
+Q@60s: What was sauteed in 
+
+the pan before the ground meat? 
+
+a. Online Memory Writing 
+
+Segment 𝐶𝐶 𝑖𝑖 
+
+Keyframes 𝐾𝐾 𝑖𝑖 
+
+Short-term Visual Buffer 𝑆𝑆 𝑡𝑡  
+
+> 𝑓𝑓 𝑡𝑡 𝑓𝑓 𝑡𝑡−1 𝑓𝑓 𝑡𝑡−2 𝑓𝑓 𝑡𝑡−3
+> Tokenizer Vision Encoder
+
+Writer VLM Ψ𝑊𝑊            
+
+> LLM
+> Focus State 𝐹𝐹 𝑖𝑖−1
+> Focus
+> Support
+> Context
+> Drop
+> Focus Allocation
+> Λ𝑖𝑖 = Budget 𝐹𝐹 𝑖𝑖−1
+> 𝜙𝜙 +→Positive Signals
+> (visible, appearance, etc.)
+> 𝜙𝜙 −→Negative Signals
+> (absence, disappearance, etc.)
+> Writer
+> Records
+> UpdateFocus to 𝐹𝐹 𝑖𝑖
+> Focus
+> Signals
+> Focus
+> Budget
+> Current
+> Focus
+
+Long-term Memory 𝑂𝑂 𝑡𝑡            
+
+> Name State Location Chain Action Chain
+> onion board →pan chop →add →saute
+
+Evidence Cache 𝐵𝐵 𝑡𝑡     
+
+> Keyframes for Memory Writing
+> onion 𝑜𝑜 1
+> pan 𝑜𝑜 2
+> meat 𝑜𝑜 3
+> Detailed Records
+> Compact
+> Records Merge & Align
+
+b. Question-time Retrieval + Answering                         
+
+> 𝑂𝑂 𝑡𝑡
+> 𝑆𝑆 𝑡𝑡
+> 𝐵𝐵 𝑡𝑡
+> Long-term
+> Memory
+> Recent
+> Frames
+> Cached
+> Evidence
+> Query 𝑞𝑞
+> Parser
+> (Semantic Parsing)
+> 𝑞𝑞 =𝑢𝑢 ,𝑌𝑌 𝑞𝑞 ,𝑡𝑡 𝑞𝑞 → 𝑧𝑧 𝑞𝑞
+> 𝑧𝑧 𝑞𝑞 : Parsed Query Intent
+> target sauteed veggies
+> anchors pan, onion, meat
+> verbs sauteed, added
+> temporal before/after
+> type 𝜒𝜒 𝑞𝑞 interaction
+> candidates A/B/C/D choice
+> Direct Linker
+> Compute → 𝑅𝑅 𝑜𝑜 𝑞𝑞
+> Sort, Keep Top-𝐾𝐾
+> Semantic Link (VLM)
+> Catalog Mapping
+> VLM-Assisted Naming
+> Tokenizer Vision Encoder
+> Semantic Link VLM
+> LLM 𝑂𝑂 𝑞𝑞 Ranked Entity Subset
+> 𝑜𝑜 1,𝑜𝑜 2, … , 𝑜𝑜 𝐾𝐾
+> Sorted w/ 𝑅𝑅 𝑜𝑜 𝑞𝑞
+> if  𝑂𝑂 𝑞𝑞  = ∅ or
+> target unresolved
+> Assembler
+> (Type-aware)
+> 𝑧𝑧 𝑞𝑞 parsed query intent
+> 𝑂𝑂 𝑞𝑞 ranked entity
+> 𝐸𝐸 𝑞𝑞 : Assembled Evidence Block
+> Entity States, Action Chains, Temporal Anchors, Cached Frame Reference
+> Tokenizer  Vision Encoder
+> Reader VLM  Ψ𝑅𝑅
+> LLM
+> �𝑦𝑦  = Final Answer
+> (chopped onion)
+> 𝑂𝑂 𝑡𝑡 ,𝑆𝑆 𝑡𝑡 ,𝐵𝐵 𝑡𝑡
+
+Prior Turns 
+
+(History) 
+
+Match Entities  Boost Focus 
+
+(w/ Rules & Weights) 
+
+Examples of Matched Entities     
+
+> onion pan meat pepper
+> Updated Focus State 𝐹𝐹 𝑖𝑖
+> Focus
+> Support
+> Context
+> Drop
+
+Focus Signals 
+
+(𝜙𝜙 +, 𝜙𝜙 −) Interaction Conditioned Boost 
+
+(From Parsed 𝑧𝑧 𝑞𝑞 )
+
+Multi-Turn Boost 
+
+c. Focus Update (Multi-Turn) 
+
+Answer: Chopped Onion Figure 2. FOLIO overview. A streaming cooking video runs across the top with an illustrative query at tq =60 s. (a) For each segment Ci, a writer VLM produces detailed/compact records under focus-guided writing levels Λi=BUDGET (Fi−1) and updates the hybrid memory 
+
+Mt=( St, Ot, Bt); U PDATE FOCUS refreshes Fi from signals ϕ±
+
+i . (b) A query is parsed to zq , linked to a ranked entity subset Oq (with a SEM LINK VLM fallback), assembled into evidence Eq , and read by an answering VLM to produce ˆy. (c) Across turns, matched entities and actions from prior queries contribute interaction-relevance signals to Fi before being fed back into (a). 
+
+Algorithm 1 FOLIO online memory construction 
+
+Require: video stream {ft}t≥1, segment duration L, writer VLM Wθ
+
+1: Initialize memory M0 = ( S0, O0, B0), focus state F0,current segment Ccur ← ∅ , and index i ← 0
+
+2: for each incoming frame ft do 
+
+3: Update the short-term visual buffer with ft
+
+4: Append ft to current segment Ccur 
+
+5: while Ccur contains a completed segment do 
+
+6: i ← i + 1 and extract Ci from Ccur 
+
+7: Select keyframes Ki from Ci
+
+8: Assign writing levels Λi from Fi−1 and Mi−1
+
+9: Using writer VLM Wθ , generate records ˆUi based on Ki and Λi
+
+10: Merge ˆUi into memory chains and append selected keyframes to Bi
+
+11: Update focus state Fi for the next segment 
+
+12: end while 
+
+13: end for 
+
+background behavior. The coefficients and thresholds are fixed method hyperparameters rather than dataset-specific learned parameters. The resulting focus state Fi guides later memory writing by inducing the next writing levels Λi+1 : entities and actions with higher focus scores receive higher-detail records, while surrounding context is written as compact context records. These writing levels change the level of detail assigned to observed entities and actions; they do not prevent the writer VLM from recording newly observed entities when they appear in the selected keyframes. 
+
+3.3. Hybrid Semantic Memory Structure 
+
+As the video stream arrives, FOLIO continuously updates a hybrid memory that combines a short-term visual buffer, a long-term semantic memory, and a visual-evidence cache. After segment Ci is processed, the memory state is 
+
+Mi = ( Si, Oi, Bi), (2) where Si is the short-term visual buffer, Oi is the long-term semantic memory implemented as an entity-centered structured memory, and Bi is the visual-evidence cache. 
+
+Short-term visual buffer. The short-term visual buffer 
+
+Si is updated as new frames arrive and keeps recent visual context available for query-time answering. It preserves high-fidelity evidence for the current state of the stream, where compressed semantic records may lose visual detail. This component is motivated by recent-frame baselines showing that a visual window provides a strong short-term signal for real-time streaming queries [44]. 
+
+Long-term semantic memory. The long-term semantic memory Oi is an entity-centered structured memory gen-erated by the writer VLM from selected keyframes. Here, entities refer to visually grounded objects or actors in the stream, with actions and events stored as associated records. 4Each entity entry keeps identity fields such as a canonical name, aliases, and category, and accumulates records and associated events over time. The writer VLM generates struc-tured records for observed entities from selected keyframes, including their state, location, relations, visible text when available, and links to the visual-evidence cache. After the current-segment records are generated, records referring to the same entity are merged into Oi as memory chains that track state, location, relations, and actions across segments. 
+
+Visual-evidence cache. The visual-evidence cache Bi stores selected keyframes by segment, together with their times-tamps, and links them to the corresponding entity and event records. 
+
+3.4. Focus-Guided Online Memory Writing 
+
+FOLIO writes memory segment by segment (Fig. 2(a)). As frames arrive, FOLIO accumulates them in a fixed-duration online segment. Once the segment has been observed, it is passed to an adaptive keyframe selector and then to the writer VLM. For segment i, the writing levels in Λi specify which selected entities and actions should receive higher-detail records, while surrounding context is written compactly. The keyframe selector chooses a compact set Ki from the observed segment as visual evidence for the writer VLM. The candidate set contains boundary frames, a middle frame, and the probe frame with the largest visual change within the segment. When the segment has little visual change and no selected entity requires additional visual evidence, FOLIO 
+
+keeps only the boundary frames; otherwise, it keeps the full candidate set. The selected keyframes are also appended to the visual-evidence cache Bi for later recovery. The writer VLM receives the selected keyframes together with Λi and generates structured records ˆUi. For entities and actions prioritized by the focus state, the writer records fine-grained state and location changes, relations to other entities, visible text when available, and associated actions or events. For surrounding context, it writes compact context records that keep the entity name, category, and a short location/state/relation note. After each segment, FOLIO aligns the writer output with the existing long-term semantic memory Oi−1 before merg-ing it. Records are merged by rule-based identity matching over names, aliases, and categories, with simple attribute checks used to avoid unsafe merges. Matched records are appended to the corresponding memory chain; otherwise, the record starts a new entity entry, which reduces accidental merging of similar objects that appear in the same stream. The updated memory Oi yields a chain view Gi, where each chain organizes an entity’s locations, actions, relations, vis-ible text, and state changes over time. The same selected keyframes are appended to Bi as recoverable visual evidence linked to the corresponding entity or event records. 
+
+3.5. Lightweight Hybrid Retrieval and Answering 
+
+When a query arrives, FOLIO retrieves evidence from the hybrid memory constructed so far (Fig. 2(b)). FOLIO first matches entity and action names from the query and an-swer options against identity fields in the long-term semantic memory, ranking the linked entity records, action chains, and event records. Because this matching operates over structured fields rather than raw flat text, retrieval remains lightweight. When direct matching is insufficient, FOLIO 
+
+uses semantic query expansion: a lightweight VLM-assisted expansion step uses the same VLM model to propose related entity or event names, which are then matched against the structured memory. This expansion selects stored evidence; it does not generate new evidence. The matched records are then ranked by their direct or ex-panded matches. After ranking, FOLIO uses a fixed relevance threshold to decide whether the structured records provide sufficient grounding. If no record exceeds this threshold, 
+
+FOLIO recovers a small number of keyframes linked to the top-ranked records from the visual-evidence cache. This conservative recovery step keeps cached frames as visual support rather than a separate retrieval source. For answer generation, the answering VLM receives the selected structured records together with the short-term vi-sual buffer and any recovered keyframes. 
+
+3.6. Focus State Updates for Multi-Turn Queries 
+
+For a multi-turn query stream (Fig. 2(c)), each query is first answered using the memory available at its arrival time. If a segment is still being written asynchronously, its long-term records are not used for that answer; the short-term visual buffer provides the recent visual context instead. Af-ter answering, FOLIO links entity and action names in the query and available answer options to stored entities, actions, or events. The matched items are used as interaction evi-dence for future segments and contribute to the interaction-relevance feature in ϕ+ 
+
+> i
+
+(o) in Sec. 3.2. Unmatched names are kept as unresolved references and affect the focus state only if they later match an observed entity or action. Be-cause the update uses only previous turns and the memory constructed so far, it changes future writing levels without accessing future frames or later queries. 
+
+4. Experiments 
+
+4.1. Experimental Setup 
+
+Streaming protocol. We evaluate FOLIO under a strict on-line streaming protocol. Videos are processed as ordered segment streams, and each query is answered using only the observed segment prefix, the memory constructed from that prefix, and previous dialogue history. Future frames are never used, answer options are provided only at query time, 5Table 1. Single-turn query stream results on full OVO-Bench. For FOLIO , we report results with Qwen2.5-VL-7B and Qwen3-VL-8B; Avg is the arithmetic mean over task columns. 
+
+Model Perception Backward OCR ACR ATR STU FPD OJR Avg EPM ASI HLD Avg 
+
+Gemini 1.5 Pro 85.9 67.0 79.3 58.4 63.4 62.0 69.3 58.6 76.4 52.6 62.5 GPT-4o 69.8 64.2 71.6 51.1 70.3 59.8 64.5 57.9 75.7 48.7 60.8 LLaVA-Video-7B 69.1 58.7 68.8 49.4 74.3 59.8 62.3 56.2 53.5 51.5 53.7 LLaVA-OneVision-7B 66.4 57.8 73.3 53.4 71.3 62.0 62.0 56.2 55.4 21.5 43.7 Qwen2-VL-7B 40.4 50.5 63.8 47.2 66.3 53.6 51.0 48.7 35.5 45.0 43.7 Qwen2-VL-72B 65.8 60.6 69.8 51.7 69.3 54.4 61.9 52.5 60.8 57.5 57.0 Flash-VStream-7B 24.2 29.4 28.5 33.7 25.7 28.8 28.4 39.1 37.2 5.9 27.4 VideoLLM-online-8B 8.1 2.8 12.0 14.0 45.5 21.1 22.2 18.8 12.2 17.7 16.2 StreamChat ‡ 51.7 47.7 58.6 41.0 61.1 47.8 50.1 50.2 54.1 37.6 47.4 Dispider 57.7 49.5 62.1 44.9 61.4 51.6 54.6 48.5 55.4 45.4 36.1 Qwen2.5-VL-7B 76.5 57.8 68.1 46.6 66.3 56.5 60.9 49.8 58.1 44.6 50.2 + OASIS 85.2 72.5 66.4 52.2 67.3 64.7 67.3 51.9 58.8 48.9 52.6 Qwen3-VL-8B ‡ 83.9 58.7 70.7 56.2 69.3 64.1 66.8 51.2 60.8 43.6 51.2 + OASIS 92.0 80.7 81.0 67.4 67.3 79.9 78.1 62.0 60.1 47.3 57.2 Qwen2.5-VL-7B+ FOLIO 95.3 83.3 87.5 60.9 62.9 72.3 77.0 50.5 54.3 66.7 57.2 Qwen3-VL-8B+ FOLIO 96.7 85.7 85.7 70.6 62.5 90.9 82.0 59.0 63.6 84.6 69.1 
+
+and multi-turn evaluation uses previous model predictions rather than ground-truth previous answers. 
+
+Benchmarks. We evaluate on OVO-Bench [ 40 ] and Stream-ingBench [ 31 ]. OVO-Bench provides single-turn streaming queries, including Perception queries about the current mo-ment and Backward queries that require recovering earlier evidence. StreamingBench evaluates multi-turn streaming interaction, where later queries may refer to previous turns or earlier visual context. 
+
+Models and baselines. We evaluate FOLIO with Qwen2.5-VL-7B and Qwen3-VL-8B backbones. We compare against OASIS [ 29 ] for single-turn streaming QA on OVO-Bench and Think-While-Watching [ 50 ] for multi-turn streaming QA on StreamingBench. 
+
+VLM setting. We serve all VLMs with vLLM [ 22 ] using one GPU per model instance through an OpenAI-compatible multimodal interface. The same serving configuration is used for all VLM calls in memory writing, semantic query expansion, and answer generation, with a 24K-token maxi-mum model length. 
+
+Hardware. All experiments are conducted on NVIDIA RTX 6000 Ada Generation GPU servers, with 48 GB memory and 960 GB/s memory bandwidth per GPU. 
+
+4.2. Main Results 
+
+Single-turn results. Table 1 reports per-task accuracy on the Perception and Backward subsets of OVO-Bench. 
+
+FOLIO improves over OASIS on both backbones, reaching 
+
+77 .0/57 .2 Perception/Backward average with Qwen2.5-VL-7B and 82 .0/69 .1 with Qwen3-VL-8B. The gains are espe-cially clear on Backward queries, where the stronger back-bone widens the margin over OASIS from +4 .6 to +11 .9
+
+points. The largest improvement appears on hallucination de-tection (HLD), suggesting that the structured memory helps distinguish whether an entity or event has actually appeared in the observed stream. HLD also benefits from conservative answer calibration, so we report it separately and do not use it as the sole evidence for memory quality. The main exception is FPD, where FOLIO trails OASIS slightly; this task requires extrapolating beyond the observed prefix and is less directly served by memory retrieval. 
+
+Multi-turn results. Table 2 evaluates whether the mem-ory design transfers to multi-turn streaming interaction on full StreamingBench. FOLIO improves over both the online backbone and the strongest multi-turn baseline, Think-While-Watching. The largest gains appear on Realtime and Om-niSource, where long-term semantic memory complements recent-frame grounding for queries over the evolving stream. SQA remains more challenging because many queries re-quire previous-turn reference resolution and fine-grained reading of on-screen states such as scores. This suggests that interaction-state tracking and detailed state capture remain important directions for improvement. Proactive Output is in-cluded for completeness, but we treat it as a timing-oriented diagnostic rather than the main evidence for the structured memory claim. 6Table 2. Multi-turn query stream results on full StreamingBench. For FOLIO , we report results with Qwen2.5-VL-7B and Qwen3-VL-8B; columns report task-family and overall accuracy. 
+
+Method Realtime OmniSource SQA Proactive Overall 
+
+VideoLLM-online-8B 35.99 28.45 30.80 3.92 32.48 Dispider-7B 67.63 35.66 34.80 25.34 53.12 StreamAgent-7B 74.28 36.26 39.60 28.90 57.02 Qwen3-VL-8B (online instruct) 25.12 21.47 17.20 17.60 23.04 Think While Watching (Qwen3-VL-8B, multi-turn) 74.40 37.47 50.00 40.00 58.82 Qwen2.5-VL-7B + FOLIO 75.3 61.8 51.6 23.1 69.7 Qwen3-VL-8B + FOLIO 81.2 63.6 54.8 51.6 74.5                                               
+
+> Table 3. Memory-writing cost diagnostics using Qwen3-VL-8B on a 500-query OVO-Bench Backward split sampled by question-type proportions. Merged bank reports the serialized memory size after segment-level records are merged.
+> Variant Acc. Writer Writer Records Merged bank (%) input tok./Q output tok./Q /Q KB/Q
+> Fixed + uniform 62.7 201.5K 38.4K 259.7 226.8 Adaptive + uniform 63.2 126.7K 38.3K 259.6 226.5 Fixed + focus-guided 65.9 207.3K 26.4K 179.2 154.9
+> FOLIO (adaptive + focus-guided) 67.1 134.7K 26.2K 178.3 153.4
+> Table 4. System cost using Qwen3-VL-8B. Writer latency is measured per segment; unmerged records report the serialized size of segment-level records before entity-level merging, and TTFT is measured at question time.
+> Dataset Writer Writer Unmerged rec. VLM TTFT/Q calls/min lat./chunk KB/min calls/Q
+> OVO-Bench 7.5 5.88s 151.1 2.15 6.58s StreamingBench 7.5 7.68s 155.5 1.80 7.31s
+
+4.3. System Cost 
+
+We analyze memory-writing cost on a 500-query OVO-Bench Backward diagnostic split sampled according to the original Backward question-type proportions. The savings come from two system choices: focused semantic memory construction, which avoids writing every observed entity with the same level of detail, and adaptive keyframe selec-tion, which reduces the visual input sent to the writer VLM. Table 3 compares these choices against fixed visual input and uniform memory writing. Relative to the fixed-uniform variant, FOLIO reduces writer input tokens by 33.2%, writer output tokens by 31.8%, written records by 31.3%, and merged memory size by 32.4%, while improving accuracy by 4.4 points on this diagnostic split. The merged mem-ory banks remain compact for all variants because records are merged at the entity level, but focused writing still re-duces the amount of text that must be generated, merged, and retrieved. Table 4 reports representative runtime and storage costs for the current 8s adaptive-keyframe setting. The writer is in-voked once per segment, or about 7.5 calls per video minute. On the 8B backbone, persisted segment-level records are written at about 151–156 KB per video minute before entity-      
+
+> 64
+> 66
+> 68
+> 70
+> 72
+> 0
+> 0.5
+> 1.0
+> 1.5
+> 2s 4s 8s 16s 32s
+> 69.9 70.3 71.0
+> 69.5
+> 65.0
+
+## ♦
+
+## ♦
+
+## ♦ ♦ ♦ 
+
+> Segment length
+> Accuracy (%)
+> Writer tokens / video (M)
+> Accuracy
+
+## ♦ Writer tokens / video 
+
+Figure 3. Chunk-length sensitivity using Qwen3-VL-8B on the 200-video StreamingBench diagnostic subset used for component ablations. Bars show accuracy, and blue markers show memory-writer input tokens per video. 
+
+level merging; the final merged memory banks are smaller, as shown in Table 3. Question-time answering uses 1.80– 2.15 VLM calls per question with 6.58–7.31s TTFT. Writer latency is 5.88–7.68s per segment in this setting, making memory writing a significant systems cost but not the only source of latency. The method is streaming compliant, and batching or faster writer and answering backbones are the main systems optimizations for real-time deployment. Full 7B/8B system statistics are in Appendix H. 
+
+Chunk-length sensitivity. Figure 3 varies only the ob-served segment length used by the memory writer on the same 200-video StreamingBench diagnostic subset used for component ablations below, which contains 1,000 times-tamped queries. Shorter segments write memory more fre-quently, but this extra cost does not improve accuracy over the default 8s setting. Longer segments reduce writer cost, but the 32s setting loses 6.0 points because each memory update must summarize a larger interval. We therefore use 8s as the default tradeoff between memory quality and writing cost. 730 40 50 60 70 80            
+
+> Accuracy (%)
+> w/o Recent Window 32.4 −38 .6
+> w/o Focus Controller 65.5 −5.5
+> w/o Struct. Memory 68.3 −2.7
+> w/o Adaptive Visual 68.3 −2.7
+> w/o Interaction Focus 69.7 −1.3
+> Full 71.0
+> Figure 4. Component ablation using Qwen3-VL-8B on the 200-video StreamingBench diagnostic subset. Bars show accuracy after removing each component; gray numbers report the drop relative to the full system.
+
+4.4. Ablations 
+
+Component ablations. Figure 4 ablates the main focus-memory components on the same 200-video Streaming-Bench diagnostic subset; the full numeric table is in Table 9 in the appendix. Removing the recent visual window causes the largest drop, showing that short-term visual evidence is indispensable for boundary and current-state queries. This is an important boundary of the method: FOLIO is not designed to replace recent visual grounding, but to make earlier enti-ties and their histories retrievable. Since the sampled split contains many real-time queries, components that mainly help longer-horizon memory can have smaller aggregate effects. Removing structured memory while retaining chunk-level event/text retrieval is therefore less harmful on this mixed split because many queries can still be answered from local or event-level evidence. Removing the focus controller or adaptive visual writing reduces accuracy, supporting the role of salience-aware memory writing and visual evidence selection. Interaction focus has a smaller effect here because only a subset of the evaluable queries in this diagnostic split require multi-turn reference resolution; the question-time ev-idence ablation below and the appendix diagnostics further isolate long-term memory behavior. 
+
+Question-time evidence ablations. Table 5 isolates the evidence sources used by the question-time reader on a 200-query OVO-Bench Backward split sampled according to the original Backward question-type proportions. All rows use the same answer prompt and differ only in the evidence sources available to the answerer; system-runtime cost is reported in Table 4. The short-term visual buffer is a strong baseline, but adding long-term structured memory improves accuracy, and the full retrieval policy performs best without uniformly appending cached keyframes. 
+
+Ablation synthesis and failure analysis. Together, the ablations show that recent visual evidence remains essential, and that long-term structured memory is most useful when 
+
+> Table 5. Question-time evidence ablation using Qwen3-VL-8B on a 200-query OVO-Bench Backward split. S/O/B denote the short-term visual buffer, long-term semantic memory, and visual-evidence cache frames.
+
+Setting Acc. (%) Calls/Q Input tok./Q (K) 
+
+S 54.5 1.00 3.18 O 42.6 1.54 1.54 B 52.5 1.54 4.01 S + B 50.5 1.54 6.94 S + O 55.5 1.54 4.47 S + O + B 50.5 1.54 7.86 
+
+FOLIO 56.7 1.54 4.84 
+
+the question depends on earlier entity histories rather than only the current visual state. The OVO-Bench Backward evidence ablation is deliberately strict: the short-term visual buffer remains strong, while adding long-term memory gives a modest overall gain and a clearer gain on HLD questions. Simple concatenation of all available evidence sources is less reliable, especially when cached keyframes are appended uniformly. The failure taxonomy in Appendix 11 further supports this interpretation. Most remaining errors are not simple memory lookup failures: in our reviewed OVO-Bench and StreamingBench errors, the “written but not retrieved” category is zero, while the dominant cases involve retrieved evidence that is still insufficient or not discriminative enough. This points to two practical limits of the current system: the writer sometimes misses fine-grained state or OCR/score evidence, and the answerer can fail to compare similar can-didate events even when relevant memory is available. 
+
+5. Conclusion 
+
+We presented FOLIO , a training-free focused semantic mem-ory system for streaming video understanding. FOLIO writes memory online with a focus state: selected entities and ac-tions receive higher-detail records, while surrounding con-text remains compact. Its hybrid memory combines recent visual context, long-term semantic memory, and a visual-evidence cache. At query time, hybrid retrieval links queries to relevant memory records and uses semantic expansion when direct matching is insufficient. Across OVO-Bench and StreamingBench, FOLIO improves accuracy while reduc-ing memory-writing cost, suggesting that streaming video memory benefits from focused writing rather than temporal compression alone. The current system also points to useful next steps. The writer uses a general schema for states, actions, relations, and visible text, but domain-specific cues such as possession changes or on-screen scores may require richer memory fields. The implementation also uses fixed chunk boundaries, although some streams would benefit from event-triggered segmentation. Finally, memory writing remains the main 8throughput bottleneck. Future work can combine focus-guided writing with domain-adaptive memory fields, event-driven segmentation, and faster batched writers for real-time multi-stream deployment. 
+
+Acknowledgments 
+
+LLMs such as Claude Code, Codex, and GPT were used as general-purpose assistants for coding, experimentation, paper drafting, and formatting. The authors verified the content to the best of their knowledge and are responsible for its accuracy. 
+
+References 
+
+[1] Kirolos Ataallah, Xiaoqian Shen, Eslam Abdelrahman, Essam Sleiman, Mingchen Zhuge, Jian Ding, Deyao Zhu, Jürgen Schmidhuber, and Mohamed Elhoseiny. Goldfish: Vision-language understanding of arbitrarily long videos. In Eu-ropean Conference on Computer Vision , pages 251–267. Springer, 2024. 3, 15, 16 [2] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, et al. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631 , 2025. 3, 15 [3] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, Jiabo Ye, Xi Zhang, Tianbao Xie, Zesen Cheng, Hang Zhang, Zhibo Yang, Haiyang Xu, and Junyang Lin. Qwen2.5-vl technical report, 2025. 1, 3, 15 [4] Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Xi Chen, Krzysztof Choromanski, Tianli Ding, Danny Driess, Avinava Dubey, Chelsea Finn, Pete Florence, Chuyuan Fu, Montse Gonzalez Arenas, Keerthana Gopalakr-ishnan, Kehang Han, Karol Hausman, Alexander Herzog, Jasmine Hsu, Brian Ichter, Alex Irpan, Nikhil Joshi, Ryan Julian, Dmitry Kalashnikov, Yuheng Kuang, Isabel Leal, Lisa Lee, Tsang-Wei Edward Lee, Sergey Levine, Yao Lu, Hen-ryk Michalewski, Igor Mordatch, Karl Pertsch, Kanishka Rao, Krista Reymann, Michael Ryoo, Grecia Salazar, Pan-nag Sanketi, Pierre Sermanet, Jaspiar Singh, Anikait Singh, Radu Soricut, Huong Tran, Vincent Vanhoucke, Quan Vuong, Ayzaan Wahid, Stefan Welker, Paul Wohlhart, Jialin Wu, Fei Xia, Ted Xiao, Peng Xu, Sichun Xu, Tianhe Yu, and Brianna Zitkovich. Rt-2: Vision-language-action models transfer web knowledge to robotic control. arXiv preprint arXiv:2307.15818 , 2023. 1 [5] Joya Chen, Zhaoyang Lv, Shiwei Wu, Kevin Qinghong Lin, Chenan Song, Difei Gao, Jia-Wei Liu, Ziteng Gao, Dongxing Mao, and Mike Zheng Shou. Videollm-online: Online video large language model for streaming video. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 18407–18418, 2024. 1, 3, 16 [6] Joya Chen, Ziyun Zeng, Yiqi Lin, Wei Li, Zejun Ma, and Mike Zheng Shou. Livecc: Learning video llm with streaming speech transcription at scale. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 29083– 29095, 2025. 3, 16 [7] Xueyi Chen, Keda Tao, Kele Shao, and Huan Wang. Stream-ingtom: Streaming token compression for efficient video understanding. arXiv preprint arXiv:2510.18269 , 2025. 3, 16 [8] Yilong Chen, Xiang Bai, Zhibin Wang, Chengyu Bai, Yuhan Dai, and Ming Lu. Streamkv: Streaming video question-answering with segment-based kv cache retrieval and com-pression. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 3120–3128, 2026. 1 [9] Shangzhe Di, Zhelun Yu, Guanghao Zhang, Haoyuan Li, Hao Cheng, Bolin Li, Wanggui He, Fangxun Shu, and Hao Jiang. Streaming video question-answering with in-context video kv-cache retrieval. In International Conference on Learning Representations , pages 42115–42127, 2025. 1, 3, 16 [10] Xin Ding, Hao Wu, Yifan Yang, Shiqi Jiang, Qianxi Zhang, Donglin Bai, Zhibo Chen, and Ting Cao. Streammind: Un-locking full frame rate streaming video dialogue through event-gated cognition. In Proceedings of the IEEE/CVF In-ternational Conference on Computer Vision , pages 13448– 13459, 2025. 1, 3, 16 [11] Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, et al. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 24108– 24118, 2025. 1, 3, 15 [12] Shenghao Fu, Qize Yang, Yuan-Ming Li, Yi-Xing Peng, Kun-Yu Lin, Xihan Wei, Jian-Fang Hu, Xiaohua Xie, and Wei-Shi Zheng. Vispeak: Visual instruction feedback in streaming videos. In Proceedings of the IEEE/CVF International Con-ference on Computer Vision , pages 21778–21788, 2025. 1, 3, 16 [13] Kristen Grauman, Andrew Westbury, Eugene Byrne, Zachary Chavis, Antonino Furnari, Rohit Girdhar, Jackson Ham-burger, Hao Jiang, Miao Liu, Xingyu Liu, Miguel Martin, Tushar Nagarajan, Ilija Radosavovic, Santhosh Kumar Ra-makrishnan, Fiona Ryan, Jayant Sharma, Michael Wray, Mengmeng Xu, Eric Zhongcong Xu, Chen Zhao, Siddhant Bansal, Dhruv Batra, Vincent Cartillier, Sean Crane, Tien Do, M. Doulaty, Pravallika Erapalli, Christoph Feichtenhofer, Adrian Fragomeni, Qichen Fu, Abrham Gebreselasie, Cristina Gonzalez, James Hillis, Xuhua Huang, Yifei Huang, Wenqi Jia, Wenqi Khoo, Jachym Koláˇ r, Satwik Kottur, Anurag Ku-mar, Federico Landini, Chao Li, Yanghao Li, Karttikeya Mangalam, Rahul Modhugu, Jonathan Munro, Tushar Mur-rell, Takumi Nishiyasu, Will Price, Paola Ruiz, Merey Ra-mazanova, Leda Sari, Kiran Somasundaram, Audra Souther-land, Yusuke Sugano, Jiarui Tao, Minh Vo, Yuchen Wang, Xindi Wu, Takuma Yagi, Yunyi Zhu, Pablo Arbelaez, David Crandall, Dima Damen, Giovanni Maria Farinella, Chris-tian Fuegen, Bernard Ghanem, Vamsi Krishna Ithapu, C. V. Jawahar, Hanbyul Joo, Kris Kitani, Haizhou Li, Richard Newcombe, Aude Oliva, Hyun Soo Park, James M. Rehg, Yoichi Sato, Jianbo Shi, Mike Zheng Shou, Antonio Torralba, Lorenzo Torresani, Mingfei Yan, and Jitendra Malik. Ego4d: Around the world in 3,000 hours of egocentric video. In Pro-
+
+9ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 18995–19012, 2022. 1 [14] Yiran Guan, Liang Yin, Dingkang Liang, Jianzhong Ju, Zhenbo Luo, Jian Luan, Yuliang Liu, and Xiang Bai. Video streaming thinking: Videollms can watch and think simulta-neously. arXiv preprint arXiv:2603.12262 , 2026. 3, 16 [15] Zhenghui Guo, Yuanbin Man, Junyuan Sheng, Bowen Lin, Ahmed Ahmed, Bo Jiang, Boyuan Zhang, Miao Yin, Sian Jin, Omprakash Gnawal, et al. Event-vstream: Event-driven real-time understanding for long video streams. arXiv preprint arXiv:2601.15655 , 2026. 3, 16 [16] Zifan Han, Hongbo Sun, Jinglin Xu, Canhui Tang, Yulong Lei, Xuchong Zhang, Hongbin Sun, Zhongjiang He, and Hao Sun. Wat: Online video understanding needs watching before thinking. arXiv preprint arXiv:2603.13412 , 2026. 3, 16 [17] Bo He, Hengduo Li, Young Kyun Jang, Menglin Jia, Xue-fei Cao, Ashish Shah, Abhinav Shrivastava, and Ser-Nam Lim. Ma-lmm: Memory-augmented large multimodal model for long-term video understanding. In Proceedings of the IEEE/CVF conference on computer vision and pattern recog-nition , pages 13504–13514, 2024. 3, 15, 16 [18] Zhenpeng Huang, Xinhao Li, Jiaqi Li, Jing Wang, Xiangyu Zeng, Cheng Liang, Tao Wu, Xi Chen, Liang Li, and Limin Wang. Online video understanding: Ovbench and videochat-online. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 3328–3338, 2025. 1, 3, 16 [19] Zhenpeng Huang, Xinhao Li, Jiaqi Li, Jing Wang, Xiangyu Zeng, Cheng Liang, Tao Wu, Xi Chen, Liang Li, and Limin Wang. Online video understanding: Ovbench and videochat-online. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 3328–3338, 2025. 3, 16 [20] Junhyeok Kim, Min Soo Kim, Jiwan Chung, Jungbin Cho, Jisoo Kim, Sungwoong Kim, Gyeongbo Sim, and Youngjae Yu. Egospeak: learning when to speak for egocentric conver-sational agents in the wild. In Findings of the Association for Computational Linguistics: NAACL 2025 , pages 2990–3005, 2025. 3, 16 [21] Minsoo Kim, Kyuhong Shim, Jungwook Choi, and Simyung Chang. Infinipot-v: Memory-constrained kv cache compres-sion for streaming video understanding. Advances in Neural Information Processing Systems , 38:138983–139013, 2026. 1, 3, 16 [22] Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Hao Zhang, and Ion Stoica. Efficient memory management for large language model serving with pagedattention. arXiv preprint arXiv:2309.06180 , 2023. 6 [23] Kunchang Li, Yali Wang, Yinan He, Yizhuo Li, Yi Wang, Yi Liu, Zun Wang, Jilan Xu, Guo Chen, Ping Luo, et al. Mvbench: A comprehensive multi-modal video understand-ing benchmark. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 22195– 22206, 2024. 1, 3, 15 [24] KunChang Li, Yinan He, Yi Wang, Yizhuo Li, Wenhai Wang, Ping Luo, Yali Wang, Limin Wang, and Yu Qiao. Videochat: Chat-centric video understanding. Science China Information Sciences , 68(10):200102, 2025. 3, 15 [25] Kangcong Li, Peng Ye, Lin Zhang, Chao Wang, Huafeng Qin, and Tao Chen. Freshmem: Brain-inspired frequency-space hybrid memory for streaming video understanding. arXiv preprint arXiv:2602.01683 , 2026. 1, 3, 16 [26] Wei Li, Bing Hu, Rui Shao, Leyang Shen, and Liqiang Nie. Lion-fs: Fast & slow video-language thinker as online video assistant. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 3240–3251, 2025. 1, 3, 16 [27] Yanwei Li, Chengyao Wang, and Jiaya Jia. Llama-vid: An im-age is worth 2 tokens in large language models. In European Conference on Computer Vision , pages 323–340. Springer, 2024. 3, 15 [28] Niu Lian, Yuting Wang, Hanshu Yao, Jinpeng Wang, Bin Chen, Yaowei Wang, Min Zhang, and Shu-Tao Xia. From verbatim to gist: Distilling pyramidal multimodal memory via semantic information bottleneck for long-horizon video agents. arXiv preprint arXiv:2603.01455 , 2026. 16 [29] Zhijia Liang, Jiaming Li, Weikai Chen, Yanhao Zhang, Hao-nan Lu, and Guanbin Li. Oasis: On-demand hierarchical event memory for streaming video reasoning. arXiv preprint arXiv:2604.17052 , 2026. 1, 3, 6, 16, 20 [30] Bin Lin, Yang Ye, Bin Zhu, Jiaxi Cui, Munan Ning, Peng Jin, and Li Yuan. Video-llava: Learning united visual represen-tation by alignment before projection. In Proceedings of the 2024 conference on empirical methods in natural language processing , pages 5971–5984, 2024. 1, 3, 15 [31] Junming Lin, Zheng Fang, Chi Chen, Haoxuan Cheng, Zi-hao Wan, Fuwen Luo, Ziyue Wang, Peng Li, Yang Liu, and Maosong Sun. Streamingbench: Assessing the gap for mllms to achieve streaming video understanding. In ICASSP 2026-2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 12147–12151. IEEE, 2026. 1, 3, 6, 14, 16 [32] Junyan Lin, Junlong Tong, Hao Wu, Jialiang Zhang, Jin-ming Liu, Xin Jin, and Xiaoyu Shen. Speak while watch-ing: Unleashing true real-time video understanding capabil-ity of multimodal large language models. arXiv preprint arXiv:2601.06843 , 2026. 3, 16 [33] Jihao Liu, Zhiding Yu, Shiyi Lan, Shihao Wang, Rongyao Fang, Jan Kautz, Hongsheng Li, and Jose M Alvare. Stream-chat: Chatting with streaming video. arXiv preprint arXiv:2412.08646 , 2024. 16 [34] Zikang Liu, Longteng Guo, Handong Li, Ru Zhen, Xingjian He, Ruyi Ji, Xiaoming Ren, Yanhao Zhang, Haonan Lu, and Jing Liu. Thinking in streaming video. arXiv preprint arXiv:2603.12938 , 2026. 3, 16 [35] Haocheng Lu, Nan Zhang, Wei Tao, Xiaoyang Qu, Guokuan Li, Jiguang Wan, and Jianzong Wang. Vista: Scene-aware optimization for streaming video question answering under post-hoc queries. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 7539–7547, 2026. 1, 3, 16 [36] Xudong Lu, Yang Bo, Jinpeng Chen, Shuhan Li, Xintong Guo, Huankang Guan, Fang Liu, Dunyuan Xu, Peiwen Sun, Heyang Sun, et al. Aura: Always-on understanding and real-time assistance via video streams. arXiv preprint arXiv:2604.04184 , 2026. 3, 16 
+
+10 [37] Yongdong Luo, Xiawu Zheng, Guilin Li, Shukang Yin, Haojia Lin, Chaoyou Fu, Jinfa Huang, Jiayi Ji, Fei Chao, Jiebo Luo, et al. Video-rag: Visually-aligned retrieval-augmented long video comprehension. Advances in Neural Information Processing Systems , 38:168008–168033, 2026. 3, 15, 16 [38] Karttikeya Mangalam, Raiymbek Akshulakov, and Jitendra Malik. Egoschema: A diagnostic benchmark for very long-form video language understanding. Advances in Neural Information Processing Systems , 36:46212–46244, 2023. 1, 3, 15 [39] Zhenyu Ning, Guangda Liu, Qihao Jin, Chengwei Li, Wen-chao Ding, Minyi Guo, and Jieru Zhao. Livevlm: Efficient online video understanding via streaming-oriented kv cache and retrieval. arXiv preprint arXiv:2505.15269 , 2025. 3, 16 [40] Junbo Niu, Yifei Li, Ziyang Miao, Chunjiang Ge, Yuanhang Zhou, Qihao He, Xiaoyi Dong, Haodong Duan, Shuangrui Ding, Rui Qian, et al. Ovo-bench: How far is your video-llms from real-world online video understanding? In Proceedings of the Computer Vision and Pattern Recognition Conference ,pages 18902–18913, 2025. 1, 3, 6, 14, 16 [41] Rui Qian, Xiaoyi Dong, Pan Zhang, Yuhang Zang, Shuangrui Ding, Dahua Lin, and Jiaqi Wang. Streaming long video un-derstanding with large language models. Advances in Neural Information Processing Systems , 37:119336–119360, 2024. 3, 15, 16 [42] Minghao Qin, Xiangrui Liu, Zhengyang Liang, Yan Shu, Huaying Yuan, Juenjie Zhou, Shitao Xiao, Bo Zhao, and Zheng Liu. Video-xl-2: Towards very long-video under-standing through task-aware kv sparsification. arXiv preprint arXiv:2506.19225 , 2025. 15 [43] Xiaoqian Shen, Yunyang Xiong, Changsheng Zhao, Lemeng Wu, Jun Chen, Chenchen Zhu, Zechun Liu, Fanyi Xiao, Bal-akrishnan Varadarajan, Florian Bordes, et al. Longvu: Spa-tiotemporal adaptive compression for long video-language understanding. arXiv preprint arXiv:2410.17434 , 2024. 1, 3, 15 [44] Yujiao Shen, Shulin Tian, Jingkang Yang, and Ziwei Liu. A simple baseline for streaming video understanding. arXiv preprint arXiv:2604.02317 , 2026. 1, 3, 4, 16 [45] Yan Shu, Zheng Liu, Peitian Zhang, Minghao Qin, Junjie Zhou, Zhengyang Liang, Tiejun Huang, and Bo Zhao. Video-xl: Extra-long vision language model for hour-scale video understanding. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 26160–26169, 2025. 3, 15 [46] Chonghao Sima, Katrin Renz, Kashyap Chitta, Li Chen, Hanxue Zhang, Chengen Xie, Ping Luo, Andreas Geiger, and Hongyang Li. Drivelm: Driving with graph visual question answering. arXiv preprint arXiv:2312.14150 , 2023. 1 [47] Enxin Song, Wenhao Chai, Guanhong Wang, Yucheng Zhang, Haoyang Zhou, Feiyang Wu, Haozhe Chi, Xun Guo, Tian Ye, Yanting Zhang, et al. Moviechat: From dense token to sparse memory for long video understanding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 18221–18232, 2024. 3, 15, 16 [48] Chao Wang, Xudong Tan, Jianjian Cao, Kangcong Li, and Tao Chen. Curvestream: Boosting streaming video understanding in mllms via curvature-aware hierarchical visual memory management. arXiv preprint arXiv:2603.19571 , 2026. 1, 3, 16 [49] Haibo Wang, Bo Feng, Zhengfeng Lai, Mingze Xu, Shiyu Li, Weifeng Ge, Afshin Dehghan, Meng Cao, and Ping Huang. Streambridge: Turning your offline video large language model into a proactive streaming assistant. Advances in Neural Information Processing Systems , 38:132332–132359, 2026. 1, 3, 16 [50] Lu Wang, Zhuoran Jin, Yupu Hao, Yubo Chen, Kang Liu, Yulong Ao, and Jun Zhao. Think while watching: Online streaming segment-level memory for multi-turn video rea-soning in multimodal large language models. arXiv preprint arXiv:2603.11896 , 2026. 3, 6, 16 [51] Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, et al. Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 , 2024. 1, 3, 15 [52] Weihan Wang, Zehai He, Wenyi Hong, Yean Cheng, Xiaohan Zhang, Ji Qi, Ming Ding, Xiaotao Gu, Shiyu Huang, Bin Xu, et al. Lvbench: An extreme long video understanding benchmark. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 22958–22967, 2025. 3, 15 [53] Xiaohan Wang, Yuhui Zhang, Orr Zohar, and Serena Yeung-Levy. Videoagent: Long-form video understanding with large language model as agent. In European Conference on Computer Vision , pages 58–76. Springer, 2024. 3, 15, 16 [54] Yi Wang, Kunchang Li, Xinhao Li, Jiashuo Yu, Yinan He, Guo Chen, Baoqi Pei, Rongkun Zheng, Zun Wang, Yansong Shi, et al. Internvideo2: Scaling foundation models for mul-timodal video understanding. In European conference on computer vision , pages 396–416. Springer, 2024. 1, 3, 15 [55] Yueqian Wang, Xiaojun Meng, Yuxuan Wang, Jianxin Liang, Jiansheng Wei, Huishuai Zhang, and Dongyan Zhao. Vide-ollm knows when to speak: Enhancing time-sensitive video comprehension with video-text duet interaction format. arXiv preprint arXiv:2411.17991 , 1(3):5, 2024. 1, 3, 16 [56] Yiyu Wang, Xuyang Liu, Xiyan Gui, Xinying Lin, Boxue Yang, Chenfei Liao, Tailai Chen, and Linfeng Zhang. Acceler-ating streaming video large language models via hierarchical token compression. arXiv preprint arXiv:2512.00891 , 2025. 1, 3, 16 [57] Yuxuan Wang, Yueqian Wang, Bo Chen, Tong Wu, Dongyan Zhao, and Zilong Zheng. Omnimmi: A comprehensive multi-modal interaction benchmark in streaming video contexts. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 18925–18935, 2025. 3, 16 [58] Yun Wang, Long Zhang, Jingren Liu, Jiaqi Yan, Zhanjie Zhang, Jiahao Zheng, Xun Yang, Dapeng Wu, Xiangyu Chen, and Xuelong Li. Episodic memory representation for long-form video understanding. arXiv preprint arXiv:2508.09486 ,2025. 1, 3, 16 [59] Ziyang Wang, Shoubin Yu, Elias Stengel-Eskin, Jaehong Yoon, Feng Cheng, Gedas Bertasius, and Mohit Bansal. 
+
+11 Videotree: Adaptive tree-based video representation for llm reasoning on long videos. In Proceedings of the Computer Vi-sion and Pattern Recognition Conference , pages 3272–3283, 2025. 3, 15, 16 [60] Siwei Wen, Zhangcheng Wang, Xingjian Zhang, Lei Huang, and Wenjun Wu. Eventmemagent: Hierarchical event-centric memory for online video understanding with adaptive tool use. arXiv preprint arXiv:2602.15329 , 2026. 1, 3, 16 [61] Shiwei Wu, Joya Chen, Kevin Qinghong Lin, Qimeng Wang, Yan Gao, Qianli Xu, Tong Xu, Yao Hu, Enhong Chen, and Mike Zheng Shou. Videollm-mod: Efficient video-language streaming with mixture-of-depths vision computation. Ad-vances in Neural Information Processing Systems , 37:109922– 109947, 2024. 3, 16 [62] Junbin Xiao, Xindi Shang, Angela Yao, and Tat-Seng Chua. Next-qa: Next phase of question-answering to explaining tem-poral actions. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 9777–9786, 2021. 3, 15 [63] Yiweng Xie, Bo He, Junke Wang, Xiangyu Zheng, Ziyi Ye, and Zuxuan Wu. Fluxmem: Adaptive hierarchical memory for streaming video understanding. arXiv preprint arXiv:2603.02096 , 2026. 1, 3, 16 [64] Haomiao Xiong, Zongxin Yang, Jiazuo Yu, Yunzhi Zhuge, Lu Zhang, Jiawen Zhu, and Huchuan Lu. Streaming video under-standing and multi-round interaction with memory-enhanced knowledge. arXiv preprint arXiv:2501.13468 , 2025. 15, 20 [65] Ruyi Xu, Guangxuan Xiao, Yukang Chen, Liuning He, Kelly Peng, Yao Lu, and Song Han. Streamingvlm: Real-time understanding for infinite video streams. arXiv preprint arXiv:2510.09608 , 2025. 3, 16 [66] ShuHang Xun, Sicheng Tao, Jungang Li, Yibo Shi, Zhixin Lin, Zhanhui Zhu, Yibo Yan, Hanqian Li, LingHao Zhang, Shikang Wang, Yixin Liu, Hanbo Zhang, Ying Ma, and Xum-ing Hu. RTV-bench: Benchmarking MLLM continuous per-ception, understanding and reasoning through real-time video. In The Thirty-ninth Annual Conference on Neural Information Processing Systems Datasets and Benchmarks Track , 2026. 1, 3, 16 [67] Yanlai Yang, Zhuokai Zhao, Satya Narayan Shukla, Aashu Singh, Shlok Kumar Mishra, Lizhu Zhang, and Mengye Ren. Streammem: Query-agnostic kv cache memory for streaming video understanding. arXiv preprint arXiv:2508.15717 , 2025. 3, 16 [68] Zhenyu Yang, Yuhang Hu, Zemin Du, Dizhan Xue, Sheng-sheng Qian, Jiahong Wu, Fan Yang, Weiming Dong, and Changsheng Xu. Svbench: A benchmark with temporal multi-turn dialogues for streaming video understanding. arXiv preprint arXiv:2502.10810 , 2025. 1, 3, 16 [69] Zhenyu Yang, Kairui Zhang, Yuhang Hu, Bing Wang, Sheng-sheng Qian, Bin Wen, Fan Yang, Tingting Gao, Weiming Dong, and Changsheng Xu. Livestar: Live streaming assis-tant for real-world online video understanding. Advances in Neural Information Processing Systems , 38:31266–31304, 2026. 1, 3, 16 [70] Zhenyu Yang, Kairui Zhang, Yuhang Hu, Bing Wang, Sheng-sheng Qian, Bin Wen, Fan Yang, Tingting Gao, Weiming Dong, and Changsheng Xu. Livestar: Live streaming assis-tant for real-world online video understanding. Advances in Neural Information Processing Systems , 38:31266–31304, 2026. 3, 16 [71] Linli Yao, Yicheng Li, Yuancheng Wei, Lei Li, Shuhuai Ren, Yuanxin Liu, Kun Ouyang, Lean Wang, Shicheng Li, Sida Li, et al. Timechat-online: 80% visual tokens are naturally redundant in streaming videos. In Proceedings of the 33rd ACM International Conference on Multimedia , pages 10807– 10816, 2025. 1, 3, 16 [72] Woongyeong Yeo, Kangsan Kim, Jaehong Yoon, and Sung Ju Hwang. Worldmm: Dynamic multimodal memory agent for long video reasoning. arXiv preprint arXiv:2512.02425 , 2025. 16 [73] Xueyang Yu, Cheng Shi, Yang Wang, and Sibei Yang. Eyes wide open: Ego proactive video-llm for streaming video. Ad-vances in Neural Information Processing Systems , 38:13420– 13463, 2026. 1, 3, 16 [74] Xiangyu Zeng, Kefan Qiu, Qingyu Zhang, Xinhao Li, Jing Wang, Jiaxin Li, Ziang Yan, Kun Tian, Meng Tian, Xinhai Zhao, et al. Streamforest: Efficient online video understand-ing with persistent event memory. Advances in Neural In-formation Processing Systems , 38:75804–75835, 2026. 1, 3, 16 [75] Hang Zhang, Xin Li, and Lidong Bing. Video-llama: An instruction-tuned audio-visual language model for video un-derstanding. In Proceedings of the 2023 conference on empir-ical methods in natural language processing: system demon-strations , pages 543–553, 2023. 3, 15 [76] Haowei Zhang, Shudong Yang, Jinlan Fu, See-Kiong Ng, and Xipeng Qiu. Hermes: Kv cache as hierarchical memory for efficient streaming video understanding. arXiv preprint arXiv:2601.14724 , 2026. 3, 16 [77] Jialiang Zhang, Junlong Tong, Junyan Lin, Hao Wu, Yirong Sun, Yunpu Ma, and Xiaoyu Shen. Think-as-you-see: Stream-ing chain-of-thought reasoning for large vision-language mod-els. arXiv preprint arXiv:2603.02872 , 2026. 3, 16 [78] Kairui Zhang, Zhenyu Yang, Bing Wang, Shengsheng Qian, and Changsheng Xu. Querystream: Advancing streaming video understanding with query-aware pruning and proactive response. In The Fourteenth International Conference on Learning Representations , 2026. 1, 3, 16 [79] Pan Zhang, Xiaoyi Dong, Yuhang Cao, Yuhang Zang, Rui Qian, Xilin Wei, Lin Chen, Yifei Li, Junbo Niu, Shuangrui Ding, et al. Internlm-xcomposer2. 5-omnilive: A comprehen-sive multimodal system for long-term streaming video and audio interactions. arXiv preprint arXiv:2412.09596 , 2024. 3, 16 [80] Peiyuan Zhang, Kaichen Zhang, Bo Li, Guangtao Zeng, Jingkang Yang, Yuanhan Zhang, Ziyue Wang, Haoran Tan, Chunyuan Li, and Ziwei Liu. Long context transfer from language to vision. arXiv preprint arXiv:2406.16852 , 2024. 1, 3, 15 [81] Yuanhan Zhang, Jinming Wu, Wei Li, Bo Li, Zejun Ma, Ziwei Liu, and Chunyuan Li. Llava-video: Video instruction tuning with synthetic data. arXiv preprint arXiv:2410.02713 , 2024. 1, 3, 15 
+
+12 [82] Yichi Zhang, Xin Luna Dong, Zhaojiang Lin, Andrea Madotto, Anuj Kumar, Babak Damavandi, Joyce Chai, and Seungwhan Moon. Proactive assistant dialogue generation from streaming egocentric videos. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 12055–12079, 2025. 3, 16 [83] Yichi Zhang, Xin Luna Dong, Zhaojiang Lin, Andrea Madotto, Anuj Kumar, Babak Damavandi, Joyce Chai, and Seungwhan Moon. Proactive assistant dialogue generation from streaming egocentric videos. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 12055–12079, 2025. 1, 3, 16 [84] Minghang Zheng, Yuxin Peng, Benyuan Sun, Yi Yang, and Yang Liu. Hierarchical event memory for accurate and low-latency online video temporal grounding. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 21589–21599, 2025. 3, 16 [85] Junjie Zhou, Yan Shu, Bo Zhao, Boya Wu, Shitao Xiao, Xi Yang, Yongping Xiong, Bo Zhang, Tiejun Huang, and Zheng Liu. Mlvu: A comprehensive benchmark for multi-task long video understanding. arXiv preprint arXiv:2406.04264 , 2(5): 6, 2024. 1, 3, 15 
+
+13 A. Supplementary Overview 
+
+This supplementary material provides dataset details, ex-tended related work, additional method details, extra quan-titative results, qualitative analyses, system-efficiency diag-nostics, and prompt templates. 
+
+B. Datasets 
+
+This appendix describes the streaming-video benchmarks used in our main experiments, with emphasis on the subsets over which we report results in Section 4. 
+
+B.1. OVO-Bench 
+
+OVO-Bench [ 40 ] is an online streaming-video question-answering benchmark. Given a text query Qt0 issued at time t0 over a streaming video of length tend , each question is restricted to a specific temporal window of the stream, and the model must answer using only the evidence available in that window. Let T be a recency threshold separating “recent” from “earlier” content. OVO-Bench partitions its questions into three online video understanding modes: Real-Time Visual Perception (RTV) , which answers about the current scene from the recent window X[t0−T, t 0]; Back-ward Tracing (BT) , which answers about earlier content from X[0 , t 0−T ]; and Forward Active Responding (FAR) ,which decides when to respond as future content X(t0, t end ]
+
+unfolds. The full benchmark contains 2,814 QA pairs over 644 unique videos spanning seven domains. RTV and BT use a single-question multiple-choice protocol, while FAR uses a different multi-query, time-aware decision protocol that triggers repeated inference at densely sampled times-tamps. Following common practice among streaming peers, we evaluate on the full RTV and BT subset of OVO-Bench – the nine multiple-choice subtasks listed below, totaling 1,468 questions across 512 unique videos – and defer the three FAR subtasks (REC, CRR, SSR) to future work. 
+
+Real-Time Visual Perception (RTV) subtasks. Real-Time Visual Perception evaluates whether the model can perceive, comprehend, and reason about ongoing visual con-tent at the current moment. We report per-task accuracy on: • OCR – Optical Character Recognition: recognize and in-terpret characters that appear within the frame (149 ques-tions). • ACR – Action Recognition: recognize and interpret the ac-tions being performed by individuals in the current frame (109). • ATR – Attribute Recognition: identify object characteris-tics such as color, texture, or size in nearby frames (116). • STU – Spatial Understanding: reason over spatial relation-ships between objects in nearby frames (178). • FPD – Future Prediction: forecast the most probable sub-sequent phase of the current scene, including changes in object states, actions, and other dynamic elements (101). • OJR – Object Recognition: recognize objects appearing in the current frames (184). 
+
+Backward Tracing (BT) subtasks. Backward Tracing evaluates whether the model can recall and reason about events from earlier in the stream. We report per-task accuracy on: • EPM – Episodic Memory: backtrack and retrieve key moments from past video inputs (297 questions). • ASI – Action Sequence Identification: identify the correct ordering of human actions in the past stream (148). • HLD – Hallucination Detection: answer questions that are deliberately irrelevant to the existing video inputs, exposing confabulation behavior (186). The RTV group probes whether the writer keeps the present scene addressable, while the BT group probes whether the entity-centered memory preserves entity- and event-level evidence beyond the recent visual window. These two requirements directly correspond to the two roles of 
+
+FOLIO ’s memory: focus-guided memory writing for current-moment salience, and the persistent entity-centered memory for retrospective recall. 
+
+B.2. StreamingBench 
+
+StreamingBench [ 31 ] is a comprehensive streaming-video understanding benchmark consisting of 900 videos and 4,500 human-curated question-answer pairs across eight video cat-egories. Each video is paired with five questions presented at different timestamps, and the model can only access the prefix observed before each question. The benchmark or-ganizes its 18 subtasks into three core aspects of streaming video understanding: Real-Time Visual Understanding 
+
+(10 subtasks, 500 videos, 2,500 questions), Omni-Source Understanding (4 subtasks, 200 videos, 1,000 questions), and Contextual Understanding (4 subtasks, 200 videos, 800 questions). Our table reports accuracy at the level the streaming literature most commonly compares: • Realtime – aggregate accuracy over the ten subtasks of Real-Time Visual Understanding: Object Perception, Causal Reasoning, Clips Summarization, Attribute Per-ception, Event Understanding, Text-Rich Understanding, Prospective Reasoning, Spatial Understanding, Action Per-ception, and Counting. These tasks evaluate whether the model can perceive, recognize, and reason about visual content as it appears in the current stream. • OmniSource – aggregate accuracy over the four subtasks of Omni-Source Understanding: Emotion Recognition, Scene Understanding, Source Discrimination, and Mul-timodal Alignment. These tasks require integrating syn-chronized visual and audio content within the stream. 14 • SQA – Sequential Question Answering, a Contextual Un-derstanding subtask in which each question is directly tied to an entity or event referenced by previous questions on the same video; the model must use episodic memory of the dialogue history to resolve cross-turn references. • Proactive – Proactive Output (PO), a Contextual Under-standing subtask in which the model must autonomously decide when to emit a prescribed output as the stream unfolds, rather than answering an explicit question. Evalu-ation uses a polling protocol that queries the model every second within a window around the ground-truth output time. • Overall – an aggregate score across the reported question categories. Within each video sample, all timestamped queries are processed against a single per-sample long-term semantic memory that is built incrementally as the stream unfolds (Section 3). Cross-turn entity binding therefore happens through the shared memory rather than through prompt-only dialogue history, and previous-turn queries update the focus state used when writing memory for later chunks (multi-turn focus update). We report Proactive Output for complete-ness, but interpret it separately from the main explicit-query setting. Proactive Output primarily tests response timing, whereas FOLIO is designed to make previously observed entities and evidence addressable for explicit queries. 
+
+B.3. StreamBench 
+
+StreamBench [ 64 ] is an open-ended streaming-video ques-tion answering benchmark designed to evaluate multi-round interaction with memory over time. Given a free-form natural-language question Qt0 posed at a specific timestamp 
+
+t0 during a streaming video, the model must produce an 
+
+open-ended answer using only the visual content observed up to t0. Unlike StreamingBench, no multiple-choice op-tions are provided: predictions are short natural-language sentences and are scored against ground-truth references with an LLM-as-judge protocol. The benchmark spans three video sources – Ego (first-person recordings), WebVideo 
+
+(long-form web clips such as cooking shows and outdoor tutorials), and Movie (short film segments) – with a roughly balanced number of videos per source. Each video is paired with five or six breakpoint questions placed at increasing timestamps, so that consecutive questions on the same video form a natural multi-turn dialogue against an incrementally growing visual context. StreamBench partitions its questions into six question subsets that probe complementary memory and reasoning skills. We report per-subset accuracy on: • SF – Spatial Feature: identify properties of the current 
+
+scene such as objects, colors, counts, or absolute spatial layout in the recent frames. • OS – Object Search: locate a previously seen object on request (e.g. “where can I find the black oven?”), requiring the model to recall a specific entity’s last known position from memory rather than rediscover it in the current view. • SM – Sequential Memory: answer about events or object states from the recent past on the same scene, including “did I just do X?” / “what was X holding just now” style questions. • LM – Long-term Memory: recall facts or events from 
+
+earlier in the stream, often crossing scene boundaries or referring to objects no longer in view (e.g. “where did I place the cutting board after washing it?”). • CI – Causal Inference: high-level holistic reasoning over the accumulated context, such as “based on the context, what am I doing?” or “what is the theme of the video?”. • KG – Knowledge Grounded: general-knowledge ques-tions that are only loosely anchored to the video (e.g. “what is the primary refrigerant used in refrigerators?”, “why are vegetables green?”), answered primarily from world knowledge and largely independent of the visual stream. Table 6 reports per-subset accuracy alongside the arithmetic-mean overall score, following the StreamBench reporting convention. The six subsets directly stress differ-ent facets of FOLIO ’s memory pipeline: SF and OS probe whether focus-guided memory writing keeps the current scene addressable and whether the entity-centered memory retains a stable last-known location per entity; SM and LM probe whether the memory preserves entity- and event-level evidence across short and long temporal gaps, respectively; CI exercises the answerer’s ability to aggregate over the entire memory into a coherent narrative. 
+
+C. Extended Related Work 
+
+This section provides the expanded related-work discussion corresponding to the compressed overview in Section 2. 
+
+C.1. Video-LLMs and Long-Video Understanding 
+
+Large vision-language models have rapidly advanced from image understanding to video understanding through stronger visual encoders, multimodal alignment, and video instruction tuning [ 2, 3 , 24 , 30 , 51 , 54 , 75 , 81 ]. These mod-els are commonly evaluated on offline video benchmarks that test temporal reasoning, long-context understanding, and multimodal question answering [ 11 , 23 , 38 , 52 , 62 , 85 ]. A complementary line of work improves long-video pro-cessing by scaling context lengths or reducing visual to-kens through sparse sampling, temporal pooling, token com-pression, or adaptive frame selection [ 27 , 42 , 43 , 45 , 80 ]. Other systems introduce memory banks, hierarchical rep-resentations, or retrieval-augmented reasoning over long videos [1, 17, 37, 41, 47, 53, 59]. These works establish strong foundations for video-language reasoning, but they largely operate in an offline 15 regime: the model, compressor, or retriever has access to the complete video, the query, or both before deciding which ev-idence to use. This assumption differs from streaming video understanding, where frames arrive over time and future queries are unknown during memory construction. FOLIO 
+
+therefore targets a different regime. Rather than compress-ing a fully observed video for a known query, FOLIO writes memory online from the observed prefix and preserves the observed entities that future queries may refer to. 
+
+C.2. Streaming Video Understanding and Interac-tion 
+
+Streaming video understanding has emerged to evaluate and build models that process videos online and answer questions at arbitrary timestamps. OVO-Bench studies real-time perception, backward tracing, and forward active re-sponding; StreamingBench evaluates real-time visual under-standing, omni-source understanding, and contextual inter-action [ 31 , 40 ]. SVBench, OVBench, RTV-Bench, Om-niStar, and ESTP-Bench further broaden the evaluation space toward temporal multi-turn dialogue, real-time per-ception, online video dialogue, and just-in-time proactive response [ 18 , 66 , 68 , 70 , 73 ]. These benchmarks show that streaming models must maintain temporal continuity while remaining grounded in the current scene. A growing set of Video-LLMs addresses this online set-ting through specialized streaming architectures, training objectives, and interaction formats. Early systems such as VideoLLM-online introduced streaming video dialogue with response/silence decisions [ 5], while subsequent models improve stream processing through mixture-of-depth com-putation, online memory buffers, frame-wise decoding, or streaming-aligned training [ 6 , 19 , 33 , 36 , 49 , 61 , 65 , 79 ]. An-other active direction focuses on proactive interaction: decid-ing when an assistant should respond, remain silent, interrupt, or provide visual instruction feedback [ 10 , 12 , 20 , 26 , 55 , 57 ,69 , 73 , 82 , 83 ]. Recent reasoning-oriented models also ex-plore watching while thinking, streaming chain-of-thought, and language traces as memory [14, 16, 32, 34, 50, 77]. This literature is relevant but studies a different axis from ours. Many of these systems ask how to process streams efficiently, how to align training with streaming inference, or when a model should speak. FOLIO instead asks what evidence should be written into memory so that later ques-tions remain answerable. It is complementary to proactive-response systems: whereas they decide when to respond, 
+
+FOLIO uses interaction to decide which entities should be remembered in greater detail. 
+
+C.3. Memory, Retrieval, and Compression for Streaming Video 
+
+The closest line of work studies how to retain useful history under memory and latency constraints. A first family op-erates at the level of visual tokens, features, or KV caches. QueryStream prunes tokens using query relevance and tem-poral novelty; FluxMem, FreshMem, and CurveStream main-tain adaptive hierarchical visual memories using adjacency, frequency-space, or curvature-based criteria; TimeChat-Online, STC, ReKV, StreamKV, InfiniPot-V, StreamMem, LiveVLM, StreamingTOM, and related methods compress or retrieve visual tokens and KV states to keep streaming in-ference efficient [ 7 –9 , 21 , 25 , 39 , 48 , 56 , 63 , 67 , 71 , 76 , 78 ]. SimpleStream provides an important sanity baseline, show-ing that strong recent frames alone can be competitive on streaming benchmarks [ 44 ]. Together, these works demon-strate that retention and compression are central to streaming Video-LLMs. A second family organizes history into temporal scenes, events, or hierarchical memories. OASIS maintains short and medium visual windows plus an on-demand hierarchical event forest; StreamForest builds a persistent event-memory forest; EventMemAgent adds adaptive tool use over event-centric memory; Vista compresses and recalls scene units; Event-VStream and hierarchical event-memory systems use event boundaries as the basic online unit [ 15 , 29 , 35 , 60 ,74 , 84 ]. Offline event-memory systems such as Video-EM similarly show the value of structured episodic memories, although they build them with access to the full video and query [58]. 
+
+FOLIO differs from both families in the unit of memory. Token and KV methods preserve computation states, but they do not expose stable entities for later reference. Scene and event memories preserve temporal units, but a single entity may persist across multiple events, change names across descriptions, move between locations, or be referenced later through an alias or answer option. FOLIO instead stores persistent entity identities and accumulates their attributes, states, locations, relations, action chains, and evidence point-ers. This entity-level memory makes the stream addressable in the same terms used by user questions. 
+
+C.4. Structured Entity and World Memory 
+
+Several recent methods move beyond flat visual tokens to-ward structured memory. MA-LMM and MovieChat intro-duce memory banks for long-video understanding, while VideoStreaming and VideoTree build compact or hierar-chical representations for query-driven reasoning [ 17 , 41 ,47 , 59 ]. VideoAgent, Goldfish, and Video-RAG-style sys-tems treat long videos as retrieval corpora, selecting rel-evant frames, clips, or auxiliary textual signals at query time [ 1 , 37 , 53 ]. More recent memory-agent approaches, such as WorldMM and MM-Mem, construct multi-source memories, knowledge graphs, visual memories, or pyra-midal semantic memories for long-horizon video reason-ing [ 28 , 72 ]. These works show the promise of structured memory for video, especially when questions require infor-16 mation distributed across time. However, most structured-memory systems are offline, query-conditioned, or agentic: they often build or traverse memory after the full video is available, use heavier tool stacks, or rely on learned retrieval policies. FOLIO is de-signed for the online streaming regime. It writes a long-term semantic memory as the stream unfolds, keeps recoverable keyframe evidence for entity records, and selects evidence using explicit targets, anchors, verbs, temporal scope, and answer-option mentions. Thus, FOLIO brings structured memory into streaming video understanding at the entity level: the central memory item is not a segment, token, scene, or event, but an observed entity whose history re-mains nameable and retrievable. 
+
+D. Additional Method Details 
+
+This appendix provides algorithmic details for the method described in Section 3. The algorithms follow the notation used in the main text. Experiment-specific constants, model choices, prompts, and decoding settings are described in the experimental setup and prompt appendix. 
+
+D.1. Online Long-Term Semantic Memory Con-struction 
+
+Algorithm 2 summarizes the construction of the long-term semantic memory. The short-term visual buffer is maintained separately at the frame level; this algorithm details the long-term semantic memory, chain view, and visual-evidence cache. The algorithm processes the video prefix in time-ordered segments. Each segment selects keyframes, writes structured records with the writer VLM, merges records into the long-term memory, updates focus, and refreshes the chain view. 
+
+Algorithm 2 Online long-term semantic memory construc-tion 
+
+Require: prefix V≤t, writer model Wθ , segment length ∆
+
+Ensure: Mt = ( Ot, Gt, Bt), focus Ft 
+
+> 1:
+
+O0, G0, B0, F0 ← ∅  
+
+> 2:
+
+{Ci}Ni=1 ← SEGMENT (V≤t, ∆)  
+
+> 3:
+
+for i = 1 to N do  
+
+> 4:
+
+Ki ← SELECT KF (Ci, Fi−1) 
+
+> 5:
+
+Λi ← ASSIGN WRITING LEVELS (Fi−1) 
+
+> 6:
+
+ˆUi ← W θ (Ki, Λi) 
+
+> 7:
+
+Oi ← MERGE (Oi−1, ˆUi) 
+
+> 8:
+
+Bi ← UPDATE CACHE (Bi−1, Ki, ˆUi) 
+
+> 9:
+
+Fi ← UPDATE FOCUS (Fi−1, Oi, ˆUi) 
+
+> 10:
+
+Gi ← BUILD CHAINS (Oi) 
+
+> 11:
+
+end for  
+
+> 12:
+
+return (ON , GN , BN ), FN
+
+D.2. Keyframe Selection and Chain Views 
+
+For each segment Ci = [ si, e i], FOLIO selects a compact keyframe set Ki ⊂ Ci. The candidate set contains bound-ary frames, a middle frame, and a high-change frame. For probe frames g1, . . . , g m sampled inside the segment, visual change is estimated by 
+
+δj = 1
+
+> HW
+
+X
+
+> h,w
+
+|gj+1 (h, w ) − gj (h, w )|, (3) and the high-change probe is selected by j⋆i = arg max j δj .When a segment has low visual change and no focused target is at risk of disappearing, the writer keeps only boundary frames; otherwise, it keeps the full candidate set. The merged entity memory is converted into a chain view 
+
+Gi = ( {O i(o)}o, {C act  
+
+> i
+
+(o)}o, Ri), (4) where Oi(o) stores entity records with location periods, 
+
+Cact  
+
+> i
+
+(o) stores action chains, and Ri aggregates cross-entity relation triples. These chain views are the default textual evidence source used by the query-time retrieval module. 
+
+D.3. Query-Time Hybrid Retrieval and Answering 
+
+Algorithm 3 summarizes evidence selection. The retrieval module parses the query and answer options, links query mentions to entity identities, and assembles a compact evi-dence block. When structured linking yields no candidate entity, the catalog linker maps the query to entity identifiers from the existing catalog through semantic query expansion. 
+
+Algorithm 3 Query-time evidence selection 
+
+Require: q = ( u, Yq , t q ), memory Mtq , answer generator 
+
+Ψϕ
+
+Ensure: answer ˆy 
+
+> 1:
+
+zq ← PARSE (u, Yq ) 
+
+> 2:
+
+Oq ← ∅  
+
+> 3:
+
+for all o ∈ O tq do  
+
+> 4:
+
+compute R(o | q) 
+
+> 5:
+
+if R(o | q) > 0 then  
+
+> 6:
+
+Oq ← O q ∪ { (o, R (o | q)) } 
+
+> 7:
+
+end if  
+
+> 8:
+
+end for  
+
+> 9:
+
+sort Oq by score; keep top-K 
+
+> 10:
+
+if Oq = ∅ then  
+
+> 11:
+
+Oq ← SEM LINK (zq , CAT (Otq ))  
+
+> 12:
+
+end if  
+
+> 13:
+
+Eq ← ASSEMBLE (zq , Oq , Gtq ) 
+
+> 14:
+
+select recent frames Krec  
+
+> q
+
+and stored frames Kcache  
+
+> q
+
+⊆Btq from the visual-evidence cache  
+
+> 15:
+
+ˆy ← Ψϕ(q, Eq , Krec  
+
+> q
+
+, Kcache  
+
+> q
+
+) 
+
+> 16:
+
+return ˆy
+
+17 D.4. Entity Relevance Score 
+
+The relevance score R(o | q) computed in Algorithm 3 sums weighted matches between the parsed query fields and the entity’s identity fields, minus a small penalty for generic background entities: 
+
+R(o | q) = wT
+
+X
+
+> r∈T q
+
+M (r, o ) + wH
+
+X
+
+> h∈H q
+
+M (h, o )+ wY
+
+X
+
+> y∈Y key
+> q
+
+M (y, o ) + wV
+
+X
+
+> v∈V q
+
+M (v, Cact  
+
+> tq
+
+(o)) 
+
+− wB B(o).
+
+(5) Here M (·, ·) is a normalized matching function over canon-ical names, aliases, categories, attributes, and head nouns, with synonym expansion for common entity-name variants. The term M (v, Cact  
+
+> tq
+
+(o)) checks whether the query verb ap-pears in the entity’s action chain, and B(o) is a small penalty for irrelevant background entities. Entities with positive scores are sorted and truncated to form the candidate set Oq .
+
+D.5. Entity Matching 
+
+The entity matcher is designed to preserve stable identities while allowing natural language variation across segments. For a new mention x and an existing entity o, FOLIO com-putes a score using normalized names, aliases, head nouns, categories, and partial-string matches: 
+
+m(x, o ) = max λname mname , λ alias malias ,λhead mhead , λ cat mcat , λ sub msub . (6) Here mname checks canonical-name equality, malias checks alias equality, mhead checks head-noun agreement, mcat 
+
+checks category agreement, and msub checks containment between normalized names. A match is accepted when 
+
+m(x, o ) ≥ τm.The matcher also extracts a small set of discriminative modifiers D(x) and D(o), such as colors or other identity-bearing attributes. For weak matches based only on head nouns or partial names, the match is suppressed when 
+
+D(x) ∩ D(o) = ∅, D(x), D (o)̸ = ∅. (7) This prevents two distinct entities with the same head noun, such as differently colored bottles, from being merged into one entity slot. 
+
+D.6. Focus Update and Writing Levels 
+
+The focus update uses two groups of features. The positive features include visibility, first appearance, reappearance, persistence, event participation, movement, state change, manipulable-target status, and interaction-conditioned rel-evance. The negative features include absence, long disap-pearance, and static background behavior. The score update is 
+
+pi(o) = clip [0 ,1] (γp i−1(o) + ∆ i(o)) , (8) where 
+
+∆i(o) = α⊤ϕ+ 
+
+> i
+
+(o) − β⊤ϕ− 
+
+> i
+
+(o). (9) Here ϕ+ 
+
+> i
+
+(o) and ϕ− 
+
+> i
+
+(o) are the positive and negative feature vectors above. The coefficients are fixed method hyperpa-rameters rather than learned parameters. Writing levels are assigned by a deterministic rule that maps each entity to one of four labels used by the writer VLM: 
+
+λi(o) = 
+
+
+
+focus , high priority ,
+
+support , useful evidence ,
+
+context , scene anchor ,
+
+drop , otherwise .
+
+(10) Only a limited number of focus entities are listed for detailed writing, while support and context entities are listed for com-pact writing. The first-appearance evidence rule preserves open-world discovery for newly visible manipulated enti-ties, tools, containers, appliances, text regions, and unusual entities. 
+
+D.7. Multi-Turn Focus Update Details 
+
+This subsection expands the multi-turn focus mechanism described in Section 3.6. When query qj arrives, FOLIO 
+
+extracts a set of focus terms Γj from its targets, anchors, and answer-option mentions. Each term is matched against the current entity-centered memory. Matched entities re-ceive an interaction aspect in Ωi(o) and a focus boost 
+
+pi(o) ← clip [0 ,1] (pi(o) + ηq μj (o)) , where μj (o) = 1[o ∈
+
+Match(Γ j , Oi)] is the query-term match indicator. Terms that do not yet match any entity are placed in a pending set 
+
+Ppend  
+
+> i
+
+and retried after later segments are written. If a pend-ing term later matches a newly observed entity, that entity receives a delayed boost pi(o) ← clip [0 ,1] (pi(o) + ηp νi(o)) 
+
+and the term is added as an alias when appropriate; here 
+
+νi(o) = 1[o ∈ Match( Ppend  
+
+> i
+
+, Oi)] is the pending-term match indicator. 
+
+D.8. Record Field Schemas 
+
+Persistent entity slot (long-term memory entry). Each slot in the long-term entity memory Ot stores oj =(id j , n j , Nj , c j , aj , Xj , Ej ): a stable identifier id j , canonical name nj , alias set Nj , category cj , attribute set aj , observa-tion sequence Xj , and event sequence Ej . An observation records the time span, location, support or carrier entity when visible, state, relations, textual evidence, confidence, and references to entity-specific keyframes in Bt. An event records the time span, action type, summary, participants, and changed entities. The writer VLM emits three kinds of records per segment, which feed the slot fields above via the merge step. 18 Detailed entity records carry identity (canonical name, aliases, category), attributes, location, support or carrier en-tity when visible, state, relations, interactions, state changes, evidence text, and keyframe references. For text-bearing evi-dence (scoreboards, screen text, jersey numbers), the writer additionally preserves the surface text as a cue. 
+
+Compact entity records carry the same identity fields together with a single short location/state/relation note and keyframe references. 
+
+Event records summarize an action with its participants and any changed entities, attached to the segment timestamp and the participating entity identifiers. 
+
+D.9. Query-Type Taxonomy 
+
+The query-type field χq in the parsed query zq takes val-ues from a fixed taxonomy: spatial, historical-location, current-location, interaction, attribute, yes/no, hallucination-detection, and concept queries. Each type selects a different evidence-assembly policy (Appendix D.10). 
+
+D.10. Evidence Assembly by Query Type 
+
+Evidence selection inside ASSEMBLE is parameterized by the query type χq from zq . The assembled block always includes the parsed query context, target and answer-option support, and a brief scene overview; type-specific selection adds: • Interaction : action-chain events and participant links for the targets and anchors. • Current-location : the most recent location period of the target entity. • Historical-location : the full location chain of the target entity up to tq .• Attribute : stored attributes and visual descriptors. • Spatial : relation triples involving the target entity. • Yes/no and hallucination-detection : presence evidence together with a coverage tag indicating whether the target appears in Otq .• Concept : indirect evidence obtained via catalog linking over the entity catalog. Evidence lines can be tagged with answer-option support when an answer option aligns with an entity or event in the assembled context. 
+
+E. Additional Dataset Results 
+
+StreamBench provides a complementary evaluation setting to OVO-Bench and StreamingBench: its questions are open-ended, the task space is more diverse, and the multi-turn interaction pattern is less constrained. Following the official protocol, we report semantic-similarity-based accuracy with an LLM-as-judge evaluator. As shown in Table 6, FOLIO 
+
+improves substantially over the backbone and the OASIS memory baseline on the same Qwen3-VL-8B model. The largest gains appear on Short-term Memory (SM), Long-term Memory (LM), and Spatial Feature (SF), showing that the entity-centered memory helps both recent grounding and historical retrieval in freer-form interaction. The im-provement on Knowledge Grounded (KG) suggests that the retrieved memory does not prevent the answerer from using its language prior when the answer is only loosely anchored to the video. Overall, these results complement the main benchmarks by showing that FOLIO remains effective when the answer space is less constrained than multiple choice. For Table 6, published baselines follow their reported frame settings. Our reproduced Qwen/OASIS rows use 0.5 fps sampling, and FOLIO uses 1 fps online memory con-struction. 
+
+Takeaway. On the same Qwen3-VL-8B backbone, FOLIO 
+
+improves the overall score from 62 .1 to 70 .6 (+8 .5 pp). The gains on SF, SM, and LM align with the role of the entity-centered memory: it keeps current visual details addressable, preserves recent state changes, and supports retrieval from earlier parts of the stream. 
+
+E.1. Additional Efficiency and Ablation Tables 
+
+F. Qualitative Case Studies 
+
+We include three representative examples to illustrate how the entity-centered memory is used at query time, and where errors still arise. We include sample identifiers to make the analysis traceable to the released metadata. 
+
+StreamingBench multi-turn example. Case 1: Stream-ingBench SQA, magic-show interaction (sample_1 , 5 turns). Result: 4/5 correct. Failure turn: question_idx=34 
+
+at 273s; the ground truth is fist bump and the prediction is high-five. Early chunks record a man in a black jacket over a white shirt and a nearby man in a black shirt. This supports the first two turns: the model correctly answers that the cen-tral person is wearing a black jacket over a white shirt, and later resolves that he is interacting with the man in the dark shirt. Later in the video, the entity-centered memory also tracks the man after he changes position and records that he is wearing a dark shirt with light-colored pants, and the recent frames show him holding a white frame with black edges containing four playing cards; these support the later correct turns. The failure occurs at a brief social gesture: the ground truth action is that the two people bumped fists, while the prediction is high-five. The relevant chunk memory around 272–280s stores the action only coarsely as “clapping hands” / “clapping hands together.” The query-time reader therefore retrieves the right people but not a precise enough action state, and the answerer maps the ambiguous gesture to the wrong option. This error is a memory-granularity failure 19 Table 6. Results on StreamBench [ 64 ]. We report accuracy (%) on the six question subsets and the macro-average across them. ‡ denotes results reproduced by us, while others are taken from prior works. Avg denotes the arithmetic mean over the six subsets. Best score in each column is highlighted in bold .
+
+# Model OS LM SM CI KG SF Avg 
+
+# GPT-4o 60.5 61.2 64.4 72.3 93.9 74.7 71.0 LLaMA-VID 33.9 38.2 44.1 58.4 76.9 57.1 51.2 LLaVA-Hound 37.6 43.2 53.4 55.7 76.3 62.0 54.7 LongVA 41.1 47.4 57.6 59.8 80.7 66.1 52.4 MiniCPM-V2.6 37.6 51.9 43.7 65.7 66.2 64.2 56.6 VILA-1.5 36.1 44.4 50.8 68.3 78.6 65.5 57.1 InternVL2 38.5 46.6 50.9 67.6 81.0 62.2 57.6 InternLM-XComposer2.5 38.8 43.3 50.8 65.6 88.4 60.5 57.7 MovieChat 18.6 20.4 26.5 42.3 67.2 35.8 35.3 FreeVA 35.6 37.5 43.7 58.8 84.0 53.7 56.3 Video-online 41.4 48.8 52.9 62.7 69.2 64.1 56.4 Flash-VStream 37.1 44.5 48.6 58.1 66.4 59.2 52.1 StreamChat 40.7 43.6 47.1 63.0 89.1 73.8 59.5 Qwen2.5-VL-7B 36.1 41.3 41.0 50.5 76.5 62.3 51.1 + OASIS [29] 35.9 39.4 44.1 54.5 76.9 64.9 52.4 Qwen3-VL-8B ‡ 33.8 50.5 47.8 69.4 73.5 62.6 56.0 + OASIS [29] 47.0 53.6 54.3 71.7 86.1 67.6 62.1 
+
+# Qwen3-VL-8B + FOLIO ‡ 44.4 64.7 66.7 64.7 94.7 88.2 70.6 
+
+Table 7. Memory-writing cost diagnostic on the 500-query OVO-Bench Backward split. This table mirrors the main-paper diagnostic and is included here to keep the supplementary efficiency tables self-contained. 
+
+Variant Acc. Input Output Records/Q Bank KB/Q (%) tok./Q tok./Q 
+
+Fixed + uniform 62.7 201.5K 38.4K 259.7 226.8 Adaptive + uniform 63.2 126.7K 38.3K 259.6 226.5 Fixed + focus-guided 65.9 207.3K 26.4K 179.2 154.9 
+
+FOLIO 67.1 134.7K 26.2K 178.3 153.4 
+
+rather than a future-leakage issue: all evidence comes from chunks before the query timestamp, but the written state is too coarse to distinguish fist bump from high-five. 
+
+Table 8. Token budget by component invocation. Memory-writing input tokens are estimated from prompt text plus image-token approximation; query-time token counts are computed from saved text prompts and re-sponses.          
+
+> Component Avg. Input Tok./Invocation Avg. Output Tok./Invocation
+> FOLIO writer VLM 6.4k 572.4 Semantic query expansion 824.6 627.2 Answerer 1071.0 147.2
+
+OVO-Bench correct example. Case 2: OVO-Bench OCR, correct (video_id=1442 ,
+
+question_id=m14s100_035 ). Query: Which brand name appears repeatedly on the side panels? GT = C / Yokohama, Pred = C / Yokohama. The chunk-level memory 20 Table 9. Memory component ablation and query-time behavior on the StreamingBench diagnostic run. Accuracy is downstream QA accuracy on 145 evaluable multiple-choice queries. Calls/Q reports the average number of VLM calls per query, including the answerer and VLM-assisted semantic query expansion. Memory hit is the fraction of queries that retrieve structured memory, semantic expansion is the fraction that invoke VLM-assisted semantic query expansion, and cache trigger is the fraction that add linked keyframes from the visual-evidence cache to the answering input. The full-system query-time behavior is computed from the saved full-method diagnostic logs, while ablation rows use the corresponding saved ablation logs. 
+
+Variant Acc. Calls/Q Frames/Chunk Memory hit Semantic expansion Cache trigger 
+
+Full FOLIO 71.0 1.70 3.83 95.9% 75.2% 2.1% w/o Recent Window 32.4 1.70 3.83 96.6% 69.7% 1.4% w/o Structured Memory 68.3 1.00 3.80 96.6% 0.0% 0.0% w/o Focus Controller 65.5 1.46 3.80 96.6% 45.5% 0.0% w/o Adaptive Visual Writing 68.3 1.66 4.00 96.6% 65.5% 1.4% w/o Interaction Focus 69.7 1.69 3.84 96.6% 69.0% 1.4%                                                            
+
+> Table 10. Additional query-time evidence ablation on a 200-query OVO-Bench Backward diagnostic split. S denotes the short-term visual buffer, O the long-term semantic memory, Exp denotes VLM-assisted semantic query expansion, and B denotes keyframe evidence from the visual-evidence cache. Calls include semantic query expansion when it is used. The FOLIO
+> row is computed over the successfully completed queries from the same diagnostic split. This expanded appendix table separates direct structured-memory retrieval from semantic query expansion and cached keyframe evidence, while the main paper reports a compressed version of the same evidence-source analysis, where O corresponds to O+Exp in this table. Input tokens, end-to-end latency, and TTFT are measured over the full query-time pipeline.
+> Setting Acc. Calls/Q Input tok./Q E2E/Q TTFT/Q (%) (K) (s) (s)
+> S54.5 1.00 3.18 8.11 2.72 O direct 41.0 1.00 1.47 12.51 6.56 O + Exp 42.6 1.54 1.54 12.84 6.58 B52.5 1.54 4.01 14.14 8.68 S + B 50.5 1.54 6.94 13.52 7.70 S + O direct 52.5 1.00 4.39 12.29 6.53 S + O + Exp 55.5 1.54 4.47 12.81 6.72 S + O direct + B 50.0 1.00 7.67 16.05 8.95 S + O + Exp + B 50.5 1.54 7.86 16.78 9.30
+> FOLIO 56.7 1.54 4.84 12.89 6.80
+
+explicitly records the visual text: 
+
+48–56s: signboard , attributes: YOKOHAMA logo , loca-tion: along the track, evidence summary: YOKOHAMA signboard is visible .
+
+The merged entity-centered memory preserves this as a sign-board entity whose later state says that it “displays YOKO-HAMA branding.” At query time, the reader uses the query and answer options to rank relevant entities; semantic query expansion maps the generic phrase “brand name” to the signboard/text entity, and the answerer selects the option containing Yokohama. This example shows the intended behavior: OCR evidence is first written into chunk memory, then merged into a stable entity slot, and finally retrieved by entity-level catalog linking. 
+
+OVO-Bench failure example. Case 3: OVO-Bench HLD, failure (video_id=375 ,
+
+question_id=m14s100_064 ). Query: Where was the bike seat before I opened it? GT = B / Unable to answer, Pred = D / on the scooter. The observed stream shows motorcycle repair, and the memory contains related but insufficient evidence: 
+
+0–8s: motorcycle , attributes include black seat ;64–72s: person adjusts the motorcycle seat; 128– 136s: fuel tank is open. 
+
+The query-time reader retrieves the motorcycle entry because semantic query expansion links “bike seat” to the motorcy-cle/seat memory. This expansion is useful when the surface wording differs from the memory name, but here it also creates a failure mode: the retrieved memory proves that a motorcycle seat exists, but it never establishes a prior loca-tion before it was opened. The answerer over-infers from the retrieved entity and predicts “on the scooter” instead of abstaining. This illustrates why hallucination-detection queries require not only retrieving related entities, but also checking whether the retrieved evidence directly supports the queried fact. 
+
+Takeaway. These cases show that FOLIO succeeds when the needed evidence is explicitly written and retrieved, but fails when the memory is related yet not evidentially sufficient, or when a short interaction is written at too coarse a granularity. 
+
+G. Failure Taxonomy Discussion 
+
+Table 11 complements the qualitative cases with a small error review of the final 8B runs. In the reviewed Streaming-Bench errors, most errors are not empty-memory failures but cases where the system retrieves plausible evidence that still does not sufficiently discriminate among the answer choices, especially on emotion, misleading-context, and counting questions. In the reviewed OVO-Bench errors, the failures are split between missing evidence and insufficiently dis-criminative retrieval, especially on EPM and ASI, where related entities are often retrieved but do not directly es-tablish the queried past state or action order. “Written but not retrieved” is rare in both datasets, suggesting that the current bottleneck is less often finding a candidate memory 21 Table 11. Failure taxonomy on the final 8B runs. We review incorrect predictions from OVO-Bench and StreamingBench. Percentages are computed within each dataset’s error set.                   
+
+> Dataset # Errors Memory Missing Written but Not Retrieved Retrieved but Evidentially Insufficient Retrieved but Not Sufficiently Discriminative Multi-turn Reference Unresolved
+> StreamingBench 37 5 (13.5) 0 (0.0) 2 (5.4) 29 (78.4) 1 (2.7) OVO-Bench 25 9 (36.0) 0 (0.0) 1 (4.0) 15 (60.0) 0 (0.0)
+
+Table 12. Memory-construction footprint on OVO-Bench and StreamingBench. Segment records are persisted JSON chunk-level records before entity-level merging; visual-evidence cache memory is measured from the stored keyframe cache. 
+
+Dataset Model Video min Segment Records (KB/min) Visual-Evidence Cache (KB/min) Writer latency Input tok. Output tok. 
+
+OVO-Bench 8B 428.5 151.1 3614.7 5.88s 4409 734 StreamingBench 8B 314.7 155.5 3645.4 7.68s 4523 781 OVO-Bench 7B 428.5 139.6 3614.7 12.15s 5577 628 StreamingBench 7B 314.7 150.4 3635.2 14.63s 5719 700 
+
+item than deciding whether the retrieved evidence is spe-cific enough to support a unique answer. We note that the reviewed StreamingBench errors include few SQA cases, so cross-turn reference failures are underrepresented relative to the full StreamingBench benchmark. The taxonomy in Table 11 suggests that the current re-trieval module is not the dominant bottleneck. In both datasets, pure “written but not retrieved” failures are rare. Instead, the remaining errors mainly come from two sources. First, some needed evidence is never written into memory at sufficient detail, especially for fine-grained states, past locations, or action transitions. Second, the answerer often over-commits once it sees retrieved evidence that is related but not sufficiently discriminative to support a unique answer. The implication is that future gains are more likely to come from improving memory fidelity and evidence-sufficiency judgment than from only increasing retrieval breadth. In particular, the StreamingBench results point to stronger cali-bration and cross-turn evidence use, while the OVO results point more strongly to missing fine-grained memory for backward questions such as EPM and ASI. 
+
+H. System Efficiency and Memory Footprint 
+
+Table 12 reports system-level statistics collected from the saved memory-construction logs. The writer VLM processes one fixed 8-second video chunk at a time, corresponding to about 60 /8 = 7 .5 VLM calls per video minute; small devia-tions come from partial boundary chunks and duration round-ing. To make the storage cost easier to read, Table 12 re-ports only the segment-level text records and visual-evidence cache memory per video minute. The text-memory number is the persisted JSON footprint of chunk-level records before entity-level merging; the final merged bank used by retrieval is smaller and is reported separately in Table 3. Table 13 reports the corresponding query-time cost. Se-mantic query expansion rate denotes how often the reader uses VLM-assisted semantic query expansion beyond direct lexical memory lookup. Cache trigger denotes the frac-tion of queries for which linked keyframes from the visual-evidence cache are added to the answering input. TTFT is measured for the query-time reader. 
+
+Table 13. Query-time retrieval and answering statistics on diagnostic subsets. Semantic query expansion is the rate at which the reader uses VLM-assisted semantic query expansion beyond direct lexical memory lookup, and cache trigger is the rate at which linked keyframes from the visual-evidence cache are added to the answering input.                                              
+
+> Dataset Model Questions Acc. VLM calls/Q TTFT/Q TTFT/call Semantic expansion Memory hit Cache trigger
+> OVO-Bench 8B 100 75.0% 2.15 6.58s 3.06s 40.0% 85.0% 0.0% StreamingBench 8B 145 74.5% 1.80 7.31s 4.06s 75.2% 95.9% 2.1% OVO-Bench 7B 100 67.0% 1.86 8.81s 4.74s 0.0% 85.0% –StreamingBench 7B 145 69.7% 1.70 7.27s 4.28s 69.7% 96.6% –
+
+The main takeaway is that the text footprint remains man-ageable even before entity-level merging. Across these runs, the persisted segment-level JSON records are about 140– 156 KB per video minute, and the final merged entity bank is smaller because records referring to the same entity are consolidated. Selected visual evidence is represented by timestamped keyframe references and re-extracted from the source video when needed. This footprint suggests that memory growth is not an immediate storage bottleneck for hours-long online streams. At the measured rates, a 10-hour online prefix corresponds to roughly 90 MB of segment-level text records. Even if selected keyframes are materialized, the visual-evidence cache grows at about 3.6 MB per video minute, or roughly 2.2 GB over a 10-hour prefix; when cached frames are stored as timestamped references, the persistent footprint is substantially smaller. 
+
+H.1. Long-Horizon Online Memory Diagnostic 
+
+We further evaluate FOLIO in a long-horizon online setting, where the memory has been constructed over a long observed prefix before the query arrives. The time length here refers to the online prefix accumulated before query arrival, not the full video duration available in an offline setting. The diag-nostic examples are sampled from OVO-Bench cases with long query-time prefixes: we first select examples whose observed prefix is at least 20 minutes, and include a small number of additional examples from the 15–20 minute range to cover more available long-prefix cases. The completed run reported below contains 47 evaluated queries after Stage-2 22 filtering. 
+
+Table 14. Long-horizon online memory diagnostic for FOLIO . The run evaluates FOLIO after long observed prefixes before query arrival and reports both downstream accuracy and memory footprint. Writer token counts are omitted because this diagnostic run did not log writer input/output tokens.           
+
+> Variant Acc. Correct VLM Calls/Q Written Rec./Q Merged Memory KB/Q
+> FOLIO 61.7 29/47 1.55 624.5 585.2
+
+This diagnostic is not used as a primary benchmark result. Its purpose is to check that the same memory-construction pipeline remains stable after the online memory has accumu-lated over a long prefix. The run completed without Stage-2 errors, reached a 100.0% memory-hit rate, and used 1.55 VLM calls per query on average. The merged memory re-mains below 0.6 MB per query on this long-prefix subset, indicating that entity merging keeps the persistent memory size manageable even when many segment-level records are written. 
+
+I. Additional Multi-Turn Diagnostic 
+
+Table 15. SQA diagnostic for multi-turn focus-state updates on the complete StreamingBench SQA split, containing 50 videos and 250 queries. Paper reader uses the previous query history available at the current turn, while no query history removes previous queries from the answering prompt. Run-time is measured per query. Sem. exp. denotes semantic query expansion rate, and Cache fr./Q denotes the average number of cache frames added per query.                                
+
+> Setting Acc. Calls/Q Runtime/Q Sem. exp. Cache fr./Q
+> FOLIO , paper reader 54.8 1.87 9.89s 87.2% 0.02
+> FOLIO , no query history 54.0 1.87 9.79s 87.2% 0.02 w/o Interaction Focus, paper reader 53.6 1.91 10.57s 91.6% 0.16 w/o Interaction Focus, no query history 53.2 1.91 10.30s 91.6% 0.12 w/o Focus Controller, paper reader 51.2 1.88 10.27s 87.6% 0.11 w/o Focus Controller, no query history 51.2 1.88 10.27s 87.6% 0.11
+
+Table 15 isolates the role of interaction focus on the 50-video SQA subset, where later queries often refer back to entities or actions from previous turns, such as asking what a previously discussed person later did or where a referenced object moved. The paper reader with query history performs best, but removing query history changes the full system only slightly. In contrast, removing interaction focus drops accuracy under both reader prompts. This suggests that the gain is not simply due to exposing the answerer to previous queries; previous turns also help by guiding later memory construction. 
+
+J. Demo Browser 
+
+Figure 5 shows two screenshots of our internal browser for inspecting FOLIO on concrete streaming examples. The browser places the video in the upper-left panel, the relevant query stream in the lower-left panel, the merged entity mem-ory in the upper-right panel, and the chunk-level memory writes in the lower-right panel. We use this view to audit whether the writer VLM preserved the correct entities, ac-tions, text evidence, and intermediate chunk responses, and whether the query-time reader retrieved the intended support before producing an answer. The same browser can be run in a streaming inspection mode. When the video is scrubbed to time t, future ques-tions, future chunks, and future merged-memory updates are hidden, so the interface only exposes the questions that have already arrived, the chunks already written, and the merged memory available by time t. This makes it useful for checking that future information is hidden and diagnosing whether an error comes from memory construction, retrieval, or answer generation. 23 (a) Basketball game example. 
+
+(b) Variety and magic-show example. Figure 5. Interactive demo browser for inspecting video, queries, merged memory, and chunk-level memory in one view. 
+
+24 K. Prompt Templates 
+
+The three vision-language calls used by FOLIO are driven by the prompt templates below, reproduced verbatim. Placeholders in braces (e.g. {start_time:.1f} , {question} ) are filled at call time by the surrounding pipeline. 
+
+K.1. Writer VLM Prompt 
+
+Used by the writer VLM Wθ on every time-ordered segment: it receives the selected keyframes and writing guidance with detailed and compact object lists, and returns structured JSON containing detailed object records, compact object records, and events. 
+
+Writer VLM Prompt (verbatim) 
+
+Analyze this segment for budgeted object-state memory. Time range: {start_time:.1f}s - {end_time:.1f}s {object_state_budget} The budget controls writing detail, not object discovery. Required behavior: 1. DETAILED objects: if visible, write structured state with location, holder, state, relation, interaction, state_change, evidence_summary, and evidence_frames. 2. COMPACT objects: if visible, write one compact note with location/state/relation and evidence_frames. 3. Always discover newly visible manipulated objects, tools, containers, appliances, cooking surfaces, sinks, screens/text, and unusual objects. Put them in compact_objects unless they are central to the action, then put them in detailed_objects. 4. Do not ignore new or rare objects just because they are not listed in the budget. 5. Do not duplicate the same physical object across detailed_objects and compact_objects. Return ONLY valid JSON: {"time": "{start_time:.1f}-{end_time:.1f}s", "detailed_objects": [ {"name": "object name", "category": "category", "attributes": ["attr1"], "location": "where it is", "holder": "none or holder", "state": "current visible state", "relations": [ {"relation": "on/in/next_to/used_with/etc", "target": "other object"} ], "interactions": [ {"type": "held/moved/used/etc", "with": "person/tool", "summary": "description"} ], "state_change": "what changed since previous segment, or stable", "evidence_summary": "specific visible evidence", "evidence_frames": [0], "confidence": 0.85 }], "compact_objects": [ {"name": "non-focus visible object", "category": "category", "location": "compact location", "state": "compact state", "relation": "relation to action or detailed object", "brief": "one short useful memory note", "evidence_frames": [0], "confidence": 0.7 
+
+25 }], "events": [ {"event_type": "action type", "summary": "what happened", "participants": ["obj1", "obj2"], "changed_objects": ["obj1"], "confidence": 0.8 }]}Rules: 1. Only list visible or partially visible objects. 2. Maximum {top_k_objects} total objects across both object lists and {top_m_events} events. 3. Prefer detailed budget for repeated or actively manipulated focus objects. 4. Preserve compact notes for tools, containers, appliances, cooking surfaces, sinks, screens/text, and newly appearing objects even when they are not the action center. 5. evidence_frames can be approximate local frame indices inside this segment; use an empty list if you cannot localize the evidence. 
+
+K.2. Semantic Query Expansion Prompt 
+
+Invoked only when direct structured-memory retrieval returns an empty candidate set, typically on abstract or concept-level queries. The VLM receives the query, answer candidates, a compact object catalog, and an action catalog, and is constrained to return existing object identifiers plus a short rationale and a candidate-answer prior. 
+
+Semantic Query Expansion Prompt (verbatim) 
+
+You are a video memory assistant. The rule-based retriever could not find direct keyword matches for this question. Use SEMANTIC REASONING to identify conceptually relevant objects. ## QUESTION {question} ## OPTIONS {options_text} ## ALL TRACKED OBJECTS IN MEMORY {object_list} ## NOTABLE ACTIONS / EVENTS {action_list} ## TASK The question may use abstract concepts (e.g., "avid reader", "active sport") that don 't directly name objects. Your job: 1. Identify which tracked objects/actions are CONCEPTUALLY related to the question. - Example: "avid reader" -> bookshelf, books, magazine, reading lamp - Example: "musician" -> piano, guitar, drum - Example: "what activity is happening" -> look at action list 2. Return their object_ids (3-7 most relevant). 3. Also explain briefly which option seems most supported. ## OUTPUT (JSON only, no other text) {"relevant_object_ids": ["obj_0001", "obj_0002", "obj_0005"], "reasoning": "Brief explanation of why these objects relate to the question concept.", "suggested_option": "A/B/C/D" }
+
+26 K.3. Answer Prompt 
+
+Used by the answering VLM Aϕ at query time. It receives the query, answer candidates, the consolidated memory block, recent frames, and any retrieved cache frames; it returns a structured response with the predicted label, supporting evidence, reason, and confidence. The prompt’s “Mode B” branch is auto-enabled when the consolidated memory carries a concept-query header (set when semantic query expansion is used at retrieval time). 
+
+Answer Prompt (verbatim) 
+
+You are a video QA assistant. Answer the multiple-choice question using: 1. The RECENT FRAMES shown above (current visual state near question time) 2. The CONSOLIDATED MEMORY below (chronological history from earlier in the video) The memory is built from object observations across the video, organized as time-ordered location chains and action chains. MODE SELECTION (auto-detected from memory): === MODE A -- STRICT FACTUAL (default) === Use this mode UNLESS the memory contains the header "## (!) CONCEPT QUESTION -- SPECIAL HANDLING REQUIRED". Rules: 1. Memory is the PRIMARY source for past events. Recent frames inform CURRENT state only. 2. For multiple choice, select one option label (A, B, C, or D). 3. If "Unable to answer", "cannot determine", "not visible", or similar is among the options AND memory/frames do NOT contain DIRECT, EXPLICIT evidence, you MUST select it. 4. Avoid speculation: prefer "Unable to answer" (when available) over guessing. 5. BANNED words: "most likely", "suggests", "implies", "could be", "commonly", "typically", "probably". If used, answer is likely "Unable to answer". 6. Mere presence of an object does NOT confirm its location, action, or relation. === MODE B -- CONCEPT REASONING (only when memory has CONCEPT QUESTION header) === This mode is enabled by the rule-based retriever failing entirely on this question (suggesting it asks an abstract concept like "is a reader" / "is a musician"). Rules: 1. INDIRECT evidence IS valid: bookshelf -> reader; piano -> musician; tools -> handyman. 2. You do NOT need direct visual confirmation of the activity. 3. The BANNED-words rule of Mode A does NOT apply here -- you may use "suggests/implies". 4. Trust the LLM-suggested option (if any) unless contradicted. === COMMON === Trust the QUESTION CONTEXT and OPTION CHECK signals at the top of memory when present. Return ONLY valid JSON. ## QUESTION {question} ## OPTIONS {options_text} ## CONSOLIDATED MEMORY {memory_text} ## DECISION PROCESS - Step 1: Does memory/frames EXPLICITLY state the answer? If yes -> pick that option. - Step 2: If memory says "TARGET NOT FOUND" -> pick "Unable to answer" if available. - Step 3: Else, pick the option least contradicted by evidence. ## OUTPUT JSON FORMAT {"prediction_label": "A/B/C/D", "prediction_text": "the text of your chosen option", "visual_observation": "what you see in recent frames", "supporting_evidence": [ 
+
+27 {"source": "memory/frames", "time": "...", "evidence": "..."} ], "reason": "brief explanation", "confidence": 0.0-1.0 }
+
+28
