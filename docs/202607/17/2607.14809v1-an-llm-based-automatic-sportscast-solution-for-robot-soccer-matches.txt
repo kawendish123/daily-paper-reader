@@ -1,0 +1,233 @@
+Title: An LLM-Based Automatic Sportscast Solution for Robot Soccer Matches
+
+URL Source: https://arxiv.org/pdf/2607.14809v1
+
+Published Time: Fri, 17 Jul 2026 01:00:35 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# An LLM-Based Automatic Sportscast Solution for Robot Soccer Matches 
+
+F. Petri 1,2,† ⋆[0009 −0008 −6208 −1498] , M. Brienza 1,†[0009 −0000 −1549 −9500] ,D. Nardi 1[0000 −0001 −6606 −200 X], D. D. Bloisi 3[0000 −0003 −0339 −8651] ,A. Gangemi 2,4[0000 −0001 −5568 −2684] , and V. Suriani 1[0000 −0003 −1199 −8358]  
+
+> 1
+
+Dept. of Computer, Control, and Management Engineering Sapienza University of Rome, Rome (Italy), francesco.petri@uniroma1.it {lastname}@diag.uniroma1.it  
+
+> 2
+
+Institute for Cognitive Sciences and Technologies (ISTC-CNR), National Research Council, Italy  
+
+> 3
+
+Dept. of International Humanities and Social Sciences, International University of Rome, Rome (Italy), domenico.bloisi@unint.eu  
+
+> 4
+
+University of Bologna, Bologna (Italy) 
+
+Abstract. RoboCup has always been a scenario to develop systems that solve real-world problems. Driven by the main goal of playing against the 2050 FIFA World Cup champions, the RoboCup Soccer leagues need to constantly measure how the research community is progressing. Comput-ing visual statistics from match videos is a crucial way to track this evolu-tion. To address this challenge, this paper introduces a fully autonomous, real-time sports commentator for RoboCup matches. By bridging the gap between raw kinematic tracking and natural language generation, our neuro-symbolic architecture extracts precise statistics from video streams and turns them into fluent, hallucination-free narration. The proposed system is capable of generating statistics and commentary both during live match streaming and in post-game analysis, easily adapting to the new dynamism of the league where different humanoid robots of different sizes share the field. Supplemental materials are available at 
+
+https://lab-rococo-sapienza.github.io/MARIO/ 
+
+Keywords: Visual Analysis · Large Language Models · Neurosym-bolic 
+
+## 1 Introduction 
+
+Since 1997, RoboCup’s primary objective has been to promote scientific research and accelerate progress in artificial intelligence and robotics. These technologies can then be transferred to real-world problems ranging from household assistance to rescue operations and robotic soccer. Testing algorithms and new approaches in the dynamic environment of robotic soccer guarantees the accelerated devel-opment of real-time, embodied, and adaptive systems. However, an aspect that  
+
+> ⋆
+
+†The authors contributed equally arXiv:2607.14809v1 [cs.CV] 16 Jul 2026 2 Petri, Brienza et al. 
+
+Fig. 1: An example of the FIFA+ Stadium Experience used during the 2022 FIFA World Cup in Qatar. The application allows fans to overlay real-time statistics and heatmaps onto the pitch using augmented reality. Image from the official FIFA website [12]. is often considered secondary with respect to technical and research challenges, but is becoming increasingly important, is the explainability and interpretabil-ity of the progress achieved by the community. In view of the 2050 objective of challenging the human FIFA World Cup champions, RoboCup Soccer needs mechanisms to observe, measure, and trace improvements over time. In this per-spective, visual statistics and automatic commentary can play a central role: they transform raw match dynamics into understandable descriptions, allowing researchers to monitor the evolution of the league and enabling the general public to access meaningful explanations of the underlying scientific advances. A first attempt to solve this problem is represented by the Open Research Challenge introduced in the Standard Platform League (SPL) in 2022 [7], which aimed to address the issue of obtaining statistics from matches similar to those in human soccer like, as happened, for example, during the 2022 World Cup (fig-ure 1). This challenge shifted the focus toward computer-vision-based systems capable of tracking robots and the ball directly from match videos. Consid-ering also the contributions from the Small Size League (SSL), which already developed a system capable of generating detailed statistics from their accurate oracle-like sensor setup, 5 we propose an analysis framework that can generate statistical data to track the future advancement of the nascent Humanoid Soc-cer League (HSL), which was first established this year and is certainly going to grow and evolve rapidly in the future. Starting from our previous work, which successfully addressed the complex requirements of that challenge, we present an extension of the MARIO [2] (Modular and Extensible Architecture for Comput-ing Visual Statistics) framework. While the original system established a robust foundation for visual perception and data extraction, combining MARIO’s de-terministic tracking with a symbolic abstraction of specific game events, this work enables LLMs to generate real-time, context-aware automated narration.   
+
+> 5https://github.com/RoboCup-SSL/ssl-match-stats An LLM-Based Automatic Sportscast Solution for Robot Soccer Matches 3
+
+Automatic sportscasting is worth studying in robot soccer because it combines multiple RoboCup-relevant technical challenges [15] with the need to translate objective match data into interpretable, human-readable explanations. While LLMs possess powerful capabilities for generating text following prompt instructions, a significant challenge arises when these models are tasked with processing raw numerical data [10]. In our scenario, the visual system provides continuous streams of raw coordinates for the field, ball, and robots. Interpreting these data through prompting alone is unreliable: LLMs may hallucinate facts, misidentify the active team, or fail to capture spatial relationships. Although Vision Language Models (VLMs) and video foundation models can describe ac-tions directly from images [3], they are not suitable for our setting. They do not yet meet the real-time requirements of live matches and lack persistent tracking mechanisms for producing consistent match summaries beyond frame-by-frame interpretation. Our work extends the MARIO architecture with a neuro-symbolic approach that bridges the gap between noisy, low-level tracking signals and natural lan-guage generation. The system builds on a computer-vision tracking pipeline where neural networks localize robots and the ball; homography then maps im-age coordinates to field coordinates, yielding a plan-view trace of the match consistent with official field dimensions. In response to the soccer leagues evolu-tion, we updated our perception module from a specific SPL setting to a more general soccer tracker capable of handling different field sizes and detecting vari-ous types of humanoid robots. Based on these data, we add a symbolic layer that employs rules, aggregations, and state detection to identify discrete sporting con-cepts, such as types of kicks, active teams, and the current game phase. Then, an LLM transforms these deterministic outputs into prototypal commentary which, by being grounded in explicit symbolic events, significantly reduces the risk of hallucinations. To summarize, the contribution of this work is threefold: 1. A symbolic event extraction module for RoboCup soccer videos, where game events are inferred from tracked dynamics and rule-based constraints. 2. A sportscast policy mechanism for natural-language commentary generation, including priority scheduling, temporal gating, and state-aware controls to reduce hallucinations, and ensure coherence with RoboCup HSL game rules. 3. A semi-automatic labeling tool for domain adaptation of lightweight CNNs for robot/player and team recognition with limited human supervision. The remainder of the paper is organized as follows. Section 2 reviews related work, Section 3 presents the proposed approach, Section 4 reports the experi-mental results, and Section 5 concludes the paper. 
+
+## 2 Related work 
+
+Sport analytics for soccer and other sports have been gaining increasing atten-tion from the research community in recent years, whether as a context to per-form classic tasks such as action recognition or decision making, or for practical 4 Petri, Brienza et al. 
+
+domain-specific purposes such as producing or improving an automatic referee system [8] [17]. Morra et al. [16] design an event recognition framework for soc-cer, but it is limited to a simulated environment. Majeed et al. [14] propose a visual analysis system based on graph neural networks that works in real time, but being based on human soccer, they have access to a wealth of labeled data that is not available in the RoboCup context. While most works focus on human sports, some analytics work has been done specifically in the RoboCup environment [1] [11]. However, they rarely focus on humanoid robots, and never on visual analysis, instead obtaining their data from simulation logs or precise sensors mounted on the field. We employ our system on games with humanoid robots, as observed by a camera placed at an arbitrary position on the side of the field outside of our control. Automatically producing sports commentary is a challenging problem in current literature due to needing to join multimodal processing, real-time constraints, and last but not least, a wish to entertain the audience [23]. LLMs have been found to be effective for the task, provided that they are supported by prompt engineering and game-specific data, as exemplified by Sun et al. in the case of basketball [19]. Inspired by their work, we design a similar set of neurosymbolic events to ground the generated commentary, but applied to the specific rules and actions of soccer and RoboCup in particular rather than basketball. To the best of our knowledge, no such event-driven, real-time system exists for soccer, in particular in the RoboCup context. We also note that while multiple labeled datasets for human soccer and other sports exist [6] [18] [22], data featuring robots is significantly more limited. Action recognition models, such as those recently developed for basketball [19], can significantly enhance the capabilities of visual tracking systems. Specifically, incorporating pose detection allows the system to extract a deeper semantic understanding of the robot’s physical states. This introduces the ability to verify complex contextual conditions during the game, such as detecting when a robot has fallen [21]. 
+
+## 3 Methodology 
+
+This section details the architecture shown in Figure 2. The methodology is or-ganized around three core components: (i) a calibration module that estimates distortion and homography to map detected robots and the ball onto an undis-torted 2D field representation, (ii) a symbolic event extractor that converts kine-matic and scoreboard evidence into discrete soccer events, and (iii) a rule-aware sportscast policy with two complementary autonomy levels (event-reactive and periodic) for robust, coherent natural-language commentary. 
+
+3.1 Calibrator Module 
+
+The calibrator maps pixels in the broadcast view to points on the RoboCup pitch (planar coordinates in millimetres). An interactive graphical interface allows the An LLM-Based Automatic Sportscast Solution for Robot Soccer Matches 5
+
+Fig. 2: System architecture detailing the flow from raw visual perception and 2D field reprojection to symbolic event extraction and dual-role LLM-driven sportscasting. user to align landmarks in a source frame with a synthetic top-down template derived from official field markings (touchlines, halfway line, centre circle, goal and penalty areas, penalty marks) for the purpose of defining an homography, and to estimate the radial distortion model of the camera. The radial distortion is defined by the following formula, calculated up to the third order [4]: 
+
+x′ = x + ¯ x(k1r2 + k2r4 + k3r6)
+
+y′ = y + ¯ y(k1r2 + k2r4 + k3r6)
+
+where (¯ x, ¯y) is the center of the transformation, and r2 = ( x − ¯x)2 + ( y − ¯y)2.We make use of the exact inversion formulae presented in [9] to enable two-way conversion between image space and field space. For estimating the homography from the given points, we use a DLT algo-rithm with RANSAC as implemented by the opencv library 6.
+
+3.2 Visual Perception Module 
+
+This module converts each raw frame into a structured match representation: robot detections with persistent identities and team labels, ball position in field coordinates, and OCR scoreboard values. All outputs share the same metric field frame as the calibrator, so later modules operate on a unified geometric reference.   
+
+> 6https://docs.opencv.org/4.x/d9/dab/tutorial_homography.html#tutorial_ homography_Demo1 6Petri, Brienza et al.
+
+Fig. 3: 2D Reprojection of Visual Detections Online inference combines a fast detector (YOLOv12 [20]) for players and a lightweight jersey-color classifier (ResNet-18 [13]) for team attribution. In paral-lel, an OCR branch reads left/right score digits and provides explicit game-state supervision for goal confirmation. The choice is based on the assumption of only having access to public streaming, though GameController data can be used as an alternative source if it becomes available. An example of the visual percep-tion module in action is depicted in figure 3, showing the bounding boxes for robot and ball detections onto the video as well as a view of the corresponding reprojection in field space. The latter also shows some basic stats, such as the ball velocity. 
+
+Robot Player Detection To preserve real-time throughput while adapting to the evolving morphology of Humanoid Soccer League platforms, we use a semi-automatic data adaptation workflow. Heavy foundation models are used offline for annotation bootstrapping, while compact models are deployed online for low-latency inference. Candidate bounding boxes for humanoid robots and the ball are generated from match frames via SAM 3 [5]. Robot crops are then extracted and queried with a Vision-Language Model (VLM) to label jersey colors. An optional human-in-the-loop step refines boxes and color labels before training. The resulting dataset is used to train YOLOv12 for detection and tracking support, and ResNet-18 for jersey color recognition. 
+
+3.3 Sportscast Policy 
+
+At any frame t, the module takes the tracked robots Xt = {(id i, team i, x i, y i)},the ball position bt = ( xbt , y bt ), and the OCR score Qt = ( qLt , q Rt ). To evaluate actions, we compute the effective ball displacement deff relative to its last known position and velocity veff as deff /∆t , where ∆t is the elapsed time since that last known position. If ∆t exceeds a predefined threshold, these quantities are considered unreliable and only the ball’s current position is used instead. To reduce tracking noise, these quantities are calculated as the maximum between a short-window estimate and a trajectory trace. Game hints are computed based on proximity and direction: An LLM-Based Automatic Sportscast Solution for Robot Soccer Matches 7
+
+– Possession Hint: We identify the closest robot i⋆t = arg min i∥pi − bt∥2. If the distance rt = ∥pi⋆t − bt∥2 falls below a defined threshold rposs , the ball is considered possessed by team i⋆t .
+
+– Directional Intent: We compute the normalized ball trajectory vector 
+
+ˆut. By calculating the dot products (directional cosines) against the vec-tor pointing towards a teammate ( ˆuteam ) and the vector pointing towards the opponent’s goal ( ˆugoal ), we obtain cteam and cgoal . These values indicate whether the ball is moving intentionally toward a friendly player or a target goal. 
+
+Event Triggering Logic The hints are passed through logical functions to detect discrete events. An action is first validated by checking if the ball has suf-ficient kinematic energy ( veff ≥ vmin , deff ≥ dmin ), filtering out instances where the ball is manually repositioned by a referee or movements too small to be considered significant events. Valid actions are then classified using predefined directional and distance thresholds. An action is categorized as a pass if the ball’s trajectory aligns closely enough with the position of a teammate. Con-versely, an action is classified as a shot if it meets three conditions: it does not strongly align with a teammate (ruling out a pass), its trajectory is directed accurately toward the opponent’s goal, and the ball travels a minimum required distance forward during the play (to avoid rebounds). Additionally, definitive goal events are strictly triggered by a positive difference in the OCR-read score-board state ( qLt − qLt−1 or qRt − qRt−1). The resulting output is a structured event tuple containing the action class, the acting team, and the associated confidence. Translating raw events directly into speech often results in repetitive, unnatu-ral, or hallucinated commentary. To bridge the gap between robotic perception and human-like broadcasting, the Sportscast Policy module routes the validated events to a Large Language Model (LLM) using a strict priority and gating system, operating on two complementary autonomy levels: Event-Reactive and Periodic. 
+
+Event-Reactive Commentary and Gating Event-reactive commentary is activated when a validated, high-priority event is emitted by the symbolic layer. To ensure that urgent occurrences preempt lower-priority queued outputs, emis-sion follows a strict priority hierarchy, ranking goals above shots or passes, which in turn outrank other minor events and periodic generation. To avoid repetitive or unstable narration, the policy applies several temporal guardrails before exe-cuting any call to the Large Language Model. These guardrails, implemented as explicit, algorithmic rules in the source code, suppress duplicate events, enforce a cooldown between closely timed events of similar priority by keeping only the earlier one, suppress events with a low-priority, and discard stale data, such as outdated ball positions or scores, once it exceeds a freshness threshold, until new detections become available. If an event successfully passes all these gates, the system constructs a conditioned prompt using machine-validated fields, such as the event class, acting team, and current score. The generation contract strictly 8 Petri, Brienza et al. 
+
+restricts the model to producing one short, factual sentence without introducing unsupported entities or actions. Consequently, the core event semantics remain strictly determined by the symbolic logic, while the language model is solely utilized for natural linguistic realization. 
+
+Periodic Commentary for Engagement Conversely, periodic commentary is enabled exclusively during quiet windows, which occur when no recent high-priority events are active and no guardrail would prevent the activation of a new event. Unlike the event-reactive approach, this branch is conditioned on aggregated scene context rather than a single discrete trigger. The contextual inputs include the current score state, short-term possession trends, the spatial zone of the ball, recently extracted symbolic events, and a short memory buffer of spoken history to create context to the sportscast having a flow during the comments. The periodic prompt instructs the model to generate a single, con-cise scene-level sentence aimed at maintaining narrative continuity and audience engagement. This generation is subject to the same strict grounding constraints as the reactive module, explicitly preventing the system from hallucinating un-verified game phases such as the kick off where the LLM have robots standing still without the ball and could still infer phases of indecision in the game. 
+
+## 4 Experimental Results 
+
+Experimental results are validated both quantitatively and qualitatively. Quan-titative validation is performed by testing our system on three video clips that were streamed on YouTube on March 14th, 2026, during the RoboCup German Open 2026 testing the system in the new league with new robot and larger field. We use the clips as they are and process them causally, i.e. without looking at future frames, to simulate a real-time stream. Qualitatively, we manually as-sess whether the generated sportscast comments are coherent with the observed game actions; occasional false positives are still observed in rare ball-tracking edge cases where false positive detection of the ball or movement from human referee of the ball happens, but this condition is reduced by trigger conditions and safety gates tuning parameters. We evaluate the accuracy of robot detec-tion and tracking by calculating the Euclidean distance in field space between the positions of the robots detected in the video and the positions those same robots reported to the GameController (GC), i.e. the referee’s central computer, during the game. GC data does not necessarily represent ground truth, since the robot’s estimate of its own position is ultimately dependent on the quality of its localization. For this reason, we carried out a qualitative evaluation of the GC logs by superimposing the reported positions onto the video clips, and found that at least one team’s localization is sufficiently accurate that it can be considered close enough to ground. Conversely, teams that failed to report their position to the GC at all were excluded from this evaluation. Robots send reports to the GC 1 or 2 times per second, i.e. once per 15-30 video frames. This makes the An LLM-Based Automatic Sportscast Solution for Robot Soccer Matches 9            
+
+> Clip name Mean Standard deviation (25%, 50%, 75%) quartiles
+> Middle 1st 0.637 0.551 (0.207, 0.446, 0.848) Middle 2nd 0.657 0.377 (0.394, 0.513, 0.812) Large 1st 0.930 0.795 (0.339, 0.610, 1.247)
+
+Table 1: Aggregated RMSE for our video clips, with entries measured in meters. GC data sparser than the video, but we smooth this out by averaging the error over multiple frames, as we explain in the following. As the evaluation metric, we calculate the frame-by-frame Root Mean Squared Error (RMSE) as follows: on each frame f , we consider the set Vf of all robots that have been detected in the video as belonging to a team with good localiza-tion, i.e. wearing the corresponding jersey color, and the set Lf of all positions from the GC logs of robots of the same team that were playing (i.e. not pe-nalized) at that time. Then, for each element of the larger set, we compute the Euclidean distance to the closest element of the smaller set, and take the average. Distinguishing the larger and the smaller set is important because it naturally penalizes detecting more or less robots than what were logged to have been ac-tually playing: in both cases, more distances are calculated and more error is accumulated. 
+
+RM SE f =
+
+
+
+1
+
+|Vf |
+
+∑ 
+
+> p∈Vf
+
+min q∈Lf ∥p − q∥2 if |Vf | ≥ | Lf |
+
+1
+
+|Lf |
+
+∑ 
+
+> p∈Lf
+
+min q∈Vf ∥p − q∥2 if |Vf | < |Lf |
+
+(1) We calculate the error throughout the whole length of the clips. Aggregated results are presented in table 1. We can observe that the tracking error is below 
+
+1.3 m at least 75% of the time. Considering that all clips were recorded in a 
+
+14 × 9 m field, and that generating sports commentary is based on describing a dynamic situation in terms of rough attack and defense rather than precisely localizing each player, we consider this sufficiently accurate for the purposes of automatic sportscast generation. We also report the results in figure 4. To avoid visual cluttering of the data points, we subdivide the video in contiguous, non-overlapping 200-frame windows and represent the mean within each window with one data point. Error bars for the standard deviation have been added to represent the variance within each window. As a positive side effect, the error fluctuation that would result from comparing time-dense video detections with time-sparse logs is smoothed out. We note that the error appears to have wide fluctuations, as expected of the high dynamicity of the environment and the lack of perfect ground truth data, but still, the spikes in error represent infrequent outliers, as evidenced by the quartile analysis above (table 1). We also see spans of time where the error stabilizes: these correspond to moments where the robots stop playing, for example before kickoff or during a referee decision. 10 Petri, Brienza et al. 00 00 0  0 0 0   00    
+
+00 
+
+0 
+
+0 
+
+ 
+
+0 
+
+ 
+
+0     
+
+>           
+
+(a) “Middle 1st” clip. 00 00 0  0 0 0   00     
+
+00 
+
+0 
+
+0 
+
+ 
+
+0 
+
+ 
+
+0      
+
+>           
+
+(b) “Middle 2nd” clip. 00 00 0  0 0 0   00     
+
+00 
+
+0 
+
+0 
+
+ 
+
+0 
+
+ 
+
+0     
+
+>           
+
+(c) “Large 1st” clip. 
+
+Fig. 4: RMSE over time for all video clips. Each point represents the average of 200 frames. Some error bars have been cut off to preserve the presentation of the data points, but no bar reaches higher than 4.4 meters. 
+
+## 5 Conclusion and Future Work 
+
+This work introduced a novel, fully automated sportscasting framework for the RoboCup Soccer League. By combining a robust visual perception and tracking pipeline with a rule-aware symbolic event trigger and a dual-role LLM policy, we demonstrated the feasibility of generating coherent, real-time commentary directly from raw video feeds, also during live streaming enabling a new frontier of people engament in RoboCup. A key advantage of this methodology is its structural adaptability. Because the system is designed as a dynamic, data-driven pipeline, it is not strictly bound to a single robot morphology and can be readily scaled to serve all RoboCup leagues. Additionally, the integration of Large Language Models naturally un-locks real-time multilingual capabilities, allowing the commentary to be dynam-ically translated and streamed directly to global audiences via platforms like YouTube, as a future goal of the league. An LLM-Based Automatic Sportscast Solution for Robot Soccer Matches 11 
+
+Acknowledgments. This work has been funded by the Italian National PhD Program on Artificial Intelligence run by Sapienza University of Rome in collaboration with the Italian National Council for Research, and by the Italian PNRR MUR project PE0000013-FAIR. Michele Brienza is funded by the European Union - Next Generation EU, Mission I.4.1 Borse PNRR Pubblica Amministrazione (Missione 4) Component 1 CUP B53C23003540006. 
+
+Disclosure of Interests. The authors have no competing interests to declare that are relevant to the content of this article. 
+
+## References 
+
+1. Abreu, P.H., Moura, J., Silva, D.C., Reis, L.P., Garganta, J.: Performance analysis in soccer: a cartesian coordinates based approach using robocup data. Soft Comput. 
+
+16 (1), 47–61 (2012). https://doi.org/10.1007/S00500-011-0733-0 
+
+2. Bloisi, D.D., Pennisi, A., Zampino, C., Biancospino, F., Laus, F., Di Stefano, G., Brienza, M., Romano, R.: Mario: modular and extensible architecture for comput-ing visual statistics in robocup spl. arXiv preprint arXiv:2209.09987 (2022) 3. Brienza, M., Musumeci, E., Suriani, V., Affinita, D., Pennisi, A., Nardi, D., Bloisi, D.D.: Llcoach: Generating robot soccer plans using multi-role large language mod-els. In: Robot World Cup, pp. 176–188. Springer (2024) 4. Brown, D.: Close-range camera calibration (1971), https://api. semanticscholar.org/CorpusID:56490170 
+
+5. Carion, N., Gustafson, L., Hu, Y.T., Debnath, S., Hu, R., Suris, D., Ryali, C., Alwala, K.V., Khedr, H., Huang, A., et al.: Sam 3: Segment anything with concepts. arXiv preprint arXiv:2511.16719 (2025) 6. Cioppa, A., Giancola, S., Deliege, A., Kang, L., Zhou, X., Cheng, Z., Ghanem, B., Van Droogenbroeck, M.: Soccernet-tracking: Multiple object tracking dataset and benchmark in soccer videos. In: 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW). p. 34903501. IEEE (2022). 
+
+https://doi.org/10.1109/cvprw56347.2022.00393 
+
+7. Committee, R.T.: Robocup standard platform league (nao) rule book (2022), 
+
+https://spl.robocup.org/wp-content/uploads/SPL-Rules-2022.pdf 
+
+8. de Oliveira, M.S., Steffen, V., Trojan, F.: A systematic review of the literature on video assistant referees in soccer: Challenges and opportunities in sports analytics. Decision Analytics Journal 7, 100232 (2023). https://doi.org/https://doi.org/ 10.1016/j.dajour.2023.100232 
+
+9. Drap, P., Lefèvre, J.: An exact formula for calculating inverse radial lens distor-tions. Sensors 16 (6), 807 (2016). https://doi.org/10.3390/S16060807 
+
+10. Fang, X., Xu, W., Tan, F.A., Zhang, J., Hu, Z., Qi, Y., Nickleach, S., Socolinsky, D., Sengamedu, S., Faloutsos, C.: Large language models (llms) on tabular data: Pre-diction, generation, and understanding–a survey. arXiv preprint arXiv:2402.17944 (2024) 11. Fukushima, T., Nakashima, T., Torra, V.: Team classification with tactical anal-ysis using fuzzy inference in robocup soccer. In: 2020 Joint 11th International Conference on Soft Computing and Intelligent Systems and 21st International Symposium on Advanced Intelligent Systems (SCIS-ISIS). pp. 1–6 (2020). https: //doi.org/10.1109/SCISISIS50064.2020.9322733 12 Petri, Brienza et al. 12. Fédération Internationale de Football Association (FIFA): FIFA+ Stadium Experience. https://www.fifa.com/en/articles/ fan-experience-fifa-world-cup-qatar-2022 (2022), accessed: 2026-04-22 13. He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image recognition. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 770–778 (2016) 14. Majeed, F., Nazir, M., Swart, K., Agus, M., Schneider, J.: Real-time analysis of soccer ball–player interactions using graph convolutional networks for enhanced game insights. Scientific Reports 15 (1), 21859 (2025) 15. Matsubara, H., Frank, I., Tanaka-Ishii, K., Noda, I., Nakashima, H., Hasida, K.: Automatic soccer commentary and robocup. In: RoboCup-98: Robot Soccer World Cup II. pp. 34–49. Springer Berlin Heidelberg, Berlin, Heidelberg (1999) 16. Morra, L., Manigrasso, F., Lamberti, F.: Soccer: Computer graphics meets sports analytics for soccer event recognition. SoftwareX 12 , 100612 (2020). https://doi. org/https://doi.org/10.1016/j.softx.2020.100612 
+
+17. Pu, Z., Pan, Y., Wang, S., Liu, B., Chen, M., Ma, H., Cui, Y.: Orientation and decision-making for soccer based on sports analytics and ai: A systematic review. IEEE/CAA Journal of Automatica Sinica 11 (1), 37–57 (2024). https://doi.org/ 10.1109/JAS.2023.123807 
+
+18. Rao, J., Wu, H., Liu, C., Wang, Y., Xie, W.: MatchTime: Towards automatic soccer game commentary generation. In: Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing. pp. 1671–1685. Association for Computational Linguistics, Miami, Florida, USA (Nov 2024). https://doi. org/10.18653/v1/2024.emnlp-main.99 
+
+19. Sun, Q., Li, Z., Ma, R., Wang, Y., Zhao, Z., Lv, X.: All commentary by ai: An end-to-end automated basketball commentary system integrating computer vision and large language models. In: Proceedings of the 2024 10th International Conference on Communication and Information Processing. p. 584592. ICCIP ’24, Association for Computing Machinery, New York, NY, USA (2025). https://doi.org/10. 1145/3708657.3708752 
+
+20. Tian, Y., Ye, Q., Doermann, D.: Yolov12: Attention-centric real-time object detec-tors. arXiv preprint arXiv:2502.12524 (2025) 21. Zampino, C., Biancospino, F., Brienza, M., Laus, F., Romano, R., Pennisi, A., Suriani, V., Bloisi, D.D., et al.: Fall detection using nao robot pose estimation in robocup spl matches. In: CEUR WORKSHOP PROCEEDINGS. pp. 88–95. CEUR-WS (2022) 22. Zhang, R., Eickhoff, C.: SOCCER: An information-sparse discourse state tracking collection in the sports commentary domain. In: Proceedings of the 2021 Con-ference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies. pp. 4325–4333. Association for Com-putational Linguistics, Online (Jun 2021). https://doi.org/10.18653/v1/2021. naacl-main.342 
+
+23. Zheng, Q., Wang, X., Cheng, K., Ali, M.A., Lu, Y., Li, W.: From multimodal perception to strategic reasoning: A survey on ai-generated game commentary (2025), https://api.semanticscholar.org/CorpusID:280000390

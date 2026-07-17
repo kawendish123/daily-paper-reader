@@ -1,0 +1,754 @@
+Title: URVC: A Unified Real-Time Neural Video Coding Model with Temporal, Spatial, and Perceptual Adaptivity
+
+URL Source: https://arxiv.org/pdf/2607.15033v1
+
+Published Time: Fri, 17 Jul 2026 01:14:57 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 1
+
+# URVC: A Unified Real-Time Neural Video Coding Model with Temporal, Spatial, and Perceptual Adaptivity 
+
+Xihua Sheng, Member, IEEE , Chang Wen Chen, Life Fellow, IEEE 
+
+Abstract —Neural video coding has advanced rapidly, achieving competitive compression performance while also enabling real-time coding speed. Yet, existing codecs exhibit severe rigidity when deployed in dynamic environments, failing to adapt to different video content, user requirements, and quality prefer-ences. First, to meet the real-time constraint, they discard explicit motion estimation and motion compression, thereby losing the ability to adapt temporal prediction to motion complexity and bitrate constraints. Second, their spatial bit allocation strategy is coarse and, once trained, is fixed. It cannot adapt to dynamic user requirements at test time, preventing users from freely controlling the spatial distribution of bits. Third, they cannot adapt their quality preference to varying application requirements without deploying separate models. We address all three limitations within a single real-time neural video codec—URVC, transform-ing a rigid system into a unified framework with temporal, spatial, and perceptual adaptivity. First, we propose a rate-aware adaptive temporal prediction method that generates diverse prediction candidates through a multi-candidate architecture and couples candidate selection directly to rate-distortion optimiza-tion. Second, we propose a decomposition-based spatial rate control method that achieves finer-grained spatial bit allocation through feature decomposition and separate quantization, and allows users to perform direct spatial rate control at test time without retraining. Third, we propose a perceptual switching method that only requires learning a secondary module bank alongside a frame generator, enabling a codec to switch between signal fidelity and perceptual quality modes. Extensive experi-ments validate that URVC surpasses the state-of-the-art real-time codec DCVC-RT in terms of YUV420 PSNR under intra period 
+
+−1, delivers substantially better perceptual quality, and supports zero-shot region-of-interest (ROI) coding. These results confirm that the proposed methods substantially enhance the temporal, spatial, and perceptual adaptivity of neural video coding, paving the way for practical deployment in real-world applications. 
+
+Index Terms —Neural video coding, temporal prediction, spa-tial rate control, perceptual quality. 
+
+I. I NTRODUCTION 
+
+Video has become the dominant form of Internet traffic, continuously driving the demand for more efficient video com-pression. Traditional video codecs, represented by H.264/AVC, H.265/HEVC, and H.266/VVC, achieve remarkable compres-sion performance through a highly adaptive hybrid coding framework. Instead of relying on a fixed coding strategy, the 
+
+Date of current version July 17, 2026. X. Sheng and C. Chen are with the Department of Computing, The Hong Kong Polytechnic University, Hong Kong SAR, China (e-mail: xi-hua.sheng@polyu.edu.hk, changwen.chen@polyu.edu.hk). Corresponding Author: Chang Wen Chen. 
+
+encoder dynamically selects among multiple coding modes ac-cording to the content characteristics and rate–distortion opti-mization. For example, it adaptively chooses motion prediction modes to accommodate diverse motion patterns, adjusts quan-tization parameters to allocate bits across spatial regions ac-cording to both content characteristics and user requirements, and switches between fidelity-oriented and perception-oriented coding configurations under different application scenarios. Such content- and user-adaptive decision making forms the foundation of modern video compression, enabling traditional codecs to flexibly balance coding efficiency, visual quality, and deployment requirements across diverse scenarios. In recent years, the pursuit of higher compression per-formance has driven the emergence of neural video coding (NVC) [1]–[22]. NVC replaces key components of the hybrid video coding framework—motion estimation, motion com-pression, motion compensation, residual coding, and entropy modeling—with neural networks, and trains the entire model end-to-end under a rate-distortion loss. Through architectural innovations such as scale-space flow [4], feature-space mo-tion estimation and compensation [3], temporal context min-ing [17], and quadtree-based entropy models [20], neural video codecs have surpassed the compression performance of tradi-tional standards. However, this performance gain has come at the cost of extreme computational complexity—many NVC models exceed one million multiply-accumulate operations (MACs) per pixel, making them impractical for real-world deployment. To further bridge the gap between compression efficiency and practical deployment, the recently proposed real-time neural video codec DCVC-RT [13] removes explicit motion estimation, motion compression, and motion com-pensation modules, replacing them with lightweight implicit temporal modeling. This simplified architecture significantly reduces computational complexity while preserving competi-tive compression performance, making real-time neural video coding practically feasible. Despite the remarkable progress in real-time neural video coding, pursuing efficiency comes at the cost of adaptivity. Unlike traditional codecs, whose coding decisions are dy-namically optimized for every frame according to content characteristics and rate–distortion optimization, a real-time neural codec performs almost all coding decisions implicitly through a fixed neural network learned offline. Once training is completed, its coding strategies are fixed and cannot adapt to the characteristics of the current video and user requirements. As a consequence, several adaptive capabilities that have long arXiv:2607.15033v1 [cs.MM] 16 Jul 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 2
+
+been fundamental to video compression are inherently lost. First, temporal prediction can no longer adapt to diverse motion patterns and bitrate constraints. Traditional codecs provide rich prediction diversity by evaluating multiple motion hypotheses and selecting the one that minimizes the rate– distortion cost. Earlier neural video codecs retain a similar capability through explicit motion estimation, motion com-pression, and motion compensation, where the prediction qual-ity can be adjusted by allocating different numbers of bits to motion information. In contrast, recent real-time neural codecs replace explicit motion modeling with an implicit prediction network. Such a fixed mapping generates temporal context in exactly the same manner regardless of motion complexity or bitrate, making it difficult to accommodate diverse motion patterns or dynamically balance prediction accuracy under different rate constraints. Second, spatial bit allocation cannot adapt to user require-ments. Although existing neural video codecs learn spatially adaptive bit allocation through end-to-end optimization, the learned allocation strategy becomes fixed once training is com-pleted. Unlike traditional codecs, where users can freely adjust quantization parameters for different coding units to satisfy application-specific requirements such as region-of-interest (ROI) coding [23], neural codecs provide almost no flexibil-ity for user-controlled spatial bit allocation at deployment. Existing ROI-oriented neural codecs [24]–[26] attempt to recover this capability by introducing ROI masks or ROI-aware supervision during training. However, these methods generally require ROI annotations or ROI-aware supervision, complicate the training procedure, and may compromise reconstruction quality outside the selected regions. Consequently, current neural codecs still lack a general mechanism for user-driven spatial rate control without retraining. Third, the codec cannot adapt its quality preference to vary-ing application requirements. Existing neural video codecs are typically optimized for a single quality preference throughout training, causing each model to specialize in either signal fidelity or perceptual quality. Fidelity-oriented codecs achieve excellent objective reconstruction quality but tend to produce overly smooth textures at low bitrates, whereas perceptual codecs generate visually realistic details at the expense of signal fidelity, with fidelity remaining substantially low even at high bitrates. As application requirements vary continu-ously in practice, different quality preferences often coexist within the same deployment environment. However, satisfying these different objectives usually requires maintaining multiple independently trained codecs, which substantially increases storage, maintenance, and deployment costs. A practical neural video codec should therefore support flexible quality adapta-tion within a single model. Motivated by the above observations, we propose URVC, a unified real-time neural video codec that achieves temporal, spatial, and perceptual adaptivity within a single lightweight framework. First, we propose a rate-aware adaptive temporal prediction method that generates diverse prediction candidates through a multi-candidate architecture and couples candidate selection directly to rate-distortion optimization. This enables temporal prediction to adapt jointly to motion complexity and bitrate constraints without explicit motion estimation. Second, we propose a decomposition-based spatial rate control method that achieves finer-grained spatial bit allocation through feature decomposition and separate quantization, and allows users to perform direct spatial rate control at test time according to their requirements. This enables zero-shot ROI coding without retraining or additional supervision. Third, we propose a perceptual switching strategy that allows a neural video codec to switch between signal-fidelity and perceptual-quality modes according to different quality preferences, eliminating the need for multiple separately trained models. The main contributions are summarized as follows:  
+
+> •
+
+We revisit neural video coding from the perspective of adaptive coding and identify a fundamental limitation of existing neural codecs: although they achieve remark-able compression performance, their coding strategies remain largely fixed at deployment, limiting adaptivity in temporal prediction, spatial rate allocation, and quality preference.  
+
+> •
+
+We propose URVC, a unified real-time neural video codec that simultaneously achieves temporal, spatial, and perceptual adaptivity, transforming a fixed-strategy codec into a deployment-adaptive coding framework.  
+
+> •
+
+We develop a rate-aware adaptive temporal predic-tion method, a decomposition-based spatial rate con-trol method, and a perceptual switching method, which collectively enable adaptive temporal prediction, user-controllable spatial rate allocation, and allow a neural codec to serve both signal fidelity and perceptual quality.  
+
+> •
+
+Extensive experimental results show that our codec sur-passes the state-of-the-art real-time codec DCVC-RT in terms of YUV420 PSNR under intra period −1, delivers substantially better perceptual quality, and achieves supe-rior compression performance on video motion control, an emerging ROI coding task, without compromising the video generation quality. The remainder of this paper is organized as follows. Sec-tion II reviews related work. Section III describes our proposed methods. Section IV presents experimental results. Section V concludes the paper. II. R ELATED WORK 
+
+A. Temporal Prediction for Neural Video Coding 
+
+Temporal prediction, which removes inter-frame redun-dancy by leveraging the information of previously decoded frames, is a cornerstone of video compression. In traditional codecs, this is achieved through explicit motion estimation and compensation that can generate multiple prediction can-didates and select the optimal one under rate-distortion con-straints. Early neural video codecs inherit this philosophy but replace hand-crafted modules with learnable networks. The pioneering DVC [1] introduces an end-to-end framework where an optical flow network estimates pixel-wise motion vectors, which are then compressed via an auto-encoder and used for bilinear warping-based motion compensation. This motion-estimation-compression-compensation pipeline has be-come the dominant paradigm for temporal prediction in NVCs. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 3
+
+Since DVC, many works have advanced this paradigm by improving motion representation and alignment. Scale-space flow [4] augments the conventional two-channel optical flow with a per-pixel scale field, allowing the warping operation to fall back to a blurred prediction when motion is un-reliable. FVC [3] moves all operations—motion estimation, compression, and compensation—into a feature space and uses deformable convolutions for more flexible alignment. DCVC-TCM [17] propagates decoded features instead of de-coded frames and learns multi-scale temporal contexts. Despite their success in rate-distortion performance, these codecs incur enormous complexity—often exceeding thousands of MACs per pixel—due to the many layers required for motion estima-tion, compression, and compensation. The high computational cost makes real-time deployment impractical. To break this complexity barrier, DCVC-RT [13] discards the entire explicit motion branch, including motion estimation, motion compression, and warping-based motion compensa-tion. Instead, temporal contexts are generated by a lightweight implicit feature extractor composed solely of depth-wise con-volutions, which operates on a cached reference feature. This design reduces the number of modules drastically and achieves real-time coding while maintaining competitive rate-distortion performance. However, the implicit temporal modeling of DCVC-RT relies on a fixed prediction rule that lacks the adaptivity in motion complexity and the bitrate constraints. 
+
+B. Spatial Rate Control for Neural Video Coding 
+
+In traditional block-based video codecs, spatial rate control can be achieved by varying the quantization parameter (QP) across coding units, enabling fine-grained bit allocation that respects region-of-interest priorities or content complexity. In existing neural video codecs, such as DCVC-DC [20], DCVC-FM [22], and DCVC-RT [13], their entropy models learn a spatially varying quantization step, which modulates the latent representation before rounding. This enables some degree of content-adaptive bit allocation—the quantization step can vary across spatial locations based on local content complexity. However, the quantization step operates at the resolution of the latent representation, which is far below the granularity needed for precise spatial control. Moreover, once trained, this allocation strategy is fixed. At test time, users cannot freely adjust the quantization strength across spatial regions, making it impossible to control the bit allocation according to user requirements. Some works have explored ROI-based video compression in this context. Fathima et al. [24] introduced two ROI-based neural codecs based on scale-space flow, where an ROI mask is concatenated to the input and the distortion loss is weighted per region. Wu et al. [25] applied a ROI loss to DVC, using a detection network to generate masks and a resolution-adaptive inference strategy. Liu et al. [26] proposed ROI-aware dynamic quantization for NVC, where a bit-allocator assigns different bit-widths to ROI and non-ROI based on motion and texture complexity. However, these methods require the ROI mask to be provided during training. Most of them achieve high ROI fidelity at the cost of severely degraded non-ROI reconstruc-tion. When ROI coding is not needed, the performance of these codecs drops significantly below that of a model trained without ROI loss. None of existing codecs support zero-shot ROI coding at test time. 
+
+C. Perceptual Optimization for Neural Video Coding 
+
+Existing perceptual neural video codecs can be broadly classified into four categories: generative adversarial network (GAN)-based, vector quantization (VQ)-based, diffusion-based, and visual auto-regressive (VAR)-based. GAN-based codecs pioneered perceptual neural video cod-ing. PLVC [27] conditions a recurrent discriminator on mo-tion and latent representations to improve spatio-temporal realism. HVFVC [28] introduces confidence-based fea-ture reconstruction and a periodic compensation loss to mitigate checkerboard artifacts. VQ-based codecs leverage vector-quantized auto-encoders for a semantically rich latent space. GLC-Video [29] performs transform coding in the latent space of a generative VQ-VAE, achieving ultra-low bitrate compression with high perceptual fidelity. Diffusion-based codecs exploit pre-trained diffusion models as generative pri-ors. DiffVC [30] integrates a multi-step diffusion process into conditional coding. DiffVC-RT [31] reduces inference to a single diffusion step and prunes the backbone for real-time decoding. GNVC-VD [32] uses a video diffusion transformer for sequence-level latent refinement, significantly improving temporal coherence. VAR-based codecs adopt a next-scale pre-diction paradigm. ProGVC [33] unifies progressive scalability and detail synthesis within a single autoregressive pipeline, enabling bitrate-adaptive perceptual compression. Despite their impressive perceptual gains, these methods share two fundamental limitations. First, they heavily sacrifice signal fidelity even at high bitrates. Second, their computa-tional complexity remains prohibitively high for practical de-ployment. For example, the latest diffusion-based DiffVC-RT consumes 2462K MACs per pixel. This complexity, combined with the need for two separate models to cover both fidelity and perceptual scenarios, severely limits their practicality in resource-constrained environments. III. M ETHOD 
+
+A. Overview 
+
+We first present an overview of our real-time neural video codec—URVC, which integrates our proposed adaptive tem-poral prediction method, spatial rate control method, and perceptual switching method, as illustrated in Fig. 1. 
+
+1) Rate-Aware Adaptive Temporal Prediction: To overcome the deterministic nature of implicit temporal prediction, we de-sign a rate-aware adaptive temporal prediction module. It takes the reference feature ˆFt−1 and produces a temporal context 
+
+Ct and an auxiliary temporal prior Cpt . The module struc-turally introduces prediction diversity through a multi-branch architecture that generates multiple prediction candidates. The final context Ct is formed by fusing these candidates, with the learnable quantization vectors serving as the fusion weights. This couples candidate selection to both the rate constraint and motion complexity, restoring the temporal adaptivity lost in deterministic implicit prediction. Details are provided in Section III-B. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 4Patchfy  ↓8                                  
+
+> Conv2d
+> DC Block
+> CD&Q𝑦 𝑡 Qො𝑦 𝑡 AE AD ො𝑦 𝑡
+> Subpixel ↑2
+> CD&Q
+> DC Block
+> DC Block
+> Conv2d ↓2
+> DC Block
+> 𝑞 𝑑
+> 𝐸
+> 𝑞 𝑠
+> 𝐸
+> 𝐶 𝑡
+> 𝑞 𝑑
+> 𝐷
+> 𝑞 𝑠
+> 𝐷 𝐶 𝑡
+> Contextual Encoder Contextual Decoder
+> DC Block
+> DC Block
+> DC Block
+> DC Block
+> Unpatchfy ↑8
+> ෠𝐹 𝑡
+> Frame Generator
+> 𝑞 𝑟
+> Conv2d 𝑥 𝑡 ො𝑥 𝑡
+> Decoded
+> Feature Buffer
+> Rate -Aware Adaptive
+> Temporal Prediction
+> Entropy
+> Model
+> 𝑞 𝑐
+> 0𝑞 𝑐
+> 1𝑞 𝑐
+> 2𝑞 𝑝
+> ෠𝐹 𝑡 −1
+> Entropy Model
+> 𝐶 𝑡
+> 𝑦 𝑡 𝑧 𝑡 QƸ𝑧 𝑡 AE AD Ƹ𝑧 𝑡 Context
+> Model
+> Hyper
+> Enc
+> Hyper
+> Dec (𝜇 ,𝜎 )
+> Factorized
+> Entropy Model 𝐶 𝑡
+> 𝑝 ො𝑦 𝑡
+> 1
+> DC Block
+> DC Block
+> Entropy Model
+> 𝑐 𝑡
+> 𝑝
+> 𝐶 𝑡
+> Signal
+> Fidelity Mode
+> Perceptual
+> Quality Mode QQuantization AE Arithmetic
+> Encoder
+> Arithmetic
+> Decoder
+> AD CConcatenation Element -wise
+> Multiplication
+> D&Q
+> Decomposition -
+> based Spatial
+> Rate Control
+> Fig. 1. Architecture of our proposed real-time neural video codec with rate-aware adaptive temporal prediction method, decomposition-based spatial rate control method, and perceptual switching method.
+
+2) Decomposition-based Contextual Encoder and Decoder: 
+
+The contextual encoder transforms the input frame xt into a compact latent representation yt. A pixel-unshuffle layer first reduces the spatial resolution by a factor of 8, and the resulting feature is concatenated with the temporal context Ct
+
+and processed by depth-wise convolutional layers. Before the final down-sampling, the intermediate feature undergoes our proposed spatial decomposition quantization, which enables finer-grained bit allocation according to content complexity. The contextual decoder mirrors the encoder, up-sampling the quantized latent ˆyt and applying the same spatial decompo-sition quantization to its intermediate feature. At test time, the down-up sampling-based decomposition in the encoder can be replaced by an arbitrary spatial mask, giving users direct spatial rate control. The decoded feature ˆFt is stored in the decoded buffer as the reference for the next frame and forwarded to the frame generator. Details are given in Section III-C. 
+
+3) Frame Generator with Perceptual Switching: The frame generator refines the decoded feature ˆFt by a series of depth-wise convolutional layers and performs a pixel-shuffle operation with an up-sampling factor of 8 to produce the reconstructed frame ˆxt. Two separate instances of the frame generator are maintained: θFid  
+
+> r
+
+for the fidelity mode and 
+
+θPer  
+
+> r
+
+for the perceptual mode. At inference time, users can switch between the two modes by selecting the corresponding instance. Further details are provided in Section III-D. 
+
+4) Entropy Model: We use a hyperprior entropy model to provide hyper prior for yt. In parallel, the temporal prior Cpt
+
+is fused with the hyper prior to predict the Gaussian distri-bution parameters for yt. The quantized side information ˆzt
+
+is compressed using a separate factorized entropy model [13], which is part of the module bank and indexed by the current QP to match the distribution of ˆzt at different bitrates. 
+
+5) Module Bank with Perceptual Switching: The learnable quantization vectors that modulate the encoder, decoder, tem-poral prediction module, and frame generator, together with the factorized entropy model for compressing the side infor-mation ˆzt, form a module bank in which all components are indexed by QP. To enable perceptual switching, we maintain two distinct module banks: BFid optimized for signal fidelity, and BPer trained for perceptual quality. At inference time, users can switch between a fidelity mode and a perceptual mode by simply loading the corresponding module bank. More details can be found in Section III-D. 
+
+B. Rate-Aware Adaptive Temporal Prediction 
+
+In existing real-time neural video codecs, temporal context prediction is formulated as a deterministic mapping: 
+
+Ct = fθ ( ˆFt−1), (1) where fθ is a neural network with fixed parameters θ and ˆFt−1
+
+denotes the reference feature from the previously decoded frame. Let Ft be the feature representation of the current frame xt (e.g., obtained after the pixel-unshuffle and initial convolutional layers of the encoder). From a probabilistic perspective, this implicit temporal modeling assumes that the conditional distribution of Ft given ˆFt−1 can be approximated by a unimodal Gaussian with constant variance: 
+
+p(Ft | ˆFt−1) ∼ N  fθ ( ˆFt−1), σ 2). (2) Real-world videos, however, exhibit highly non-stationary temporal statistics due to fast translation, non-rigid deforma-tion, and occlusion. When the actual motion deviates from the training distribution, a statistical mismatch occurs, making the empirical prediction variance far exceed the model’s assump-tion: 
+
+E∥Ft − fθ ( ˆFt−1)∥2 ≫ σ2. (3) Because the fixed mapping can adapt neither to motion com-plexity nor to bitrate constraints, it may provide adequate prediction under simple motion, but can lead to substantially JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 5DC Blocks            
+
+> ×𝟐
+> ෠𝐹 𝑡 −1
+> 𝑞 𝑝 𝐶 𝑡
+> 𝑝
+> DC Blocks
+> ×𝟒
+> Down ↓2DC Blocks
+> ×𝟒
+> DC Blocks
+> ×𝟒
+> Down ↓2
+> Up ↑2
+> Up ↑2
+> 𝑞 𝑐
+> 0
+> 𝑞 𝑐
+> 2
+> 𝑞 𝑐
+> 1
+> CDC Block 𝐶 𝑡
+> CConcatenation Element -wise
+> Multiplication
+> Fig. 2. Illustration of the rate-aware adaptive temporal prediction method.
+
+increased residuals under complex motion or at low bitrates, rendering temporal prediction potentially fragile. To overcome the statistical mismatch caused by the deter-ministic unimodal assumption, we draw on the bias-diversity trade-off from ensemble learning. According to the Ambiguity Decomposition theorem [34], the mean squared error (MSE) of an ensemble ¯f = PK−1 
+
+> k=0
+
+wkϕk (with P 
+
+> k
+
+wk = 1 ) can be rigorously decomposed as MSE ( ¯f ) = 
+
+> K−1
+
+X
+
+> k=0
+
+wkMSE (ϕk) −
+
+> K−1
+
+X
+
+> k=0
+
+wk∥ϕk − ¯f ∥2, (4) where the first term represents the average individual error and the second term quantifies the ensemble diversity (or ambiguity). It indicates that to reduce the total prediction error, it is beneficial to construct a set of heterogeneous base estimators that possess high diversity, thereby increasing the second term. Homogeneous branches would substantially reduce the diversity term, limiting the ensemble’s ability to capture multimodal dependencies. Guided by this principle, as shown in Fig. 2, we design a multi-branch context prediction architecture that produces a candidate set C = {C0 
+
+> t
+
+, C 1 
+
+> t
+
+, C 2 
+
+> t
+
+}
+
+through structurally diverse processing:  
+
+> •
+
+Full-resolution branch C0 
+
+> t
+
+:
+
+C0 
+
+> t
+
+= ϕ0( ˆFt−1; θ0). (5) This branch operates at the original feature resolution, preserving the fine-grained spatial details present in the reference feature ˆFt−1. 
+
+> •
+
+Low-resolution parallel branches C1 
+
+> t
+
+, C 2 
+
+> t
+
+:
+
+C1 
+
+> t
+
+= Up (ϕ1(Down ( ˆFt−1); θ1)) ,C2 
+
+> t
+
+= Up (ϕ2(Down ( ˆFt−1); θ2)) , (6) where Down (·) denotes a bilinear down-sampling opera-tion and Up (·) denotes a bilinear up-sampling operation. The down-sampling operation reduces the spatial resolu-tion, which enlarges the effective receptive field of subse-quent convolutions and discards high-frequency informa-tion. The two branches receive the same down-sampled input but are initialized and trained with independent weights θ1 and θ2, allowing them to learn complementary features and produce distinct prediction candidates. This heterogeneous design promotes a larger ensemble diver-sity term, providing a joint estimate against complex temporal misalignment. The structural diversity across resolutions and parallel streams enables the ensemble to capture a range of possible motion patterns. To perform rate-distortion optimized mode selection without discrete search, we let the learnable quantization vectors 
+
+q0 
+
+> c
+
+, q 1 
+
+> c
+
+, q 2 
+
+> c
+
+∈ RC×1×1, which are part of the module bank and indexed by QP, serve as fusion weights. The final temporal context Ct is obtained as: 
+
+Ct = ffuse 
+
+ q0 
+
+> c
+
+⊙ C0
+
+> t
+
+ ∥  q1 
+
+> c
+
+⊙ C1
+
+> t
+
+ ∥  q2 
+
+> c
+
+⊙ C2
+
+> t
+
+
+
+, (7) where ⊙ is channel-wise multiplication, ∥ denotes concatena-tion along the channel dimension, and ffuse is a subsequent depth-wise convolutional fusion layer. These qkc function as differentiable proxy variables [13] that directly modulate the contribution of each branch in the feature domain, driven by the rate-distortion optimization. The role of qkc can be understood by examining the gradient of the rate-distortion objective with respect to these quantization vectors. Since qkc
+
+multiplies the branch output Ckt before the fusion network, the chain rule gives 
+
+∂L
+
+∂q kc
+
+=
+
+
+
+λ ∂d ∂(qkc ⊙ Ckt ) + ∂R ∂(qkc ⊙ Ckt )
+
+
+
+⊙ Ckt , (8) where ⊙ denotes element-wise multiplication. This gradient jointly combines a distortion-driven component and a rate-driven component, both of which are balanced by the Lagrange multiplier λ. When λ is small and the rate penalty dominates, the optimization tends to suppress high-frequency channels in the full-resolution branch C0 
+
+> t
+
+, allowing the coarser branches 
+
+C1 
+
+> t
+
+and C2 
+
+> t
+
+to contribute more to the fused context Ct. When λ
+
+is large and the distortion penalty dominates, the suppression is relaxed, and the full-resolution branch can contribute its fine-grained details more fully. This rate-dependent adaptive selection emerges from end-to-end training, thereby restoring the adaptivity of temporal prediction to motion complexity and bitrate constraints that was lost in deterministic implicit prediction. 
+
+C. Decomposition-based Spatial Rate Control 
+
+Existing neural video codecs employ a two-level quantiza-tion mechanism [13], [20], [22]. The first level operates in the encoder and decoder: learnable one-dimensional quantization vectors qE , q D ∈ RC×1×1 uniformly modulate the encoder intermediate feature F Et and the decoder intermediate feature 
+
+F Dt across all spatial locations: 
+
+˜F Et = F Et ⊙ qE , ˜F Dt = F Dt ⊙ qD . (9) The second level is realized by the entropy model: in addition to predicting the mean μt and scale σt, the entropy model learns a quantization step Qt of the same size as the latent representation yt. Before rounding ( ⌊⌉ ) at the encoder, yt is divided by Qt element-wise; at the decoder, ˆyt is multiplied back by Qt:
+
+yquant  
+
+> t
+
+=
+
+ yt
+
+Qt
+
+
+
+, ˆyt = yquant  
+
+> t
+
+⊙ Qt. (10) Since the first-level quantization is spatially uniform, and although the second-level quantization enables some degree JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 6𝐹 𝑡    
+
+> 𝐸 /𝐷
+> Down ↓2Up ↑2𝐹 𝑡
+> 𝐸 /𝐷 ,𝑠
+> 𝑞 𝑠
+> 𝐸 /𝐷
+> 𝑞 𝑑
+> 𝐸 /𝐷
+> ෨𝐹 𝑡
+> 𝐸 /𝐷
+> 𝐹 𝑡
+> 𝑏𝑔
+> 𝑞 𝑠
+> 𝐸
+> 𝑞 𝑑
+> 𝐸
+> ෨𝐹 𝑡
+> 𝐸 𝐹 𝑡
+> 𝐸
+> 𝐹 𝑡
+> 𝑓𝑔
+> 𝑀 𝑡
+> Element -wise
+> Subtraction
+> Element -wise
+> Addition
+> Element -wise
+> Multiplication
+> 𝐹 𝑡
+> 𝐸 /𝐷 ,𝑑
+> Fig. 3. Illustration of the decomposition-based spatial rate control method.
+
+of content-adaptive spatial bit allocation, it operates at the low spatial resolution of yt (16 × smaller than the original frame), which limits its allocation precision. More importantly, once trained, users cannot freely control the quantization strength across spatial regions at test time. To achieve direct spatial rate control at test time, we propose a spatial decomposition-based quantization mechanism. For the encoder intermediate feature F Et and the decoder interme-diate feature F Dt , we obtain their smooth structural component by bilinearly down-sampling the features to half resolution and then up-sampling it back to the original resolution: 
+
+F E/D,s t = Up  Down (F E/D t ). (11) The detail component captures the texture and edge informa-tion filtered out by down-sampling, and is computed as the residual: 
+
+F E/D,d t = F E/D t − F E/D,s t . (12) Each component is then modulated by its own learnable quantization vector qE/D s , q E/D d ∈ RC×1×1, and the two are summed back together: 
+
+˜F E/D t = F E/D,s t ⊙ qE/D s + F E/D,d t ⊙ qE/D d . (13) The learnable quantization vectors qE/D  
+
+> s
+
+and qE/D  
+
+> d
+
+are part of the module bank and are indexed by the current QP. Trained end-to-end under the rate-distortion loss, they allow the network to allocate bits unevenly across spatial structures. The structural component can be heavily quantized to save rate, while the detail component can retain finer precision. A crucial property of this design is that the down-up sampling-based decomposition in the encoder can be replaced at test time by an arbitrary spatial mask-based decomposi-tion. Concretely, let Mt ∈ { 0, 1}1×H×W be a user-defined binary ROI mask, down-sampled to the resolution of F Et . The mask-based decomposition can be performed as: 
+
+F bg t = F Et ⊙ Mt, F f g t = F Et ⊙ (1 − Mt). (14) Then we apply the structural quantization vector qEs to the background and the detail quantization vector qEd to the foreground: 
+
+˜F Et = F bg t ⊙ qEs + F f g t ⊙ qEd . (15) Since qEd has learned to preserve fine-grained information and 
+
+qEs has learned to encode smooth content at lower fidelity during training, this substitution naturally grants higher recon-struction quality to the user-specified foreground regions while compressing the background regions more efficiently. The decoder continues to use the original down-up decomposition, so no modification is needed at the receiver side. The mask 
+
+Mt itself is not transmitted, incurring zero bitrate overhead. 
+
+D. Perceptual Switching 
+
+The perception-distortion trade-off [35] shows that the fidelity-optimal and perception-optimal reconstructions occupy distinct points on the rate-distortion-perception surface, and therefore require different sets of model parameters. Following this, existing neural video codecs train two separate models. A model optimized for signal fidelity outputs the conditional expectation E[X|Y ], where X denotes the original signal and 
+
+Y denotes the available observations at the decoder, minimiz-ing pixel-level error but producing smooth reconstructions. A model optimized for perceptual quality sacrifices pixel fidelity to produce visually plausible textures and achieve better perceptual quality. However, this two-model solution substantially increases storage and maintenance costs, which is particularly burdensome for resource-constrained applications. A closer examination of the theory, however, reveals an unexploited degree of freedom. The perception-distortion trade-off constrains only the conditional distribution p ˆX|Y that the codec realizes, not the network architecture that produces it. In other words, while the two modes must correspond to different conditional distributions, nothing in the theory requires them to be realized by two entirely separate networks. This observation motivates a design in which the model backbone is shared between the two modes, and only a small set of mode-specific parameters is switched. Building on this insight, we propose a perceptual switching method. We first identify the quantization vectors as the primary mode-specific parameters. After end-to-end training for signal fidelity, the backbone convolutional layers have learned to ex-tract generic feature representations from the input frames. The learnable quantization vectors apply channel-wise modulation to these features. Different quantization vectors do not alter how the backbone convolution kernels extract features, but only change the retained amplitude of each channel. Hence, the backbone convolution kernels can be shared, while the quantization vectors can be switched. This design can be fur-ther understood from the perspective of covariance. Consider a feature representation F ∈ RC×H×W before modulation, and let ˜F = F ⊙ q be the feature after modulation by a quantization vector q ∈ RC×1×1. The channel covariance matrix ΣF = E[( F − μF )( F − μF )⊤] becomes: 
+
+Σ ˜F = diag( q) Σ F diag( q)⊤, (16) JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 7Signal 
+
+> Fidelity Mode
+
+𝑞 1 
+
+> 0
+
+𝑞 1 
+
+> 1
+
+𝑞 1
+
+> 2
+
+𝑞 𝑝 
+
+𝑞 𝑑 
+
+> 𝐸
+
+𝑞 𝑠 
+
+> 𝐸
+
+𝑞 𝑑 
+
+> 𝐷
+
+𝑞 𝑠 
+
+> 𝐷
+> Frame
+> Generator
+
+𝑞 𝑟 
+
+> Perceptual
+> Quality Mode
+
+𝑞 1 
+
+> 0
+
+𝑞 1 
+
+> 1
+
+𝑞 1
+
+> 2
+
+𝑞 𝑝 
+
+𝑞 𝑑 
+
+> 𝐸
+
+𝑞 𝑠 
+
+> 𝐸
+
+𝑞 𝑑 
+
+> 𝐷
+
+𝑞 𝑠 
+
+> 𝐷
+> Frame
+> Generator
+
+𝑞 𝑟   
+
+> Factorized
+> Entropy Model
+> QP QP
+> Factorized
+> Entropy Model
+> Fig. 4. Illustration of the perceptual switching method.
+
+where diag( q) is a diagonal matrix with the entries of q on the diagonal, and μF is the channel-wise mean of F . This identity shows that replacing the quantization vectors is equivalent to independently rescaling the diagonal entries of the feature covariance matrix. Two different sets of quantization vectors therefore produce different feature energy distributions, each corresponding to one of the two modes. Replacing the quantization vectors leads to two further requirements. First, the factorized entropy model must be up-dated synchronously. When the distribution of the hyper-prior latent ˆzt shifts due to the changed quantization vectors, the original entropy model would produce inaccurate probability estimates. Hence, the two modes require separate factorized entropy models ϕFid  
+
+> z
+
+and ϕPer  
+
+> z
+
+. Second, the frame generator 
+
+θr , which maps the decoded feature ˆFt to the reconstructed frame ˆxt, also needs to be replaced. When the statistics of the decoded feature change under perceptual quantization vectors, the original frame generator may no longer produce outputs aligned with perceptual objectives. The two modes therefore also require separate frame generators θFid  
+
+> r
+
+and θPer  
+
+> r
+
+.Building on the above analysis, as presented in Fig. 4, we maintain two module banks ( BFid , BPer ) and two frame generators ( θFid  
+
+> r
+
+, θ Per  
+
+> r
+
+) for the two modes, both having the same structure. Each module bank is indexed by QP and contains a set of channel-wise quantization vectors—the structural/detail quantization vectors qE/D s , q E/D d , the temporal prior quan-tization vector qp, the context fusion quantization vectors 
+
+q0 
+
+> c
+
+, q 1 
+
+> c
+
+, q 2 
+
+> c
+
+, the reconstruction quantization vector qr , and a factorized entropy model ϕz .Training proceeds in two stages. In the first stage, all convo-lutional layers in the contextual encoder, contextual decoder, and temporal prediction module, together with BFid and the frame generator θFid  
+
+> r
+
+, are jointly trained under a rate-fidelity loss. In the second stage, all convolutional weights are frozen. 
+
+BPer and the frame generator θPer  
+
+> r
+
+are initialized from BFid 
+
+and θFid  
+
+> r
+
+, respectively, and fine-tuned using a perceptual loss. Because the backbone is trained once for signal fidelity and then frozen, the fidelity mode remains completely unaffected when the perceptual mode is added. At inference time, users can switch between two modes by changing the loaded module bank and frame generator parameters, incurring negligible additional storage and identical computational cost. IV. E XPERIMENTS 
+
+A. Datasets 
+
+We train our model on the training split of the Vimeo-90k dataset [36]. Following [2], [13], we further process the original Vimeo video clips into longer sequences for cascaded training. For evaluation, we use three widely adopted benchmark datasets. The HEVC Common Test Sequences [37] (Classes B, C, D, and E) cover resolutions from 416 ×240 to 1920 ×1080, with content ranging from static conference scenes to fast-paced sports. The UVG dataset [38] con-tains seven 1080p high-frame-rate sequences. The MCL-JCV dataset [39] consists of thirty 1080p sequences with diverse content. All test sequences are in YUV420 format. 
+
+B. Test Details 
+
+For the traditional codec, we compare with the offi-cial reference software VTM-17.0 of the H.266/VVC [40] standard under the encoder lowdelay vtm.cfg configuration. For neural codecs, we compare with DCVC-DC [20], DCVC-FM [22], PRAVC [2], and the state-of-the-art real-time codec DCVC-RT [13]. We also include our reproduced version of DCVC-RT, denoted as DCVC-RT ∗, which serves as the direct baseline of our model. Due to limited GPU memory, we are unable to perform the cascaded training [17] with 64 frames at a resolution of 512 ×512 as done in the original DCVC-RT. Consequently, DCVC-RT ∗ achieves lower com-pression performance than the released model. We conduct three sets of experiments to evaluate our codec from different perspectives. For signal fidelity, we assess rate-distortion performance using YUV420 PSNR with VTM-17.0 as the anchor. For perceptual quality, we evaluate DISTS [41] and LPIPS [42] with DCVC-FM as the anchor. For spatial rate control, we test on two representative videos— a dancing sequence and a martial-arts sequence—using a CLIP [43] semantic similarity and a motion similarity as evaluation metrics. All frames are encoded with intra period set to −1 and reported in the YUV420 color space. 
+
+C. Training Details 
+
+To support variable-rate coding within a single model, we randomly sample a QP from the range [0 , 63] in each training iteration. To implement a hierarchical quality structure, we adopt the QP offset pattern [0 , 8, 0, 4, 0, 4, 0, 4] for a group of 8 pictures and assign distortion weights of [ 1.2, 0.5, 0.9, 0.5]to the four corresponding hierarchical levels. Each QP serves as an index to select a corresponding set of components in the module bank. The Lagrangian multiplier λ is interpolated between 1 and 768 according to the sampled QP. The loss function differs between the fidelity mode and perceptual mode. For signal fidelity training, we use a scaled YUV mean squared error (MSE) loss with the Y, U, and V components weighted at a ratio of 6:1:1 . For perceptual quality training, the distortion term is a weighted combination of YUV MSE, LPIPS, and a GAN loss [27]. The model is optimized with the AdamW optimizer [44] using a batch size of 8. All training is performed on 8 NVIDIA RTX 3090 GPUs. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 8
+
+Fig. 5. Rate-distortion curves on HEVC, UVG, and MCL-JCV datasets. All frames are coded with intra period –1 in YUV420 color space. The quality metric is the weighted YUV PSNR where the Y, U, and V components are combined with a 6:1:1 ratio. TABLE I BD-RATE (%) COMPARISON IN YUV420 COLORSPACE MEASURED WITH PSNR. T HE ANCHOR IS VTM-17.0. A LL FRAMES ARE TESTED WITH THE INTRA PERIOD SET TO –1. HEVC Class B HEVC Class C HEVC Class D HEVC Class E UVG MCL-JCV Average VTM 0.0 0.0 0.0 0.0 0.0 0.0 0.0 DCVC-DC 13.4 –4.5 –16.8 88.8 7.8 –2.0 14.5 DCVC-FM –18.0 –30.7 –39.1 –29.6 –21.7 –12.1 –25.2 PRAVC –9.5 –18.0 –27.0 3.7 –15.7 –7.3 –12.3 DCVC-RT –13.6 –17.4 –25.7 –21.9 –22.2 –12.1 –18.8 DCVC-RT* –3.8 –12.9 –25.5 –14.4 –12.0 –0.5 –11.5 Ours –16.3 –25.4 –35.8 –22.3 –24.1 –10.6 –22.4 †DCVC-RT ∗ is our reproduced version of DCVC-RT, which serves as the direct baseline of our model. Due to limited GPU memory, we are unable to perform the cascaded training with 64 frames at a resolution of 512 ×512 as done in the original DCVC-RT. Consequently, DCVC-RT ∗ achieves lower compression performance than the released model. Character Image Reference Video 
+
+Expression  Body  Movement 
+
+Fig. 6. Illustration of video motion control as a typical ROI task. The generative model only extracts the character’s facial expressions and body movements from the reference video, while the background is largely ignored. 
+
+D. Experimental Results for Signal Fidelity 
+
+Table I reports the BD-rate savings in YUV420 PSNR with VTM-17.0 as the anchor. Our codec achieves an av-erage BD-rate of −22 .4% . When compared with codecs whose computational complexity exceeds millions of MACs per pixel, our codec substantially outperforms DCVC-DC (14 .5% ) and PRAVC ( −12 .3% ), and remains slightly below DCVC-FM ( −25 .2% ) in overall compression efficiency. When compared with lightweight real-time codecs, our codec de-livers over 10% bitrate saving over our reproduced baseline DCVC-RT ∗ (−11 .5% ) under the same constrained training protocol. This substantial improvement directly validates the effectiveness of our proposed rate-aware adaptive temporal prediction and finer-grained spatial bit allocation. More im-portantly, our codec even surpasses the officially released DCVC-RT ( −22 .4% vs. −18 .8% ) on average. This improve-ment is consistent across most individual datasets, with no-table gains on HEVC Class C ( −25 .4% vs. −17 .4% ) and HEVC Class D ( −35 .8% vs. −25 .7% ). Nevertheless, on high-resolution sequences such as 1080p videos, the rate-distortion curves in Fig. 5 show that our codec performs slightly below the released DCVC-RT at high bitrates. This is mainly due to JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 9Semantic Similarity: 0.983, Motion Similarity: 0.760, Bpp: 0.043        
+
+> Semantic Similarity: 0.987, Motion Similarity: 0.777, Bpp: 0.063
+> Reference Video Character Image
+> Generated Video
+> Generated Video
+> Semantic Similarity: 0.979, Motion Similarity: 0.672, Bpp: 0.058
+> Semantic Similarity: 0.982, Motion Similarity: 0.684, Bpp: 0.075
+> Compressed Video with Spatial Rate Control
+> Compressed Video without Spatial Rate Control
+> Mask
+> Reference Video Character Image Mask
+> Generated Video Compressed Video without Spatial Rate Control
+> Generated Video Compressed Video with Spatial Rate Control
+> Fig. 7. Comparison of reference video compression and generated animation with/without our spatial rate control on the Dancer and KungFu sequences.
+
+our limited GPU memory, which prevents us from using the same training protocol of the original DCVC-RT. We can only train with smaller-resolution crops of 256 × 384 (instead of 
+
+512 × 512 ), and although we also use 64 -frame sequences, we are forced to adopt a grouped cascaded training scheme [45] with detached computation graphs rather than the unrolled continuous cascading of the official implementation. These constraints slightly reduce the model’s capacity at very high bitrates. We believe that with access to GPUs with larger memory, our model would achieve further performance gains. 
+
+E. Experimental Results for Spatial Rate Control 
+
+We evaluate our spatial rate control method on a video motion control task, a representative ROI coding scenario. In this task, a user uploads a reference video and a character image to a cloud server, and a generative model animates the character to mimic the motion of the reference video. As exemplified by recent project such as Seedance [46], the generative model only needs to extract the character’s facial expressions and body movements from the reference video, while the background is largely ignored, as illustrated in Fig. 6. Consequently, the foreground (the person) requires high JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 10                                       
+
+> Fig. 8. Rate-perception curves on HEVC, UVG, and MCL-JCV datasets. All frames are coded with intra period –1 in YUV420 color space. The reconstructed videos are converted to RGB before computing DISTS and LPIPS. TABLE II BD-RATE (%) COMPARISON IN TERMS OF DISTS ( LEFT )AND LPIPS ( RIGHT ). HEVC Class B HEVC Class C HEVC Class D HEVC Class E UVG MCL-JCV Average DCVC-FM 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 DCVC-RT –11.1 / –8.1 0.3 / –0.3 –0.4 / –1.7 –7.5 / –0.2 –12.1 / –8.8 –11.2 / –10.5 –7.0 / –4.9 Ours (Fidelity) –17.4 / –20.3 –4.3 / –11.1 –6.7 / –12.5 –8.1 / –0.4 –23.7 / –16.8 –16.9 / –16.2 –12.9 / –12.9 Ours (Perception) –69.0 / –57.7 –46.1 / –37.0 –34.2 / –31.7 –56.7 / –36.5 –75.7 / –66.8 –62.0 / –62.6 –57.3 / –48.7
+
+reconstruction quality, while the background can be heavily compressed without affecting the generated video. This makes the problem a natural fit for ROI coding. We test on two representative reference videos, including a dancing video ( Dancer ) and a martial-arts video ( KungFu ). Fig. 7 compares the reconstructed reference videos with and without our spatial rate control. As expected, the background regions—e.g., the fence in Dancer and the grass in KungFu —become noticeably blurred when spatial rate control is applied, because they are quantized more heavily. In contrast, the foreground remains sharp. We feed the compressed reference videos into the same video motion control model [46]. Vi-sual inspection shows that the generated videos are virtually indistinguishable from each other. For objective evaluation, we compute two similarity metrics between the video frames (denoted as {Goi }Ni=1 ) generated from the original uncompressed reference video and those (denoted as {Gci }Ni=1 ) generated from the compressed refer-ence video. The first metric is CLIP semantic similarity. Let 
+
+fCLIP (·) denote the CLIP image encoder (ViT-base-patch32) that maps an frame to a normalized feature vector. The semantic similarity for frame i is the cosine similarity between 
+
+fCLIP (Goi ) and fCLIP (Gci ). The average over all frames is: CLIP-Sim = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+fCLIP (Goi ) · fCLIP (Gci )
+
+∥fCLIP (Goi )∥∥ fCLIP (Gci )∥ . (17) The second metric is motion similarity. Let flow (·, ·) denote the dense optical flow field computed between two frames. For adjacent frames i and i + 1 , define uGc 
+
+> i
+
+= flow (Gci , G ci+1 ) and 
+
+uGo 
+
+> i
+
+= flow (Goi , G oi+1 ). The motion similarity is the average cosine similarity over all adjacent frame pairs: Motion-Sim = 1
+
+N − 1 
+
+> N−1
+
+X
+
+> i=1
+
+uGc 
+
+> i
+
+· uGo
+
+> i
+
+∥uGc 
+
+> i
+
+∥∥ uGo 
+
+> i
+
+∥ . (18) As shown in Fig. 7, both metrics remain nearly identical for the videos generated with and without spatial rate control, while our method achieves 20–30% bitrate savings on the reference video. For the KungFu sequence, the CLIP similarity is 0.987 vs. 0.983, and the flow similarity is 0.777 vs. 0.760, while the bitrate is reduced by 31.7%. Similar results are observed on the 
+
+Dancer sequence. These results confirm that our spatial rate control can effectively allocate bits to semantically relevant regions without harming the downstream generative task. 
+
+F. Experimental Results for Perceptual Quality 
+
+We present the rate-perception curves in terms of DISTS and LPIPS in Fig. 8. Detailed BD-rate saving values are reported in Tables II, with DCVC-FM as the anchor. The results show that our codec with the perceptual mode achieves an average BD-rate of −57 .3% in DISTS and −48 .7% in LPIPS, substantially outperforming both DCVC-FM and the JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 11 Original   
+
+> (bpp ↓/LPIPS ↓/DISTS ↓)
+> Ours (Fidelity)
+> (0.020/0.253/0.141)
+> Ours ( Percept ual )
+> (0.019/0.190/0.098)
+> DCVC -RT
+> (0.021/0.262/0.146)
+> (0.028/0.121/0.150) (0.026/0.111/0.139) (0.027/0.140/0.154) (0.031/0.120/0.148) (bpp ↓/LPIPS ↓/DISTS ↓)
+> DCVC -FM
+> (0.023/0.257/0.144)
+
+Fig. 9. Visual comparison between DCVC-FM [22], DCVC-RT [13], our codec in signal fidelity mode, and our codec in perceptual mode. TABLE III ENCODING /DECODING TIME AND MODEL COMPLEXITY COMPARISON FOR ONE 1080 P VIDEO FRAME .Schemes Encoding Decoding MACs/pixel Params DCVC-DC 1.21 s 0.64 s 1397.90K 18.45M DCVC-FM 0.74 s 0.53 s 1180.77K 17.02M PRAVC 1.11 s 0.85 s 1963.56K 19.28M DCVC-RT 0.020 s 0.021 s 195.23K 19.93M Ours 0.027 s 0.028 s 223.00K 24.89M 
+
+released DCVC-RT ( −7.0% DISTS, −4.9% LPIPS). Fig. 9 provides visual comparisons on two sequences. On Basket-ballDrive 1920x1080 50 , our perceptual mode operates at a lower bitrate of 0.019 bpp, yet achieves markedly better DISTS of 0.098 and LPIPS of 0.190, compared with 0.144 and 0.257 for DCVC-FM at 0.023 bpp. The visual gain is evident on the player’s shorts, where the stripe patterns are noticeably sharper and more faithfully rendered. On Blowing-Bubbles 416x240 50 , our codec delivers a DISTS of 0.139 and an LPIPS of 0.111 at 0.026 bpp, while DCVC-FM obtains 0.148 and 0.120 at 0.031 bpp. The improvement is visible on the girl’s eyebrows, which appear clearer and more naturally textured. These results confirm that our proposed perceptual switching method yields substantial perceptual gains. 
+
+G. Complexity Analysis 
+
+Table III compares the encoding and decoding speed, MACs per pixel, and model parameters of our codec with those of several representative neural video codecs. All measurements are taken at 1080p resolution on a single NVIDIA RTX 3090 GPU. The results show that our codec encodes one 1080p frame in 0.027 seconds and decodes in 0.028 seconds, slightly higher than the real-time baseline DCVC-RT ( 0.020 s and 
+
+0.021 s). The computational cost increases from 195 .23 K to 
+
+223 .00 K MACs per pixel, and the model size grows from 
+
+19 .93 M to 24 .89 M parameters. Despite these increases, our codec remains firmly in the real-time regime. Compared with the non-real-time codecs DCVC-DC, DCVC-FM, and PRAVC, it is more than 20 × faster while delivering com-petitive or superior compression performance. The modest additional complexity over DCVC-RT is the cost paid for the temporal, spatial, and perceptual adaptivity that no existing real-time neural codec provides. 
+
+TABLE IV EFFECTIVENESS OF PROPOSED RATE -AWARE ADAPTIVE TEMPORAL PREDICTION (RAATP) METHOD AND DECOMPOSITION -BASED SPATIAL RATE CONTROL (DSRC) METHOD .Model Index RAATP DSRC BD-Rate (PSNR) 
+
+M1 % % 0.0% 
+
+M2 ! % –6.9% 
+
+M3 ! ! –10.7% Predicted Context w/o RAATP  Predicted Residual w/o RAATP  
+
+> Predicted Context with RAATP Predicted Residual with RAATP
+
+Fig. 10. Visualization of the predicted temporal contexts and prediction resid-uals with and without our proposed rate-aware adaptive temporal prediction (RAATP) method. Darker colors indicate smaller residuals. 
+
+H. Ablation Study 1) Effectiveness of Rate-Aware Adaptive Temporal Predic-tion: To verify the effectiveness of the rate-aware adaptive temporal prediction (RAATP) method, we conduct an ablation study on the HEVC dataset. As shown in Table IV, starting from the baseline model M1 that employs neither RAATP nor the decomposition-based spatial rate control (DSRC) method, equipping RAATP alone in model M2 yields a BD-rate saving of 6.9% in YUV420 PSNR. Fig. 10 offers a qualitative explanation for this gain by visualizing the predicted tempo-ral contexts and the corresponding prediction residuals with and without RAATP. Without RAATP, the codec produces relatively smooth predictions that fail to capture fine motion details, leaving larger residuals in complex or occluded areas. When RAATP is enabled, the predicted context aligns more accurately with the current frame and the residuals are reduced. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 12 Structural Components  Detail Components     
+
+> Bit Allocation with DSRC Bit Allocation without DSRC
+> Bit Allocation with DSRC Bit Allocation without DSRC
+> Background Components Foreground Components
+> Fig. 11. Illustration of the down-up sampling-based decomposition and user-specified mask-based decomposition. Visualization of the bit allocation with and without our proposed decomposition-based spatial rate control (DSRC) method. Darker colors indicate more bits.
+
+2) Effectiveness of Decomposition-based Spatial Rate Con-trol: Table IV also quantifies the contribution of the decomposition-based spatial rate control (DSRC) method. Adding DSRC on top of RAATP (from M2 to M3) yields an additional BD-rate saving of 3.8% , confirming that spatial decomposition-based quantization further improves compres-sion efficiency. Fig. 11 provides a visual interpretation of how DSRC achieves this gain. The first row shows the result of the down-up sampling-based decomposition. The structural com-ponent appears smoother than the original frame, resembling a low-pass filtered version that captures the main structures of the video, while the detail component retains the fine textures and edges. The second row compares the bit allocation maps with and without DSRC. Without DSRC, the codec distributes bits more uniformly across the textured and flat regions. When DSRC is enabled, the codec can adaptively allocate fewer bits to flat regions and more bits to texture-rich regions, leading to an efficient use of rate budgets. A further benefit of this decomposition is that, at test time, the down-up sampling operation in the encoder can be replaced by a user-specified mask, enabling zero-shot ROI coding. Since the detail quantization vector qEd has learned to preserve fine-grained information and the structural quan-tization vector qEs has learned to encode smooth content at lower fidelity, substituting the mask naturally assigns higher reconstruction quality to the foreground regions while allowing the background to be more heavily quantized. As shown in Fig. 11, taking the Dancer sequence as an example, the user                    
+
+> TABLE V EFFECTIVENESS OF PROPOSED MODULE BANK -BASED PERCEPTUAL SWITCHING (MBPS) METHOD AND FRAME GENERATOR -BASED PERCEPTUAL SWITCHING METHOD (FGPS). Model Index MBPS FGPS BD-Rate (DISTS) BD-Rate (LPIPS)
+> M4%%0.0% 0.0%
+> M5!%–27.5% –16.9%
+> M6!!–51.8% –44.1%
+
+can specify the foreground to use the quantization vector corresponding to the high bitrate and the background to use that of the low bitrate. With DSRC, the user can effectively reduce the background bitrate without affecting the video generation quality. 
+
+3) Effectiveness of Perceptual Switching: To verify the effectiveness of the proposed perceptual switching method, we conduct an ablation study that progressively enables its two key components: the module bank-based perceptual switching (MBPS), which replaces all quantization vectors and the fac-torized entropy model with their perceptual counterparts, and the frame generator-based perceptual switching (FGPS), which additionally replaces the frame generator with one trained for perceptual quality. We take our codec with signal-fidelity mode as the baseline ( M4) and evaluate DISTS and LPIPS BD-rate savings against it. As shown in Table V, enabling MBPS alone in model M5 achieves BD-rate savings of 27 .5% in DISTS and 
+
+16 .9% in LPIPS. This demonstrates that switching the module bank already yields a substantial perceptual improvement over the fidelity-only baseline. When FGPS is further enabled in model M6, the BD-rate savings increase to 51 .8% in DISTS and 44 .1% in LPIPS. The large additional gains indicate that a dedicated perceptual frame generator can further benefit the overall perceptual quality. V. C ONCLUSION 
+
+In this paper, we propose a unified real-time neural video codec with temporal, spatial, and perceptual adaptivity. We first propose a rate-aware adaptive temporal prediction method that generates diverse prediction candidates and couples can-didate selection directly to bitrate constraints. Second, we propose a decomposition-based spatial rate control method that achieves finer-grained spatial bit allocation and enables direct spatial rate control at test time. Third, we propose a perceptual switching method that allows a codec to switch between a signal fidelity mode and a perceptual quality mode. Extensive experiments validate that our codec delivers excel-lent objective quality, perceptual quality, and zero-shot ROI coding. These results confirm that our methods significantly enhance the practicality of neural video coding, advancing it toward broader real-world deployment. REFERENCES [1] G. Lu, X. Zhang, W. Ouyang, L. Chen, Z. Gao, and D. Xu, “An end-to-end learning framework for video compression,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2020. [2] X. Sheng, L. Li, D. Liu, and H. Li, “Prediction and reference quality adaptation for learned video compression,” IEEE Transactions on Image Processing , 2025. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 13 
+
+[3] Z. Hu, D. Xu, G. Lu, W. Jiang, W. Wang, and S. Liu, “Fvc: An end-to-end framework towards deep video compression in feature space,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 45, no. 4, pp. 4569–4585, 2022. [4] E. Agustsson, D. Minnen, N. Johnston, J. Balle, S. J. Hwang, and G. Toderici, “Scale-space flow for end-to-end optimized video compres-sion,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 8503–8512, 2020. [5] Z. Cheng, H. Sun, M. Takeuchi, and J. Katto, “Learning image and video compression through spatial-temporal energy compaction,” in 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 10071–10080, 2019. [6] O. Rippel, S. Nair, C. Lew, S. Branson, A. G. Anderson, and L. Bour-dev, “Learned video compression,” in Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pp. 3454–3463, 2019. [7] H. Liu, M. Lu, Z. Chen, X. Cao, Z. Ma, and Y. Wang, “End-to-end neural video coding using a compound spatiotemporal representation,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 32, no. 8, pp. 5650–5662, 2022. [8] M. A. Yılmaz and A. M. Tekalp, “End-to-end rate-distortion optimized learned hierarchical bi-directional video compression,” IEEE Transac-tions on Image Processing , vol. 31, pp. 974–983, 2021. [9] K. Lin, C. Jia, X. Zhang, S. Wang, S. Ma, and W. Gao, “DMVC: Decomposed motion modeling for learned video compression,” IEEE Transactions on Circuits and Systems for Video Technology , 2022. [10] Z. Guo, R. Feng, Z. Zhang, X. Jin, and Z. Chen, “Learning cross-scale weighted prediction for efficient neural video compression,” IEEE Transactions on Image Processing , 2023. [11] J. Liu, S. Wang, W.-C. Ma, M. Shah, R. Hu, P. Dhawan, and R. Urtasun, “Conditional entropy coding for efficient video compression,” in Euro-pean Conference on Computer Vision (ECCV) , pp. 453–468, Springer, 2020. [12] X. Wei, J. Lin, J. Xu, W. Gao, and T. Zhao, “Rdvc: Efficient deep video compression with regulable rate and complexity optimization,” IEEE Transactions on Multimedia , 2025. [13] Z. Jia, B. Li, J. Li, W. Xie, L. Qi, H. Li, and Y. Lu, “Towards practical real-time neural video compression,” in Proceedings of the Computer Vision and Pattern Recognition Conference , pp. 12543–12552, 2025. [14] F. Yuan, Z. Pan, J. Lei, B. Peng, H. Xie, F. L. Wang, and S. Kwong, “Mining temporal redundancy using long short-term motion aggregation and global-local decorrelation for learned video compression,” IEEE Transactions on Circuits and Systems for Video Technology , 2025. [15] Y.-H. Ho, C.-P. Chang, P.-Y. Chen, A. Gnutti, and W.-H. Peng, “Canf-vc: Conditional augmented normalizing flows for video compression,” in Computer Vision–ECCV 2022: 17th European Conference, Tel Aviv, Israel, October 23–27, 2022, Proceedings, Part XVI , pp. 207–223, Springer, 2022. [16] Y.-H. Chen, H.-S. Xie, C.-W. Chen, Z.-L. Gao, M. Benjak, W.-H. Peng, and J. Ostermann, “Maskcrt: Masked conditional residual transformer for learned video compression,” IEEE Transactions on Circuits and Systems for Video Technology , 2024. [17] X. Sheng, J. Li, B. Li, L. Li, D. Liu, and Y. Lu, “Temporal context min-ing for learned video compression,” IEEE Transactions on Multimedia ,vol. 25, pp. 7311–7322, 2022. [18] X. Sheng, L. Li, D. Liu, and H. Li, “Vnvc: A versatile neural video cod-ing framework for efficient human-machine vision,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2024. [19] X. Sheng, L. Li, D. Liu, and S. Wang, “Bi-directional deep contextual video compression,” IEEE Transactions on Multimedia , 2025. [20] J. Li, B. Li, and Y. Lu, “Neural video compression with diverse contexts,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 22616–22626, 2023. [21] X. Sheng, L. Li, D. Liu, and H. Li, “Spatial decomposition and temporal fusion based inter prediction for learned video compression,” IEEE Transactions on Circuits and Systems for Video Technology , 2024. [22] J. Li, B. Li, and Y. Lu, “Neural video compression with feature modulation,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 26099–26108, 2024. [23] M.-J. Chen, M.-C. Chi, C.-T. Hsu, and J.-W. Chen, “Roi video coding based on h. 263+ with robust skin-color detection technique,” IEEE Transactions on Consumer Electronics , vol. 49, no. 3, pp. 724–730, 2003. [24] N. Fathima, J. Petersen, G. Sauti` ere, A. Wiggers, and R. Pourreza, “A neural video codec with spatial rate-distortion control,” in Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision ,pp. 5365–5374, 2023. [25] X. Wu, P. Wang, and X. Wang, “Roi-dvc: A region-of-interest based deep video coding framework,” in 2024 IEEE International Conference on Image Processing (ICIP) , pp. 1967–1972, IEEE, 2024. [26] J. Liu, B. Zhang, and X. Cao, “Roi-aware dynamic network quantization for neural video compression,” in International Conference on Pattern Recognition , pp. 333–349, Springer, 2024. [27] R. Yang, R. Timofte, and L. Van Gool, “Perceptual learned video compression with recurrent conditional gan.,” in IJCAI , pp. 1537–1544, 2022. [28] M. Li, Y. Shi, J. Wang, and Y. Huang, “High visual-fidelity learned video compression,” in Proceedings of the 31st ACM International Conference on Multimedia , pp. 8057–8066, 2023. [29] L. Qi, Z. Jia, J. Li, B. Li, H. Li, and Y. Lu, “Generative latent coding for ultra-low bitrate image and video compression,” IEEE Transactions on Circuits and Systems for Video Technology , 2025. [30] W. Ma and Z. Chen, “Diffusion-based perceptual neural video com-pression with temporal diffusion information reuse,” ACM Transactions on Multimedia Computing, Communications and Applications , vol. 21, no. 12, pp. 1–22, 2025. [31] W. Ma and Z. Chen, “Diffvc-rt: Towards practical real-time diffusion-based perceptual neural video compression,” arXiv preprint arXiv:2601.20564 , 2026. [32] Q. Mao, H. Cheng, T. Yang, L. Jin, and S. Ma, “Generative neural video compression via video diffusion prior,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 43239– 43248, 2026. [33] D. Li, R. Dong, Y. Chen, K. Li, D. Ding, and L. Li, “Progvc: Progressive-based generative video compression via auto-regressive con-text modeling,” arXiv preprint arXiv:2603.17546 , 2026. [34] A. Krogh and J. Vedelsby, “Neural network ensembles, cross validation, and active learning,” Advances in neural information processing systems ,vol. 7, 1994. [35] Y. Blau and T. Michaeli, “The perception-distortion tradeoff,” in Pro-ceedings of the IEEE conference on computer vision and pattern recognition , pp. 6228–6237, 2018. [36] T. Xue, B. Chen, J. Wu, D. Wei, and W. T. Freeman, “Video enhance-ment with task-oriented flow,” International Journal of Computer Vision ,vol. 127, no. 8, pp. 1106–1125, 2019. [37] G. J. Sullivan, J.-R. Ohm, W.-J. Han, and T. Wiegand, “Overview of the high efficiency video coding (HEVC) standard,” IEEE Transactions on Circuits and Systems for Video Technology , vol. 22, no. 12, pp. 1649– 1668, 2012. [38] A. Mercat, M. Viitanen, and J. Vanne, “UVG dataset: 50/120fps 4k sequences for video codec analysis and development,” in Proceedings of the 11th ACM Multimedia Systems Conference , pp. 297–302, 2020. [39] H. Wang, W. Gan, S. Hu, J. Y. Lin, L. Jin, L. Song, P. Wang, I. Katsavounidis, A. Aaron, and C.-C. J. Kuo, “MCL-JCV: a JND-based H.264/AVC video quality assessment dataset,” in 2016 IEEE International Conference on Image Processing (ICIP) , pp. 1509–1513, IEEE, 2016. [40] B. Bross, Y.-K. Wang, Y. Ye, S. Liu, J. Chen, G. J. Sullivan, and J.-R. Ohm, “Overview of the versatile video coding (VVC) standard and its applications,” IEEE Transactions on Circuits and Systems for Video Technology , 2021. [41] K. Ding, K. Ma, S. Wang, and E. P. Simoncelli, “Image quality assess-ment: Unifying structure and texture similarity,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 44, no. 5, pp. 2567– 2581, 2020. [42] R. Zhang, P. Isola, A. A. Efros, E. Shechtman, and O. Wang, “The unreasonable effectiveness of deep features as a perceptual metric,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 586–595, 2018. [43] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, et al. , “Learning transferable visual models from natural language supervision,” in International conference on machine learning , pp. 8748–8763, PMLR, 2021. [44] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” 
+
+arXiv preprint arXiv:1412.6980 , 2014. [45] W. Jiang, J. Li, K. Zhang, and L. Zhang, “Ecvc: Exploiting non-local correlations in multiple frames for contextual video compression,” in 
+
+Proceedings of the Computer Vision and Pattern Recognition Confer-ence , pp. 7331–7341, 2025. [46] T. Seedance, D. Chen, L. Chen, X. Chen, Y. Chen, Z. Chen, Z. Chen, F. Cheng, T. Cheng, Y. Cheng, et al. , “Seedance 2.0: Advancing video generation for world complexity,” arXiv preprint arXiv:2604.14148 ,2026.

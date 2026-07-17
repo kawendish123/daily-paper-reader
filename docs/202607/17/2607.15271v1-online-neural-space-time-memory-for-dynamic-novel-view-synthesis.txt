@@ -1,0 +1,483 @@
+Title: Online Neural Space Time Memory for Dynamic Novel View Synthesis
+
+URL Source: https://arxiv.org/pdf/2607.15271v1
+
+Published Time: Fri, 17 Jul 2026 01:44:46 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# Online Neural Space Time Memory for Dynamic Novel View Synthesis 
+
+## Baback Elmieh 1,2* Lynn Tsai 2 Zeman Li 2 Srinivas Kaza 2 Tiancheng Sun 2
+
+## Gabor Csapo 2 Ali Behrouz 2 Yuan Deng 2 Stephen Lombardi 2
+
+## Steven M. Seitz 2 Xuan Luo 21University of Washington 2Google INPUT VIEWS INPUT              
+
+> 30 FPS
+> SYNTHESIS
+> 30 FPS
+> No back logo
+> Synthesis recalls back logo from memory
+> Updated memory captures back logo
+> Back revealed Back occluded Back occluded
+> STEREO INPUTS
+> MEMORY READOUT
+> OUTPUT
+> t=0.0s 0.5s 1.0s 1.5s 2.0s 2.5s 3.0s
+> t=0.0s 0.5s 1.0s 1.5s 2.0s 2.5s 3.0s
+> MEMORIZATION
+> 1 FPS
+
+Figure 1. Neural Space-Time Memory (NSTM) synthesizes novel views in amortized real-time from 30 FPS multi-view videos, while updating its memory at 1 FPS. Middle: NSTM captures the back logo as the subject rotates (see memory readout), faithfully recalling it later from memory given only frontal views. Right: While full self-attention in typical feed-forward models (e.g., LVSM [22]) scales quadratically with history sequence length, NSTM scales with O(1) complexity, achieving amortized real-time inference at 256 × 256 
+
+resolution on one H100 GPU. 
+
+## Abstract 
+
+Online novel view synthesis from multi-view streaming videos faces a fundamental trade-off: maintaining a persis-tent, long-horizon memory to reconstruct temporarily oc-cluded regions while operating under strict real-time con-straints. While Test-Time Training (TTT) offers a power-ful memory mechanism, standard models mandate gradient-based memory updates at every frame to adapt to the chang-ing motion in dynamic scenes. The computational cost of heavy memory updates precludes real-time application and can lead to instability over long contexts. Given that mem-ory updates are more demanding than memory application and video content is largely redundant, we propose to de-couple the frequencies of these two processes. Our ap-proach performs periodic memory updates while applying the memory on a per-frame basis, using cross-view attention to manage deformations between the prior memory state and the current frame. To lock in the historical context, we introduce two critical mechanisms: an auxiliary Memory 
+
+> *
+
+This work was done while Baback was a student researcher at Google. 
+
+Loss that forces persistent internalization of the scene, and a Memory Caching strategy that regularizes active weights against catastrophic drift. Our method demonstrates real-time, state-of-the-art performance on scenes with dynamic human motion as well as minute-scale online memorization. Please see our project page for extensive demos and results: nst-mem.github.io. 
+
+## 1. Introduction 
+
+Online novel view synthesis (NVS) of dynamic scenes from multi-view streaming videos is a highly sought-after goal in computer vision, underpinning many applications such as 3D telepresence and live free-viewpoint broadcasts. How-ever, sparse camera setups and occlusions often make ob-servations incomplete at a single instant. For example, synthesizing a person’s back when current inputs provide only frontal views is challenging without historical con-text (Fig. 1). Solving this problem requires a space-time memory – akin to how humans integrate information across space and time, naturally recalling previously observed, now-occluded visual details. However, current online dy-namic NVS methods struggle to maintain a persistent mem-1arXiv:2607.15271v1 [cs.CV] 16 Jul 2026 ory over a long time without sacrificing real-time speed. In this paper, we present a system for online dynamic NVS from multi-view videos that can retain minute-long historical context to perform grounded synthesis of mo-mentarily occluded regions while operating under amor-tized real-time constraints. At the core of our approach is a space-time memory mechanism based on Test-Time Training (TTT) . We leverage TTT for its expressive mem-ory capacity and, crucially, its linear scalability – bypass-ing the prohibitive quadratic computational cost of full self-attention heavily used in typical feed-forward NVS methods (Fig. 1). Nevertheless, while TTT has shown promise in static 3D environments, adapting it to continuous, stream-ing dynamic scenes in real time poses several challenges, as follows. 
+
+Speed. Real-time dynamic NVS via TTT faces an archi-tectural bottleneck. Standard TTT gains efficiency through 
+
+large-chunk processing and per-image attention [64, 66]. However, this per-image attention forces the model to rely entirely on the memory module to synthesize target views. Thus tracking continuous motion requires per-timestep (small-chunk ) memory updates, breaking the large-chunk efficiency. This full per-timestep TTT step (memory update and apply) takes 58ms at 256 × 256 on an H100, preclud-ing real-time deployment. Conversely, pure memory apply requires only 27ms (37 FPS). Exploiting this computational asymmetry and video redundancy, we propose to decouple 
+
+their frequencies (Fig. 1): updating memory ( memorization )periodically while applying it ( synthesis ) per frame. To re-solve the resulting motion misalignment between the peri-odically updated memory and the current frame, we utilize 
+
+cross-view attention (Fig. 2) – it allows target views to di-rectly attend to current inputs, fusing ongoing motion with past memory context to achieve amortized real-time speed. 
+
+Memory Persistence and Supervision Balance. Decou-pling synthesis and memorization frequencies requires care-ful design of the training objective. This is because oc-clusion signals in natural videos are spatially and tempo-rally sparse. Jointly training the separate memorization and synthesis tasks on this sparse data distribution results in an underconstrained problem, causing the network to over-rely on processing current, incomplete observation, effec-tively bypassing the memory module and forgetting the past (Sec. 4.3). To resolve this, we disentangle the training ob-jectives and propose an auxiliary memory loss . During the 
+
+Memorization Step , we query the memory using only the target view camera rays (memory tokens in Fig. 2), deliber-ately preventing any attention over the current input views. By isolating the readout, we force the memory module to reconstruct the scene entirely from its internalized histori-cal context. By explicitly supervising the memory’s inde-pendent reconstruction capabilities, we force the memory module to persistently internalize the scene context. 
+
+Long-Term Stability. Continuous memory updates in TTT can lead to instability over long time horizons. Our peri-odic update scheme natively mitigates this by reducing the overall update frequency. To further enhance stability, we adopt a memory caching strategy [6] that aggregates histor-ical memory checkpoints, stabilizing the parameter space to handle minute-long streams. Crucially, modeling deforma-tion in the Synthesis Step enables memory caching to han-dle changing motion (Sec. 4.3). Finally, we identify that the standard dot-product inner loss used in state-of-the-art TTT works [23, 64, 66] causes magnitude inflation over many update steps and show that we can stabilize the framework by replacing it with an L2 objective [3, 7]. We evaluate our framework on the large-scale MVHu-manNet++ dataset [55], as human motion represents one of the most prominent and challenging applications of online dynamic NVS from multi-view videos. Despite the dataset’s diverse and complex motion and garments, NSTM successfully delivers high-fidelity synthesis and sta-ble, minute-long persistent memorization at amortized real-time speeds. Our key contributions are summarized as follows: • Real-Time, Long-Context Dynamic NVS: We propose Neural Space-Time Memory (NSTM), the first online framework for dynamic novel view synthesis from multi-view videos that sustains minute-long persistent memory while operating in amortized real-time. • Decoupled Memorization and Deformation: We over-come the TTT computational bottleneck by structurally decoupling the frequencies between periodic, heavy memory updates and continuous, transformer-driven per-frame synthesis. • Disentangled Memory Supervision: We introduce an alternating memorization and synthesis training regime and an auxiliary memory loss that explicitly forces the network to internalize persistent scene context, overcom-ing sparse supervision occlusion signals. • Memory Caching & Stability: We enable stable, minute-long view synthesis by aggregating historical states via memory caching .
+
+## 2. Related Works 
+
+Novel View Synthesis. Classical NVS enforces multi-view geometric consistency through explicit 3D representations such as meshes [18, 36, 44], multi-plane images [8, 12– 14], neural radiance fields [31, 34, 47, 48, 51, 61, 62], point clouds [1, 46, 50, 56], and 3D Gaussian splat-ting [20, 27, 54, 58]. While effective, these representa-tions impose implicit inductive biases that constrain flex-ibility on scenes that deviate from their predefined priors, motivating more general data-driven architectures [37, 40]. Diffusion-based methods relax these constraints by lever-aging strong 2D generative priors [19] to hallucinate un-2Synthesis Supervision  
+
+> Memory Supervision
+> Outer loop gradients Inner loop gradients
+
+...  Target  Memory Input Figure 2. NSTM Training Scheme. Left: Our alternating training scheme explicitly enforces memorization. In the Memory Supervision 
+
+step, isolated memory tokens (target camera rays) perform strict self-attention —- sharing weights with the cross-view attention layer — without attending to input views. Once the memory is updated by the inputs, these isolated tokens query the memory to reconstruct the target view. This forces a pure memory readout, ensuring context internalization. During Synthesis Supervision , we perform self-attention across input and target tokens to capture ongoing motion, and then query the previously updated memory state. Right: Visualizations of the inputs, targets, and memory in both steps. Crucially, the historical memory state often exhibits a different pose from the current observation during synthesis. Our cross-view attention addresses this deformation, successfully fusing past appearance with current motion. 
+
+observed regions [32, 33, 39, 53, 63], but rely on itera-tive sampling that is ill-suited to real-time streaming. Aseparate, representation-free line discards the explicit 3D proxy entirely: LVSM [22] and LaCT [66] cast NVS as a latent sequence modeling task, tokenizing source views and letting expressive transformers implicitly capture multi-view consistency in a single feed-forward pass. We build on this representation-free formulation for its scalability and freedom from geometric priors. Crucially, whereas prior works target offline batch-processing of static scenes, NSTM elevates this paradigm to real-time dynamic stream-ing via a persistent space-time memory and our decoupled memorization-synthesis architecture. 
+
+Streaming Scene Reconstruction. Streaming novel view synthesis in a dynamic setting requires causal, efficient processing of continuous video streams. Unlike offline methods that retrospectively optimize over an entire se-quence [9, 15, 29, 30, 54, 57, 60], streaming reconstruction performs online updates using only current and previous frames under strict computational budgets. Prior per-frame optimization approaches [41, 59] are too slow for real-time use, while recent work [52] accelerates this using optical flow to reuse prior information, though this local tracking accumulates errors that degrade quality over time. We ad-dress this by encoding a persistent memory directly into the network’s fast weights [66], allowing our model to retain context and memorize scene geometry for temporally con-sistent synthesis without excessive drift. 
+
+Memory Modules. The quadratic cost of Transform-ers [45] on long-context data has driven a broad search for sub-quadratic memory. Linear attention replaces the Softmax operator with a separable kernel [26], compress-ing context into a fixed-size matrix-valued memory, and a large body of work has since refined the discipline of how this memory is written and maintained: through stronger kernels [2, 25], more expressive learning rules such as the Delta [38], Oja [21], and Omega [3] rules, principled forget-ting and retention gates [7, 17, 35, 42], and hybrid attention designs [5, 11]. Because a fixed-size matrix is capacity-limited and underperforms on retrieval, a further line based on Test-Time Memorization/Training [7, 43] and Nested Learning [4] introduces deep memories whose capacity grows with depth [3, 5], and sub-linearly growing memories via structured matrices or memory caching [6, 16]. We build directly on this memory-discipline lineage. Concretely, our memory differs from all of the above in four respects: (1) prior modules are 1-dimensional and sequential, and can-not exploit the rich space-time dependencies in multi-view videos; (2) their coupled update-apply mechanism causes suboptimal information flow along the time dimension, as our ablations confirm (Sec. 4.3, Tab. 2); (3) contrary to these approaches, our design is based on decoupling memoriza-tion and synthesis by using different modules in our archi-tecture; and (4) we adopt an L2 objective for long-horizon stability; this avoids the magnitude inflation that the dot-product inner loss used across most prior memory modules, including the large-chunk TTT of LaCT [66], incurs over long rollouts. 
+
+## 3. Method 
+
+We address online novel view synthesis from multi-view dynamic video streams. At each timestep t, we observe N input views Ot = {(It,i , Pt,i )}Ni=1 , where It,i ∈ RH×W ×3
+
+3LVSM 
+
+Current Input 
+
+(T=60)  Token-Mem LaCT-NVS  Ours  Ground Truth 
+
+Visible Back 
+
+(T=0) Figure 3. Memory Stress Test at T = 60 . Despite only observing the back at T = 0 , NSTM accurately recalls the hoodie patterns and hairstyles while fusing with current motion. LVSM makes its best stateless guess in unseen regions, LaCT-NVS suffers from out-of-distribution memory drift, and Token-Mem fails to recall accurate back views. See our supplementary website for the video results. 
+
+is an RGB image and Pt,i ∈ SE (3) is the corresponding camera pose. Because Ot provides an incomplete obser-vation of the true dynamic scene (e.g., due to occlusion), NSTM synthesizes the target image Itgt  
+
+> t
+
+by conditioning the rendering function on both the current input Ot and an ac-cumulated implicit memory Wt−1:
+
+Itgt  
+
+> t
+
+= Φ  Ptgt  
+
+> t
+
+, Ot; Wt−1
+
+ . (1) Following LVSM [22], we channel-wise concatenate in-put RGB images with their corresponding per-pixel Pl¨ ucker ray maps, using linear layers to patchify them into input tokens. Similarly, we patchify the Pl¨ ucker rays of the tar-get camera to form target tokens. These concatenated in-put and target tokens are then passed through a stack of Transformer blocks, each comprising an attention module, a TTT memory module, and a feed-forward MLP module (Fig. 2). Finally, we extract the processed target tokens and unpatchify them, applying a sigmoid activation to predict the target RGB images (see Sec. C.6 for more details). 
+
+TTT memory module. Test Time Training/Memorization [7, 43] defines implicit memory as a set of fast weights that are updated at inference time, forming a compressive neural memory. This contrasts with the slow weights (i.e., model parameters) that are frozen during inference. In our archi-tecture, we use Wt−1 = {W1, W 2, W 3} as the fast weights with the design of a bias-free SwiGLU-MLP: 
+
+fW (x) =  SiLU (W1x) ⊙ (W3x) W2, (2) Input tokens are projected into keys k, queries q, and values 
+
+v, then to read from the weights we apply them via ( o =
+
+fW (q)) . The update operation memorizes context via a single gradient step on an inner loss binding keys to values, 
+
+W′ = W − η ∇W Linner 
+
+ fW (k), v . (3) The inner loss is a design choice that distinguishes different existing architectures and determines the memory manage-ment in prioritizing the input tokens. In this paper, we use an L2 inner loss: 
+
+Linner = ∥v − fW (k)∥22. (4) In Tab. 2 and Fig. 5 we show that contrary to the choice of unbounded dot-product loss as in some previous models (such as LaCT [66] or DLA [3]) that cause severe magni-tude inflation of fW (k) after repeated gradient descent over long horizons, our choice of L2 objective results in long-horizon stability. We further stabilize the update by Newton–Schulz or-thonormalization of the gradient (Muon [24]) and L2 weight normalization. Our network is trained end-to-end via an 4outer-loop task loss over the slow weights, initial fast-weight state, and projections. We denote the fast-weight state at timestep t as Wt (Sec. 3.3). 
+
+3.1. Decoupled Memorization and Synthesis 
+
+Na¨ ıvely applying our memory architecture summarized in Sec. 3 to live video streams introduces a latency bottleneck. Standard TTT-based model rigidly couples the memory up-date and apply steps. To achieve high throughput, prior static frameworks [66] process sequence chunks in paral-lel. However, this relies on chunk-level buffering , which introduces unacceptable delays and violates the strict on-line constraints of live streaming. Conversely, processing the stream sequentially, by forcing a heavy gradient-based memorization at every incoming frame, incurs prohibitive computational overhead of 58ms (see Tab. 5 latency break-down), severely precluding real-time performance. To over-come this cost, NSTM decouples the frequency of memory updates from novel view synthesis, and decomposes the on-line inference process into two frequency-asymmetric steps (Fig. 2): 
+
+Periodic Memorization Step: Rather than updating at ev-ery frame, we strictly limit heavy gradient updates to a periodic schedule to compress novel states into the fast-weights. Per-frame Synthesis Step: At every timestep t,we execute a lightweight query against the persistent mem-ory Wt−1 Eq. (1). However, because the scene is dynamic and memory updates are periodic, the memory state and the current observation are inherently misaligned (Fig. 2). To handle this temporal deformation, we adopt a cross-view attention mechanism. Jointly attending across the source posed images and the target camera rays explicitly cap-tures ongoing motion. The output then queries the memory module, dynamically fusing current motion with historical context to synthesize the novel view at amortized real-time speeds (Fig. 1). Note that, this process is opposed to the static per-image attention used in recent TTT-based archi-tectures [23, 66]. 
+
+3.2. Disentangled Memory Supervision 
+
+A na¨ ıve joint training of the cross-view attention mod-ule and the memory module is fundamentally undercon-strained. Because disocclusion signals in streaming video are naturally sparse, the model tends to over-rely on the attention and effectively bypasses historical memory. To force the persistent internalization of scene context, we in-troduce an alternating training regime across a sequence of 
+
+T timesteps. 
+
+Memory Supervision. As illustrated in Fig. 2, on even timesteps ( t = 0 , 2, . . . ), we read out from the memory and supervise this readout to reconstruct a random target view. To enforce this loss on the memory alone, it is critical to ensure we read out purely from the memory, completely isolated from the current inputs. Therefore, we introduce additional memory readout tokens , representing the cam-era rays of the target view. Crucially, we restrict the atten-tion mask of the aforementioned cross-view attention mod-ule such that these memory tokens only self-attend amongst themselves. These isolated tokens then query the updated memory and pass through the feed-forward layers. Ulti-mately, they form an image, denoted as Imem  
+
+> t
+
+, relying en-tirely on the internalized historical state. We supervise this blind retrieval via an auxiliary memory loss :
+
+L(t) 
+
+> mem
+
+= L(Imem  
+
+> t
+
+, Igt  
+
+> t
+
+),
+
+where L(I, Igt ) = MSE (I, Igt ) + λlpips LPIPS (I, Igt ). (5) 
+
+λlpips = 0 .5 is the weight to balance the LPIPS loss [65]. 
+
+Synthesis Supervision. On odd timesteps ( t = 1 , 3, . . . ), the network operates in standard novel view synthesis mode and we supervise the synthesized target view. Here, the standard target ray tokens freely cross-attend with the to-kenized inputs Ot while querying the persistent memory 
+
+Wt−1 inherited from the immediately preceding memoriza-tion step. Consequently, despite dynamic deformations be-tween the current observation and the previous memory state, if a region is occluded, the network learns to dynam-ically fuse and recover it from this preceding memory. We supervise the output target image from this joint synthesis, denoted as Isynth  
+
+> t
+
+, using the identical loss formulation: 
+
+L(t) 
+
+> synth
+
+= L(Isynth  
+
+> t
+
+, Igt  
+
+> t
+
+). (6) This alternating process continues until all T observa-tions in the sequence are processed. The final training ob-jective minimizes the joint loss across all timesteps, balanc-ing the primary novel view synthesis task against the auxil-iary memory regularization: 
+
+Ltotal =
+
+> T
+
+X 
+
+> t=1
+> tis odd
+
+L(t) 
+
+> synth
+
++
+
+> T
+
+X 
+
+> t=0
+> tis even
+
+L(t)
+
+> mem
+
+, (7) where λmem controls the strength of the memory supervi-sion. 
+
+Training-Inference Asymmetry. While we train with a 1:1 alternating ratio, our framework can execute significantly more synthesis steps than memory updates during infer-ence. This discrepancy does not degrade performance be-cause the synthesis steps between two memorization steps read out from the same frozen memory state and are com-pletely independent of one another. See our supplemental videos where we synthesize 29 frames for every 1 step of memorization (29:1). 
+
+3.3. Memory Caching 
+
+TTT suffers from RNN drift over long-horizon updates. We observe this as memory decay, stemming from optimiza-tion instability, in the LaCT-NVS [66] column of Fig. 4. To 54 Timesteps 30 Timesteps 60 Timesteps Method PSNR ↑ SSIM ↑ LPIPS ↓ DISTS ↓ mPSNR ↑ mSSIM ↑ PSNR ↑ SSIM ↑ LPIPS ↓ DISTS ↓ mPSNR ↑ mSSIM ↑ PSNR ↑ SSIM ↑ LPIPS ↓ DISTS ↓ mPSNR ↑ mSSIM ↑                                                                        
+
+> LVSM 29.13 0.9666 0.0258 0.1040 19.55 0.5790 28.98 0.9656 0.0263 0.1055 19.40 0.5707 28.99 0.9662 0.0257 0.1034 19.34 0.5670 LaCT-NVS 30.69 0.9741 0.0196 0.0822 21.72 0.7110 30.38 0.9708 0.0216 0.0885 21.22 0.6507 25.85 0.9500 0.0360 0.1236 16.25 0.5158 Token-Mem 29.36 0.9674 0.0249 0.1009 20.40 0.6409 28.36 0.9621 0.0290 0.1136 19.14 0.5624 28.11 0.9617 0.0295 0.1141 18.84 0.5505 Ours 30.43 0.9731 0.0203 0.0851 21.46 0.6971 30.03 0.9700 0.0225 0.0915 20.86 0.6434 29.99 0.9701 0.0225 0.0919 20.71 0.6286
+
+Table 1. Memory Stress Test Quantitative Comparisons. The best , second-best , and third-best results are highlighted. We evaluate memory retention quality across 390 scenes (see Sec. 4.1), measured at timestamps T = 4 , 30 , 60 . While our method maintains an mPSNR above 20 dB across all tested durations, LaCT-NVS drops by 5.47 dB and Token-Mem by 1.56 dB from T = 4 to T = 60 . As a stateless model, LVSM fails to reconstruct details in the back view when only observing frontal views, and maintains a nearly flat performance across time. Please refer to our supplementary website for comprehensive video comparisons. T = 0 
+
+T = 4 
+
+T = 30 
+
+T = 6 0   
+
+> LaCT-NVS Token-Attn LVSM
+
+Ours  Ground Truth Input Views 
+
+Figure 4. Memory Stress Test Over Time. We show the back view at T=0. For subsequent timestamps, we show only frontal views and task the model with synthesizing the occluded back. NSTM maintains high-fidelity recall over time while baseline models suffer from drift or collapse to stateless prior over time. 
+
+address this problem, we adapt a memory caching strategy recently proposed for large language models [6, 7]. Concretely, the sequential application of our periodic memory update generates a sequence of evolving memory states W0, W1, W2, . . . , where the ones between updates are the same. Note, at any timestep t, the active memory is Wt−1 since the memory is not reset after a snapshot is taken. We average over the active memory and every K
+
+past memory states, which can be implemented recursively. 
+
+¯W0 = W0, ¯Wn = n − 1
+
+n ¯Wn−1 + 1
+
+n WnK , ∀n > 1,
+
+ˆWt−1 = 1
+
+m + 1 Wt−1 +
+
+> m
+
+X
+
+> i=1
+
+WiK 
+
+!
+
+= Wt−1 + m ¯Wm
+
+m + 1 
+
+where m = ⌊(t − 1) /K ⌋. ¯Wm is the average of every 
+
+K past states. In practice, we only keep one extra set of weights ¯Wm to track the whole average. This aggregated state ˆWt−1 replaces standard memory conditioning (Eq. 1), stabilizing the parameter space and mitigating the out-of-distribution drift caused by continuous gradient updates. Importantly, this memory caching strategy fails on standard, coupled TTT architectures. Its effectiveness fundamentally relies on our cross-view attention to explicitly handle spatial deformations, as we empirically validate in Sec. 4.3. 
+
+## 4. Experiments 
+
+We validate NSTM’s ability to maintain real-time, high-fidelity, minute-long memory under severe occlusions. We detail our experimental setup in Sec. 4.1, evaluate memory persistence and synthesis fidelity in Sec. 4.2, deconstruct our architecture via an ablation study in Sec. 4.3, and an-alyze our amortized efficiency in Sec. 4.4. We encourage readers to view our supplementary videos for convincing comparisons. 
+
+4.1. Experimental Setup 
+
+Dataset. We evaluate on MVHumanNet++ [28], featuring 60,000 multi-view motion sequences across 4,500 identi-ties and 9,000 outfits, using a 90%/10% train/test split. The dataset’s wide view coverage, unconstrained motion and minute-long sequence length make it an ideal testbed for dynamic NVS and long-term memory tasks. 
+
+Evaluation Protocol. MVHumanNet++ [28] provides an-notated train/eval sets of 60-frame sequences (subsampled at 1.2 FPS from 50s of raw video), enabling minute-scale evaluation. However, measuring long-term memorization in the wild is challenging as natural disocclusions are spatially and temporally sparse – only 17 of 390 test scenes exhibit full rotations that can best test memorization. To compre-hensively evaluate memory, we use two protocols. (1) Mem-ory Stress Test: A forced-occlusion setup to evaluate mem-orization across all scenes. The model observes full front and back views at T = 0 . For subsequent frames, we re-strict inputs to frontal stereo views and task the model with synthesizing the occluded back. Evaluations at 4, 30, and 60 frames quantify memory decay from short-term hori-zons to the minute-scale limit. (2) Memory from Natural Rotations: For the 17 full-rotation scenes, we provide fixed frontal stereo inputs and evaluate synthesis as the back nat-urally reveals and occludes. To avoid the backgrounds dom-inating the metrics, we report masked mPSNR and mSSIM 6isolated over the dynamic foreground. All evaluation are done at 256 × 256 resolution on one H100 GPU. Results for the Memory Stress Test are presented in Sec. 4.2 and results for the Memory from Natural Rotations and an un-constrained NVS setup are shown in Sec. B. 
+
+Baselines. We compare against the stateless LVSM [22] and two stateful baselines: fast-weight-based LaCT-NVS [66] (adapted to causal updates for dynamic scenes) and token-memory-based Token-Mem (an NVS adaptation of CUT3R [49]). See Sec. C.3 for further adaption details on baseline models. Following their original designs, both stateful methods update memory per frame. Based on our memorization-synthesis decoupling, NSTM updates mem-ory every two frames. Note our subsampled video test cases actually artificially benefit the stateful baselines by miti-gating their rapid drift at higher frame rates. In contrast, NSTM’s results accurately reflect true performance on nor-mal high-FPS videos as its dense synthesis steps operate in-dependently between these periodic memorization updates. 
+
+Implementation details. NSTM and all baselines are im-plemented in JAX and trained with identical optimizer hy-perparameters and a batch size of 128. All 256 × 256 state-ful models adopt a two-stage training curriculum: mem-ory bootstrapping pretraining on 4-frame clips (64 H100 GPUs), followed by fine-tuning on 24-frame clips (128 H100 GPUs) for free-viewpoint synthesis and long-term memory. The 512 × 512 model undergoes an additional 24-frame fine-tuning at 512 × 512 using 128 B200 GPUs. The stateless LVSM[22] adopts only one stage using one frame with 32 H100 GPUs. See Sec. C.1 for full details. Inference latency is evaluated on a single H100 GPU at 256 ×256 . We set λLPIPS = 0 .5.
+
+4.2. Memory Stress Test 
+
+We present our quantitative comparisons in Tab. 1 and qual-itative visual evidence in Fig. 3. In the short term ( T = 4 ), the advantage of explicit memory is clear: NSTM, LaCT-NVS, and Token-Mem all outperform the stateless LVSM, which struggles without historical context. However, the fragility of prior stateful methods becomes visible over the minute-long context ( T = 60 ). Token-Mem quickly forgets historical context, its performance comparable to the state-less LVSM that never observed the back view. LaCT-NVS suffers a 5.47 dB drop in PSNR due to the instability of its continuous update mechanism. This quantitative collapse is clearly visible in Fig. 3 and Fig. 4: where LaCT-NVS suffers from out-of-distribution (OOD) drift, while LVSM produces blurry outputs in unseen regions (e.g. the back) due to its stateless nature. On the other hand, NSTM maintains highly robust long-term memory which is especially pronounced in our masked foreground metrics (mPSNR/mSSIM), proving the model accurately locks in the dynamic subject’s iden-Ablation Study (over 60 timesteps) Method PSNR ↑ SSIM ↑ LPIPS ↓ mPSNR ↑ mSSIM ↑                                  
+
+> LaCT-NVS Baseline 22.32 0.9275 0.0616 13.49 0.4942 LaCT-NVS w/ L227.77 0.9594 0.0275 19.08 0.6189 LaCT-NVS w/ L2w/ Mem Caching 20.25 0.9135 0.0688 12.03 0.4707 Ours wo/ Lmem 28.23 0.9639 0.0251 19.36 0.6198 Ours wo/ Mem Caching 29.24 0.9673 0.0232 19.78 0.6321 Ours w/ Mem Caching 30.09 0.9705 0.0217 20.79 0.6537
+
+Table 2. Quantitative Ablation Study . best , second best , and third best are colored. Metrics are averaged over 60 timesteps over 390 MVHumanNet++ [55] eval scenes. 
+
+tity rather than relying on the background. Qualitatively (Fig. 3), NSTM faithfully reconstructs specific, temporarily occluded details—such as complex logo and hair styles— long after they disappear from the input stream. This sus-tained high-fidelity recall directly validates the stabilizing effect of our L2 objective and memory caching strategy. 
+
+4.3. Ablation Study 
+
+We validate our design choices in Tab. 2 and Fig. 5, measur-ing the impact of each component on the pretrained models using the 60-frame memory stress test protocol. 
+
+Stability via L2 Objective. We first establish a na¨ ıve causal baseline (LaCT-NVS) [66] that updates memory at every frame without decoupling memorization from syn-thesis. As observed, the unbounded dot-product inner loss causes magnitude inflation over continuous updates, result-ing in poor performance (22.32 PSNR). Replacing this with a stable L2 objective (LaCT-NVS w/ L2) significantly im-proves stability and synthesis quality (+5.45 PSNR). 
+
+Memory Caching Requires Decoupled Training. While memory caching is designed for long-term stability, it fun-damentally fails on coupled architectures. Row 3 evaluates the LaCT-NVS with L2 baseline by performing its stan-dard update-and-apply step at every frame, but uniquely conditioning it on the aggregated memory cache (Sec. 3.3). This causes a severe performance drop (20.25 PSNR). The synthesized output becomes visually ”stuck” in a historical pose (see LaCT-NVS w/ L2 w/ caching column in Fig. 5). This occurs because temporal motion is inherently baked into the fast-weights; aggregating these weights creates a superposition of past poses. In our decoupled architecture (Sec. 3.1), the cross-view attention explicitly learns to re-solve and deform from this superimposed historical mem-ory to match the current observation. The tightly coupled baseline lacks this explicit deformation mechanism, caus-ing it to simply output the averaged past poses. This proves that structurally decoupling memorization from synthesis is necessary to successfully aggregate historical memory. 
+
+Disentangled Supervision Enhances Memory Persis-tence. When we fully decouple the architecture but remove the auxiliary memory loss Lmem (Ours wo/ Lmem ), perfor-mance drops to 28.23 PSNR. Without explicit pressure to 7LaCT-NVS  LaCT-NVS   
+
+> w/ L2
+> LaCT-NVS
+> w/ L2 w/ Caching
+> Ours
+> wo/ Lmem
+> Ours
+> wo/ Caching Ours Ground Truth
+> Visible Back
+> (T=0)
+> Current Input
+> (T=60)
+
+Figure 5. Qualitative ablation study. At T = 60 , each model synthesizes the back view that has been occluded after T = 0 . LaCT-NVS 
+
+demonstrates the instability of the inner dot-product loss. In contrast, LaCT-NVS w/ L2 greatly improves stability through our L2 inner loss choice, though it still suffers from some drift. LaCT-NVS w/ L2 w/ Caching freezes into an averaged past pose, demonstrating that our memorization-synthesis decoupling with cross-view attention is essential for effective memory caching. Dropping Lmem from our method collapses recall, validating our disentangled memory supervision design (Sec. 3.2). Furthermore, dropping memory caching reduces the recall horizon. Only the full model ( Ours ) provides minute-scale recall of the historical back view while capturing current motion. See our supplementary website for the video results. 
+
+reconstruct the scene independently, the network takes a shortcut, over-relying on the cross-view attention’s current visual context and partially collapsing to a stateless prior. Introducing Lmem forces robust geometric internalization (+1.01 PSNR). 
+
+Long-term Stability via Memory Caching. Finally, ap-plying our memory caching strategy to the fully decoupled and properly supervised model (Ours w/ Mem Caching) yields our highest performance (30.09 PSNR), successfully mitigating long-term weight drift and preserving minute-long context. 
+
+4.4. Real-Time Inference Efficiency 
+
+To validate our claim of real-time, long-horizon genera-tion, we compare the amortized inference latency of NSTM against Temporal-LVSM , an adaptation of LVSM [22] for dynamic video sequences. To handle long contexts in this baseline, we compute dense attention across all past obser-vations that we want to memorize. As shown in Fig. 1, this imposes a quadratic computational cost, causing latency to spike and precluding real-time rendering on continuous streams. In contrast, NSTM architecturally bypasses this bottleneck, achieving constant inference latency regardless of video length. Our decoupling strategy breaks the tie be-tween temporal horizon and computational cost, unlocking sustained, real-time dynamic view synthesis. 
+
+## 5. Conclusion and Limitations 
+
+We presented Neural Space-Time Memory (NSTM), a novel online dynamic NVS framework operating on multi-view streaming videos. By disentangling periodic mem-ory updates from per-frame transformer-based deformation modeling and introducing a targeted memory auxiliary loss, NSTM internalizes persistent scene context while maintain-ing amortized real-time speed. Furthermore, our memory caching strategy and stable L2 update rule unlock minute-long memory retention, achieving state-of-the-art results. While NSTM provides a principled solution for stream-ing dynamic NVS, we identify several avenues for future re-search. Update Frequency and Missed Events: Periodic up-dates may miss events between memorization steps. Large-chunk updates that memorize multiple frames at once, each with its own time embedding, could mitigate this and ad-ditionally support irregular frame spacing (e.g., unsynced multi-view rigs), leaving open the tradeoff between update frequency and chunk size. Finite Memory Capacity: Mod-els like ours eventually hit capacity limits; future iterations could manage memory caching weights in a learned way. 
+
+Memory Primacy Bias: The method favors memorization during early steps; larger-scale training on longer sequences and better mid-sequence frame sampling could encourage long-term retention. Complex Motion and Trajectories: Re-solving long-range camera and subject motion within the compressed memory remains challenging and is left for fu-8ture work. See Fig. 8 for limitation examples. 
+
+## 6. Acknowledgements 
+
+We would like to thank Michael Broxton and Ryan Over-beck for their encouragement and support of the project at Google. We also thank John Flynn and Osman Ulusoy for their valuable discussions and feedback on the manuscript, and Tianyuan Zhang and Bowei Chen for early clarifying discussions on LaCT. Finally, we extend our appreciation to Xiaoguang Han, Hongjie Liao, and Yihao Zhi for providing full-length MVHumanNet++ videos for our experiments. 
+
+## References 
+
+[1] Kara-Ali Aliev, Artem Sevastopolsky, Maria Kolos, Dmitry Ulyanov, and Victor Lempitsky. Neural point-based graph-ics. In European conference on computer vision , pages 696– 712. Springer, 2020. 2 [2] Simran Arora, Sabri Eyuboglu, Michael Zhang, Aman Timalsina, Silas Alberti, James Zou, Atri Rudra, and Christopher Re. Simple linear attention language models bal-ance the recall-throughput tradeoff. In International Confer-ence on Machine Learning , pages 1763–1840. PMLR, 2024. 3[3] Ali Behrouz, Zeman Li, Praneeth Kacham, Majid Daliri, Yuan Deng, Peilin Zhong, Meisam Razaviyayn, and Vahab Mirrokni. Atlas: Learning to optimally memorize the con-text at test time, 2025. 2, 3, 4 [4] Ali Behrouz, Meisam Razaviyayn, Peilin Zhong, and Vahab Mirrokni. Nested learning: The illusion of deep learning ar-chitectures. In The Thirty-ninth Annual Conference on Neu-ral Information Processing Systems , 2025. 3 [5] Ali Behrouz, Peilin Zhong, and Vahab Mirrokni. Titans: Learning to memorize at test time. In The Thirty-ninth An-nual Conference on Neural Information Processing Systems ,2025. 3 [6] Ali Behrouz, Zeman Li, Yuan Deng, Peilin Zhong, Meisam Razaviyayn, and Vahab Mirrokni. Memory caching: Rnns with growing memory, 2026. 2, 3, 6 [7] Ali Behrouz, Meisam Razaviyayn, Peilin Zhong, and Vahab Mirrokni. It’s all connected: A journey through test-time memorization, attentional bias, retention, and online opti-mization. In The Fourteenth International Conference on Learning Representations , 2026. 2, 3, 4, 6 [8] Michael Broxton, John Flynn, Ryan Overbeck, Daniel Erick-son, Peter Hedman, Matthew Duvall, Jason Dourgarian, Jay Busch, Matt Whalen, and Paul Debevec. Immersive light field video with a layered mesh representation. ACM Trans-actions on Graphics (TOG) , 39(4):86–1, 2020. 2 [9] Ang Cao and Justin Johnson. Hexplane: A fast representa-tion for dynamic scenes. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,pages 130–141, 2023. 3 [10] Keyan Ding, Kede Ma, Shiqi Wang, and Eero P. Simoncelli. Image quality assessment: Unifying structure and texture similarity. CoRR , abs/2004.07728, 2020. 12 [11] Xin Dong, Yonggan Fu, Shizhe Diao, Wonmin Byeon, ZIJIA CHEN, Ameya Sunil Mahabaleshwarkar, Shih-Yang Liu, Min-Hung Chen, Yoshi Suhara, Yingyan Celine Lin, et al. Hymba: A hybrid-head architecture for small language mod-els. In The Thirteenth International Conference on Learning Representations , 2025. 3 [12] John Flynn, Ivan Neulander, James Philbin, and Noah Snavely. Deepstereo: Learning to predict new views from the world’s imagery. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 5515–5524, 2016. 2 [13] John Flynn, Michael Broxton, Paul Debevec, Matthew Du-Vall, Graham Fyffe, Ryan Overbeck, Noah Snavely, and Richard Tucker. Deepview: View synthesis with learned gra-dient descent. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 2367– 2376, 2019. [14] John Flynn, Michael Broxton, Lukas Murmann, Lucy Chai, Matthew DuVall, Cl´ ement Godard, Kathryn Heal, Srinivas Kaza, Stephen Lombardi, Xuan Luo, et al. Quark: Real-time, high-resolution, and general neural view synthesis. ACM Transactions on Graphics (TOG) , 43(6):1–20, 2024. 2 [15] Sara Fridovich-Keil, Giacomo Meanti, Frederik Rahbæk Warburg, Benjamin Recht, and Angjoo Kanazawa. K-planes: Explicit radiance fields in space, time, and appearance. In 
+
+Proceedings of the IEEE/CVF conference on computer vi-sion and pattern recognition , pages 12479–12488, 2023. 3 [16] Han Guo, Songlin Yang, Tarushii Goel, Eric P Xing, Tri Dao, and Yoon Kim. Log-linear attention. arXiv preprint arXiv:2506.04761 , 2025. 3 [17] Ramin Hasani, Mathias Lechner, Tsun-Hsuan Wang, Makram Chahine, Alexander Amini, and Daniela Rus. Liq-uid structural state-space models. In The Eleventh Interna-tional Conference on Learning Representations , 2023. 3 [18] Peter Hedman, Julien Philip, True Price, Jan-Michael Frahm, George Drettakis, and Gabriel Brostow. Deep blending for free-viewpoint image-based rendering. ACM Transactions on Graphics (ToG) , 37(6):1–15, 2018. 2 [19] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising dif-fusion probabilistic models. Advances in neural information processing systems , 33:6840–6851, 2020. 2 [20] Binbin Huang, Zehao Yu, Anpei Chen, Andreas Geiger, and Shenghua Gao. 2d gaussian splatting for geometrically ac-curate radiance fields. In ACM SIGGRAPH 2024 conference papers , pages 1–11, 2024. 2 [21] Kazuki Irie, Francesco Faccio, and J¨ urgen Schmidhuber. Neural differential equations for learning to program neural nets through continuous learning rules. Advances in Neural Information Processing Systems , 35:38614–38628, 2022. 3 [22] Haian Jin, Hanwen Jiang, Hao Tan, Kai Zhang, Sai Bi, Tianyuan Zhang, Fujun Luan, Noah Snavely, and Zexiang Xu. Lvsm: A large view synthesis model with minimal 3d inductive bias. In The Thirteenth International Conference on Learning Representations , 2025. 1, 3, 4, 7, 8, 12, 14, 15 [23] Haian Jin, Rundi Wu, Tianyuan Zhang, Ruiqi Gao, Jonathan T. Barron, Noah Snavely, and Aleksander Holyn-ski. ZipMap: Linear-time stateful 3d reconstruction via test-
+
+9time training. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2026. 2, 5 [24] Keller Jordan, Yuchen Jin, Vlado Boza, Jiacheng You, Franz Cesista, Laker Newhouse, and Jeremy Bernstein. Muon: An optimizer for hidden layers in neural networks, 2024. 4 [25] Praneeth Kacham, Vahab Mirrokni, and Peilin Zhong. Polysketchformer: Fast transformers via sketching poly-nomial kernels. In International Conference on Machine Learning , pages 22748–22770. PMLR, 2024. 3 [26] Angelos Katharopoulos, Apoorv Vyas, Nikolaos Pappas, and Franc ¸ois Fleuret. Transformers are rnns: Fast autoregressive transformers with linear attention. In International confer-ence on machine learning , pages 5156–5165. PMLR, 2020. 3[27] Bernhard Kerbl, Georgios Kopanas, Thomas Leimk¨ uhler, George Drettakis, et al. 3d gaussian splatting for real-time radiance field rendering. ACM Trans. Graph. , 42(4):139–1, 2023. 2 [28] Chenghong Li, Hongjie Liao, Yihao Zhi, Xihe Yang, Zheng-wentai Sun, Jiahao Chang, Shuguang Cui, and Xiaoguang Han. Mvhumannet++: A large-scale dataset of multi-view daily dressing human captures with richer annotations for 3d human digitization. arXiv preprint arXiv:2505.01838 , 2025. 6[29] Tianye Li, Mira Slavcheva, Michael Zollhoefer, Simon Green, Christoph Lassner, Changil Kim, Tanner Schmidt, Steven Lovegrove, Michael Goesele, Richard Newcombe, et al. Neural 3d video synthesis from multi-view video. In 
+
+Proceedings of the IEEE/CVF conference on computer vi-sion and pattern recognition , pages 5521–5531, 2022. 3 [30] Zhan Li, Zhang Chen, Zhong Li, and Yi Xu. Spacetime gaus-sian feature splatting for real-time dynamic view synthesis. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 8508–8520, 2024. 3 [31] Haotong Lin, Sida Peng, Zhen Xu, Yunzhi Yan, Qing Shuai, Hujun Bao, and Xiaowei Zhou. Efficient neural radiance fields for interactive free-viewpoint video. In SIGGRAPH Asia 2022 conference papers , pages 1–9, 2022. 2 [32] Ruoshi Liu, Rundi Wu, Basile Van Hoorick, Pavel Tok-makov, Sergey Zakharov, and Carl Vondrick. Zero-1-to-3: Zero-shot one image to 3d object. In Proceedings of the IEEE/CVF international conference on computer vision ,pages 9298–9309, 2023. 3 [33] Yuan Liu, Cheng Lin, Zijiao Zeng, Xiaoxiao Long, Lingjie Liu, Taku Komura, and Wenping Wang. Syncdreamer: Gen-erating multiview-consistent images from a single-view im-age. arXiv preprint arXiv:2309.03453 , 2023. 3 [34] Ben Mildenhall, Pratul P Srinivasan, Matthew Tancik, Jonathan T Barron, Ravi Ramamoorthi, and Ren Ng. Nerf: Representing scenes as neural radiance fields for view syn-thesis. Communications of the ACM , 65(1):99–106, 2021. 2[35] Bo Peng, Ruichong Zhang, Daniel Goldstein, Eric Alcaide, Xingjian Du, Haowen Hou, Jiaju Lin, Jiaxing Liu, Janna Lu, William Merrill, Guangyu Song, Kaifeng Tan, Saiteja Ut-pala, Nathan Wilce, Johan S. Wind, Tianyi Wu, Daniel Wut-tke, and Christian Zhou-Zheng. RWKV-7 ”goose” with ex-pressive dynamic state evolution. In Second Conference on Language Modeling , 2025. 3 [36] Gernot Riegler and Vladlen Koltun. Free view synthesis. In European conference on computer vision , pages 623–640. Springer, 2020. 2 [37] Mehdi SM Sajjadi, Henning Meyer, Etienne Pot, Urs Bergmann, Klaus Greff, Noha Radwan, Suhani Vora, Mario Luˇ ci´ c, Daniel Duckworth, Alexey Dosovitskiy, et al. Scene representation transformer: Geometry-free novel view syn-thesis through set-latent scene representations. In Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition , pages 6229–6238, 2022. 2 [38] Imanol Schlag, Kazuki Irie, and J¨ urgen Schmidhuber. Linear transformers are secretly fast weight programmers. In Inter-national conference on machine learning , pages 9355–9366. PMLR, 2021. 3 [39] Yichun Shi, Peng Wang, Jianglong Ye, Mai Long, Kejie Li, and Xiao Yang. Mvdream: Multi-view diffusion for 3d gen-eration. arXiv preprint arXiv:2308.16512 , 2023. 3 [40] Vincent Sitzmann, Michael Zollh¨ ofer, and Gordon Wet-zstein. Scene representation networks: Continuous 3d-structure-aware neural scene representations. Advances in neural information processing systems , 32, 2019. 2 [41] Jiakai Sun, Han Jiao, Guangyuan Li, Zhanjie Zhang, Lei Zhao, and Wei Xing. 3dgstream: On-the-fly training of 3d gaussians for efficient streaming of photo-realistic free-viewpoint videos. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition , pages 20675–20685, 2024. 3 [42] Yutao Sun, Li Dong, Shaohan Huang, Shuming Ma, Yuqing Xia, Jilong Xue, Jianyong Wang, and Furu Wei. Retentive network: A successor to transformer for large language mod-els. arXiv preprint arXiv:2307.08621 , 2023. 3 [43] Yu Sun, Xinhao Li, Karan Dalal, Jiarui Xu, Arjun Vikram, Genghan Zhang, Yann Dubois, Xinlei Chen, Xiaolong Wang, Sanmi Koyejo, Tatsunori Hashimoto, and Carlos Guestrin. Learning to (learn at test time): Rnns with expressive hidden states, 2025. 3, 4 [44] Justus Thies, Michael Zollh¨ ofer, and Matthias Nießner. De-ferred neural rendering: Image synthesis using neural tex-tures. Acm Transactions on Graphics (TOG) , 38(4):1–12, 2019. 2 [45] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszko-reit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems , 30, 2017. 3 [46] Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rupprecht, and David Novotny. Vggt: Vi-sual geometry grounded transformer. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 5294–5306, 2025. 2 [47] Peng Wang, Lingjie Liu, Yuan Liu, Christian Theobalt, Taku Komura, and Wenping Wang. Neus: Learning neural implicit surfaces by volume rendering for multi-view reconstruction. 
+
+arXiv preprint arXiv:2106.10689 , 2021. 2 [48] Qianqian Wang, Zhicheng Wang, Kyle Genova, Pratul P Srinivasan, Howard Zhou, Jonathan T Barron, Ricardo 
+
+10 Martin-Brualla, Noah Snavely, and Thomas Funkhouser. Ibr-net: Learning multi-view image-based rendering. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 4690–4699, 2021. 2 [49] Qianqian Wang, Yifei Zhang, Aleksander Holynski, Alexei A. Efros, and Angjoo Kanazawa. Continuous 3D Perception Model with Persistent State . In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 10510–10522, Los Alamitos, CA, USA, 2025. IEEE Computer Society. 7, 12, 14 [50] Shuzhe Wang, Vincent Leroy, Yohann Cabon, Boris Chidlovskii, and Jerome Revaud. Dust3r: Geometric 3d vi-sion made easy. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 20697– 20709, 2024. 2 [51] Yiming Wang, Qin Han, Marc Habermann, Kostas Dani-ilidis, Christian Theobalt, and Lingjie Liu. Neus2: Fast learning of neural implicit surfaces for multi-view recon-struction. In Proceedings of the IEEE/CVF international conference on computer vision , pages 3295–3306, 2023. 2 [52] Yiming Wang, Lucy Chai, Xuan Luo, Michael Niemeyer, Manuel Lagunas, Stephen Lombardi, Siyu Tang, and Tiancheng Sun. Learning efficient fuse-and-refine for feed-forward 3d gaussian splatting. arXiv preprint arXiv:2503.14698 , 2025. 3 [53] Daniel Watson, William Chan, Ricardo Martin-Brualla, Jonathan Ho, Andrea Tagliasacchi, and Mohammad Norouzi. Novel view synthesis with diffusion models. arXiv preprint arXiv:2210.04628 , 2022. 3 [54] Guanjun Wu, Taoran Yi, Jiemin Fang, Lingxi Xie, Xiaopeng Zhang, Wei Wei, Wenyu Liu, Qi Tian, and Xinggang Wang. 4d gaussian splatting for real-time dynamic scene rendering. In Proceedings of the IEEE/CVF conference on computer vi-sion and pattern recognition , pages 20310–20320, 2024. 2, 3[55] Zhangyang Xiong, Chenghong Li, Kenkun Liu, Hongjie Liao, Jianqiao Hu, Junyi Zhu, Shuliang Ning, Lingteng Qiu, Chongjie Wang, Shijie Wang, Shuguang Cui, and Xiaoguang Han. Mvhumannet: A large-scale dataset of multi-view daily dressing human captures. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 19801–19811, 2024. 2, 7 [56] Qiangeng Xu, Zexiang Xu, Julien Philip, Sai Bi, Zhixin Shu, Kalyan Sunkavalli, and Ulrich Neumann. Point-nerf: Point-based neural radiance fields. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 5438–5448, 2022. 2 [57] Zhen Xu, Sida Peng, Haotong Lin, Guangzhao He, Jiaming Sun, Yujun Shen, Hujun Bao, and Xiaowei Zhou. 4k4d: Real-time 4d view synthesis at 4k resolution. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 20029–20040, 2024. 3 [58] Zhen Xu, Zhengqin Li, Zhao Dong, Xiaowei Zhou, Richard Newcombe, and Zhaoyang Lv. 4dgt: Learning a 4d gaus-sian transformer using real-world monocular videos. arXiv preprint arXiv:2506.08015 , 2025. 2 [59] Jinbo Yan, Rui Peng, Zhiyan Wang, Luyang Tang, Jiayu Yang, Jie Liang, Jiahao Wu, and Ronggang Wang. Instant gaussian stream: Fast and generalizable streaming of dy-namic scene reconstruction via gaussian splatting. In Pro-ceedings of the Computer Vision and Pattern Recognition Conference , pages 16520–16531, 2025. 3 [60] Ziyi Yang, Xinyu Gao, Wen Zhou, Shaohui Jiao, Yuqing Zhang, and Xiaogang Jin. Deformable 3d gaussians for high-fidelity monocular dynamic scene reconstruction. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 20331–20341, 2024. 3 [61] Lior Yariv, Yoni Kasten, Dror Moran, Meirav Galun, Matan Atzmon, Basri Ronen, and Yaron Lipman. Multiview neu-ral surface reconstruction by disentangling geometry and ap-pearance. Advances in Neural Information Processing Sys-tems , 33:2492–2502, 2020. 2 [62] Lior Yariv, Jiatao Gu, Yoni Kasten, and Yaron Lipman. Vol-ume rendering of neural implicit surfaces. Advances in neu-ral information processing systems , 34:4805–4815, 2021. 2 [63] Wangbo Yu, Jinbo Xing, Li Yuan, Wenbo Hu, Xiaoyu Li, Zhipeng Huang, Xiangjun Gao, Tien-Tsin Wong, Ying Shan, and Yonghong Tian. Viewcrafter: Taming video diffusion models for high-fidelity novel view synthesis. arXiv preprint arXiv:2409.02048 , 2024. 3 [64] Junyi Zhang, Charles Herrmann, Junhwa Hur, Chen Sun, Ming-Hsuan Yang, Forrester Cole, Trevor Darrell, and De-qing Sun. Loger: Long-context geometric reconstruction with hybrid memory. arXiv preprint arXiv:2603.03269 ,2026. 2 [65] Richard Zhang, Phillip Isola, Alexei A. Efros, Eli Shecht-man, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. CoRR , abs/1801.03924, 2018. 5 [66] Tianyuan Zhang, Sai Bi, Yicong Hong, Kai Zhang, Fujun Luan, Songlin Yang, Kalyan Sunkavalli, William T Freeman, and Hao Tan. Test-time training done right. arXiv preprint arXiv:2505.23884 , 2025. 2, 3, 4, 5, 7, 12, 14 
+
+## A. Supplementary Material 
+
+Our Supplementary Material presents additional memory and novel-view synthesis experiments in Sec. B, and pro-vides full implementation, training, inference and model ar-chitecture details in Sec. C. 
+
+## B. Additional Experiments 
+
+B.1. Memory from Natural Rotations Test 
+
+To evaluate NSTM on the general setting of natural video sequences where occlusions can happen naturally at any point, we evaluate 17 scenes in MVHumanNet++ that fea-ture back reveal during natural rotations. This is in contrast to our “Memory Stress Test” Tab. 1 where the model sees the back view only at timestep 0 and needs to remember it while receiving only frontal views over the entire dura-tion of the video. To test, we provide fixed frontal stereo inputs ( cam15 and cam01 ) and evaluate synthesis as the back naturally reveals and occludes. 11 Average over T=60 Last frame Method PSNR ↑ SSIM ↑ LPIPS ↓ DISTS ↓ mPSNR ↑ mSSIM ↑ PSNR ↑ SSIM ↑ LPIPS ↓ DISTS ↓ mPSNR ↑ mSSIM ↑                                                
+
+> LVSM 28.81 0.9654 0.0286 0.1216 19.21 0.5069 28.81 0.9656 0.0296 0.1298 19.69 0.5272 LaCT-NVS 29.13 0.9667 0.0253 0.1045 19.98 0.5850 27.01 0.9551 0.0340 0.1414 17.93 0.4982 Token-Mem 27.24 0.9565 0.0353 0.1303 18.05 0.4926 28.11 0.9615 0.0329 0.1363 19.14 0.5194 Ours 29.53 0.9692 0.0247 0.1056 20.39 0.5928 29.68 0.9691 0.0250 0.1107 20.88 0.5997
+
+Table 3. Memory from Natural Rotations Test. Best , second best , and third best are highlighted. Memory is critical for this evaluation protocol: the sequences feature natural rotations that reveal the back of the subject, which the models must accurately synthesize. Because the memory of stateful baselines degrades over time, NSTM significantly outperforms Token-Mem and LaCT-NVS by 1.74 dB and 2.95 dB in mPSNR, respectively, when measured on the final frame. Furthermore, by also surpassing the stateless LVSM [22], NSTM clearly demonstrates the advantage of our robust memory persistence. See our supplementary website for video results.                               
+
+> Novel View Synethesis Over 60 Timesteps Method PSNR ↑SSIM ↑LPIPS ↓DISTS ↓mPSNR ↑mSSIM ↑
+> LVSM 29.48 0.9699 0.0225 0.0917 20.10 0.6509 LaCT-NVS 26.84 0.9567 0.0281 0.0997 17.62 0.5869 Token-Mem 22.81 0.9273 0.0477 0.1180 14.04 0.4595 Ours 29.11 0.9696 0.0223 0.0894 19.93 0.6703
+
+Table 4. General Novel View Synthesis Comparison. best , second best , and third best are highlighted. Given stereo inputs from fixed frontal cameras, all models synthesize arbitrary unseen viewpoints over time. The metrics are averaged over 60 timesteps across 390 evaluation scenes. NSTM significantly outperforms prior stateful baselines (LaCT-NVS [66] and Token-Mem [49]) by successfully mitigating long-term memory degradation. Because the sparsity of disocclusions in this protocol limits the benefits of historical context, NSTM performs on par with the stateless LVSM baseline [22], confirming its strong general NVS capabilities. See videos in our supplementary website for qualitative visual results. 
+
+Results and Discussions. We present our quantitative com-parisons in Tab. 3 and qualitative visual evidence in Fig. 6 measuring performance both averaged across all frames and on the final frame in the (t = 60) sequence. The strength of NSTM remains evident, outperforming Token-Mem and LaCT-NVS by and LaCT-NVS by 1.74 dB and 2.95 dB mP-SNR on last frame measurement. Since LVSM is a stateless model the average and last frame performance are almost identical, demonstrating that it is not able to remember past details that would allow it to increase its accuracy. 
+
+B.2. General Novel View Synthesis Test 
+
+In addition to the memory stress test in Sec. 4.2 and natural memory test in Sec. B.1, NSTM is fundamentally designed to be a highly versatile dynamic NVS framework. To evalu-ate its generalized synthesis capabilities, we conduct exper-iments under a standard, unconstrained streaming protocol. 
+
+Evaluation Protocol. To simulate typical real-world telep-resence or broadcasting scenarios where input camera rigs are fixed, we restrict the streaming inputs to only two static frontal views ( cam15 and cam01 ). The model is then tasked with rendering the dynamic scene from arbitrary time-varying target viewpoints. Because disocclusions un-der this protocol are spatially and temporally sparse, the benefit of long-term memory is naturally limited. Thus, we use this setup strictly to isolate and stress-test the model’s spatial generalization – specifically, its ability to synthesize arbitrary unseen viewpoints from instantaneous inputs. 
+
+Results and Discussions. Despite temporal context provid-ing limited benefits, Table 4 shows that NSTM consistently outperforms the stateful LaCT-NVS and Token-Mem base-lines. Furthermore, NSTM remains competitive in standard structural metrics (LPIPS, SSIM, and mSSIM) against the purely stateless LVSM baseline, while outperforming on LPIPS and DISTS [10]. This demonstrates our model’s spa-tial rendering capabilities. 
+
+B.3. Inference Speed 
+
+Step Latency (ms) ↓ FPS ↑
+
+Memorization 58.14 17.19 Synthesis 27.01 37.02 
+
+Table 5. Computation Asymmetry. The memorization step (in-cluding both memory update and apply) is significantly slower than the synthesis step (apply only). Inference performance break-down measured on a single H100 GPU with a resolution of 256x256. 
+
+As mentioned in the Introduction, the memory update and apply operations exhibit asymmetric computational costs. As detailed in Tab. 5, a full memorization step (both update and apply) requires 58.14 ms, whereas a synthesis step (apply only) takes just 27.01 ms. Consequently, by scheduling memorization at 1 FPS and synthesis at 30 FPS, our framework achieves an amortized rendering speed of 28.1 ms per frame (see Fig. 1 of the main paper). All mea-surements were conducted at 256 × 256 resolution on a sin-gle NVIDIA H100 GPU. 
+
+## C. Additional Implementation Details 
+
+In this section, we provide comprehensive details regard-ing our training curriculum, optimization hyperparameters, baseline configurations. 12 LVSM 
+
+Last Frame 
+
+(T=60)  Token-Mem LaCT-NVS  Ours  Ground Truth 
+
+Visible Back 
+
+(T=6) 
+
+(T=8) Figure 6. Memory from Natural Rotations Qualitative Results . We evaluate our method against the baselines on sequences feature natural rotations that reveal the back of the subject, which the models must synthesize. Left column shows at which timestep the back is revealed. NSTM recalls the clothing graphics. The stateless LVSM cannot synthesize the unseen graphics, while LaCT-NVS and Token-Mem show a degraded memory. See supplementary website for more video results. 
+
+C.1. Training Curriculum 
+
+All 256 × 256 stateful models are trained with a two-stage training curriculum. Pretraining bootstraps our model’s memory and is carried out on short video clips consisting of 4 frames. We then finetune for free-viewpoint synthe-sis and long memory persistence with long 24-frame video clips. To demostrate our memory retention capabilities at 
+
+512 × 512 , we further finetune our 256 × 256 model in stage 3 on 512 × 512 videos. At each timestep, the net-work processes 2 sparse input views to synthesize 1 target view. Details on each stage follows: 
+
+Stage 1: Memory Bootstrap Pretraining. The objective of this initial phase is to explicitly encourage the network to build and rely upon its memory module. For the first frame of the sequence ( t = 0 ), the input consists of one frontal view ( cam00 ) and one back-facing view ( cam08 ), provid-ing full geometric context. For subsequent frames ( t > 0), the inputs transition to two random views. Crucially, the target supervision is a target view that is explicitly distinct from the t > 0 inputs. Note these target viewpoints remain the same across the sequence. This rigid setup encourages memorizing the initial context to faithfully inpaint the tar-gets at later timesteps. 
+
+Stage 2: Free-Viewpoint and Long Memory Adaptation Finetuning. Once the memory module is bootstrapped, we adapt the network to encourage longer memory persistence and enable synthesis of arbitrary, time-varying viewpoints. We extend the pretraining sequence from 4 frames to 24 frames and supervise the network at each timestep by a ran-dom, time-varying target view strictly withheld from the input stream. To construct the inputs, two random base cameras are selected and held constant for all t > 0. At the initial timestep ( t = 0 ), we enforce a forced-occlusion scenario by exclusively sourcing inputs from two distinct, alternative cameras. Finally, to ensure the model prop-erly learns object-centric rotation rather than just camera translation, 50% of the training sequences undergo coordi-nate alignment. Specifically, we modify the extrinsics of the first initial t = 0 camera to match the first base view. Throughout this extended sequence, we maintain the alter-nating memorization and synthesis steps utilized in the pre-training phase. 
+
+Stage 3: High-Resolution ( 512 × 512 ) Finetuning. We further finetune at 512 × 512 resolution for 20K iterations. Similar to Stage 2, we simulate memory assimilation by in-jecting two alternative cameras. However, we inject the two alternative cameras at a random memorization step (even steps) rather than strictly at t = 0 . To ensure sufficient sub-sequent frames remain for supervision, t is sampled from a decaying distribution: 
+
+p(t) = 
+
+  
+
+> γt/ 2
+> PT / 2−1
+> j=0 γj
+
+if t mod 2 = 0 0 otherwise where γ = 0 .5, and T = 24 denotes the video sequence length. 13 Figure 7. Online Inference Pipeline and NSTM Layer Design. Left : During inference, we run the memorization step periodically while performing the synthesis step per-frame, which enables us to achieve amortized real-time speed. Right : We introduce the NSTM Layer consisting of cross-view attention, a fast-weight block and a feed-forward layer. We also incorporate a learned scale that allows the network to balance the contribution of memory and attention to each layer’s output. 
+
+C.2. Training Hyperparameters 
+
+We implement our framework using JAX. Models are trained with a total batch size of 128 for 500 , 000 itera-tions during the pretraining stage, followed by an additional 
+
+25 , 000 iterations during the finetuning stage. The 512 ×512 
+
+model undergoes another stage of high-resolution finetun-ing as in Sec. C.1. We employ a cosine learning rate de-cay schedule with a linear warmup. During pretraining, the learning rate is initialized at 1×10 −6, warms up over 4, 000 
+
+steps to a peak of 4 × 10 −4, remains constant for 100 , 000 
+
+steps, and then decays down to a final value of 1 × 10 −6.During the finetuning stage, we retain the same schedule parameters but reduce the peak learning rate to 4 × 10 −5
+
+warming up over 4, 000 steps and then remaining constant. Finally, for the image reconstruction objective across all models and stages, the perceptual loss weight is fixed at 
+
+λlpips = 0 .5.
+
+C.3. Baseline Adaptations and Coordinate Align-ments 
+
+To ensure a fair comparison, all baselines evaluated in Tab. 1 are of 256 × 256 resolution and all stateful models are trained on the exact same two-training curriculum. The LVSM baseline [22] is stateless and thus goes through only one pretraining stage as below. Due to architectural differ-ences, camera coordinate systems must be aligned differ-ently: 
+
+LVSM [22]: We utilize the exact architecture described in the original LVSM paper. But for fair comparison, we use the same learning rate schedule as above and the same L2 and LPIPS loss. Because LVSM is a stateless, per-frame model, we construct its training batches by extracting only the final frame ( t = 3) from our 4-timestep pretraining video clips, ensuring it trains on identical data distributions. For coordinate alignment, we relativize the camera coordi-nate system to each individual target camera over time (i.e., the specific target camera for that frame is set as the origin with an identity rotation). 
+
+LaCT-NVS [66] and NSTM (Ours): Stateful models must maintain coherent camera coordinate system across time and adapt to time-varying target cameras. Therefore, for LaCT and NSTM, we relativize all cameras in the sequence to the first target camera ( t = 0 ), ensuring a stable, global coordinate space for the fast-weights to operate within. 
+
+Token-Mem [49]: As explained in Sec. 4.1, Token-Mem is a custom novel view synthesis model whose memory mech-anism is based on CUT3R [49]. As a stateful method, it also requires a temporally consistent coordinate frame, and we use the same coordinate system as described above for LaCT and our NTSM. Architecture-wise, we follow the original CUT3R [49] implementation to use a state size of 768 tokens each with 768 feature channel. Differing from [49], we optimize L2 and LPIPS losses consistent with the other methods compared. 
+
+C.4. Evaluation Protocol Details 
+
+Evaluation Dataset Filtering. Across all our long-term evaluation protocols—including the Memory Stress Test and ablation study (in the main paper), the Memory from Natural Rotations Test (Sec. B.1 ), and the General Novel View Synthesis Test (Sec. B.2)—we stress-test model per-formance over extended time horizons (i.e., up to t = 60 ). Consequently, we filtered the originally provided MVHu-14 Ground Truth Ours  
+
+> Missed Input
+> (T=1)
+> Current Input
+> (T=60) Ground Truth
+
+Ours                
+
+> Current Input
+> (T=60)
+> Late-Step Input
+> (T=42) Figure 8. Limitations .Left: Update Frequency and Missed Events. Our periodic updates may miss events between memorization steps. The pattern shown at t= 1 was presented only at this non-update timestep and is therefore not recoverable at t= 60 .Right: Memory Primacy Bias Our method favors memorization during early steps. Here the back is revealed after 21 updates (at t= 42 ) and our recovery at t= 60 is only partial.
+
+manNet++ test set to strictly include sequences containing at least 60 frames. This curation resulted in a unified sub-set of 390 evaluation scenes, which differs from the stan-dard MVHumanNet++ test split but is applied consistently across all our long-term evaluations. 
+
+Sequence Ordering for Natural Rotations . For the Nat-ural Rotations Test (Sec. B.1), we utilize 17 scenes fea-turing natural back-revealing motions. Because these ro-tations typically occur near the end of the raw videos, we temporally reverse the sequences. This ensures the unoc-cluded back is observed early, allowing us to rigorously as-sess long-term memory retention (up to t = 60 ) over the subsequent minute-long horizon 
+
+C.5. Online Inference Protocol 
+
+Decoupled Memorization and Synthesis Frequencies. 
+
+Unlike models that rigidly couple memory updates and queries at every timestep, NSTM operates on indepen-dent execution strides. For our evaluation, the annotated train and eval sequences provided by the MVHumanNet++ dataset are aggressively subsampled capturing only 1 frame every 25 frames from the raw 30 FPS videos (i.e., sub-sampled at 1.2 FPS). Consequently, the temporal gap be-tween consecutive inputs is roughly 833 ms. We train and evaluate by memorizing every other frame within these se-quences. Furthermore, MVHumanNet++ provides raw 30 FPS videos; for our supplemental results, we demonstrate NSTM’s real-time rendering capabilities by synthesizing 29 frames for every 1 step of memorization. 
+
+C.6. Detailed Model Architecture 
+
+Fig. 7 shows our NSTM layer in more details. During in-ference, we run the memorization step periodically while performing the synthesis step per-frame. Different from training time, there is no memory tokens and we extract the target tokens as output for all steps. More specifically, following LVSM [22], we channel-wise concatenate input RGB images with their corresponding per-pixel Pl¨ ucker ray maps, using linear layers to patchify them into input tokens. Similarly, we patchify the Pl¨ ucker rays of the target camera to form target tokens. These concatenated input and tar-get tokens are then passed through a L = 24 Transformer blocks, each comprising a cross-view attention module, a TTT memory module, and a feed-forward MLP module. The cross-view attention module applies self-attention on the concatenated input and target tokens. Beyond a stan-dard TTT layer, we introduce a learned weight α to balance the contribution from the cross-view attention module and the TTT memory module. Finally, we extract the processed target tokens and unpatchify them with an linear layer, ap-plying a sigmoid activation to predict the target RGB im-ages. 
+
+C.7. Foreground Matting and Background Aug-mentation 
+
+To facilitate clean isolation of the dynamic subject from the studio background, we output a 4-channel RGB α im-age. During training, we employ background augmenta-tion: we composite both the ground-truth foreground and our model’s predicted RGB α output onto randomly sam-pled solid color backgrounds before computing the photo-metric loss. This augmentation forces the network to learn a highly accurate alpha matte. Consequently, at inference time, NSTM produces a clean, disentangled alpha channel, enabling seamless compositing of the synthesized human subject into arbitrary novel environments. 15

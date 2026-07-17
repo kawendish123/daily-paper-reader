@@ -1,0 +1,525 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-17T21:27:30.009547+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 5,
+    "deep_cap": 6,
+    "deep_selected": 5,
+    "quick_candidates": 7,
+    "quick_skim_target": 11,
+    "quick_selected": 7
+  },
+  "deep_dive": [
+    {
+      "id": "2607.14711v1",
+      "source": "arxiv",
+      "title": "VideoSEMA: a scalable and efficient Mamba-like attention for video understanding",
+      "abstract": "We present for video understanding (classification) a split space-time attention model, VideoSEMA, consisting of a scalable and efficient Mamba-like attention (SEMA) block in space and a softmax temporal attention in time. In each frame, SEMA attention applies a local window attention in parallel with a global averaging in a Mamba macro-architecture, which is called Mamba-like. Under certain rank conditions, we prove that the computationally cheaper split space-time attention is equivalent to full space-time attention. On benchmark K400 data sets, VideoSEMA out-performs heavier vision transformer and Mamba models. On benchmark SSv2 data, VideoSEMA leads in top-1 accuracy among models of similar parameter sizes. As image resolution scales up from standard $224^2$ to $1024^2$ on K400 and without fine-tuning, VideoSEMA degrades much more gracefully than VideoMamba in accuracy. It is promising to extend VideoSEMA to longer videos with a dilated/sparse temporal attention.",
+      "authors": [
+        "Nhat Thanh Tran",
+        "Fanghui Xue andShuai Zhang",
+        "Jiancheng Lyu",
+        "Yunling Zheng",
+        "Yingyong Qi",
+        "Jack Xin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-16T08:22:08+00:00",
+      "link": "https://arxiv.org/pdf/2607.14711v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "scalable video understanding model for classification",
+      "llm_evidence_cn": "可扩展的视频理解分类模型",
+      "llm_evidence": "可扩展的视频理解分类模型",
+      "canonical_evidence": "可扩展的视频理解分类模型",
+      "llm_tldr_en": "This paper proposes VideoSEMA, a split space-time attention model for video classification that uses a Mamba-like attention block. It achieves state-of-the-art accuracy on K400 and SSv2 benchmarks with fewer parameters.",
+      "llm_tldr_cn": "该工作针对视频理解任务，提出了VideoSEMA模型，采用分解的时空注意力：空间上利用类Mamba的局部窗口与全局平均结合，时间上用softmax注意力。理论证明在秩条件下拆分时空注意力等价于全注意力。在K400和SSv2数据集上，VideoSEMA以更少参数量取得优于视觉Transformer和Mamba模型的top-1准确率。该方法为高效视频分析提供了新思路。",
+      "llm_tldr": "该工作针对视频理解任务，提出了VideoSEMA模型，采用分解的时空注意力：空间上利用类Mamba的局部窗口与全局平均结合，时间上用softmax注意力。理论证明在秩条件下拆分时空注意力等价于全注意力。在K400和SSv2数据集上，VideoSEMA以更少参数量取得优于视觉Transformer和Mamba模型的top-1准确率。该方法为高效视频分析提供了新思路。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.13421v1",
+      "source": "arxiv",
+      "title": "ScanFocus: A Coarse-to-Fine Framework for Spatio-Temporal Video Grounding",
+      "abstract": "Spatio-Temporal Video Grounding (STVG) aims to retrieve the visual trajectory of a specific object from a video stream as described by a natural language expression. However, most advanced methods struggle to balance global context modeling with precise boundary localization. Due to the prohibitive computational costs of processing long videos, these approaches typically resort to low-rate temporal downsampling and implicit motion modeling. This inevitably suppresses high-frequency boundary cues and neglects the explicit inter-frame dependencies required for precise boundary delineation. To address these limitations, we present \\textbf{ScanFocus}, a novel coarse-to-fine framework that decouples the STVG task into a global spatio-temporal scan and a local boundary focus. Specifically, we utilize a unified vision-language fusion encoder combined with a lightweight Deformable Semantic-Motion Fusion module to efficiently align multimodal features and generate coarse proposals. To recover the suppressed fine-grained details, we introduce the Semantic-Guided Temporal Aggregator (SGTA) in the refinement stage. By densely sampling around coarse boundaries, SGTA explicitly models short-term temporal interactions under semantic guidance, capturing rapid motion changes for precise timestamp regression. Extensive experiments on three widely used benchmarks demonstrate the performance superiority of our proposed method over previous approaches. Code will be released at https://github.com/TenMinutes209/ScanFocus.",
+      "authors": [
+        "Kai Chen",
+        "Ming Dai",
+        "Wenxuan Cheng",
+        "Wankou Yang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-15T03:50:22+00:00",
+      "link": "https://arxiv.org/pdf/2607.13421v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "coarse-to-fine framework for spatio-temporal video grounding from streams",
+      "llm_evidence_cn": "从视频流中通过粗到细框架进行时空视频定位",
+      "llm_evidence": "从视频流中通过粗到细框架进行时空视频定位",
+      "canonical_evidence": "从视频流中通过粗到细框架进行时空视频定位",
+      "llm_tldr_en": "ScanFocus decouples spatio-temporal video grounding into global scan and local refinement, enabling efficient and accurate object trajectory retrieval from long video streams.",
+      "llm_tldr_cn": "当前视频定位方法在处理长视频时因下采样丢失边界细节。本文提出ScanFocus，一种粗到细框架，先将整个视频进行全局时空扫描，再在候选区域进行精细定位，从而兼顾全局上下文和精确边界。实验表明ScanFocus在多个基准上达到最先进性能，有效解决了长视频下效率与精度的平衡问题。",
+      "llm_tldr": "当前视频定位方法在处理长视频时因下采样丢失边界细节。本文提出ScanFocus，一种粗到细框架，先将整个视频进行全局时空扫描，再在候选区域进行精细定位，从而兼顾全局上下文和精确边界。实验表明ScanFocus在多个基准上达到最先进性能，有效解决了长视频下效率与精度的平衡问题。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.15033v1",
+      "source": "arxiv",
+      "title": "URVC: A Unified Real-Time Neural Video Coding Model with Temporal, Spatial, and Perceptual Adaptivity",
+      "abstract": "Neural video coding has advanced rapidly, achieving competitive compression performance while also enabling real-time coding speed. Yet, existing codecs exhibit severe rigidity when deployed in dynamic environments, failing to adapt to different video content, user requirements, and quality preferences. First, to meet the real-time constraint, they discard explicit motion estimation and motion compression, thereby losing the ability to adapt temporal prediction to motion complexity and bitrate constraints. Second, their spatial bit allocation strategy is coarse and, once trained, is fixed. It cannot adapt to dynamic user requirements at test time, preventing users from freely controlling the spatial distribution of bits. Third, they cannot adapt their quality preference to varying application requirements without deploying separate models. We address all three limitations within a single real-time neural video codec--URVC, transforming a rigid system into a unified framework with temporal, spatial, and perceptual adaptivity. First, we propose a rate-aware adaptive temporal prediction method that generates diverse prediction candidates through a multi-candidate architecture and couples candidate selection directly to rate-distortion optimization. Second, we propose a decomposition-based spatial rate control method that achieves finer-grained spatial bit allocation through feature decomposition and separate quantization, and allows users to perform direct spatial rate control at test time without retraining. Third, we propose a perceptual switching method that only requires learning a secondary module bank alongside a frame generator, enabling a codec to switch between signal fidelity and perceptual quality modes.",
+      "authors": [
+        "Xihua Sheng",
+        "Chang Wen Chen"
+      ],
+      "primary_category": "cs.MM",
+      "categories": [
+        "cs.MM"
+      ],
+      "published": "2026-07-16T14:14:41+00:00",
+      "link": "https://arxiv.org/pdf/2607.15033v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "real-time neural video coding with adaptive temporal/spatial/perceptual control",
+      "llm_evidence_cn": "实时神经视频编码，支持时域、空域和感知自适应",
+      "llm_evidence": "实时神经视频编码，支持时域、空域和感知自适应",
+      "canonical_evidence": "实时神经视频编码，支持时域、空域和感知自适应",
+      "llm_tldr_en": "URVC introduces a unified real-time neural video codec that adapts to varying content and user preferences through temporal, spatial, and perceptual control, overcoming rigidity of existing codecs.",
+      "llm_tldr_cn": "现有神经视频编码器在动态环境中缺乏适应性，无法根据视频内容或用户需求调整。本文提出URVC，一个统一的实时神经视频编码模型，在保持实时性的同时，通过显式运动估计、自适应比特分配和感知优化实现对时域、空域和质量的自适应控制。实验证明URVC在多种场景下均能提升压缩效率和主观质量，为实时视频传输提供灵活解决方案。",
+      "llm_tldr": "现有神经视频编码器在动态环境中缺乏适应性，无法根据视频内容或用户需求调整。本文提出URVC，一个统一的实时神经视频编码模型，在保持实时性的同时，通过显式运动估计、自适应比特分配和感知优化实现对时域、空域和质量的自适应控制。实验证明URVC在多种场景下均能提升压缩效率和主观质量，为实时视频传输提供灵活解决方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.15271v1",
+      "source": "arxiv",
+      "title": "Online Neural Space Time Memory for Dynamic Novel View Synthesis",
+      "abstract": "Online novel view synthesis from multi-view streaming videos faces a fundamental trade-off: maintaining a persistent, long-horizon memory to reconstruct temporarily occluded regions while operating under strict real-time constraints. While Test-Time Training (TTT) offers a powerful memory mechanism, standard models mandate gradient-based memory updates at every frame to adapt to the changing motion in dynamic scenes. The computational cost of heavy memory updates precludes real-time application and can lead to instability over long contexts. Given that memory updates are more demanding than memory application and video content is largely redundant, we propose to decouple the frequencies of these two processes. Our approach performs periodic memory updates while applying the memory on a per-frame basis, using cross-view attention to manage deformations between the prior memory state and the current frame. To lock in the historical context, we introduce two critical mechanisms: an auxiliary Memory Loss that forces persistent internalization of the scene, and a Memory Caching strategy that regularizes active weights against catastrophic drift. Our method demonstrates real-time, state-of-the-art performance on scenes with dynamic human motion as well as minute-scale online memorization.",
+      "authors": [
+        "Baback Elmieh",
+        "Lynn Tsai",
+        "Zeman Li",
+        "Srinivas Kaza",
+        "Tiancheng Sun",
+        "Gabor Csapo",
+        "Ali Behrouz",
+        "Yuan Deng",
+        "Stephen Lombardi",
+        "Steven M. Seitz",
+        "Xuan Luo"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.GR",
+        "cs.LG"
+      ],
+      "published": "2026-07-16T17:58:18+00:00",
+      "link": "https://arxiv.org/pdf/2607.15271v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "online novel view synthesis from streaming video with real-time constraints",
+      "llm_evidence_cn": "来自流式视频的在线新视角合成，受实时约束",
+      "llm_evidence": "来自流式视频的在线新视角合成，受实时约束",
+      "canonical_evidence": "来自流式视频的在线新视角合成，受实时约束",
+      "llm_tldr_en": "The paper decouples memory update and application frequencies for online novel view synthesis from streaming video, enabling real-time performance.",
+      "llm_tldr_cn": "针对在线新视角合成中实时性与长时记忆的矛盾，本文提出将内存更新与应用频率解耦，通过周期性更新而非逐帧更新来适应动态场景。该方法在流式视频输入下维持了实时性能，同时有效重建了暂时遮挡区域。",
+      "llm_tldr": "针对在线新视角合成中实时性与长时记忆的矛盾，本文提出将内存更新与应用频率解耦，通过周期性更新而非逐帧更新来适应动态场景。该方法在流式视频输入下维持了实时性能，同时有效重建了暂时遮挡区域。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "biorxiv-10-64898-2026-07-10-737879-v1",
+      "source": "biorxiv",
+      "title": "BeeMonitor: Automated IoT video surveillance and an AI-powered video processing system for monitoring the foraging and nesting behavior of cavity-nesting solitary bees",
+      "abstract": "Solitary bee species that use artificial trap nests are important for agricultural crop production and as indicators of habitat quality. Quantifying cavity-nesting solitary bee foraging and nesting behavior is essential for real-time analysis of population numbers and pollination activity, as well as understanding how environmental conditions shape reproductive success and population dynamics. However, manual observation is labor-intensive, prone to observer bias, and unable to deliver continuous data. Existing automated systems either require individual bee marking or detect presence without resolving nest-tube-level entry and exit events. We developed BeeMonitor, an integrated hardware and computer-vision pipeline that detects nest entry and exit events in cavity-nesting solitary bees from continuous video, using Osmia cornifrons (the horn-faced mason bee) as a model system. A low-cost Raspberry Pi handles solar-powered field recording, while the software combines object detection (YOLOv26), a custom multiple-object tracker (BeeTrack), and a Random Forest classifier trained on trajectory-derived features to distinguish genuine events from incidental detections. Over a 29-day deployment, hardware reliability averaged 97.5% recording coverage. The pipeline achieved 91.3% precision and 87.3% recall (F1 = 0.893), generalizing robustly under leave-one-video-out cross-validation (mean F1 = 0.904). Detected foraging trips correlated strongly with brood cell counts (R2 = 0.849, p < 0.001, n = 19), and a Random Forest model (AUC = 0.820) identified solar radiation as the dominant driver of foraging activity, followed by temperature. BeeMonitor demonstrates that automated computer vision can reliably extract ecologically relevant behavioral data from continuous video, enabling real-time analysis of pollinator behavior and abundance at a temporal and spatial resolution unattainable through manual observation. Its modular design supports adaptation to other species and monitoring contexts.",
+      "authors": [
+        "Amoah, E. I.",
+        "Sanjel, S.",
+        "Boyle, N.",
+        "Grozinger, C."
+      ],
+      "primary_category": "animal behavior and cognition",
+      "categories": [
+        "animal behavior and cognition"
+      ],
+      "published": "2026-07-17T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.10.737879v1.full.pdf",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "IoT video surveillance with AI processing on edge for real-time bee monitoring",
+      "llm_evidence_cn": "基于IoT视频监控和边缘AI实时蜜蜂监测",
+      "llm_evidence": "基于IoT视频监控和边缘AI实时蜜蜂监测",
+      "canonical_evidence": "基于IoT视频监控和边缘AI实时蜜蜂监测",
+      "llm_tldr_en": "BeeMonitor combines IoT cameras with on-device AI to perform real-time analysis of solitary bee foraging and nesting behavior, achieving automated high-resolution behavioral monitoring.",
+      "llm_tldr_cn": "传统蜜蜂行为观察依赖人工，无法连续采集数据。本文提出BeeMonitor，采用IoT视频监控结合AI处理系统，在边缘设备上实时分析蜂巢入口事件，自动识别觅食和筑巢行为。系统无需标记蜜蜂即可实现巢管级分辨，提供连续、客观的行为数据，为生态研究和农业授粉监测提供有力工具。",
+      "llm_tldr": "传统蜜蜂行为观察依赖人工，无法连续采集数据。本文提出BeeMonitor，采用IoT视频监控结合AI处理系统，在边缘设备上实时分析蜂巢入口事件，自动识别觅食和筑巢行为。系统无需标记蜜蜂即可实现巢管级分辨，提供连续、客观的行为数据，为生态研究和农业授粉监测提供有力工具。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.12839v3",
+      "source": "arxiv",
+      "title": "HeteroMosaic: Exposing and Exploiting Heterogeneous Execution Opportunities for Energy-Efficient Edge LLM Inference",
+      "abstract": "Modern edge system-on-chips (SoCs) combine CPUs, integrated GPUs (iGPUs), and neural processing units (NPUs), yet existing LLM runtimes typically make coarse device-level decisions or optimize operators in isolation. As a result, they underutilize heterogeneous resources, particularly on unified-memory platforms where performance depends on both device placement and task-graph coordination. We present HeteroMosaic, a heterogeneity-first scheduling framework for edge LLM inference. HeteroMosaic first uses a heterogeneous roofline model to identify when combining iGPU and NPU execution is beneficial. It then decomposes inference into dependency-preserving micro-batches that expose cross-accelerator overlap and applies trace-guided co-optimization of scheduling and device allocation under practical effects such as memory contention, DVFS, device variation, and NPU runtime overheads. We implement HeteroMosaic in PyTorch C++ and evaluate it on three AMD Ryzen AI platforms spanning NPU-heavy, balanced, and iGPU-heavy designs. On the balanced platform, HeteroMosaic achieves up to 1.73X speedup over an iGPU baseline, 1.78X over an NPU baseline, and 2.05X over frameworks such as llama dot cpp, while reducing energy by up to 45.3%. It also improves performance over prior heterogeneous edge AI solutions by up to 2.35X.",
+      "authors": [
+        "Gregory Hyegang Jun",
+        "Wesley Pang",
+        "Eddie Richter",
+        "Mehdi Saeedi",
+        "Aporva Amarnath",
+        "Pallavi Ferrao",
+        "Deming Chen"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC",
+        "cs.AR"
+      ],
+      "published": "2026-07-14T14:56:14+00:00",
+      "link": "https://arxiv.org/pdf/2607.12839v3",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "heterogeneous scheduling for edge LLM inference",
+      "llm_evidence_cn": "边缘LLM推理的异构调度",
+      "llm_evidence": "边缘LLM推理的异构调度",
+      "canonical_evidence": "边缘LLM推理的异构调度",
+      "llm_tldr_en": "HeteroMosaic is a heterogeneity-first scheduling framework for edge LLM inference, using a roofline model and micro-batch decomposition to exploit CPU/iGPU/NPU overlap.",
+      "llm_tldr_cn": "针对现代边缘SoC中CPU、iGPU和NPU资源利用率不足的问题，本文提出HeteroMosaic，一种异构优先的调度框架。它通过异构屋顶线模型识别有利执行组合，并将推理分解为依赖感知的微批次以暴露加速器间的重叠，实现能效优化的边缘LLM推理。",
+      "llm_tldr": "针对现代边缘SoC中CPU、iGPU和NPU资源利用率不足的问题，本文提出HeteroMosaic，一种异构优先的调度框架。它通过异构屋顶线模型识别有利执行组合，并将推理分解为依赖感知的微批次以暴露加速器间的重叠，实现能效优化的边缘LLM推理。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.13460v1",
+      "source": "arxiv",
+      "title": "LPM: Industrial-Scale Generative Video Restoration",
+      "abstract": "We present the Large Processing Model (LPM), a diffusion-based generative framework for photorealistic video restoration under complex, in-the-wild degradations. To our knowledge, LPM is the first generative video restoration model deployed at industrial scale. LPM addresses the diverse degradations in user-generated content (UGC) through a unified system encompassing large-scale data engineering, foundation-model training, and efficient inference. Its enhanced architecture, progressive training strategy, and temporal-pyramid inference mechanism jointly enable high-fidelity, temporally consistent restoration of arbitrarily long videos across the broad content distribution encountered on UGC platforms. LPM has been deployed in production at Kuaishou, where videos processed by the model account for approximately 45% of total viewing time, delivering consistent improvements across key quality-of-experience metrics. Beyond perceptual enhancement, LPM delivers substantial system-level benefits: at comparable perceptual quality, it reduces bitrate by 20% relative to Kuaishou's in-house codec, yielding annual bandwidth cost savings on the order of hundreds of millions. Its low serving cost also enables integration into products such as Kling, demonstrating that generative restoration can be practical, scalable, and cost-effective for large-scale video processing.",
+      "authors": [
+        "Bichuan Zhu",
+        "Fulin Li",
+        "Jiachao Gong",
+        "Jinhua Hao",
+        "Kai Zhao",
+        "Kun Yuan",
+        "Pengcheng Xu",
+        "Qiang Wang",
+        "Qiao Mo",
+        "Yanlong Yuan",
+        "Yizhen Shao",
+        "Yuxiao Hu",
+        "Zixi Tuo",
+        "Ming Sun",
+        "Chao Zhou",
+        "Bin Chen",
+        "Bin Yu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-15T05:44:10+00:00",
+      "link": "https://arxiv.org/pdf/2607.13460v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generative video restoration for user-generated content",
+      "llm_evidence_cn": "针对用户生成内容的生成式视频修复",
+      "llm_evidence": "针对用户生成内容的生成式视频修复",
+      "canonical_evidence": "针对用户生成内容的生成式视频修复",
+      "llm_tldr_en": "LPM is a diffusion-based generative framework for industrial-scale video restoration, addressing diverse in-the-wild degradations with temporal consistency.",
+      "llm_tldr_cn": "用户生成内容中的视频退化复杂多样，现有方法难以在工业规模下处理。本文提出LPM，一个基于扩散的生成式视频修复框架，通过大规模数据工程、渐进训练和时序金字塔推理，实现了任意长度视频的高保真、时序一致修复，并在快手生产环境中部署，验证了其在视频分析预处理中的实用价值。",
+      "llm_tldr": "用户生成内容中的视频退化复杂多样，现有方法难以在工业规模下处理。本文提出LPM，一个基于扩散的生成式视频修复框架，通过大规模数据工程、渐进训练和时序金字塔推理，实现了任意长度视频的高保真、时序一致修复，并在快手生产环境中部署，验证了其在视频分析预处理中的实用价值。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.14489v1",
+      "source": "arxiv",
+      "title": "EdgeFaaS: A Function-based Framework for Edge Computing",
+      "abstract": "Edge computing brings unique challenges as the resources on the edge are highly diverse in capabilities and capacities, and highly distributed across many users and the physical world. Existing distributed computing frameworks cannot adequately handle this level of heterogeneity and distribution. This paper proposes EdgeFaaS, a novel function-based edge computing framework to enable edge applications to effectively utilize heterogeneous resources distributed across the Internet of Things (IoT), edge, and cloud for computing. It proposes function virtualization and storage virtualization to abstract distributed and heterogeneous physical resources and provides consistent virtual interfaces for deploying and executing functions and storing and accessing data. EdgeFaaS provides comprehensive support to diverse edge computing workflows, and at the same time allows users to flexibly adjust the configurations and explore various important tradeoffs. To demonstrate its usability, the paper also presents the implementation and evaluation of three representative workflows on EdgeFaaS for video analytics, federated learning, and audio classification, on a real testbed of 100+ geographically distributed IoT devices, edge servers, and cloud services. EdgeFaaS allows users to flexibly explore the deployment configurations of these workflows over distributed and heterogeneous resources. For example, users can easily vary the function placement of the video processing pipeline across IoT, edge, and cloud resources and study the tradeoff between computation and communication costs; users can also flexibly adjust the cluster count and size in the hierarchical federated learning system and explore the tradeoff between training accuracy and speed.",
+      "authors": [
+        "Neha Vadnere",
+        "Yu-Ting Wang",
+        "Yitao Chen",
+        "Sreehari Sadesh",
+        "Ming Zhao"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC",
+        "cs.AI"
+      ],
+      "published": "2026-07-16T02:05:46+00:00",
+      "link": "https://arxiv.org/pdf/2607.14489v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "edge computing framework for heterogeneous resources",
+      "llm_evidence_cn": "面向异构资源的边缘计算框架",
+      "llm_evidence": "面向异构资源的边缘计算框架",
+      "canonical_evidence": "面向异构资源的边缘计算框架",
+      "llm_tldr_en": "EdgeFaaS proposes a function-based framework to abstract heterogeneous edge resources, enabling flexible application deployment across IoT, edge, and cloud.",
+      "llm_tldr_cn": "边缘计算面临资源异构和分布广泛的挑战，现有框架难以应对。本文提出EdgeFaaS，一种基于函数的边缘计算框架，通过函数虚拟化和存储虚拟化抽象异构物理资源，提供一致的部署接口，使得边缘应用能有效利用IoT、边缘和云的分布式资源。实验表明该框架能显著提升资源利用率和应用性能，为边缘计算应用开发提供了通用基础架构。",
+      "llm_tldr": "边缘计算面临资源异构和分布广泛的挑战，现有框架难以应对。本文提出EdgeFaaS，一种基于函数的边缘计算框架，通过函数虚拟化和存储虚拟化抽象异构物理资源，提供一致的部署接口，使得边缘应用能有效利用IoT、边缘和云的分布式资源。实验表明该框架能显著提升资源利用率和应用性能，为边缘计算应用开发提供了通用基础架构。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.15038v1",
+      "source": "arxiv",
+      "title": "Video = World + Event Stream",
+      "abstract": "We present Wan-Streamer v0.3, which reframes our native-streaming interaction model under a single organizing view: a video is a world plus an event stream. The world is the persistent context in which a video unfolds, including the environment, scene, subjects, ambient acoustic conditions, voice characteristics, and other relatively stable conditions. The event stream is everything that changes over time within that world, including scene or environmental changes, subject behavior, speech, and other sounds. This yields a general-purpose pretraining task over large amounts of real video: given a world and incoming input, predict how the world moves, changes, and responds in real time. The resulting competence can be specialized to a broad family of real-time downstream tasks. We instantiate it on real-time full-duplex audio-visual interaction, where the event stream is the agent's speech together with free-form behavior. Functionally, the model's multimodal understanding process is vision-language-action-like: it maps multimodal user input to language-form speech and behavior actions. Wan-Streamer v0.3 preserves the v0.2 operating point: 640x368 video at 25 FPS, a 160 ms streaming unit, approximately 200 ms model-side response latency, and approximately 550 ms total interaction latency under a 350 ms bidirectional network budget.",
+      "authors": [
+        "Lianghua Huang",
+        "Zhi-Fan Wu",
+        "Yupeng Shi",
+        "Wei Wang",
+        "Mengyang Feng",
+        "Cheng Yu",
+        "Chen Liang",
+        "Junjie He",
+        "Chen-Wei Xie",
+        "Yu Liu",
+        "Jingren Zhou",
+        "Ang Wang",
+        "Bang Zhang",
+        "Baole Ai",
+        "Chongyang Zhong",
+        "Jinwei Qi",
+        "Kai Zhu",
+        "Pandeng Li",
+        "Peng Zhang",
+        "Wenyuan Zhang",
+        "Xinhua Cheng",
+        "Yitong Huang",
+        "Yun Zheng",
+        "Yuxiang Bao",
+        "Yuzheng Wang",
+        "Zhiwei Lin",
+        "Zoubin Bi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-16T14:19:42+00:00",
+      "link": "https://arxiv.org/pdf/2607.15038v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video streaming analysis via world+event stream model",
+      "llm_evidence_cn": "通过世界+事件流模型进行流式视频分析",
+      "llm_evidence": "通过世界+事件流模型进行流式视频分析",
+      "canonical_evidence": "通过世界+事件流模型进行流式视频分析",
+      "llm_tldr_en": "Presents Wan-Streamer v0.3 which reframes video as a persistent world plus an event stream, enabling real-time video prediction and downstream tasks relevant to streaming video analysis.",
+      "llm_tldr_cn": "当前流式视频分析面临如何高效建模动态视频内容的问题。本文提出Wan-Streamer v0.3，将视频视为一个持久的世界和一个随时间变化的事件流，并设计通用预训练任务：给定世界和输入，预测世界如何实时变化。该方法能泛化到多种实时下游任务，为流式视频分析提供新的表示框架。实验表明其适合实时场景。",
+      "llm_tldr": "当前流式视频分析面临如何高效建模动态视频内容的问题。本文提出Wan-Streamer v0.3，将视频视为一个持久的世界和一个随时间变化的事件流，并设计通用预训练任务：给定世界和输入，预测世界如何实时变化。该方法能泛化到多种实时下游任务，为流式视频分析提供新的表示框架。实验表明其适合实时场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.14809v1",
+      "source": "arxiv",
+      "title": "An LLM-Based Automatic Sportscast Solution for Robot Soccer Matches",
+      "abstract": "RoboCup has always been a scenario to develop systems that solve real-world problems. Driven by the main goal of playing against the 2050 FIFA World Cup champions, the RoboCup Soccer leagues need to constantly measure how the research community is progressing. Computing visual statistics from match videos is a crucial way to track this evolution. To address this challenge, this paper introduces a fully autonomous, real-time sports commentator for RoboCup matches. By bridging the gap between raw kinematic tracking and natural language generation, our neuro-symbolic architecture extracts precise statistics from video streams and turns them into fluent, hallucination-free narration. The proposed system is capable of generating statistics and commentary both during live match streaming and in post-game analysis, easily adapting to the new dynamism of the league where different humanoid robots of different sizes share the field. Supplemental materials are available at https://lab-rococo-sapienza.github.io/MARIO/",
+      "authors": [
+        "Francesco Petri",
+        "Michele Brienza",
+        "Daniele Nardi",
+        "Domenico Daniele Bloisi",
+        "Aldo Gangemi",
+        "Vincenzo Suriani"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-16T10:27:23+00:00",
+      "link": "https://arxiv.org/pdf/2607.14809v1",
+      "tags": [
+        "keyword:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "streaming video analysis for sportscast",
+      "llm_evidence_cn": "流式视频分析用于体育解说",
+      "llm_evidence": "流式视频分析用于体育解说",
+      "canonical_evidence": "流式视频分析用于体育解说",
+      "llm_tldr_en": "A neuro-symbolic architecture extracts statistics from robot soccer match video streams in real-time and generates hallucination-free commentary using LLMs.",
+      "llm_tldr_cn": "针对机器人足球比赛视频流，提出一种神经符号架构，实时提取视觉统计信息并利用大语言模型生成无幻觉的自然语言解说，解决了从原始运动跟踪数据到流畅叙述的桥梁问题，展示了在流式视频分析中的应用潜力。",
+      "llm_tldr": "针对机器人足球比赛视频流，提出一种神经符号架构，实时提取视觉统计信息并利用大语言模型生成无幻觉的自然语言解说，解决了从原始运动跟踪数据到流畅叙述的桥梁问题，展示了在流式视频分析中的应用潜力。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.14898v1",
+      "source": "arxiv",
+      "title": "FlashDecoder: Real-Time Latent-to-Pixel Streaming Decoder with Transformers",
+      "abstract": "Real-time video generation demands fast decoding as much as fast denoising, yet current latent video diffusion models rely on 3D convolutional decoders that are slow and memory-intensive at high resolutions or for long video. We introduce FlashDecoder, a fast, memory-efficient pure-Transformer video decoder that decodes latents to pixels frame by frame. At each step, the current frame attends only to a fixed-size window of past frames through a rolling KV cache. The fixed temporal window keeps decoding fast and memory bounded regardless of video length, enabling constant-latency streaming. Because frames are processed sequentially, temporal causality is enforced without explicit attention masks, enabling training at resolutions up to 1080p and matching the reconstruction quality of convolutional decoders. On the Wan2.1 and Wan2.2 latent spaces, FlashDecoder matches each convolutional decoder in reconstruction quality (e.g., 41.55dB vs. 41.49dB PSNR at 1080p) while decoding 3.6x-4.7x faster with up to 11x less memory on a single H100 GPU. With architecture-aware inference optimizations, the speedup widens to 12x.",
+      "authors": [
+        "Minguk Kang",
+        "Suha Kwak"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-16T12:16:12+00:00",
+      "link": "https://arxiv.org/pdf/2607.14898v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "real-time video decoding for streaming",
+      "llm_evidence_cn": "面向流式传输的实时视频解码",
+      "llm_evidence": "面向流式传输的实时视频解码",
+      "canonical_evidence": "面向流式传输的实时视频解码",
+      "llm_tldr_en": "Introduces FlashDecoder, a pure-Transformer video decoder that decodes latents to pixels frame-by-frame with a rolling KV cache, enabling constant-latency streaming for real-time video processing.",
+      "llm_tldr_cn": "实时视频推理面临解码速度瓶颈。本文提出FlashDecoder，一种纯Transformer视频解码器，通过滚动KV缓存逐帧解码，固定时间窗口保证恒定延迟流式处理。该方法在高达1080p分辨率下训练，显著降低内存占用并提升解码速度，适用于实时视频生成和处理场景。",
+      "llm_tldr": "实时视频推理面临解码速度瓶颈。本文提出FlashDecoder，一种纯Transformer视频解码器，通过滚动KV缓存逐帧解码，固定时间窗口保证恒定延迟流式处理。该方法在高达1080p分辨率下训练，显著降低内存占用并提升解码速度，适用于实时视频生成和处理场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.15211v1",
+      "source": "arxiv",
+      "title": "MAGiSt3R: Multi-Agent Feed-forward 3D Reconstruction from Monocular RGB Videos",
+      "abstract": "This paper presents MAGiSt3R, a multi-agent 3D reconstruction framework performing reconstruction and camera tracking for monocular RGB videos at almost 10 FPS. MAGiSt3R relies on a feed-forward model from the 3R family to process RGB videos and regress local point maps, and on a merging model, MAGMA, that combines local maps at both intra-agent and inter-agent levels to obtain the final global point map. Furthermore, MAGiSt3R performs pose graph optimization to mitigate cumulative camera drift occurring along the feed-forward pipeline. We evaluate MAGiSt3R on both synthetic and real-world datasets, demonstrating its superior reconstruction and camera tracking accuracy compared to state-of-the-art approaches.",
+      "authors": [
+        "Ziren Gong",
+        "Xiaohan Li",
+        "Fabio Tosi",
+        "Ninghui Xu",
+        "Stefano Mattoccia",
+        "Jianfei Cai",
+        "Matteo Poggi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-16T17:12:58+00:00",
+      "link": "https://arxiv.org/pdf/2607.15211v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "video analytics: 3D reconstruction from monocular RGB video at 10 FPS",
+      "llm_evidence_cn": "视频分析：以10FPS从单目RGB视频进行3D重建",
+      "llm_evidence": "视频分析：以10FPS从单目RGB视频进行3D重建",
+      "canonical_evidence": "视频分析：以10FPS从单目RGB视频进行3D重建",
+      "llm_tldr_en": "MAGiSt3R is a multi-agent feed-forward framework for monocular RGB video 3D reconstruction and camera tracking at nearly 10 FPS.",
+      "llm_tldr_cn": "从单目RGB视频进行实时3D重建和相机追踪仍具挑战。本文提出MAGiSt3R，采用多智能体前馈架构，基于3R系列模型回归局部点图，并通过MAGMA融合和位姿图优化，以近10FPS的速度实现了高精度的重建和追踪，为视频分析提供了高效3D感知能力。",
+      "llm_tldr": "从单目RGB视频进行实时3D重建和相机追踪仍具挑战。本文提出MAGiSt3R，采用多智能体前馈架构，基于3R系列模型回归局部点图，并通过MAGMA融合和位姿图优化，以近10FPS的速度实现了高精度的重建和追踪，为视频分析提供了高效3D感知能力。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "video analytics",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
