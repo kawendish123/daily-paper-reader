@@ -1,0 +1,206 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-18T21:18:29.960228+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2607.14935v1",
+      "source": "arxiv",
+      "title": "VideoChat3: Fully Open Video MLLM for Efficient and Generalist Video Understanding",
+      "abstract": "Recent advances in video understanding have spanned motion, long video, and streaming interaction, driving this field toward real-world applications. Despite this progress, current open-source models remain limited in several ways. They often struggle to generalize across diverse video types, making them effective only in specific domains. High computational demands further restrict their efficiency and scalability. Moreover, most models are only partially open, with key components such as training code, strategy, or datasets unavailable, which hinders reproducibility and slows community-driven development. To address these issues, we introduce VideoChat3, a fully open, efficient, and generalist video-centric MLLM. VideoChat3 advances video understanding through two complementary designs. For efficiency, we introduce Inflated 3D Vision Transformer (I3D-ViT) and Adaptive Frame Resolution for Streaming Video Perception, which enables efficient spatiotemporal representation and reduces the cost of processing video inputs during training and inference. For effectiveness, we develop a scalable video data synthesis pipeline that curates three diverse, high-quality training datasets: VideoChat3-Academic2M, VideoChat3-LV116K, and VideoChat3-OL617K, covering general, long-form, and streaming video scenarios, improving the model's generalization across domains. By integrating these designs, VideoChat3 achieves a rare balance of broad generalization and computational efficiency. Experiments across general, long-form, and streaming benchmarks demonstrate that VideoChat3 surpasses prior open-source models with equal or larger parameter counts with only 4B parameters and higher efficiency.",
+      "authors": [
+        "Xinhao Li",
+        "Yuhan Zhu",
+        "Xiangyu Zeng",
+        "Yuhao Dong",
+        "Haoning Wu",
+        "Zhiqiu Zhang",
+        "Yuandong Yang",
+        "Changlian Ma",
+        "Qingyu Zhang",
+        "Yansong Shi",
+        "Xinyu Chen",
+        "Haoran Chen",
+        "Zizheng Huang",
+        "Jun Zhang",
+        "Kun Ouyang",
+        "Lin Sui",
+        "Ziang Yan",
+        "Yicheng Xu",
+        "Chenting Wang",
+        "Yinan He",
+        "Hongjie Zhang",
+        "Yi Wang",
+        "Yu Qiao",
+        "Yali Wang",
+        "Ziwei Liu",
+        "Kai Chen",
+        "Limin Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-16T12:47:59+00:00",
+      "link": "https://arxiv.org/pdf/2607.14935v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "streaming video understanding MLLM",
+      "llm_evidence_cn": "流式视频理解多模态大模型",
+      "llm_evidence": "流式视频理解多模态大模型",
+      "canonical_evidence": "流式视频理解多模态大模型",
+      "llm_tldr_en": "VideoChat3 is a fully open, efficient, and generalist video MLLM that handles streaming interaction and diverse video types, advancing real-world video understanding.",
+      "llm_tldr_cn": "当前开源视频模型在泛化性和高效性上存在局限，VideoChat3提出一种全开放、高效且通用的视频多模态大模型，支持流式交互和多样视频类型，降低计算需求，推动视频理解走向实际应用。",
+      "llm_tldr": "当前开源视频模型在泛化性和高效性上存在局限，VideoChat3提出一种全开放、高效且通用的视频多模态大模型，支持流式交互和多样视频类型，降低计算需求，推动视频理解走向实际应用。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.14908v1",
+      "source": "arxiv",
+      "title": "CODA: Algorithm-Hardware Co-design for Edge Video Diffusion via NMP-Enabled Compute-Cache Operator Disaggregation",
+      "abstract": "Deploying Video Diffusion Models (VDMs) on edge devices is appealing for localized and privacy-preserving generation, but their iterative Transformer-based denoising remains too slow for practical local inference. Cross-Timestep Caching (CTC) has emerged as a promising direction for reducing redundant computation, reusing activations across adjacent denoising steps rather than modifying model weights, while largely preserving generation fidelity. However, on memory-constrained edge GPUs, CTC requires a massive cache footprint that quickly exceeds on-device VRAM and forces the cache into host memory. More fundamentally, cache operators remain tightly interleaved and chain-dependent with native compute operators, so naive near-memory offloading still incurs repeated PCIe exchanges for residual and fusion computations, turning cache reuse into a communication- and serialization-bound execution flow. We therefore propose CODA, an algorithm-hardware co-designed architecture centered on Compute-Cache Operator Disaggregation. CODA separates dense compute paths and memory-bound cache paths across the xPU and a lightweight DIMM-side near-memory engine, reorganizes fragmented cache activity into hardware-friendly coalesced segments, and exploits Classifier-Free Guidance (CFG) branch independence to overlap xPU compute with cache-side execution. Experiments show that CODA achieves up to 1.80x end-to-end speedup and 1.74x higher energy efficiency, while preserving competitive generation quality compared with a state-of-the-art caching algorithm.",
+      "authors": [
+        "Yuanpeng Zhang",
+        "YuXuan Wu",
+        "Yitong Xiao",
+        "Chenhao Xue",
+        "Yi Ren",
+        "Cong Li",
+        "Yihan Yin",
+        "Dimin Niu",
+        "Guangyu Sun"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR",
+        "cs.DC"
+      ],
+      "published": "2026-07-16T12:28:01+00:00",
+      "link": "https://arxiv.org/pdf/2607.14908v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "edge video diffusion deployment",
+      "llm_evidence_cn": "边缘视频扩散模型部署",
+      "llm_evidence": "边缘视频扩散模型部署",
+      "canonical_evidence": "边缘视频扩散模型部署",
+      "llm_tldr_en": "CODA proposes algorithm-hardware co-design for edge video diffusion using NMP-enabled compute-cache operator disaggregation, enabling efficient local inference.",
+      "llm_tldr_cn": "在边缘设备部署视频扩散模型面临计算和存储瓶颈。CODA通过算法硬件协同设计，利用近存储处理实现计算-缓存算子解耦，显著降低缓存占用和延迟，为边缘视频生成提供可行方案。",
+      "llm_tldr": "在边缘设备部署视频扩散模型面临计算和存储瓶颈。CODA通过算法硬件协同设计，利用近存储处理实现计算-缓存算子解耦，显著降低缓存占用和延迟，为边缘视频生成提供可行方案。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "edge computing",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.09103v1",
+      "source": "arxiv",
+      "title": "Equivariant Filter for High Performance Image Tracking using an Event Camera",
+      "abstract": "Image tracking is the problem of estimating the transformation that relates a moving image of a scene to an original reference image. The problem is important in control of autonomous vehicles or robots, where the image encodes information about the motion of the camera or environment, as well as in pure computer vision applications. In this paper, we present an equivariant filter design for high performance tracking of planar image transformations using an event camera. The design exploits the Asynchronous Event Blob (AEB) tracker (Wang et al., 2024) to extract feature-position measurements from the raw event stream, and an equivariant filter to compute an affine image translation and rotation using the special Euclidean group symmetry. The equivariant filter incorporates an equivalent-measurement update step that de-correlates the (highly temporally correlated) feature-position measurements provided by the AEB tracker. We evaluate the design experimentally using two datasets involving general and fast rotational motion. We benchmark results against direct optimisation (estimating the relative transformation from the raw blob tracks), and a covariance intersection approach for overcoming data correlation. Our design provides smooth image tracking for features moving up to 7000 pixels per second on the image plane.",
+      "authors": [
+        "Angus Apps",
+        "Yixiao Ge",
+        "Timothy L. Molloy",
+        "Robert Mahony"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-10T05:36:36+00:00",
+      "link": "https://arxiv.org/pdf/2607.09103v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "high performance image tracking using event camera for real-time applications",
+      "llm_evidence_cn": "利用事件相机实现高性能图像跟踪，适用于实时应用",
+      "llm_evidence": "利用事件相机实现高性能图像跟踪，适用于实时应用",
+      "canonical_evidence": "利用事件相机实现高性能图像跟踪，适用于实时应用",
+      "llm_tldr_en": "Presents an equivariant filter for real-time affine image tracking using event cameras, achieving high performance with geometric symmetry.",
+      "llm_tldr_cn": "针对事件相机的实时图像跟踪问题，提出了一种等变滤波器设计，利用特殊欧几里得群对称性从原始事件流中提取特征并计算仿射变换，在无需完整图像帧的情况下实现高性能跟踪，适用于自主车辆和机器人控制等实时场景。",
+      "llm_tldr": "针对事件相机的实时图像跟踪问题，提出了一种等变滤波器设计，利用特殊欧几里得群对称性从原始事件流中提取特征并计算仿射变换，在无需完整图像帧的情况下实现高性能跟踪，适用于自主车辆和机器人控制等实时场景。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "real-time video processing",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.13770v1",
+      "source": "arxiv",
+      "title": "Kaleido: Algorithm-Hardware Co-Design for Video Diffusion Transformers by Exploiting Latent Space Correlations",
+      "abstract": "Video diffusion transformers (vDiTs) generate high quality video but introduce extremely high compute cost due to the long diffusion timesteps and self attention computation. As diffusion timesteps are reduced, the computation cost of self attention becomes the dominant bottleneck. Existing acceleration approaches largely inherit sparse attention techniques from large language models, which fail to consider the unique spatiotemporal correlation of video data.   This paper presents Kaleido, an algorithm hardware codesign that accelerates all operations in vDiTs by exploiting channel-wise spatiotemporal correlations in latent space. Based on this insight, we propose a lightweight channelwise reuse algorithm that skips redundant computations by reusing partial results while preserving higher generative quality than prior methods (>17 dB). To efficiently support this algorithm, we design a systolic array like accelerator with reconfigurable processing elements and a lightweight data dispatcher to mitigate irregular sparsity and data access patterns introduced by our reuse algorithm. Evaluations across three mainstream vDiT models show that Kaleido achieves up to 5.9x speedup and 16.0x energy savings over state of the art accelerators.",
+      "authors": [
+        "Wenxuan Miao",
+        "Haosong Liu",
+        "Weiming Hu",
+        "Zihan Liu",
+        "Aiyue Chen",
+        "Jianlin Yu",
+        "Yiwu Yao",
+        "Yiming Gan",
+        "Jieru Zhao",
+        "Jingwen Leng",
+        "Minyi Guo",
+        "Yu Feng"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR",
+        "cs.AI"
+      ],
+      "published": "2026-07-15T12:31:19+00:00",
+      "link": "https://arxiv.org/pdf/2607.13770v1",
+      "tags": [
+        "keyword:mec-video",
+        "query:mec-video"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "video diffusion transformer acceleration",
+      "llm_evidence_cn": "视频扩散Transformer加速",
+      "llm_evidence": "视频扩散Transformer加速",
+      "canonical_evidence": "视频扩散Transformer加速",
+      "llm_tldr_en": "Kaleido exploits channel-wise spatiotemporal correlations in latent space to accelerate video diffusion transformers via lightweight channelwise reuse algorithm.",
+      "llm_tldr_cn": "视频扩散Transformer计算成本极高。Kaleido通过利用潜空间中的通道时空相关性，提出轻量级通道重用算法，加速所有操作，且无需牺牲质量。",
+      "llm_tldr": "视频扩散Transformer计算成本极高。Kaleido通过利用潜空间中的通道时空相关性，提出轻量级通道重用算法，加速所有操作，且无需牺牲质量。",
+      "llm_tags": [
+        "query:mec-video"
+      ],
+      "matched_query_tag": "query:mec-video",
+      "matched_query_text": "streaming video analysis techniques",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

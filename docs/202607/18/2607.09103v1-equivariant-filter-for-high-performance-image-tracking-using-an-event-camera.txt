@@ -1,0 +1,294 @@
+Title: Equivariant Filter for High Performance Image Tracking using an Event Camera
+
+URL Source: https://arxiv.org/pdf/2607.09103v1
+
+Published Time: Mon, 13 Jul 2026 00:24:46 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# EQUIVARIANT FILTER FOR HIGH PERFORMANCE IMAGE TRACKING USING AN EVENT CAMERA 
+
+AUTHOR ACCEPTED VERSION ⋆
+
+Angus Apps 
+
+Systems Theory and Robotics Group School of Engineering Australian National University Canberra, Australia 
+
+Angus.Apps@anu.edu.au 
+
+Yixiao Ge 
+
+Systems Theory and Robotics Group School of Engineering Australian National University Canberra, Australia 
+
+Yixiao.Ge@anu.edu.au 
+
+Timothy L. Molloy 
+
+School of Engineering Australian National University Canberra, Australia 
+
+Timothy.Molloy@anu.edu.au 
+
+Robert Mahony 
+
+Systems Theory and Robotics Group School of Engineering Australian National University Canberra, Australia 
+
+Robert.Mahony@anu.edu.au 
+
+July 13, 2026 
+
+# ABSTRACT 
+
+Image tracking is the problem of estimating the transformation that relates a moving image of a scene to an original reference image. The problem is important in control of autonomous vehicles or robots, where the image encodes information about the motion of the camera or environment, as well as in pure computer vision applications. In this paper, we present an equivariant filter design for high performance tracking of planar image transformations using an event camera. The design exploits the Asynchronous Event Blob (AEB) tracker [1] to extract feature-position measurements from the raw event stream, and an equivariant filter to compute an affine image translation and rotation using the special Euclidean group symmetry. The equivariant filter incorporates an equivalent-measurement update step that de-correlates the (highly temporally correlated) feature-position measurements provided by the AEB tracker. We evaluate the design experimentally using two datasets involving general and fast rotational motion. We benchmark results against direct optimisation (estimating the relative transformation from the raw blob tracks), and a covariance intersection approach for overcoming data correlation. Our design provides smooth image tracking for features moving up to 7000 pixels per second on the image plane. 
+
+# 1 Introduction 
+
+Image tracking is the problem of estimating the transformation that relates a moving image of a scene to an original reference image. Image tracking is widely used in many computer vision applications, such as perspective correction [2] and image stabilisation [3], and has proven valuable in many robotics applications, such as visual odometry [4] and vision-based control [5, 6]. Classical computer vision techniques exploit the algebraic relationship between sets of matching feature points to compute the corresponding image transformation [7]. With sufficient matching points, algebraic algorithms can compute quality estimates of the transformation between consecutive image frames. However, these estimates are computed independently for each pair of images and do not exploit the temporal evolution of the image transformation caused by real-world camera motion. To address this issue, authors in the systems and control community have developed non-linear observers for image transformation estimation. In the last decade, deterministic observers for homography tracking were developed [8, 9] that provide robust performance with strong stability guarantees. Recent years have seen the development of stochastic filters for homography tracking. [10] proposed an interacting multiple model filter that runs parallel iterated extended Kalman filters with different process noise to manage model mismatch. [11] proposed an equivariant filter to estimate homography and structure  
+
+> ⋆
+
+©2026 the authors. This work has been accepted to IFAC for publication under a Creative Commons Licence CC-BY-NC-ND. This work was supported by the Australian Research Council under the Discovery Project DP250100112. Accepted for presentation at IFAC World Congress .arXiv:2607.09103v1 [cs.CV] 10 Jul 2026 Equivariant Filter for High Performance Image Tracking using an Event Camera AUTHOR ACCEPTED VERSION 
+
+parameters for a moving image sequence. This work allowed incorporation of inertial measurement unit inputs to predict the image motion rather than direct estimation of the infinitesimal homography velocity. Stochastic filtering has been applied effectively in other image processing applications, such as recursive structure and motion estimation in 3D vision [12] and vision-based state estimation using infinite-dimensional measurements [13]. A fundamental challenge for existing image tracking algorithms is feature tracking, particularly in highly dynamic scenarios where high optic flow causes large feature displacement between images. Event cameras introduce a new sensing modality that provides a significant advantage for tracking in highly dynamic environments [14]. Event-based feature tracking has been approached using both model- and learning-based approaches. While learning-based approaches are effective for tracking general objects [15], they require temporal accumulation or discretisation, sacrificing the low-latency advantage of event-driven data. For high performance applications where simple features are tracked, model-based approaches have been shown to be preferable [16, 1]. [1] propose the Asynchronous Event Blob (AEB) tracker that models features as spatial Gaussian distributions whose parameters are estimated by an extended Kalman filter. The AEB tracker has shown robust tracking at over 11,000 pixels per second. Although the AEB tracker offers significant advantages, the output tracks generated by the AEB tracker are highly correlated due to the filtering process and cannot be treated as independent measurements in a subsequent image tracking filter. Managing correlated measurements has been explored in multi-sensor fusion applications, particularly in track-to-track fusion algorithms [17, 18]. These situations occur when there are multiple different nodes or sensors providing an estimate of the same state variable that are fused to generate a central estimate. Here, the correlation is often unknown and can cause filter instability if ignored [19]. [20] proposed an equivalent-measurement framework that generates a measurement that would have generated the same estimate evolution, but remains temporally independent. This approach has been used in applications such as bias estimation [21, 22]. In this paper, we propose an Equivariant Filter (EqF) to estimate a planar image transformation using event cameras. We develop a cascaded filter design whereby the AEB tracker processes the raw event stream to output feature positions. These tracks are then used asynchronously in an image tracking filter. However, since the AEB tracker outputs have high temporal correlation, they cannot be directly used as measurements in the image tracking filter. To overcome this, we use the equivalent measurement framework to provide uncorrelated track estimates that can be used directly in a second stage EqF for image tracking. To demonstrate our approach and simplify the exposition we focus on planar transformations corresponding to SE (2) 
+
+image transformations. The extension of these ideas to full image homography estimation on SL (3) is algebraically more complicated and is left for future work, although the authors expect the results to be similar. We evaluate our algorithm experimentally on two datasets and compare to both a covariance intersection fusion algorithm, and a raw “event-by-event” optimisation algorithm. Our algorithm provides significantly smoother and more stable estimates than the alternate algorithms for features moving up to 7000 pixels per second. 
+
+# 2 Preliminaries 
+
+Let G be a general Lie group with dimension n, associated with the Lie algebra g. Let id denote the identity element of G. For any given X, Y ∈ G, the left and right translations are denoted by L X , RX : G → G, and are defined by LX (Y ) := XY, RX (Y ) := Y X. 
+
+The Lie algebra g is isomorphic to a vector space Rn with the same dimension. We use wedge (·)∧ : Rn → g and vee 
+
+(·)∨ : g → Rn operators to map between the Lie algebra and the vector space. The Adjoint map for the group G, Ad X : g → g
+
+is defined by 
+
+Ad X [u∧] = D LX ◦ DRX−1 [u∧] ,
+
+for every X ∈ G and u∧ ∈ g, where DLX , and DRX denote the differentials of the left and right translations, respectively. The adjoint map for the Lie algebra ad u∧ : g → g is given by 
+
+ad u∧ v∧ = [ u∧, v ∧] ,
+
+and is equivalent to the Lie bracket. A (right) group action of a Lie group G on a manifold M is a smooth map ϕ : G × M → M that satisfies 
+
+ϕ(X, ϕ (Y, ξ )) = ϕ(Y X, ξ ) and ϕ(id , ξ ) = ξ
+
+for all X, Y ∈ G and ξ ∈ M . It induces the partial maps ϕX : M → M and ϕξ : G → M which are defined by 
+
+ϕX (ξ) := ϕ(X, ξ ) =: ϕξ (X).
+
+# 3 System Model 
+
+Consider an event camera translating and rotating over a planar scene perpendicular to the optical axis of the camera. Since we are only considering planar motion, we can rescale the image so that the image coordinates correspond to the Euclidean coordinates, saving considerable complexity in the formulation. Choose an arbitrary 2D inertial reference frame {0} and let 2Equivariant Filter for High Performance Image Tracking using an Event Camera AUTHOR ACCEPTED VERSION 
+
+{B} denote the camera’s 2D body-fixed frame. That is, the reference image has coordinates {0} and the body-frame image has coordinates {B}. We will assume that the event camera tracks a collection of blob-like features on the planar scene. Let 
+
+˚pi ∈ { 0} for i ∈ { 1, . . . , n } denote the stationary locations of the feature points in the reference image. The position of the blob in the body-frame image at time-index t is denoted pit ∈ { B}.We would like to estimate the image transformation from {B} to {0} and its linear and angular velocity in {B}. Since only planar motion is considered, then the associated image transformation can be represented by a homogeneous transformation matrix P ∈ SE (2) in the special Euclidean group on two dimensions. That is, P ∈ SE (2) represents the special Euclidean transformation from {0} to {B} (at an implicit time-index t that will be clear from context). It follows that the true position of the ith feature in the body frame {B} is given by 
+
+pit = hi(P ) = P −1˚pi, (1) where the overbar indicates homogeneous coordinates. The function hi(P ) (no overbar) returns pit ∈ R2. The measurement model used for image tracking is 
+
+yit = hi(P ) + μt, μt ∼ N(0 , R t), (2) which is a measurement of the ith feature-position in the body frame {B} at time t. Note that we do not actually have an independently distributed measurement yit available and we will need to construct this from the output of the AEB tracker as discussed in Section 5. We will use a constant velocity model for the proposed image tracking algorithm. The state space is identified as 
+
+M := SE (2) × se (2) , (3) where SE (2) is the SE (2) -torsor with elements representing the camera position and rotation on the plane. The se (2) part of the state is the angular and linear velocity of the camera in {B} corresponding to the angular and linear velocity components of the 2D special Euclidean transformation. The element P ∈ SE (2) represents the camera orientation and position on the plane expressed as a homogeneous transformation matrix while the camera’s linear and angular velocities are denoted by V ∈ se (2) .The deterministic system dynamics are given by 
+
+˙P = P (V + U1∧), ˙V = U2∧. (4) The first input signal U1 ∈ R3 is a virtual input that is included to provide structure for the symmetry operation [23] and will be set to zero in the algorithm. The second input signal U2 ∈ R3 is the acceleration input and is set to zero since we assume constant velocity. That is, the input velocity of the system in the filter implementation is (U1, U 2) = (0 3×1, 03×1) ∈ L, where 
+
+L := R3 × R3 is the input space. 
+
+# 4 Equivariant filter design 
+
+In this section, we develop the proposed Equivariant Filter (EqF) design for the image tracking problem according to the procedure of [24]. 
+
+4.1 Symmetry of the system 
+
+The system symmetry follows [23]. Let Z := ( P, V ) ∈ M denote elements of the state space. Define 
+
+˙Z = ddt (P, V ) = f(U1,U 2)(P, V ) = fU (Z) (5) with U = ( U1, U 2) ∈ L as the compact form of (4). Define a symmetry Lie group G := SE (2) ⋉ se (2) with elements written X = ( A, a ) ∈ G [23]. The group product, identity and inverse are given by 
+
+(A1, a 1) · (A2, a 2) = ( A1A2, a 1 + Ad A1 a2),
+
+id = ( I3, 03), (A1, a 1)−1 = ( A−1, − Ad A−1 a).
+
+The symmetry actions and system lift required for the EqF are given in the following propositions proved in ([23], Section IV. and V., respectively). 
+
+Proposition 4.1 (State action) The group action ϕ : G × M → M defined by 
+
+ϕ(( A, a ), (PZ , V Z )) = ( PZ A, Ad A−1 (VZ − a)) (6) 
+
+is a transitive right group action. 
+
+3Equivariant Filter for High Performance Image Tracking using an Event Camera AUTHOR ACCEPTED VERSION 
+
+Proposition 4.2 (Input action) Define ψ : G × L → L as 
+
+ψ(( A, a ), (U1, U 2)) = (Ad A−1 (U1∧ + a), Ad A−1 U2∧). (7) 
+
+Then ψ is a right group action of G on L.
+
+Proposition 4.3 (System lift) Define the map Λ : M × L → g by 
+
+Λ (( PZ , V Z ), (U1, U 2)) =  VZ + U1∧, ad VZ U1∧ − U2∧ . (8) 
+
+Then Λ is a lift for the system in (4) with respect to the symmetry group; that is, it satisfies the lift condition 
+
+DE |id ϕ(P,V )(E) [Λ (( P, V ) , (U1, U 2))] = f(U1,U 2) (P, V ) .
+
+4.2 Equivariant filter dynamics 
+
+Choose an origin ˚Z ∈ M to be ˚Z := ( ˚P, ˚V ) = ( I3, 03). Define the local coordinate chart ϑ : U ˚Z ⊂ M → R6 to be 
+
+ϑ :=  ϕ˚Z · exp G
+
+−1 = log G ·ϕ−1˚Z , (9) on a neighborhood U ˚Z around the origin such that the map is bijective. The logarithm log G in (9) is computed using the matrix realisation of the semi-direct product Lie group. Let Z = ( P, V ) ∈ M denote the true state of the system. Define the observer state to be ˆX = ( ˆA, ˆa) ∈ G with covariance 
+
+Σ ∈ S+(6) , where S+(n) denotes the set of n × n symmetric positive definite matrices. The covariance matrix Σ is a positive definite operator on the vector representation of the direct product Lie-algebra g × g ≡ R6. The estimate of the state is obtained by applying the group action to the origin ˆZ = ϕ ˆX ˚Z. Let yit ∈ R2 denote the output track coordinates of a the ith tracked point provided by the AEB front end tracker. The equivariant error is given by e = ϕ( ˆX−1, Z ), and the filter dynamics are derived by linearising the dynamics of the local state error ε = ϑ(e). Define At, Bt and Ct to be the Jacobian matrices of the EqF, defined in [24]. The input U1 = 0 is set to zero to enforce the system kinematics. We use a constant velocity model for the dynamics and set U2 ≡ 0. The filter is designed to run predict and update synchronously. The discrete filter update equations for a single measurement are given by 
+
+ˆXt|t−1 = ˆXt−1|t−1 exp G(δt Λ( ϕ( ˆXt−1|t−1, ˚Z), (0 , 0))) (10) 
+
+Σt|t−1 = exp( Atδt ) Σ t−1|t−1 exp( Atδt )⊤ + δtB tQtB⊤ 
+
+> t
+
+(11) 
+
+∆ = D E id ϕ˚Z (E)† Dϑ−1Σt|t−1Ct⊤(CtΣt|t−1Ct⊤ + Rt)−1(yit − hi(ϕ( ˆXt|t−1, ˚Z))) (12) 
+
+ˆXt|t = exp G(∆) ˆXt|t−1 (13) 
+
+Σt|t = ( I − Σt|t−1Ct⊤(CtΣt|t−1Ct⊤ + Rt)−1Ct)Σ t|t−1. (14) The matrices Qt ∈ S+(6) and Rt ∈ S+(2) are the input and output gain matrices, ∆ ∈ g is the correction term, and δt is the time since the last EqF update. 
+
+# 5 Equivalent Measurement Update 
+
+As discussed, the outputs of event-based AEB feature trackers are used as point measurements for image tracking. These track estimates have strong temporal correlation as they are generated by a filter that correlates the full measurement history to generate the present estimate of the state. To compensate for this in the EqF, we propose to use the equivalent measurement formulation introduced by [20]. An advantage of this approach is that it also allows one to update the EqF at a slower rate than the AEB tracker, reducing computational load when required. Let t denote the index of the EqF filter and let k denote the index of the output of the ith AEB tracker. Let tik denote the EqF filter index at a time coincident with the ith AEB tracker estimate with index k. Consider the EqF update at a time tik based on the historic track data {k − m + 1 , . . . , k }, where m ∈ { 1, 2, . . . } denotes the number of events accumulated between EqF updates. Typically, we will use m = 1 , using information from just the latest event, and run the EqF at the same rate as the AEB tracker updates. However, by accumulating data we can ensure that the equivalent measurement remains well defined and reduce computational load if required. Let (ˆ pik|k, Σik|k) denote the AEB filter estimate, including covariance estimate, at index k. Note that the notation Σ is overloaded to represent both the covariance estimate from the AEB filter and EqF, and they differ by the use of k and t in the subscript, respectively. We modify the AEB tracker to generate the accumulated prediction filter-state estimate (ˆ pik|k−m, Σik|k−m) from k − m to k. If m = 1 then this is exactly the standard prediction provided by a Kalman filter. If m > 1 then this is provided by iterating the prediction equations of the AEB filter without update for indexes 
+
+k − m to k (Fig. 1). The equivalent measurement formulation considers an independently distributed virtual measurement 
+
+ˆyik|k−m = pik + ηk|k−m, ηk|k−m ∼ N(0 , ˆRik|k−m) (15) 4Equivariant Filter for High Performance Image Tracking using an Event Camera AUTHOR ACCEPTED VERSION        
+
+> k−mk
+> Predict Only: (ˆ pik|k−m,Σik|k−m)
+> ˆpik−m|k−m
+> Σik−m|k−m
+> Predict and Update: (ˆ pik|k,Σik|k)
+> ˆpik|k
+> Σik|k
+
+Figure 1: Equivalent measurement formulation for the ith feature. From index k − m, compute the predicted and updated AEB states up to index k. The equivalent measurement is computed from these by (16)–(17). that would have generated the updated-state (ˆ pik|k, Σik|k) from the predicted-state (ˆ pik|k−m, Σik|k−m) for a single measurement update . Here pik is the true feature-position and ˆRik|k−m is a measurement covariance associated with a (virtual) zero mean independent Gaussian noise process ηk|k−m. The measurement ˆyik|k−m and its noise covariance ˆRik|k−m can be computed from the state estimates by implementing the standard Kalman filter update equations in reverse [20, 25], 
+
+ˆyik|k−m = ˆ pik|k−m + Σ ik|k−m
+
+
+
+Σik|k−m − Σik|k
+
+−1 
+
+ˆpik|k − ˆpik|k−m
+
+
+
+(16) 
+
+ˆRik|k−m = Σ ik|k−m
+
+
+
+Σik|k−m − Σik|k
+
+−1
+
+Σik|k−m − Σik|k−m. (17) The equivalent measurement ˆyik|k−m is an independently distributed function of the true track position pik which in turn is a deterministic function of the image transformation state. We set yitk = ˆ yik|k−m in (12) and Ritk = ˆRik|k−m in (14) to implement the image tracking EqF. It is important to note that the inverse of the change in covariance (Σ ik|k−m − Σik|k) in (16)–(17) may be ill conditioned. This is particularly the case for the output of the AEB tracker where each event (update) introduces very little information. As the difference approaches zero, numerical precision can introduce instability in the matrix inverse. In such situations, one must choose m > 1 to increase the accumulation window until there is sufficient information in the equivalent measurement to make (16) and (17) well defined. The value of m can be chosen dynamically by testing (Σ ik|k−m − Σik|k) at each index to check that the inverse is well conditioned. 
+
+# 6 Experimental Setup 
+
+In this section, we outline the experimental setup used to evaluate the algorithm proposed in Section 4 and 5. 
+
+6.1 Hardware Setup 
+
+Two experiments were conducted with the Prophesee EVK4 event camera. To evaluate the algorithm under general se (2) 
+
+motion, we marked a planar surface with four feature points. The camera was moved by hand in the parallel plane (translation and rotation), shown in Figure 2a. Since this data was based on a hand-held camera, there will be noticeable variation from true planar motion, and this data provides an indication of the robustness of the algorithm. To evaluate our algorithm in a high-speed application, four feature points were placed on a spinning planar disc attached to a stepper motor, shown in Figure 2b. In Section 7.2, the disc speed was ∼4.4 revolutions per second, corresponding to feature velocities of ∼7000 pixels per second on the image plane. Although this setup uses a fixed camera and moving feature points, it can equally be interpreted as fixed feature points and a moving camera. Estimating the SE (2) transformation instantaneously requires a minimum of two pairs of corresponding points. For four points the estimation problem is over-determined, providing robustness to noisy measurements. The tracking algorithm will continue to function even if points are occluded as long as there is at least one point visible to generate events that lead to filter updates. The filter will drift from the true solution if there are less than two points visible for an extended period of time. 
+
+6.2 Feature Tracking using the AEB Tracker 
+
+Feature points were tracked using the AEB tracker as it has shown state of the art performance for high-speed tracking [1]. Consider a feature that is stationary in the world that is being observed by a moving event camera. A feature is considered an 
+
+event blob when the spatial distribution of events it generates on the image plane is well-approximated by a bivariate Gaussian distribution around a moving center. The AEB tracker parameterises an event blob by its position (mean) and orientation with associated linear and angular velocities, and its shape defined by the principal correlations of the Gaussian. The state of the AEB tracker is estimated asynchronously with each associated event using an extended Kalman filter. For image tracking, the AEB tracker provides position information of features at high temporal resolution. 5Equivariant Filter for High Performance Image Tracking using an Event Camera AUTHOR ACCEPTED VERSION  
+
+> (a) (b)
+
+Figure 2: Experimental setup for (a) general planar motion and (b) fast rotating motion. Inset images show the features (red) as observed from the AEB tracker. 
+
+6.3 Comparisons 
+
+We compare our algorithm to two alternatives. First, we implement an algebraic optimisation for the least squares solution of the SE (2) transformation between measured points in {B} and reference points in {0} at each time step [26]. Zero-order hold is used to sample all AEB trackers at the same time. The velocity components are estimated using first order finite difference over SE (2) estimates. For numerical stability, velocity estimates are computed over larger timescales than the raw event rate to reduce the effects of per event noise. At each time step, the velocity is computed between the current SE (2) estimate and the estimate five milliseconds ago. The orientation used to transform to a body velocity is taken as the average orientation between the two time instances. We also compare our algorithm to the same EqF but using covariance intersection for data fusion in the update step [19]. Measurements are taken directly as the AEB position and associated covariance, and are fused with the predicted EqF state via 
+
+Σt|t =
+
+
+
+αtΣ−1 
+
+> t|t−1
+
++ (1 − αt)C⊤ 
+
+> t
+
+Σi−1 
+
+> k|k
+
+Ct
+
+−1
+
+(18) 
+
+∆ = Σ t|t(1 − αt)C⊤ 
+
+> t
+
+Σi−1 
+
+> k|k
+
+(ˆ pik|k − hi(ϕ( ˆXt|t−1, ˚ξ))) (19) 
+
+ˆXt|t = exp G(∆) ˆXt|t−1 (20) where ( ˆXt|t−1, Σt|t−1) is the predicted EqF state and (ˆ pik|k, Σik|k) is the updated AEB tracker position. The scalar αt is a weighting parameter that is chosen to minimise the trace of the updated covariance matrix Σt|t.
+
+# 7 Results and Discussion 
+
+In this section, we present the results of the experiments. 
+
+7.1 Image Tracking under General Motion 
+
+We first compare the performance of the three algorithms for general se (2) motion including rotation and translation (Fig.2a). The state estimates are shown in Figure 3. At macro-scale, all algorithms appear to perform comparably for the SE (2) estimate. However, it is noticeable that significantly more noise is introduced for the optimisation and covariance intersection methods in the se (2) estimates. The difference in performance becomes more apparent at a finer time scale (right column). For the SE (2) 
+
+estimate in the zoomed plots, the mean values remain similar, however the optimisation appears noisier than the equivalent measurement (no covariance estimate is available). Covariance intersection appears to have more low frequency deviations and maintains a significantly more conservative estimate. The velocity terms reveal a larger disparity in performance as optimisation shows large variance in estimates (150-250 pixels per second) over millisecond time horizons. This is a byproduct of computing the velocity through finite difference of position. The EqF with covariance intersection also shows large deviations, but they occur more smoothly as a result of the filtering process. The EqF with equivalent measurements produces low-variance velocity estimates and significantly outperforms the alternate algorithms. 
+
+7.2 Image Tracking under Fast Motion 
+
+We also compare the performance of the three algorithms for fast rotational motion (Fig. 2b). The state estimates are shown in Figure 4. Due to the fast motion, only a short time window is presented so that details can be resolved. Similar to Section 6Equivariant Filter for High Performance Image Tracking using an Event Camera AUTHOR ACCEPTED VERSION 
+
+7.1, all algorithms perform comparably at the macro-scale for SE (2) , and the se (2) estimates for optimisation and covariance intersection methods are visibly noisier than the equivalent measurement. In the zoomed window, the equivalent measurement and covariance intersection perform comparably and provide smooth estimates over this short time interval. As expected, covariance intersection stabilises to a significantly higher steady-state covariance. For fast motion, the optimisation algorithm performs worse than the two filtering algorithms, with significantly more noise in both estimates. This can be attributed to the isolated estimation with no temporal correspondence, and faster motion inducing larger changes in feature tracker estimates that no longer satisfy the zero-order-hold assumption. This reinforces the advantages of filtering for image tracking as the temporal evolution of the system helps to stabilise the estimates. 
+
+Figure 3: State estimates (lines) and error covariance (one standard deviation, shaded) for general motion. The right col-umn shows a zoomed time window indicated by the dashed lines in the left column. 
+
+Figure 4: State estimates (lines) and error covariance (one standard deviation, shaded) for fast motion. The right column shows a zoomed time window indicated by the dashed lines in the left column. 
+
+7.3 Discussion 
+
+From Figures 3 and 4, the EqF with equivalent measurement appears to outperform the two alternate approaches by providing smoother SE (2) and se (2) estimates across both datasets. Although both alternate algorithms are able to perform image tracking, their estimates (particularly for se (2) ) are significantly noisier. First comparing to the EqF with covariance intersection. As a conservative estimator, covariance intersection is guaranteed to overestimate the covariance of the state for any cross-correlation which leads to overly cautious estimates. Additionally, computing the weighting parameter αt at each timestep (see Section 6.3) introduces an optimisation problem that must be solved up to the event rate of the feature tracker. The optimisation algorithm achieves comparable performance for SE (2) in the presented datasets, but the velocity estimates are significantly worse. The design-decisions required to compute the velocity directly impact the performance, whereas this is embedded in the filtering algorithms. As there is no temporal dependence between estimates, it is more sensitive to occluded feature points, particularly when there are limited feature points. In contrast the filtering-based approaches can use the kinematic model to overcome such situations and provide robustness against instances of temporary occlusions and lost features. 
+
+# 8 Conclusions 
+
+In this work, we propose an EqF for SE (2) image tracking with an event camera. An event-based feature tracker provides sub-pixel position measurements at high temporal resolution, but this data is highly correlated as it is derived from a filtering process. We develop an equivalent measurement to handle the high temporal correlation between consecutive measurements. We evaluate our algorithm experimentally on two datasets against two alternate approaches. Our algorithm provides signif-icantly smoother and more stable estimates than the alternate algorithms for features moving up to 7000 pixels per second. The equivalent measurement formulation is crucial in our filter, and with its development there is a clear path to extend our algorithm to SL (3) for full homography tracking. 7Equivariant Filter for High Performance Image Tracking using an Event Camera AUTHOR ACCEPTED VERSION 
+
+# References 
+
+[1] Z. Wang, T. Molloy, P. Van Goor, and R. Mahony, “Asynchronous blob tracker for event cameras,” IEEE Transactions on Robotics , 2024. 1, 2, 5 [2] P. I. Corke, W. Jachimczyk, and R. Pillat, Robotics, vision and control: fundamental algorithms in MATLAB . Springer, 2011, vol. 73. 1 [3] M.-D. Hua, J. Trumpf, T. Hamel, R. Mahony, and P. Morin, “Feature-based recursive observer design for homography estimation and its application to image stabilization,” Asian Journal of Control , vol. 21, no. 4, pp. 1443–1458, 2019. 1 [4] D. Scaramuzza and R. Siegwart, “Appearance-guided monocular omnidirectional visual odometry for outdoor ground vehicles,” IEEE transactions on robotics , vol. 24, no. 5, pp. 1015–1026, 2008. 1 [5] S. Benhimane and E. Malis, “Homography-based 2d visual tracking and servoing,” The International Journal of Robotics Research , vol. 26, no. 7, pp. 661–676, 2007. 1 [6] B. Lai, Z. Li, W. Li, C. Yang, and Y. Pan, “Homography-based visual servoing of eye-in-hand robots with exact depth estimation,” IEEE Transactions on Industrial Electronics , vol. 71, no. 4, pp. 3832–3841, 2023. 1 [7] R. Hartley and A. Zisserman, Multiple view geometry in computer vision . Cambridge university press, 2003. 1 [8] T. Hamel, R. Mahony, J. Trumpf, P. Morin, and M.-D. Hua, “Homography estimation on the special linear group based on direct point correspondence,” in 2011 50th IEEE Conference on Decision and Control and European Control Conference .IEEE, 2011, pp. 7902–7908. 1 [9] R. Mahony, T. Hamel, P. Morin, and E. Malis, “Nonlinear complementary filters on the special linear group,” International Journal of Control , vol. 85, no. 10, pp. 1557–1573, 2012. 1 [10] A. D. C. Bernal, P. Decoste, and J. R. Forbes, “Bayesian filtering for homography estimation,” IEEE Robotics and Au-tomation Letters , vol. 8, no. 12, pp. 8216–8223, 2023. 1 [11] T. Bouazza, K. Ashton, P. van Goor, R. Mahony, and T. Hamel, “Equivariant filter for feature-based homography esti-mation for general camera motion,” in 2023 62nd IEEE Conference on Decision and Control (CDC) . IEEE, 2023, pp. 8463–8470. 1 [12] Y. Ma, S. Soatto, J. Koˇ seck´ a, and S. Sastry, An invitation to 3-d vision: from images to geometric models . Springer, 2004, vol. 26. 2 [13] M. M. Varley, T. L. Molloy, and G. N. Nair, “Optimal linear filtering for discrete-time systems with infinite-dimensional measurements,” IEEE Transactions on Automatic Control , vol. 70, no. 3, pp. 1637–1651, 2025. 2 [14] G. Gallego, T. Delbr¨ uck, G. Orchard, C. Bartolozzi, B. Taba, A. Censi, S. Leutenegger, A. J. Davison, J. Conradt, K. Dani-ilidis et al. , “Event-based vision: A survey,” IEEE transactions on pattern analysis and machine intelligence , vol. 44, no. 1, pp. 154–180, 2020. 2 [15] F. Hamann, D. Gehrig, F. Febryanto, K. Daniilidis, and G. Gallego, “Etap: Event-based tracking of any point,” in Pro-ceedings of the Computer Vision and Pattern Recognition Conference , 2025, pp. 27 186–27 196. 2 [16] T. Delbruck et al. , “Frame-free dynamic digital vision,” in Proceedings of Intl. Symp. on Secure-Life Electronics, Advanced Electronics for Quality Life and Society , vol. 1. Tokyo, 2008, pp. 21–26. 2 [17] C.-Y. Chong, S. Mori, W. H. Barker, and K.-C. Chang, “Architectures and algorithms for track association and fusion,” 
+
+IEEE Aerospace and Electronic Systems Magazine , vol. 15, no. 1, pp. 5–13, 2000. 2 [18] K.-C. Chang, R. K. Saha, and Y. Bar-Shalom, “On optimal track-to-track fusion,” IEEE Transactions on Aerospace and Electronic Systems , vol. 33, no. 4, pp. 1271–1276, 2002. 2 [19] S. Julier and J. K. Uhlmann, “General decentralized data fusion with covariance intersection,” in Handbook of multisensor data fusion . CRC Press, 2017, pp. 339–364. 2, 6 [20] G. Frenkel, “Flexible architectures for sensor fusion in theater missile defense.” Tech. Rep., 1994. 2, 4, 5 [21] N. N. Okello and S. Challa, “Joint sensor registration and track-to-track fusion for distributed trackers,” IEEE Transactions on Aerospace and Electronic Systems , vol. 40, no. 3, pp. 808–823, 2004. 2 [22] E. Taghavi, R. Tharmarasa, T. Kirubarajan, Y. Bar-Shalom, and M. McDonald, “A practical bias estimation algorithm for multisensor-multitarget tracking,” IEEE Transactions on Aerospace and Electronic Systems , vol. 52, no. 1, pp. 2–19, 2016. 2 [23] Y. Ng, P. Van Goor, T. Hamel, and R. Mahony, “Equivariant systems theory and observer design for second order kinematic systems on matrix lie groups,” in 2020 59th IEEE conference on decision and control (CDC) . IEEE, 2020, pp. 4194– 4199. 3 [24] P. van Goor, T. Hamel, and R. Mahony, “Equivariant filter (eqf),” IEEE Transactions on Automatic Control , vol. 68, no. 6, pp. 3501–3512, 2022. 3, 4 [25] G. Welch, G. Bishop et al. , “An introduction to the Kalman filter,” 1995. 5 8Equivariant Filter for High Performance Image Tracking using an Event Camera AUTHOR ACCEPTED VERSION 
+
+[26] S. Umeyama, “Least-squares estimation of transformation parameters between two point patterns,” IEEE Transactions on pattern analysis and machine intelligence , vol. 13, no. 4, pp. 376–380, 2002. 6 9
