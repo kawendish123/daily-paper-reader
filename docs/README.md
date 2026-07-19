@@ -6,34 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-18
-- 运行时间：2026-07-18 21:21:35 UTC
+- 最新运行日期：2026-07-19
+- 运行时间：2026-07-19 20:47:43 UTC
 - 运行状态：成功
-- 本次总论文数：4
-- 精读区：2
-- 速读区：2
+- 本次总论文数：1
+- 精读区：1
+- 速读区：0
 
 ### 今日简报（AI）
-1) 今日聚焦高效视频理解与边缘视频扩散，两篇高评分精读分别对应视频多模态大模型开源方案和算法-硬件协同设计。  
-2) 最值得看的方向：VideoChat3的完全开源视频MLLM（9.0分）和CODA通过NMP解耦计算缓存实现边缘视频扩散（8.0分）。  
-3) 建议普通读者优先精读VideoChat3，了解开源视频理解方案；若关注部署，再深入CODA的边缘硬件优化。
-- 详情：[/202607/18/README](/202607/18/README)
+今日聚焦轻量级语义分割新模型MobileSAM2，得分8.0，为空间智能应用提供高效方案。  
+该模型在保持SAM强大分割能力的同时大幅降低计算资源，适合边缘端部署。  
+建议读者进一步探索其实际部署性能，尤其是移动端实时分割场景。
+- 详情：[/202607/19/README](/202607/19/README)
 
 ### 精读区论文标签
-1. [VideoChat3: Fully Open Video MLLM for Efficient and Generalist Video Understanding](/202607/18/2607.14935v1-videochat3-fully-open-video-mllm-for-efficient-and-generalist-video-understanding)  
-   标签：评分：9.0/10、query:mec-video
-   evidence：流式视频理解多模态大模型
-2. [CODA: Algorithm-Hardware Co-design for Edge Video Diffusion via NMP-Enabled Compute-Cache Operator Disaggregation](/202607/18/2607.14908v1-coda-algorithm-hardware-co-design-for-edge-video-diffusion-via-nmp-enabled-compute-cache-operator-disaggregation)  
+1. [MobileSAM2: Lightweight Segment Anything for Spatial Intelligence](/202607/19/2607.12297v1-mobilesam2-lightweight-segment-anything-for-spatial-intelligence)  
    标签：评分：8.0/10、query:mec-video
-   evidence：边缘视频扩散模型部署
+   evidence：轻量级视频分割用于移动设备，支持边缘视频分析
 
 ### 速读区论文标签
-1. [Equivariant Filter for High Performance Image Tracking using an Event Camera](/202607/18/2607.09103v1-equivariant-filter-for-high-performance-image-tracking-using-an-event-camera)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：利用事件相机实现高性能图像跟踪，适用于实时应用
-2. [Kaleido: Algorithm-Hardware Co-Design for Video Diffusion Transformers by Exploiting Latent Space Correlations](/202607/18/2607.13770v1-kaleido-algorithm-hardware-co-design-for-video-diffusion-transformers-by-exploiting-latent-space-correlations)  
-   标签：评分：6.0/10、query:mec-video
-   evidence：视频扩散Transformer加速
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">

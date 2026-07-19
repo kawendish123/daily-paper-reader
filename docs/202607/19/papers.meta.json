@@ -1,0 +1,24 @@
+{
+  "label": "2026-07-19",
+  "date": "2026-07-19",
+  "generated_at": "2026-07-19T20:47:49",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202607/19/2607.12297v1-mobilesam2-lightweight-segment-anything-for-spatial-intelligence",
+      "section": "deep",
+      "title_en": "MobileSAM2: Lightweight Segment Anything for Spatial Intelligence",
+      "authors": "Kai Jiang, Jiaxing Huang, Jingyi Zhang, Weiying Xie, Yunsong Li, Yufei Wang, Aoran Xiao, Dacheng Tao",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.12297v1",
+      "score": "8.0",
+      "evidence": "轻量级视频分割用于移动设备，支持边缘视频分析",
+      "tldr": "SAM2模型虽强大但难以在手机等设备部署。本文提出超图知识蒸馏（HyperKD），通过时间超图蒸馏和粒度超图蒸馏分别建模通用时间知识与多粒度知识，将SAM2能力迁移至轻量学生模型。通过架构搜索得到MobileSAM2系列，在多个基准上取得优异效果，并在具身AI任务中展现良好泛化性能，为移动端实现任意分割提供了可行方案。",
+      "tags": "query:mec-video",
+      "abstract_en": "The recent large video foundation model, SAM2, enables segment anything in both images and videos, serving as a powerful base model for various applications. However, many of such use cases require to operate on resource-constrained devices like mobile phones and laptops. In this work, we aim to make SAM2 more mobile-friendly by distilling the heavyweight SAM2 into a lightweight model, facilitating segment anything in both images and videos on mobile devices. To this end, we propose Hypergraphical Knowledge Distill (HyperKD), which introduces the idea of hypergraph into knowledge distillation, aiming to effectively model and transfer SAM2's generalizable and comprehensive knowledge. HyperKD consists of Temporal HyperKD and Granularity HyperKD that construct hypergraphs to explicitly model and extract the generalizable temporal knowledge and the comprehensive multi-granularity knowledge from SAM2 respectively, which are then distilled into the lightweight student model by aligning it with the constructed hypergraphs. Besides, we present MobileSAM2, a new family of lightweight SAM2 that balances efficiency and effectiveness via searching the best model architectures with HyperKD during model size reduction. Extensive experiments validate MobileSAM2 across multiple benchmarks and show promising generalization performance on embodied AI tasks.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

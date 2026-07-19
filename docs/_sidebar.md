@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-07-19 <!--dpr-date:20260719-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/19/2607.12297v1-mobilesam2-lightweight-segment-anything-for-spatial-intelligence" data-sidebar-item="{&quot;title&quot;: &quot;MobileSAM2: Lightweight Segment Anything for Spatial Intelligence&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.12297v1-mobilesam2-lightweight-segment-anything-for-spatial-intelligence&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;mec-video&quot;}], &quot;evidence&quot;: &quot;轻量级视频分割用于移动设备，支持边缘视频分析&quot;}">MobileSAM2: Lightweight Segment Anything for Spatial Intelligence</a>
   * 2026-07-18 <!--dpr-date:20260718-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/18/2607.14935v1-videochat3-fully-open-video-mllm-for-efficient-and-generalist-video-understanding" data-sidebar-item="{&quot;title&quot;: &quot;VideoChat3: Fully Open Video MLLM for Efficient and Generalist Video Understanding&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.14935v1-videochat3-fully-open-video-mllm-for-efficient-and-generalist-video-understanding&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;mec-video&quot;}], &quot;evidence&quot;: &quot;流式视频理解多模态大模型&quot;}">VideoChat3: Fully Open Video MLLM for Efficient and Generalist Video Understanding</a>
