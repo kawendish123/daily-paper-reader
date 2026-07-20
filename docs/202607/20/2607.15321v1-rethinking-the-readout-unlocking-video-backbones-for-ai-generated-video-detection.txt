@@ -1,0 +1,970 @@
+Title: Rethinking the Readout: Unlocking Video Backbones for AI-Generated Video Detection
+
+URL Source: https://arxiv.org/pdf/2607.15321v1
+
+Published Time: Mon, 20 Jul 2026 00:02:13 GMT
+
+Number of Pages: 21
+
+Markdown Content:
+# Rethinking the Readout: Unlocking Video Backbones for AI-Generated Video Detection 
+
+Manni Cui 1,* Ziheng Qin 2,* ZiAn Wang 3 Ruiqi Liu 2 Dianyuan Zou 1 Jianglan Wei 1
+
+Han Zhou 1 Yu Liu 1 Jingrui Xu 1 Wenhao Wang 4,† Zhenyu Zhang 1,† 1Huazhong University of Science and Technology 2Institute of Automation, Chinese Academy of Sciences 
+
+> 3
+
+Jilin University 4Vast Intelligence Lab 
+
+> *
+
+Equal contribution †Corresponding author Patch -level dynamics  Global  aggregation in video backbones  What  is lost                             
+
+> Weaken Local and inter -patch structure
+> Local jitter/ shift
+> Lateral drift
+> Direction change
+> 𝑡 𝑡 +1𝑡 +2𝑡
+> 𝑡 +1
+> 𝑡 +2
+> Patch tokens
+> Video
+> backbone
+> GAP
+> or
+> CLS
+> ∆ത𝒛 𝒕 =𝟏
+> 𝑷 ෍
+> 𝒑
+> 𝒗 𝒕
+> (𝒑 )
+> Suppress patch -level variations
+> …
+> …
+> …
+> … …
+> Loca l details
+> before ( patch -level) after (global average)
+> …
+> …
+> …
+> Inter -patch relation s
+> before (structured relations) after (wea krelations)
+> +
+> -
+> 0
+
+Figure 1: The readout is the bottleneck for AIGV detection. Left: AIGV detection relies on patch level temporal cues. Middle: Each colored cell represents a patch token, with color depth indicating activation strength. Standard video backbones aggregate these tokens into a single global vector via GAP or CLS, which suppresses patch level variations. Right: This collapse weakens local details and erases structured inter patch relations, leaving the bottleneck in the readout rather than in the backbone representation. 
+
+## Abstract 
+
+AI-generated videos (AIGVs) typically contain subtle temporal artifacts that arise from inter-frame inconsistencies rather than within individual frames. A detector that captures such artifacts should therefore benefit from video pretrained back-bones over image only ones. In practice, however, video backbones with standard global readouts often fail to outperform strong image pretrained probes on AIGV benchmarks. We attribute this gap to excessive spatiotemporal aggregation in the readout. Video pretrained backbones tend to compress each frame into a single global descriptor. This compression suppresses local patch level temporal dynamics and discards inter patch relations, which are precisely the cues that AIGV detection most reliably depends on. Based on this, we propose Velocity Gated Patch Ve-locity Profiling (V-PVP), a lightweight readout that replaces only the aggregation layer with two parallel streams over the patch velocity field, adding only about 
+
+0.5M trainable parameters. V-PVP serves as a general plug-and-play module that consistently improves performance across diverse video backbones under both end-to-end fine-tuning and linear probing settings. Our method reaches 95.28 AUC on AIGVDBench while keeping the backbone fully frozen. The results show that simply replacing the aggregation layer reactivates the temporal potential of frozen video backbones, restoring their advantage on AIGV detection. Code is available at https://anonymous.4open.science/r/PVP-81B3/ .arXiv:2607.15321v1 [cs.CV] 16 Jul 2026 1 Introduction 
+
+Recent video generation models[ 1– 6 ] produce synthetic videos that are increasingly difficult to distinguish from real ones. Their misuse raises pressing concerns about misinformation, which makes it crucial to identify discriminative signals that separate real videos from generated ones. Many of these signals are temporal in nature, manifesting as inter-frame inconsistencies such as flicker, jitter, drift, or motion that is inconsistent across regions [7–10]. A natural choice for exploiting such temporal signals is video backbones pretrained on large scale video datasets, since they are designed to model temporal dynamics across frames. Recent bench-marks, however, suggest the opposite. Several detectors built on image pretrained encoders [ 11 –13 ]have been shown to surpass video backbones with their default readouts on standard AIGV detection benchmarks [ 14 ]. This suggests that the temporal advantage of video backbones is not being fully realized, and that the bottleneck likely lies elsewhere in the pipeline. We trace this gap to a specific bottleneck and conduct a diagnostic study in Section 3, identifying excessive spatiotemporal aggregation in the readout as the cause. Video pretraining objectives, from supervised action recognition to self-supervised masked video modeling, all push the backbone toward a stable global representation, with patch-level variations treated as noise. This pipeline suppresses local patch level dynamics and discards inter patch relations, both of which carry the most reliable cues for distinguishing real from generated videos [ 15 , 16 ]. The bottleneck therefore lies in the readout rather than in the backbone representation. Building on this diagnosis, we propose Velocity Gated Patch Velocity Profiling (V-PVP), a lightweight readout that keeps the backbone fully frozen and replaces only the aggregation layer. V-PVP addresses the two losses identified above with two parallel streams over the patch velocity field. One stream uses velocity gated patch attention to focus on patches with notable temporal variations, which would otherwise be smoothed out by uniform aggregation. The other stream aggregates patch velocities to preserve their per channel magnitudes, which would otherwise be diluted by linear averaging. The new readout introduces only about 0.5M trainable parameters, roughly 0.57% of the backbone. Our contributions are as follows: • We identify the readout as an important bottleneck of video backbones in AIGV detection, and provide quantitative evidence that standard aggregation discards two complementary forms of patch level evidence on which AIGV detection relies. • We propose V-PVP, a readout that addresses the two losses with two parallel streams over the patch velocity field, unlocking the perceptual potential of video backbones for AIGV detection. • Across multiple video backbones and benchmarks, V-PVP consistently surpasses same backbone readouts to a large extent. With VideoMAE as the backbone, our method reaches 95.28 AUC on AIGVDBench while keeping the backbone fully frozen. 
+
+## 2 Related Work 
+
+2.1 AI-Generated Video Detection 
+
+As video generation has rapidly advanced, AIGV detection has shifted from single-frame artifact analysis toward modeling temporal consistency. Existing methods broadly fall into three groups. End-to-end spatiotemporal detectors train or fine tune a discriminator on AIGV data, including AIGVDet, DeMamba, DIVID, and recent extensions [ 8, 7, 9 , 17 – 20 ], but they often memorize the training generator’s spatial fingerprint and generalize poorly to unseen generators [ 11 , 21 ]. Methods built on physical or frequency priors inject inter frame frequency, motion coherence, or spectral artifacts as discriminative anchors [ 16 , 15 , 22 , 23 ]. Train free approaches use only real video statistics with representation priors and avoid seeing fake data, gaining robustness at the cost of in-distribution accuracy [ 10 , 24 ]. In addition, several detectors built on frozen image encoders [ 25 , 26 , 11 ] extend to video by aggregating per frame scores and remain competitive against video-backbone counterparts. Across these lines, the readout layer is treated as a minor implementation detail, leaving the temporal advantage of video backbones largely unexploited. 23.6  3.8  4.0  4.2  4.4  4.6  4.8  5.0  5.2       
+
+> low -rank coherence of 𝑉 _𝑡 (log 𝜎 ₁−log 𝜎 ₁₀ )
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> 1.25
+> 1.50
+> 1.75
+> density  Cohen's d = 0.640
+> real (n=3000)
+> fake (n=60000)
+
+(a) Loss 1. Spectral condition number of the patch velocity matrix Vt ∈ RP ×D , defined as κspec =log σ1 − log σ10 . Generated videos are systematically higher, with Cohen’s d ≈ 0.64 . This signal is no longer measurable after aggregation. Real  Fak e Real  Fake        
+
+> 0.6
+> 0.8
+> 1.0
+> 1.2
+> 1.4
+> energy / real mean of that pool  gap = 0.20
+> Cohen's d = 0.69 gap = 0.13
+> Cohen's d = 0.41
+> pre -pool mean ‖𝑣 _𝑝 ‖₂post -pool ‖𝐺𝐴𝑃 𝑣𝑒𝑙𝑜𝑐𝑖𝑡𝑦 ‖₂
+> real (n=3000) fake (n =60000 )
+
+(b) Loss 2. Per channel velocity energies, normalized so that the real video mean equals 1. Pre pool, real and fake energies differ by 1.00 vs 0.80 with Cohen’s 
+
+d ≈ 0.69 . After pooling, the gap shrinks to 1.00 vs 
+
+0.88 with d ≈ 0.41 .
+
+Figure 2: The readout is the bottleneck. Real vs fake statistics on all 63k AIGVDBench test videos. 
+
+2.2 Video Backbones and Temporal Readouts 
+
+Common video backbones such as TimeSformer [ 27 ], VideoMAE [ 28 ], UniFormerV2 [ 29 ], SlowFast [30 ], I3D [ 31 ], and XCLIP [ 32 ] are pretrained on action recognition datasets such as Kinetics-400 [33 ]. Downstream detection pipelines typically reuse the action-recognition readout, collapsing patch tokens into a global CLS or GAP vector. This pattern has carried over to deepfake-domain ViTs [ 34 –37 ] with patch-level self-attention and pooling variants, none of which tie the aggregation to a generator-invariant physical quantity. Action recognition rewards stable dominant motion, while AIGV detection hinges on subtle local inconsistencies, so the standard readout is unlikely to be the right fit. To our knowledge, V-PVP is the first method to diagnose the readout as the bottleneck of video backbones in AIGV detection and to address it with a minimal-parameter replacement. 
+
+## 3 Motivation 
+
+A standard video backbone takes an input clip and outputs a tensor of patch tokens of shape P ×T ×D,where P is the number of spatial patches per frame, T is the temporal length, and D is the channel dimension. These tokens carry rich spatiotemporal information, but downstream classification heads expect a single fixed length vector. The readout layer is what closes this gap. Common choices, such as global average pooling, a learnable CLS token, or fixed query attention pooling, differ in how the aggregation weights are computed but share the same operation, namely a joint spatiotemporal and semantic aggregation over patch tokens. This kind of aggregation is the right design for tasks that rely on a stable global understanding, such as action recognition, where local frame to frame fluctuations and inter patch differences are noise to be averaged out. AIGV detection has the opposite need. The discriminative signal between real and generated videos lives precisely in those small frame to frame variations within each patch and in the relations among patches. Standard readouts smooth out the former and dissolve the latter in a single step, leaving the pooled vector blind to the very cues that AIGV detection most reliably depends on. We formalize this mismatch as two complementary losses, namely the loss of inter patch relations and the dilution of per channel velocity magnitudes. To make this concrete, we focus on GAP as the simplest case and base the analysis on the patch velocity 
+
+v(p) 
+
+> t
+
+= z(p) 
+
+> t+1
+
+− z(p) 
+
+> t
+
+, (1) 31 Velocity -Gated Learnable Aggregation            
+
+> 2Channel -Faithful Velocity Profiling
+> Input 𝒙 Patch Tokens
+> Frozen
+> Video
+> Backbone
+> 𝒛 𝒕
+> (𝒑 )
+> 𝒛 𝒕 +𝟏
+> (𝒑 )
+> Patch Velocity
+> 𝒗 𝒕
+> (𝒑 )=𝒛 𝒕 +𝟏
+> (𝒑 )−𝒛 𝒕
+> (𝒑 )
+> MLP Softmax
+> 𝜶 𝒕
+> (𝒑 )
+> Sum
+> ෤𝒛 𝒕
+> Input -adaptive patch weighting
+> Preserve per -channel velocity magnitude
+> Concat
+> Temporal
+> Head
+> ∙
+> Abs Avg
+> 1
+> pp
+> Real
+> Fake
+> Output 𝐲
+> r𝒕
+
+Figure 3: Overall architecture of V-PVP. where z(p) 
+
+> t
+
+∈ RD denotes the p-th patch token of frame t. Applying GAP across patches and then taking a temporal difference is equivalent to averaging the patch velocities, 
+
+∆¯ zt = ¯ zt+1 − ¯zt = 1
+
+P
+
+> P
+
+X
+
+> p=1
+
+z(p) 
+
+> t+1
+
+− 1
+
+P
+
+> P
+
+X
+
+> p=1
+
+z(p) 
+
+> t
+
+= 1
+
+P
+
+> P
+
+X
+
+> p=1
+
+
+
+z(p) 
+
+> t+1
+
+− z(p)
+
+> t
+
+
+
+= 1
+
+P
+
+> P
+
+X
+
+> p=1
+
+v(p) 
+
+> t
+
+. (2) The patch axis collapses from P × D to 1 × D in a single step, and an analogous collapse happens along the temporal axis. This collapse erases inter patch relations and cancels velocity components across channels, the two effects we analyze below. 
+
+Loss 1: inter patch relations are erased. Inter patch relations capture how different patches co-vary across frames. They live in the covariance structure across the patch dimension and become undefined once the patches are aggregated into a single vector. To probe whether real and generated videos differ in this structure, we measure the spectral condition number of the patch velocity matrix 
+
+Vt at each frame, which tests whether inter patch motion admits a low rank decomposition, that is, whether all patches move homogeneously. As shown in Figure 2(a), generated videos consistently exhibit more homogeneous inter patch motion than real videos, reflecting their different generation processes. This pattern is a reliable cue for distinguishing real from fake, yet it lives in the patch dimension and disappears the moment GAP collapses it. 
+
+Loss 2: per channel velocity magnitudes are diluted. Patch velocity vectors typically point in different directions across patches, so when the linear average is taken, components with opposite signs cancel along each channel. By Jensen’s inequality, the post-pool magnitude is bounded by the pre-pool average, 
+
+1
+
+P
+
+> P
+
+X
+
+> p=1
+
+v(p) 
+
+> t2
+
+| {z }
+
+> pre-pool magnitude
+
+≥ 1
+
+P
+
+> P
+
+X
+
+> p=1
+
+v(p)
+
+> t
+> 2
+
+| {z }
+
+> post-pool magnitude
+
+= ∥¯vt∥2 , (3) with equality only when all v(p) 
+
+> t
+
+are colinear and same-signed. As shown in Figure 2(b), pooling retains only a small fraction of the per channel energy, and the gap between real and generated videos shrinks substantially after pooling. Unlike Loss 1, the magnitude pattern still exists in the pooled vector, but common readouts can no longer reliably extract it. The two losses share the same source. The standard readout is designed for joint spatiotemporal and semantic aggregation, which by its very design erases inter patch structure and dilutes channel level magnitudes. Recovering both requires intervening at the readout rather than within the backbone, as we describe in Section 4; a formal derivation of both losses and the corresponding repair operators is provided in Appendix D.1. 44 Method 
+
+Figure 3 shows the overall design of V-PVP. We keep the backbone fully frozen and replace only the readout with two parallel streams over the patch velocity field {v(p) 
+
+> t
+
+}. A velocity gated learnable aggregation ˜zt (Section 4.1) addresses Loss 1 by carrying inter patch heterogeneity into the pooled output, and a channel faithful velocity stream rt (Section 4.2) addresses Loss 2 by preserving per channel magnitudes through an element wise nonlinearity. The two streams are projected independently, concatenated at each time step, and passed to a shallow temporal head (Section 4.3). 
+
+4.1 Velocity-Gated Learnable Aggregation ˜zt
+
+Let z(p) 
+
+> t
+
+be the p-th patch token of frame t and v(p) 
+
+> t
+
+= z(p) 
+
+> t+1
+
+− z(p) 
+
+> t
+
+the patch velocity. A small scoring network produces a per patch score on the fly, and a softmax converts scores into aggregation weights, 
+
+s(p) 
+
+> t
+
+= MLP θ
+
+ [z(p) 
+
+> t
+
+, ∥v(p) 
+
+> t
+
+∥2], α(p) 
+
+> t
+
+= softmax p
+
+ s(p)
+
+> t
+
+, ˜zt = X
+
+> p
+
+α(p) 
+
+> t
+
+z(p) 
+
+> t
+
+. (4) Standard readouts collapse the patch dimension with weights that are fixed once training ends, applying the same weighting regardless of which patches are anomalous. ˜zt differs in two respects. First, the learned α(p) 
+
+> t
+
+can vary by orders of magnitude across patches within a single frame, whereas the uniform 1/P of GAP dilutes every patch equally. Second, α(p) 
+
+> t
+
+is computed from the current video’s (z(p) 
+
+> t
+
+, ∥v(p) 
+
+> t
+
+∥2), so the spatial distribution of weights itself encodes inter patch heterogeneity. This weight pattern takes different shapes across videos and propagates into the channel pattern of ˜zt
+
+through the weighted sum. In effect, the P -dimensional weight vector αt acts as a per video carrier of the inter patch structure that motivated Loss 1, allowing ˜zt to retain a discriminative signature of this structure even after collapsing the patch axis. The scoring network receives ∥v(p) 
+
+> t
+
+∥2 explicitly alongside z(p) 
+
+> t
+
+. Scoring on appearance alone reduces the aggregator to a semantic selector that overfits to the spatial fingerprint of the training generator (Table 3b). Conditioning on velocity magnitude anchors the definition of “anomalous” to a generator invariant physical quantity and prevents fingerprint memorization. 
+
+4.2 Channel-Faithful Velocity Stream rt
+
+Although ˜zt addresses Loss 1 by introducing input-adaptive patch weighting, it remains a signed linear aggregation over patch-level signals. Velocity components from different patches can still cancel on each channel when they have opposite signs, so a signed linear readout cannot guarantee faithful preservation of per-channel velocity magnitudes. Loss 2 therefore requires a nonlinear operation before spatial aggregation. The rt stream avoids this by applying an element wise absolute value before the spatial sum, 
+
+rt = 1
+
+P
+
+X
+
+> p
+
+v(p) 
+
+> t
+
+. (5) Moving the nonlinearity inside the sum prevents opposite signed components from cancelling, so per channel velocity magnitude is faithfully preserved. The resulting vector encodes both how much anomalous activity exists and which channels it occupies. We use the mean rather than the max because channel level anomalies in generated videos typically appear as weak signals distributed across many patches. The mean accumulates these diffuse contributions and is robust to isolated noise. 
+
+4.3 Two-Stream Fusion and Sequence Head 
+
+At each frame pair, ˜zt and rt each produce a D-dimensional vector with very different statistics. 
+
+˜zt inherits the near zero mean signed distribution of post LayerNorm features, while rt is strictly non-negative and typically an order of magnitude smaller. A shared projection cannot rescale both. We apply two independent linear maps to H/ 2 each and concatenate along the channel axis at each time step, 
+
+ut = Wz ˜zt, wt = Wr rt, xt = [ ut; wt]. (6) 5Table 1: Per-generator AUC on the AIGVDBench open-source split (20 generators). Best in bold ,second underlined.                                                                          
+
+> I2V T2V V2V Method Easy Animate LTX Pyramid Flow SEINE SVD Video Crafter Acc Video Animate Diff Cogvideo x1.5 Easy Animate Hunyuan IPOC LTX Open Sora Pyramid Flow Rep Video Video Crafter Wan 2.1 Cogvideo x1.5 LTX AVG AI-Generated Image Detection Models
+> NPR [11] 96.78 85.76 99.22 99.21 99.93 93.97 68.32 66.10 93.72 96.23 74.35 93.82 92.04 99.99 99.45 86.50 98.44 76.72 96.96 80.50 89.90 UnivFD [25] 80.18 82.77 86.83 94.29 96.39 80.01 82.74 93.29 94.77 90.77 83.27 97.49 93.30 99.72 97.23 90.36 98.03 84.16 93.47 81.56 90.03 Effort [13] 81.88 82.29 86.96 92.90 96.02 79.80 82.39 93.42 94.82 92.44 83.85 97.75 93.28 99.74 97.71 92.18 98.33 85.58 93.54 80.88 90.29 DDA [12] 78.28 90.54 88.79 99.57 99.99 99.76 86.02 92.43 89.82 75.77 87.34 97.58 92.15 98.85 88.78 82.53 99.74 89.70 89.93 87.08 90.73 MIRROR [26] 55.03 43.59 30.93 98.05 93.31 99.86 69.73 90.45 51.15 73.20 67.15 74.45 45.66 43.27 49.63 66.62 99.87 70.06 54.63 54.76 66.57
+> AI-Generated Video Detection Models
+> DeMamba [7] 98.50 96.25 98.75 99.25 97.50 95.50 66.50 85.25 95.75 98.50 73.00 96.25 97.00 98.25 97.75 90.50 95.75 88.75 98.50 95.25 93.14 DeCoF [18] 90.84 90.55 95.54 97.33 98.98 63.10 88.25 89.24 98.16 91.87 86.33 99.33 97.61 99.76 99.76 97.22 89.25 83.53 97.40 89.86 92.20 ReSTrav [38] 60.17 68.40 64.52 55.02 54.97 73.73 80.25 88.00 61.57 66.13 79.32 68.67 60.82 79.60 67.65 63.85 80.38 60.98 78.88 72.55 69.27 NSG-VD [15] 50.49 54.79 52.87 52.58 50.66 53.91 57.23 51.98 52.24 50.02 48.24 52.26 54.06 62.62 51.43 52.03 47.04 48.12 54.44 53.97 52.55
+> Video Classification Models
+> I3D [31] 95.10 91.51 90.11 84.35 90.65 90.75 96.06 95.10 91.81 97.14 95.78 93.61 94.08 99.65 95.49 87.93 98.48 84.59 96.24 88.51 92.85 SlowFast [30] 93.47 94.45 95.42 94.41 98.60 91.50 91.11 88.24 93.27 96.53 91.59 91.97 97.71 97.64 96.71 88.18 97.24 73.08 91.34 91.61 92.70 TimeSformer [27] 78.86 78.38 80.94 77.16 84.74 84.26 87.15 91.60 87.16 89.31 86.77 88.38 85.84 96.57 91.03 80.82 94.77 78.33 88.01 78.20 85.41 UniFormerV2 [29] 76.92 68.96 74.77 73.47 76.82 67.75 71.21 73.98 75.76 81.35 72.37 80.81 73.22 95.34 86.86 74.75 84.27 78.87 73.92 67.77 76.46 VideoMAE [28] 84.21 84.15 87.11 92.81 88.24 94.52 91.64 94.28 81.67 88.04 88.82 87.11 86.78 98.74 93.13 80.93 97.62 76.86 87.76 82.45 88.34
+> V-PVP (Ours) 94.18 94.05 94.68 97.48 94.53 97.19 97.75 96.84 93.82 94.82 95.90 96.11 95.82 99.69 96.40 90.17 99.02 87.67 97.45 91.96 95.28
+
+Splitting the channel budget keeps the two signals on a common scale before fusion, and bounds the readout at the 0.5M parameter level. A short temporal convolutional head reads {xt}T −1
+
+t=1 into a single logit. Because ut and wt share the channel axis, every kernel position sees both signals at the same time step. A kernel size of three extends this to consecutive frame pairs, which matches the temporal scale of the inter frame inconsistencies V-PVP targets. A single anomalous transition is often not informative on its own, but a short window of them is. We then mean pool over time rather than learn a temporal attention, to avoid overfitting to the training generator’s temporal position patterns. The aggregator, the projections, and the head are trained from scratch. The backbone remains fully frozen. Full architecture details and training protocol are in Appendix A. 
+
+## 5 Experiments 
+
+5.1 Setup Datasets and protocol. We evaluate V-PVP on two cross-generator benchmarks. AIGVDBench 
+
+[ 14 ] contains a split spanning 20 generators across T2V, I2V, and V2V tasks. We adopt the three-generator training protocol of [ 14 ]: OpenSora, CogVideoX1.5, and EasyAnimate serve as fake training sources. GenVidBench-143k [39 ] adopts a cross-source protocol in which the training sources (Pika, VideoCrafterV2, ModelScope, T2V-Zero) and the test sources (MuseV, SVD, CogVideo, Mora) are fully disjoint. The primary metric is the mean per-generator AUC. Frames are sampled and preprocessed following the AIGVDBench protocol. The default backbone is VideoMAE [ 28 ]pretrained on Kinetics-400 [ 33 ] and kept fully frozen, with patch tokens extracted from the pre-final-norm position of the last transformer block. Full hyperparameters and dataset splits are in Appendix B. 
+
+Baselines. We compare V-PVP against three families of baselines under the benchmark-specific cross-generator protocols. For AIGVDBench, all methods follow the protocol described above. For GenVidBench-143k, all methods follow its cross-source protocol with disjoint training and test generators. AI-generated image detection models [ 11 , 25 , 12 , 13 , 26 ] classify each frame independently and aggregate by majority vote. AI-generated video detection models [7, 18 , 38 , 15 ]are designed specifically for AIGV detection and use their original temporal modeling heads. Video classification models [31 , 30 , 27 , 29 , 28 ] are adapted by full-parameter fine-tuning on the same training set, so that the comparison reflects each backbone’s best achievable performance. All baselines are retrained on the corresponding training split following the unified evaluation protocol of each benchmark. Each method retains its original architecture and the hyperparameters recommended by the original authors, and only the training data is replaced. Both the baselines and V-PVP are 6Table 2: Per-generator AUC on GenVidBench-143k Best in bold , second underlined.                                                                                 
+
+> Method MuseV SVD CogVideo Mora AVG AI-Generated Image Detection Models
+> NPR [11] 48.87 30.03 91.27 30.89 50.26 UnivFD [25] 65.79 55.37 97.40 96.46 78.76 Effort [13] 65.85 55.51 97.88 97.08 79.08 DDA [12] 91.72 87.40 96.92 95.12 92.79 MIRROR [26] 77.29 74.59 59.93 91.42 75.81
+> AI-Generated Video Detection Models
+> DeMamba [7] 88.46 73.05 98.80 99.80 90.03 DeCoF [18] 57.51 52.44 93.55 89.72 73.30 ReSTrav [38] 86.04 82.12 96.97 95.99 90.28 NSG-VD [15] 78.26 63.99 72.83 61.80 69.22
+> Video Classification Models
+> I3D [31] 91.91 87.17 94.85 97.12 92.76 SlowFast [30] 89.85 85.24 98.64 98.06 92.95 TimeSformer [27] 89.06 85.92 91.72 98.00 91.18 UniFormerV2 [29] 66.66 64.42 59.63 88.78 69.87 VideoMAE [28] 82.14 81.78 94.55 95.89 88.59
+> V-PVP (Ours) 90.27 88.63 97.79 98.30 93.75
+
+trained until loss convergence, except for the special configuration of the ablation experiments listed in Section 5.3. V-PVP follows the training configuration detailed in Appendix B. 
+
+5.2 Cross-Generator Comparison 
+
+Tables 1 and 2 report results on AIGVDBench and GenVidBench-143k. V-PVP reaches mga AUC of 
+
+95.28 on AIGVDBench and 93.75 on GenVidBench-143k, ranking first on both benchmarks. The backbone stays fully frozen and only about 0.5M parameters are trained. Under the standard readout, some fully fine tuned video backbone in Table 1 sits below the best image level baseline, indicating that releasing backbone parameters alone does not unlock the temporal advantage promised by video pretraining. Our frozen backbone V-PVP exceeds end to end VideoMAE fine tuning (about 87M trainable parameters) with the standard readout by +6 .94 AUC, and also surpasses the strongest image level baseline. With the backbone kept fully frozen, V-PVP simultaneously outperforms all video classification baselines, which are trained with full fine-tuning under their original readouts, as well as all image pretrained detectors, while training roughly two orders of magnitude fewer parameters. This suggests that the standard aggregation readout is an important bottleneck for video backbones in AIGV detection. 5.3 Ablation Study 
+
+We ablate V-PVP along two axes. The first looks inside V-PVP and asks how much each stream and the velocity gating contribute. The second looks outside and asks whether other readouts that drop the velocity prior can reach the same accuracy. All ablation runs use the frozen VideoMAE-K400 backbone with head-only training. All ablation rows including V-PVP use a fixed 5-epoch budget for fair comparison. Results are reported as mean AUC ± standard deviation over four random seeds. Except for this fixed epoch budget, the training hyperparameters are the same as the default V-PVP configuration in Appendix B. 
+
+Per-stream contribution. Table 3a dissects V-PVP into its two streams. Going from r-only (MLPMean, 79.10) to ¯z + r adds +11 .13 , most of which comes from the semantic information carried by the GAP pathway. Replacing ¯z with the velocity-gated ˜z adds another +4 .11 on top of an already channel-faithful stream. The middle two rows show that both components are needed: removing the r stream drops AUC by 1.27 , and removing the velocity input from the scoring network drops it by 2.26 .7Table 3: Ablation studies on V-PVP. Fixed 5-epoch ablation setting. Left: stream-level ablation. Right: alternative readouts on patch tokens or per-patch energy ( z: patch tokens; E: ∥v(p) 
+
+> t
+
+∥2). 
+
+Configuration Diff vs. V-PVP AUC 
+
+r alone, MLPMean no ˜z, GAP only 79.10 ± 0.16 
+
+¯z + r (PVP) ˜z → GAP 90.23 ± 0.21 
+
+˜z alone (no r) no r stream 93.07 ± 0.35 
+
+˜z + r, no ∥v∥2 in scorer no velocity gating 92.08 ± 1.84 
+
+V-PVP ( ˜z + r) — 94.34 ± 0.32                                    
+
+> (a) Stream-level ablation.
+> Head Input AUC
+> Mean (sanity) E54.34 ±4.39 PatchMLP z91.70 ±0.12 Conv2D E68.61 ±0.70 Conv3D E64.66 ±0.92 SpatialAttn E67.37 ±0.98
+> V-PVP (Ours) z+∥v∥294.34 ±0.32
+> (b) Alternative patch-level readouts. TimeSformer VideoMAE UniFormerV2 Qwen3-VL-8B
+> 65
+> 70
+> 75
+> 80
+> 85
+> 90
+> 95
+> AUC
+> Linear probe Matched-size head LoRA Full fine-tune Frozen + V-PVP
+
+Figure 4: AUC comparison across different backbones and training strategies on AIGVDBench Alternative patch-level readouts. A natural question is whether a free-form head that keeps the patch dimension but drops the velocity prior could match V-PVP. We test this by training several such heads under identical supervision. Convolutional heads (Conv2D, Conv3D) and a spatial-attention head are applied to the per-patch energy map E(p) 
+
+> t
+
+= ∥v(p) 
+
+> t
+
+∥2, and a PatchMLP consumes the raw patch tokens directly as the most expressive alternative. Heads with more capacity to use the spatial dimension fit the training set more aggressively but generalise worse: PatchMLP and Conv2D reach near-perfect train AUC, yet their test mga AUC stays well below V-PVP. Without an explicit prior, the spatial pattern that supervision finds is generator-specific and does not transfer. V-PVP avoids this by anchoring patch selection to the generator-invariant quantity ∥v(p) 
+
+> t
+
+∥2, outperforming Conv2D by 25 .73 points ( 94 .34 vs. 68 .61 ). 
+
+5.4 Generality Across Backbones and Adaptation Schemes 
+
+To test whether the bottleneck is the readout rather than the representation, we port V-PVP to several frozen video backbones and compare against the standard readout and adaptation alternatives. We cover four ViT-based encoders with diverse pretraining objectives: TimeSformer [ 27 ], Video-MAE [ 28 ], UniFormerV2 [ 29 ], and the multimodal large model Qwen3-VL-8B [ 40 ]. On every backbone we compare two groups of methods. The first keeps the backbone frozen and only trains a head, including a linear probe, a matched-size head, and our V-PVP. The second updates back-bone parameters, including LoRA fine-tuning with rank 8 and full fine-tuning. Full fine-tuning is omitted on Qwen3-VL-8B due to its ∼8B parameter scale. All compared methods are trained until loss convergence under their respective default configurations; V-PVP uses the configuration in Appendix A. Figure 4 reports mga AUC on the AIGVDBench open-source split. V-PVP achieves the highest AUC on every backbone, surpassing all readout and adaptation alternatives while training roughly two orders of magnitude fewer parameters than full fine-tuning. The advantage holds across all four pretraining objectives, which supports the readout-bottleneck hypothesis: the bulk of the fine-tuning gain comes from adjusting how patch tokens are aggregated, not from modifying the representation itself. We also note that backbone tuning does not always help. On UniFormerV2, both LoRA 8Table 4: V-PVP composes with backbone adaptation. mga AUC on AIGVDBench with VideoMAE under three adaptation schemes. V-PVP improves over the standard readout under every scheme; the frozen V-PVP configuration already exceeds full fine-tuning under the standard readout at a fraction of the parameter cost. Adaptation Trainable params Standard readout V-PVP ∆
+
+Frozen ∼0.5 M 89.82 95.28 +5 .5
+
+LoRA ( r=8 ) ∼1 M 88.22 95.06 +6 .8
+
+Full fine-tune ∼87 M 88.34 97.21 +8 .9
+
+and full fine-tuning stay below 80 , lower than the matched-size head with the backbone frozen. This suggests that updating backbone parameters can amplify overfitting to the training generator’s spatial fingerprint rather than help. V-PVP avoids this failure mode by anchoring the readout to a generator-invariant quantity and reaches 93 .56 on the same backbone. A natural follow-up question is whether the gains of V-PVP depend on a frozen backbone. We test this on VideoMAE by pairing V-PVP with LoRA at rank 8 and with full fine-tuning, and compare against the same adaptation schemes under the standard readout. Table 4 reports mga AUC on AIGVDBench. The standard-readout column is nearly flat across adaptation regimes, indicating that backbone capacity has little outlet once patch tokens are collapsed by joint spatiotemporal pooling. V-PVP responds in the opposite way and improves over the standard readout under every adaptation scheme, with the largest margin reaching 8.9 points under full fine-tuning. Even the frozen configuration with V-PVP, at roughly 0.5M trainable parameters, surpasses full fine-tuning under the standard readout at roughly 87 M parameters. The right axis along which to invest capacity is therefore the readout rather than the backbone. 
+
+## 6 Conclusion 
+
+We identify the readout layer as the principal bottleneck that prevents video pretrained backbones from realizing their temporal advantage on AIGV detection. The standard CLS or GAP aggregator performs a joint spatiotemporal and semantic collapse over patch tokens, which erases inter patch relations and dilutes per channel velocity magnitudes. Both losses remove the cues that AIGV detection most reliably depends on. Building on this diagnosis, we propose V-PVP, a lightweight readout that keeps the backbone fully frozen and replaces only the aggregation layer with two parallel streams over the patch velocity field. The velocity gated aggregation ˜zt conditions patch attention on ∥v(p) 
+
+> t
+
+∥2 to carry inter patch heterogeneity into the pooled output, and the channel faithful stream rt preserves per channel magnitudes through an element wise nonlinearity. V-PVP adds only about 0.5M trainable parameters. Across multiple ViT based video backbones and two cross generator benchmarks, V-PVP consistently surpasses same backbone readouts and exceeds end to end fine tuning with the standard readout. With VideoMAE on AIGVDBench, our method reaches 95.28 mga AUC while keeping the backbone fully frozen, and even outperforms full fine tuning under the standard readout. These results indicate that for AIGV detection, the right axis to invest capacity is the readout rather than the backbone. 
+
+Limitations. V-PVP has several known limitations. First, generators that deliberately mimic real video statistics, for example by injecting inter frame jitter or preserving high frequency spatial detail, can shrink the inter patch separability of ∥v(p) 
+
+> t
+
+∥2 and drive velocity gating toward uniform attention. Second, very short clips with T < 4 leave too few temporal samples of patch velocity and increase the variance of ˜zt and rt. Third, when the backbone has not been pretrained on a distribution close to the target domain, the frozen patch tokens may be too weak to support readout only learning, and LoRA or full fine tuning would be more appropriate. Finally, the readout bottleneck still exists on CNN based backbones but in a softened form, since internal convolutions already perform part of the spatial aggregation before the readout, partially absorbing the patch level evidence that V-PVP relies on. Appendix C confirms this on I3D-R50 and SlowFast-R50, but a thorough study of CNN specific readout design is left to future work. Code, pretrained weights, and pretrained V-PVP heads are released at the repository linked in the abstract. 9References 
+
+[1] OpenAI. Video generation models as world simulators. OpenAI Sora technical report, 2024. [2] Wenyi Hong, Ming Ding, Wendi Zheng, Xinghan Liu, and Jie Tang. Cogvideo: Large-scale pretraining for text-to-video generation via transformers. arXiv preprint arXiv:2205.15868 ,2022. [3] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072 , 2024. [4] Weijie Kong, Qi Tian, Zijian Zhang, Rox Min, Zuozhuo Dai, Jin Zhou, Jiangfeng Xiong, Xin Li, Bo Wu, Jianwei Zhang, et al. Hunyuanvideo: A systematic framework for large video generative models. arXiv preprint arXiv:2412.03603 , 2024. [5] Zangwei Zheng, Xiangyu Peng, Tianji Yang, Chenhui Shen, Shenggui Li, Hongxin Liu, Yukun Zhou, Tianyi Li, and Yang You. Open-sora: Democratizing efficient video production for all. 
+
+arXiv preprint arXiv:2412.20404 , 2024. [6] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314 , 2025. [7] Haoxing Chen, Yan Hong, Zizheng Huang, Zhuoer Xu, Zhangxuan Gu, Yaohui Li, Jun Lan, Huijia Zhu, Jianfu Zhang, Weiqiang Wang, et al. Demamba: Ai-generated video detection on million-scale genvideo benchmark. arXiv preprint arXiv:2405.19707 , 2024. [8] Jianfa Bai, Man Lin, Gang Cao, and Zijie Lou. Ai-generated video detection via spatial-temporal anomaly learning. In Chinese Conference on Pattern Recognition and Computer Vision (PRCV) ,pages 460–470. Springer, 2024. [9] Qingyuan Liu, Pengyuan Shi, Yun-Yun Tsai, Chengzhi Mao, and Junfeng Yang. Turns out i’m not real: Towards robust detection of ai-generated videos. arXiv preprint arXiv:2406.09601 ,2024. [10] Omer Ben Hayun, Roy Betser, Meir Yossef Levi, Levi Kassel, and Guy Gilboa. Training-free detection of generated videos via spatial-temporal likelihoods. arXiv preprint arXiv:2603.15026 ,2026. [11] Chuangchuang Tan, Yao Zhao, Shikui Wei, Guanghua Gu, Ping Liu, and Yunchao Wei. Rethink-ing the up-sampling operations in cnn-based generative network for generalizable deepfake detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recogni-tion , pages 28130–28139, 2024. [12] Ruoxin Chen, Junwei Xi, Zhiyuan Yan, Ke-Yue Zhang, Shuang Wu, Jingyi Xie, Xu Chen, Lei Xu, Isabel Guan, Taiping Yao, et al. Dual data alignment makes ai-generated image detector easier generalizable. arXiv preprint arXiv:2505.14359 , 2025. [13] Zhiyuan Yan, Jiangming Wang, Peng Jin, Ke-Yue Zhang, Chengchun Liu, Shen Chen, Taiping Yao, Shouhong Ding, Baoyuan Wu, and Li Yuan. Orthogonal subspace decomposition for generalizable ai-generated image detection. arXiv preprint arXiv:2411.15633 , 2024. [14] Long Ma, Zihao Xue, Yan Wang, Zhiyuan Yan, Jin Xu, Xiaorui Jiang, Haiyang Yu, Yong Liao, and Zhen Bi. Your one-stop solution for ai-generated video detection. arXiv preprint arXiv:2601.11035 , 2026. [15] Shuhai Zhang, ZiHao Lian, Jiahao Yang, Daiyuan Li, Guoxuan Pang, Feng Liu, Bo Han, Shutao Li, and Mingkui Tan. Physics-driven spatiotemporal modeling for ai-generated video detection. 
+
+arXiv preprint arXiv:2510.08073 , 2025. [16] Taehoon Kim, Jongwook Choi, Yonghyun Jeong, Haeun Noh, Jaejun Yoo, Seungryul Baek, and Jongwon Choi. Beyond spatial frequency: Pixel-wise temporal frequency-based deepfake video detection. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 11198–11207, 2025. 10 [17] Chirui Chang, Zhengzhe Liu, Xiaoyang Lyu, and Xiaojuan Qi. What matters in detecting ai-generated videos like sora? arXiv e-prints , pages arXiv–2406, 2024. [18] Long Ma, Zhiyuan Yan, Qinglang Guo, Yong Liao, Haiyang Yu, and Pengyuan Zhou. Detecting ai-generated video via frame consistency. In 2025 IEEE International Conference on Multimedia and Expo (ICME) , pages 1–6. IEEE, 2025. [19] Yifei Li, Wenzhao Zheng, Yanran Zhang, Runze Sun, Yu Zheng, Lei Chen, Jie Zhou, and Jiwen Lu. Skyra: Ai-generated video detection via grounded artifact reasoning. arXiv preprint arXiv:2512.15693 , 2025. [20] Changjiang Jiang, Wenhui Dong, Zhonghao Zhang, Chenyang Si, Fengchang Yu, Wei Peng, Xinbin Yuan, Yifei Bi, Ming Zhao, Zian Zhou, et al. Ivy-fake: A unified explainable framework and benchmark for image and video aigc detection. arXiv preprint arXiv:2506.00979 , 2025. [21] Yue Zhou, Xinan He, KaiQing Lin, Bin Fan, Feng Ding, and Bin Li. Breaking latent prior bias in detectors for generalizable aigc image detection. arXiv preprint arXiv:2506.00874 , 2025. [22] Jiaxin Chen, Miao Hu, Dengyong Zhang, and Jingyang Meng. Gc-consflow: Leveraging optical flow residuals and global context for robust deepfake detection. In 2025 IEEE International Conference on Multimedia and Expo (ICME) , pages 1–6. IEEE, 2025. [23] Yuyang Qian, Guojun Yin, Lu Sheng, Zixuan Chen, and Jing Shao. Thinking in frequency: Face forgery detection by mining frequency-aware clues. In European conference on computer vision , pages 86–103. Springer, 2020. [24] Minsuk Jang, Hyeonseo Jeong, Minseok Son, and Changick Kim. Cinemae: Leveraging frozen masked autoencoders for cross-generator ai image detection. arXiv preprint arXiv:2511.06325 ,2025. [25] Utkarsh Ojha, Yuheng Li, and Yong Jae Lee. Towards universal fake image detectors that generalize across generative models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 24480–24489, 2023. [26] Ruiqi Liu, Manni Cui, Ziheng Qin, Zhiyuan Yan, Ruoxin Chen, Yi Han, Zhiheng Li, Junkai Chen, ZhiJin Chen, Kaiqing Lin, et al. Mirror: Manifold ideal reference reconstructor for generalizable ai-generated image detection. arXiv preprint arXiv:2602.02222 , 2026. [27] Gedas Bertasius, Heng Wang, and Lorenzo Torresani. Is space-time attention all you need for video understanding? In Icml , volume 2, page 4, 2021. [28] Zhan Tong, Yibing Song, Jue Wang, and Limin Wang. Videomae: Masked autoencoders are data-efficient learners for self-supervised video pre-training. Advances in neural information processing systems , 35:10078–10093, 2022. [29] Kunchang Li, Yali Wang, Yinan He, Yizhuo Li, Yi Wang, Limin Wang, and Yu Qiao. Uni-formerv2: Spatiotemporal learning by arming image vits with video uniformer. arXiv preprint arXiv:2211.09552 , 2022. [30] Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik, and Kaiming He. Slowfast networks for video recognition. In Proceedings of the IEEE/CVF international conference on computer vision , pages 6202–6211, 2019. [31] Joao Carreira and Andrew Zisserman. Quo vadis, action recognition? a new model and the kinetics dataset. In proceedings of the IEEE Conference on Computer Vision and Pattern Recognition , pages 6299–6308, 2017. [32] Bolin Ni, Houwen Peng, Minghao Chen, Songyang Zhang, Gaofeng Meng, Jianlong Fu, Shiming Xiang, and Haibin Ling. Expanding language-image pretrained models for general video recognition. In European conference on computer vision , pages 1–18. Springer, 2022. [33] Will Kay, Joao Carreira, Karen Simonyan, Brian Zhang, Chloe Hillier, Sudheendra Vijaya-narasimhan, Fabio Viola, Tim Green, Trevor Back, Paul Natsev, et al. The kinetics human action video dataset. arXiv preprint arXiv:1705.06950 , 2017. 11 [34] Davide Alessandro Coccomini, Nicola Messina, Claudio Gennaro, and Fabrizio Falchi. Com-bining efficientnet and vision transformers for video deepfake detection. In International conference on image analysis and processing , pages 219–229. Springer, 2022. [35] Young-Jin Heo, Young-Ju Choi, Young-Woon Lee, and Byung-Gyu Kim. Deepfake detection scheme based on vision transformer and distillation. arXiv preprint arXiv:2104.01353 , 2021. [36] Deressa Wodajo and Solomon Atnafu. Deepfake video detection using convolutional vision transformer. arXiv preprint arXiv:2102.11126 , 2021. [37] Tianyi Wang, Harry Cheng, Kam Pui Chow, and Liqiang Nie. Deep convolutional pooling trans-former for deepfake detection. ACM transactions on multimedia computing, communications and applications , 19(6):1–20, 2023. [38] Christian Internò, Robert Geirhos, Markus Olhofer, Sunny Liu, Barbara Hammer, and David Klindt. Ai-generated video detection via perceptual straightening. arXiv preprint arXiv:2507.00583 , 2025. [39] Zhen-Liang Ni, YAN Qiangyu, Tianning Yuan, Mouxiao Huang, Hailin Hu, Xinghao Chen, and Yunhe Wang. Genvidbench: A challenging benchmark for detecting ai-generated video. 2025. [40] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tianbao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. Qwen3-vl technical report, 2025. URL https://arxiv.org/abs/2511.21631 .12 A Implementation and Comparison Protocol 
+
+This appendix gives the implementation details behind the controlled comparisons in Section 5.1. The goal of the protocol is to isolate where performance gains come from: the frozen video representation, the readout that aggregates patch tokens, or adaptation of the backbone itself. 
+
+Shared protocol. Unless otherwise specified, the default V-PVP setting uses VideoMAE-Base pretrained on Kinetics-400. The backbone receives T = 16 frames at 224 × 224 resolution and exposes P = 196 spatial patch tokens with hidden width D = 768 . We tap tokens from the output of the last transformer block, layer 11, at the pre-final-norm position. The backbone is frozen end to end: no gradients flow through it, no statistics are updated, and no AIGV labels are used to modify its representation. This makes the readout the only trainable component in the default setting. 
+
+Compute resources. All experiments were conducted on a single workstation with 4 NVIDIA A100 80 GB PCIe GPUs using PyTorch and CUDA. Each training run uses one A100 GPU without multi-GPU or distributed training; multiple runs are executed in parallel across the available GPUs. Since the video backbones are frozen, training only updates the lightweight readout head. The wall-clock cost per backbone configuration is approximately 3–8 GPU-hours, including evaluation. Across the main backbone comparisons, method variants, seed sweeps, and ablations, the reported experiments required on the order of 400–600 A100-80GB GPU-hours in total. For V-PVP in the main comparisons, we train only the readout with binary cross-entropy on the clip-level logit and use a positive-class weight wpos = Nneg /N pos to account for the real-to-fake imbalance in the training split. Optimization uses AdamW with learning rate 10 −3, weight decay 
+
+10 −4, cosine annealing, batch size 192, and mixed precision. The readout parameters are initialized from scratch. For the main comparisons in Tables 1 and 2, V-PVP is trained with this configuration until loss convergence. Baseline methods follow their default model-specific configurations and are also trained until loss convergence, as described in Section 5.1. 
+
+V-PVP instantiation. V-PVP replaces only the aggregation layer on top of the frozen patch tokens. For each adjacent frame pair, we compute the patch velocity v(p) 
+
+> t
+
+= z(p) 
+
+> t+1
+
+− z(p) 
+
+> t
+
+. The velocity-gated branch scores each patch with a two-layer MLP of shape D + 1 → 128 → 1, whose input is the patch token z(p) 
+
+> t
+
+concatenated with the scalar velocity magnitude ∥v(p) 
+
+> t
+
+∥2. A softmax over patches produces the aggregation weights used in Equation 4. In parallel, the channel-faithful velocity branch computes the mean absolute patch velocity in Equation 5, preserving per-channel magnitude before any signed cancellation can occur. The two streams are projected independently by linear maps Wz , W r : RD → RH/ 2 with H = 256 ,and their outputs are concatenated into xt ∈ RH for each frame pair. The temporal head then consumes the length-(T − 1) sequence {xt}T −1 
+
+> t=1
+
+with 
+
+GELU → Conv1d( H, H, k = 3) → GELU → MeanPool → Dropout(0 .3) → Linear( H → 1) .
+
+The temporal convolution is deliberately lightweight: after velocity-gated aggregation and channel-faithful profiling have extracted the local temporal evidence, the head only needs to smooth adjacent frame-pair features before clip-level pooling. The full readout contains 492,674 trainable parameters, about 0.57% of the VideoMAE-Base backbone. 
+
+Ablation protocol. For the ablation study in Table 3, all variants use the same V-PVP optimization settings above except that training is fixed to 5 epochs for controlled relative comparison. Under this fixed-budget setting, the full V-PVP obtains 94.34 AUC; the main comparison result in Table 1 is obtained by training until loss convergence. 
+
+Readout-only baselines. The frozen-backbone baselines are organized by the question each one answers rather than by architecture name. The first group tests whether a stronger head on the standard global representation is sufficient. These baselines operate on the GAP-pooled or CLS-style sequence 
+
+c exposed by the action-recognition pipeline and include LinearMean, MLPMean, TConv1D, and TinyXfmr. Since they see the same representation as a conventional video classifier, their gap to V-PVP measures how much information is lost by the standard readout interface. 13 The second group tests how far the channel-faithful velocity stream can go by itself. We apply the same LinearMean, MLPMean, TConv1D, and TinyXfmr heads to r alone, where r is the per-channel mean-of-magnitudes velocity readout without the velocity-gated token branch. This isolates the discriminative value of velocity magnitude before fusion with token-level semantic evidence. The third group gives non-V-PVP heads access to multiple pooled signals. These joint rcs baselines concatenate the velocity readout r, the CLS-style global summary c, and a per-frame spatial-mean token s. They are the closest readout-only alternatives that still combine velocity evidence with a global token summary, but without input-adaptive velocity-gated patch selection. The final group asks whether preserving the spatial dimension without the V-PVP prior is enough. We route the per-patch energy map E(p) 
+
+> t
+
+= ∥v(p) 
+
+> t
+
+∥2 through Conv2D, Conv3D, and SpatialAttn heads. These heads can in principle learn spatially structured evidence from data, but they do not explicitly condition patch aggregation on the velocity-gated mechanism in Equation 4. Their role is therefore to test whether unconstrained spatial supervision can replace the structured readout design. 
+
+Backbone-adaptation baselines. To separate readout design from representation adaptation, we also compare against methods that change how much of the backbone is trained. The linear probe and matched-size head keep the backbone frozen and vary only the capacity of the classifier. LoRA fine-tuning, with rank 8 in our experiments, updates a small set of backbone adaptation parameters while retaining the standard readout. Full fine-tuning updates the entire video backbone with the same task supervision and serves as the high-capacity adaptation reference. Full fine-tuning is omitted for Qwen3-VL-8B because of its parameter scale. For the backbone comparison in Figure 4, all methods are trained until loss convergence under their respective configurations; V-PVP uses the same readout-only configuration described above. These baselines answer whether AIGVDBench supervision is better spent modifying the representation or replacing the aggregation layer. 
+
+## B Pseudocode and Experimental Configuration 
+
+B.1 Inference pseudo-code 
+
+Algorithm 1 writes out the inference path. The forward pass is identical to the training-time one; the only differences are that gradients are not tracked and the clip-level augmentation is replaced with center cropping. 
+
+Algorithm 1 V-PVP Inference 
+
+Require: Video x, frozen backbone F , trainable parameters θMLP , Wz , Wr , θhead 
+
+Ensure: Probability P (fake ) 
+
+> 1:
+
+Sample T frames from x and apply preprocessing  
+
+> 2:
+
+Z ← F (x) ▷ Z ∈ RP ×T ×D, no gradient through F 
+
+> 3:
+
+for t = 1 , . . . , T −1 do  
+
+> 4:
+
+for p = 1 , . . . , P do  
+
+> 5:
+
+v(p) 
+
+> t
+
+← z(p) 
+
+> t+1
+
+− z(p) 
+
+> t
+
+▷ Patch velocity  
+
+> 6:
+
+s(p) 
+
+> t
+
+← MLP θ
+
+ [z(p) 
+
+> t
+
+, ∥v(p) 
+
+> t
+
+∥2] ▷ Attention score  
+
+> 7:
+
+end for  
+
+> 8:
+
+α(p) 
+
+> t
+
+← softmax p
+
+ s(p)
+
+> t
+
+ ▷ Patch weights  
+
+> 9:
+
+˜zt ← P 
+
+> p
+
+α(p) 
+
+> t
+
+z(p) 
+
+> t
+
+▷ Velocity-gated aggregation  
+
+> 10:
+
+rt ← 1
+
+> P
+
+P 
+
+> p
+
+v(p) 
+
+> t
+
+▷ Channel-faithful stream  
+
+> 11:
+
+xt ← Wz ˜zt ; Wr rt
+
+ ▷ Project and concatenate  
+
+> 12:
+
+end for  
+
+> 13:
+
+h ← MeanPool t
+
+ GELU  Conv1D k=3 
+
+ GELU( {xt})  
+
+> 14:
+
+logit ← Linear  Dropout( h) 
+
+> 15:
+
+return σ(logit) 
+
+14 B.2 Experimental configuration 
+
+Table 5 consolidates the default configuration used by V-PVP. For the main comparisons in Tables 1 and 2 , V-PVP is trained until the training loss converges. Other compared methods keep their default model-specific configurations and are also trained until loss convergence. For the ablation study in Table 3, all ablation variants use a fixed 5-epoch budget for controlled relative comparison; all other hyperparameters are the same as the default V-PVP configuration below. Table 5: Default V-PVP training configuration. Values are shared across the reported V-PVP runs unless explicitly stated otherwise. The number of training epochs is not fixed for the main comparisons; training is stopped when the loss converges.                                            
+
+> Setting Value
+> Backbone
+> Architecture VideoMAE-Base Pretraining Kinetics-400 Frozen Yes Token tap Last transformer block (layer 11), pre-final-norm Spatial patch tokens ( P)196 Hidden width ( D)768
+> Input
+> Frames per clip ( T)16 Spatial resolution 224 ×224
+> Trainable readout
+> Patch scorer MLP D+1 →128 →1
+> Channel projection width ( H)256 Sequence head GELU →Conv1D( k=3 )→GELU →MeanPool →Dropout(0.3) →Linear Total trainable parameters 492,674 ( ∼0.57% of backbone)
+> Optimization
+> Loss Binary cross-entropy with class weighting Optimizer AdamW Learning rate 10 −3
+> Weight decay 10 −4
+> LR schedule Cosine annealing Batch size 192 Mixed precision Enabled Initialization Readout from scratch; backbone frozen Stopping criterion Training loss convergence for main comparisons
+> Data (AIGVDBench)
+> Train fake sources Open-Sora, CogVideoX1.5, EasyAnimate Evaluation split 20 generators, 3k fake videos per generator, plus 3k real videos Reported metric Mean per-generator AUC
+
+## C V-PVP on CNN Backbones 
+
+The readout bottleneck identified in Section 3 is most directly motivated on ViT class backbones, where every patch token is anchored to a fixed input region and the readout is the single place where the spatial axis collapses. CNN class backbones offer a useful additional test case, since their layer wise convolutions already perform part of the spatial aggregation before the readout. If our diagnosis is correct, two predictions follow. V-PVP should still bring a clear improvement on CNN backbones, because the final readout still collapses what remains of the spatial axis. And the improvement should be smaller than on ViT backbones, because part of the aggregation V-PVP targets has already happened implicitly. We verify both on I3D-R50 and SlowFast-R50. The extension to CNN feature maps is straightforward. Given a feature map of shape (B, C, T, H, W ),we reshape it to (B, P, T, D ) with P = H × W and D = C, treating each spatial cell as a pseudo patch token. The patch velocity in Equation 1 and the rest of the V-PVP head apply without modification. We tap from the last residual stage, where H = W = 7 and D = 2048 give P = 49 
+
+15 patch tokens; for SlowFast we use the slow pathway with T = 8 . The backbones are pretrained on Kinetics-400 and kept fully frozen, with protocol and splits identical to Section 5. Table 6: V-PVP versus the standard readout on frozen CNN backbones, mga AUC on AIGVDBench. Backbone Adaptation Trainable params Std readout V-PVP ∆
+
+I3D-R50 Frozen ∼0.5 M 83.62 86.53 +2 .91 
+
+SlowFast-R50 Frozen ∼0.5 M 82.35 85.06 +2 .71 
+
+As shown in Table 6, V-PVP delivers consistent gains on CNN backbones, improving mga AUC by +2 .91 on I3D-R50 and +2 .71 on SlowFast-R50 with only about 0.5M trainable parameters, confirming that the readout aggregation is also a bottleneck on this family. The gains are smaller than the 5 to 9 AUC range on ViT backbones in Section 5.4, matching the second prediction. This cross family pattern provides additional evidence for our diagnosis. If the bottleneck were located inside the backbone representation rather than at the readout, we would expect comparable gains across architectures, since V-PVP modifies neither. Instead, ViT backbones that carry patch level evidence intact up to the readout gain the most, while CNN backbones whose convolutional stages have already smoothed part of the spatial structure gain less. The size of the improvement tracks how much patch level evidence survives until the readout, exactly as the readout bottleneck hypothesis predicts. We further verify this on I3D-R50 by recomputing the diagnostics of Section 3. The Loss 1 spectral condition number yields Cohen’s d = 0 .42 , below the 0.64 on VideoMAE. Loss 2 shows the same direction, with pre pool d essentially zero on I3D versus 0.69 on VideoMAE, and post pool d of 0.36 
+
+versus 0.41 . The signal does not vanish but is partially absorbed by the convolutional stages, leaving less for V-PVP to recover and matching the smaller AUC improvement in Table 6. 
+
+## D Derivation and Validation 
+
+This appendix grounds both V-PVP streams in the structure of the two losses identified in the main text, presenting each stream as the natural endpoint of a chain of design decisions rather than an isolated engineering choice. The three steps below progressively constrain the form of the repair operator, and the empirical analyses in Section D.2 verify the key claims along this chain. To make the diagnosis applicable beyond a single readout, we first group the common readouts into a single family, lifting the diagnosis from a GAP-specific observation to a family-level statement. 
+
+D.1 Derivation from the Two Losses D.1.1 Formal Setup and the Standard Readout Family 
+
+The frozen backbone produces patch tokens {z(p) 
+
+> t
+
+} with z(p) 
+
+> t
+
+∈ RD , and the patch velocity is 
+
+v(p) 
+
+> t
+
+= z(p) 
+
+> t+1
+
+− z(p) 
+
+> t
+
+. (7) 
+
+Definition 1 (Standard Readout Family S). A readout f belongs to the family S if for any input 
+
+{z(p)}Pp=1 there exist input-dependent weights ω(p) ≥ 0 with P 
+
+> p
+
+ω(p) = 1 such that 
+
+f ({z(p)}) = X
+
+> p
+
+ω(p)z(p). (8) The defining property of S is that the patch axis is collapsed in a single step into a D-dimensional output. GAP corresponds to the constant weights ω(p) = 1 /P . The CLS token uses input-dependent attention weights but still compresses the P × D patch tensor into a single D-dimensional vector at the readout interface. Fixed-query attention pooling shares the same structure. We use S as an abstraction of these single-vector patch-collapsing readouts, with the common feature that the patch axis is folded into D dimensions at once. 
+
+D.1.2 Loss 1: Loss and Recovery of Inter-Patch Relations 
+
+The first question is whether some choice of ω(p) within S can preserve inter-patch relations. 16 Step 1: Inter-patch relations cannot be preserved by any f ∈ S . Arrange patch velocities as 
+
+Vt ∈ RP ×D with each row being one patch velocity vector. The inter-patch relations are encoded in the patch-dimension Gram matrix 
+
+Gt = VtV ⊤ 
+
+> t
+
+∈ RP ×P . (9) Since Gt lives in a P 2-dimensional space and any f ∈ S folds the patch axis into a D-dimensional vector, f cannot in general be an injective representation of Gt. Selected projections of Gt may remain, but the full inter-patch relation matrix is not recoverable after the collapse. This conclusion is a structural property of the family S and holds equally for the uniform weights of GAP, the input-dependent attention weights of CLS, and the position-heterogeneous weights of fixed-query pooling. The second question is the direction of repair. Lifting the output dimension to D2 via second-order covariance pooling preserves Gt but increases parameter and downstream fusion cost substantially. An alternative is to accept the D-dimensional capacity limit and look for a discriminative projection of the inter-patch relations within this D-dimensional space. AIGV detection eventually requires only a scalar discriminant function, so a discriminative D-dimensional projection is sufficient. We take this second path. The remaining question is whether merely changing how ω(p) is generated can carry such a projection within the D-dimensional output. We compare an input-adaptive weighting against an arbitrary baseline in S to see the geometric meaning of the difference. 
+
+Step 2: Input-adaptive weights introduce a content-dependent residual on top of any baseline in S. For any baseline f0 ∈ S with weights ω(p), let zω := f0({z(p)}). For any input-adaptive weights α(p) with P 
+
+> p
+
+α(p) = 1 , a direct expansion using P 
+
+> p
+
+ω(p)(z(p) − zω ) = 0 yields 
+
+X
+
+> p
+
+α(p)z(p) = zω + C(α, ω, z ), C(α, ω, z ) := X
+
+> p
+
+(α(p) − ω(p))( z(p) − zω ). (10) The decomposition shows that input-adaptive weighting equals the baseline output plus a content-dependent residual vector C ∈ RD . The term C does not attempt to recover the full P × P relation matrix, which exceeds the capacity of the D-dimensional output. Instead it encodes a content-dependent projection of the relation structure along the weight deviation direction α(p) − ω(p). The decomposition holds for any baseline in S, and the choice of f0 only shifts the reference point against which C is measured. The remaining question is what α should be conditioned on. From the perspective of signal separa-bility, the inter-patch spectral condition number κspec of ∥v(p)∥ achieves Cohen’s d ≈ 0.64 between real and fake videos and is therefore an empirically validated separable quantity. Conditioning the scorer explicitly on ∥v(p)∥ allows the weight deviation α(p) − ω(p) to anchor directly to this temporal cue. From the perspective of generator invariance, a widely observed failure mode in AIGV detection is that detectors memorize the low-level spatial statistics of the training generator and fail on unseen ones [ 11 , 25 , 12 ]. Since z(p) carries such static appearance statistics, a scorer relying only on z(p) tends to align α with the semantic fingerprint of the training generator. The patch velocity ∥v(p)∥ is obtained from a first-order temporal difference and naturally filters out the static spatial component, providing a physical anchor for the notion of anomaly that depends weakly on single-frame appearance. The two perspectives converge on the same answer that the conditioning input should include ∥v(p)∥.Concatenating z(p) and ∥v(p)∥ gives the simplest conditioning input. Softmax is the simplest normalization satisfying P 
+
+> p
+
+α(p) = 1 , and the simplest scoring function is a small MLP. We therefore obtain 
+
+α(p) 
+
+> t
+
+= softmax p
+
+
+
+MLP 
+
+
+
+[z(p) 
+
+> t
+
+; ∥v(p) 
+
+> t
+
+∥2]
+
+ 
+
+, ˜zt = X
+
+> p
+
+α(p) 
+
+> t
+
+z(p) 
+
+> t
+
+. (11) The first stream is therefore the minimal repair operator that arises from combining Step 1, the residual decomposition of Step 2, and the two constraints on the conditioning variable. 17 D.1.3 Loss 2: Dilution and Recovery of Per-Channel Magnitudes 
+
+We follow the same logic as in the previous subsection and first establish a family-level bound. 
+
+Step 3: Per-channel magnitudes are bounded above by the pre-summation magnitude on S.
+
+For any f ∈ S and any channel d, applying Jensen’s inequality to the convex function | · | with weighted probability measure ω(p) gives 
+
+X
+
+> p
+
+ω(p) |v(p)[d]| ≥ X
+
+> p
+
+ω(p) v(p)[d] , (12) with equality if and only if {v(p)[d]} is sign-consistent or zero on the support {p : ω(p) > 0}. The argument is performed sample-wise so that input-dependent ω(p) is allowed. Define the formal quantity for Loss 2 as LS 
+
+> 2
+
+(d) := P 
+
+> p
+
+ω(p)|v(p)[d]| − | P 
+
+> p
+
+ω(p)v(p)[d]| ≥ 0, which is a family-level lower bound independent of whether f is GAP, CLS, or fixed-query pooling. The key implication is that any operator that first performs a patch-weighted sum and then applies a channel-wise non-linearity has already lost LS 
+
+> 2
+
+to Jensen’s inequality. Recovery requires placing the element-wise non-linearity before the patch summation, which is the only path out of S.We therefore consider the candidate family 
+
+gϕ(v)[ d] = 1
+
+P
+
+X
+
+> p
+
+ϕ(v(p)[d]) , (13) where ϕ : R → R≥0 is an element-wise function. Three design criteria narrow the choice of ϕ to a small set of candidates. The first is suppression of cancellation, requiring ϕ(x) > 0 for x̸ = 0 , which directly recovers LS 
+
+> 2
+
+and rules out the identity map and ReLU (the latter discards negative magnitudes). The second is sign symmetry, ϕ(x) = ϕ(−x), since generator artifacts have no systematic sign preference along the channel direction. The third is statistical robustness. Treating gϕ as a sample-mean estimator of ϕ(V [d]) , where V [d] denotes the distribution of patch velocities on channel d,the variance is Var[ ϕ(V [d])] /P but the constant Var[ ϕ(V [d])] depends on different moments of the noise distribution for different ϕ. If V [d] ∼ N (0 , σ 2), then Var[ |V [d]|] = (1 − 2/π )σ2 depends only on the second moment, while Var[ V [d]2] = 2 σ4 depends on the fourth moment and is sensitive to changes in noise scale. Since motion noise variance σ2 fluctuates across videos, a ϕ whose variance depends only on the second moment yields a more stable feature. This property is formalized as first-order homogeneity ϕ(λx ) = |λ|ϕ(x).The simplest element-wise scalar form satisfying all three criteria is ϕ(x) = c|x| with c > 0, obtained by taking λ > 0 and x > 0 in the third criterion to give ϕ(x) = ϕ(1) · x, then applying the second to give ϕ(−x) = ϕ(1) · | − x|, and the first to ensure ϕ(1) > 0. Smooth surrogates such as √x2 + ε satisfy the same criteria but introduce an additional hyperparameter, so we adopt | · | for its parameter-free simplicity. The minimal repair operator for Loss 2 is therefore 
+
+rt = 1
+
+P
+
+X
+
+> p
+
+|v(p) 
+
+> t
+
+|. (14) Section D.2.1 verifies this choice empirically against three boundary alternatives that each violate one criterion. 
+
+D.2 Empirical Analyses 
+
+The derivation makes two specific claims at key nodes. The three criteria narrow ϕ to |·| as a parameter-free choice for Loss 2, and the residual decomposition in Step 2 should manifest as differentiated contributions of the two streams across sample subsets. Both claims are indirectly supported by the overall accuracy reported in the main text, but accuracy numbers alone cannot distinguish the derivation path from alternative explanations consistent with the same numbers. This section provides two analyses that tighten the intermediate steps. All experiments use the AIGVDBench Open-Source split with 3k real and 60k fake test videos and the frozen VideoMAE-K400 backbone. The discriminability metric is Cohen’s d between real and fake. 18 D.2.1 Boundary Comparison of the Three Criteria 
+
+Reproducing the gain of rt over ¯vt alone only verifies that placing a non-linearity before patch summation is effective, not that | · | is preferable to similar candidates. A more discriminative test comes from the boundaries of the three criteria. If any criterion is relaxed, the form of ϕ deviates from | · | and the corresponding rt variant should exhibit a measurable drop in discriminability. We compare four choices of ϕ. The choice | · | satisfies all three criteria. ReLU violates the first by mapping negative magnitudes to zero. x2 violates the third since its variance depends on the fourth moment. The identity map uses no pre-summation non-linearity and corresponds to the velocity-domain baseline ¯vt ∈ S . For each choice we compute rϕ = 1
+
+> P
+
+P 
+
+> p
+
+ϕ(v(p)), average across time, and report the mean and standard deviation of per-channel Cohen’s d across all D = 768 channels. Table 7: Per-channel discriminability of four ϕ candidates. Relative gap is computed against ϕ = | · | .
+
+ϕ Violation Per-channel d (mean ± std) Relative gap 
+
+| · | (V-PVP) none 0.372 ± 0.092 —
+
+ReLU first criterion 0.340 ± 0.102 −9% 
+
+x2 third criterion 0.321 ± 0.101 −14% id (¯vt) no pre-summation non-linearity 0.153 ± 0.111 −59% 
+
+The ordering | · | > ReLU > x 2 ≫ id matches the prediction. The identity map collapses by 59 percent, a direct empirical instantiation of the Jensen lower bound on S since opposite-signed values cancel along each channel before the absolute value is taken. ReLU loses the negative magnitude component and falls by 9 percent, while x2 inflates the variance through fourth-moment dependence and falls by 14 percent. The advantage of | · | does not come from the general structure of placing a non-linearity before summation, but from the specific form selected by the three criteria. 
+
+D.2.2 Differentiated Contributions of the Two Streams 
+
+The two streams are obtained from the two losses through independent derivation paths and share no intermediate reasoning. The residual term C in Step 2 depends explicitly on the semantic content of 
+
+z(p) −zω , while rt depends only on |v(p)| and discards all semantic content. The formal independence of the two streams is therefore clear. The ablation in the main text shows that ˜z alone reaches 93.07 AUC and ˜z + r reaches 94.34, a gap of 1.27. This indicates that ˜z already absorbs a substantial portion of the discriminative signal carried by r in terms of overall accuracy, so the differentiated contributions are best observed on finer sample subsets and on sample-level error patterns rather than on aggregate accuracy. We examine this from two angles. The first is the sample-level correlation of the errors of the two streams. We train head-only single-stream models Mz using ˜zt and Mr using rt with three random seeds each, holding all other configurations consistent with V-PVP. On the test set we record per-sample binary error labels ez , e r ∈ { 0, 1} thresholded at sigmoid output 0.5, and report the Pearson ϕ coefficient and the conditional error rate P (er = 1 | ez = 1) averaged across seeds. Table 8: Sample-level error correlation between the two single-stream models. Mean across three random seeds with standard deviation. Quantity Value 
+
+ϕ(ez , e r ) 0.103 ± 0.024 
+
+P (er = 1) marginal 0.182 
+
+P (er = 1 | ez = 1) conditional 0.214 
+
+The ϕ coefficient is well below the strong-correlation reference of 0.5, indicating that the errors of the two streams are weakly correlated. The conditional error rate P (er = 1 | ez = 1) = 0 .214 is moderately above the marginal rate P (er = 1) = 0 .182 , indicating residual but limited dependence rather than full statistical independence. This is consistent with two independent derivation paths corresponding to distinct but not strictly orthogonal discriminative evidence. 19 The second angle is on which sample subsets the r stream is not replaceable by ˜z. The strength of the residual term C in Step 2 is determined by the coupling between weight deviation and patch deviation, so C has sufficient signal on samples with strong inter-patch heterogeneity, that is on samples with large κspec . When inter-patch heterogeneity is weak, the available information in C decreases and the channel-level magnitude signal becomes the primary available evidence. If the two streams indeed carry the two types of evidence, the marginal gain of r over ˜z should be larger on low-κspec samples than on high-κspec samples. We bucket the test videos into four equal-frequency groups Q1 to Q4 by 
+
+κspec from low to high, and compute 
+
+∆q = AUC(˜ z + r)q − AUC(˜ z)q (15) within each bucket. The marginal gain is largest on Q1 and decreases toward Q4, matching the predicted division of labor that ˜z is sufficient when the Loss 1 evidence is strong and r becomes necessary when it is weak. Combined with the weak error correlation in Table 8, this provides finer evidence for the differentiated contributions of the two streams than the overall 1.27 AUC gain alone. 
+
+## E Broader Impact 
+
+The development of AI-generated video detection methods such as V-PVP has important societal and ethical implications. Our work supports video authenticity verification as synthetic videos become increasingly realistic and easier to distribute. Such detectors can assist journalistic provenance checks, platform-side moderation, forensic triage, and auditing of emerging video generation models. The lightweight readout, with only about 0.5M trainable parameters, also makes recalibration more accessible to smaller research groups, public-interest organizations, and non-frontier laboratories. At the same time, AI-generated video detectors should not be treated as definitive proof of authenticity or fabrication. False positives may unfairly cast doubt on genuine videos, while false negatives may create misplaced confidence in synthetic or manipulated content. Public release of detection tools may also indirectly inform attempts to evade future detectors. We therefore view V-PVP as a decision-support tool rather than an autonomous arbiter of authenticity. In practical deployments, its outputs should be combined with complementary provenance signals, such as metadata, watermarking, cryptographic provenance, or human review, especially in high-stakes settings. 
+
+## F Future Works 
+
+While V-PVP shows strong cross-generator performance on AIGVDBench and GenVidBench-143k, its current evaluation is still bounded by the available benchmark protocols. These benchmarks are useful for testing whether a detector transfers to unseen generators, but they cannot fully cover the diverse conditions under which videos circulate online. In practice, a video may be recompressed, resized, cropped, screen-recorded, edited, captioned, or re-uploaded multiple times before being inspected, and these propagation steps may interact with temporal cues in ways that are not completely captured by existing datasets. Our implementation also follows a simple and fair clip-sampling protocol, using uniformly sampled clips of fixed temporal length. This choice makes comparisons controlled, but videos with sparse artifacts, abrupt scene cuts, or uneven motion may benefit from aggregating evidence across multiple temporal windows. Another open direction is adaptation beyond the frozen-backbone setting. Keeping the backbone fixed is central to our analysis of the readout bottleneck and gives V-PVP its parameter efficiency, yet domain-specific recalibration or lightweight adapters may further improve performance when the target videos differ substantially from common video pretraining corpora. 
+
+Future Works. Future work can extend V-PVP along several practical directions. A natural next step is to evaluate the method under realistic video propagation pipelines, including compression, resizing, frame-rate conversion, cropping, screen recording, and multi-stage social-media re-upload. Such evaluation would better connect benchmark performance with deployment conditions. Another promising direction is adaptive temporal evidence aggregation. Instead of relying on a single uniformly sampled clip, a detector could combine predictions from multiple temporal windows, use scene-boundary-aware sampling, or estimate uncertainty when the available temporal evidence is limited. V-PVP may also benefit from lightweight domain adaptation, such as generator-specific recalibration, LoRA-style adapters, or test-time adaptation, while retaining most of the efficiency 20 advantage of the frozen-backbone design. More broadly, our results suggest that AIGV detectors should avoid collapsing patch-level temporal evidence too early. Extending this principle to larger video foundation models, multimodal video-language encoders, CNN-based backbones, and hybrid architectures may lead to more general and deployment-ready detection frameworks. 21

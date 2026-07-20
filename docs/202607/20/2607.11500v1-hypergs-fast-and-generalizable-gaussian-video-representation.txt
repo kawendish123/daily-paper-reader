@@ -1,0 +1,665 @@
+Title: HyperGS: Fast and Generalizable Gaussian Video Representation
+
+URL Source: https://arxiv.org/pdf/2607.11500v1
+
+Published Time: Tue, 14 Jul 2026 03:14:55 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# HyperGS: Fast and Generalizable Gaussian Video Represen-tation 
+
+Fatimah Zohra 1, Chen Zhao 1,2 , Shuming Liu 1, Yahya Al Malallah 1, Bernard Ghanem 1
+
+> 1
+
+King Abdullah University of Science and Technology (KAUST) 
+
+> 2
+
+Harbin Institute of Technology, Shenzhen 
+
+## Abstract 
+
+Gaussian Splatting has emerged as an effective representation for video, but existing methods rely on per-video optimization. This leads to slow encoding and limits generalization across videos. To amortize this optimization, we propose HyperGS, a feedforward, optimization-free approach that directly predicts Gaussian representations from any video in a single forward pass, speeding up encoding and decoding by orders of magnitude while generalizing to out-of-distribution videos at higher resolutions. In HyperGS, we design a factorized spa-tiotemporal Transformer to extract tokens from video, and a learnable query-based Trans-former to obtain 8-parameter Gaussian representations for each video frame. We find that naively predicting Gaussians across diverse videos induces a needle-like degeneration that collapses training, and address this with a rank-based geometric regularizer whose strength adapts dynamically to stabilize optimization. HyperGS achieves encoding at 10 4–10 5× the speed of per-video Gaussian optimization at matched reconstruction quality while gener-alizing zero-shot to 720 p video, enabling higher-resolution rendering without re-encoding. HyperGS improves PSNR by +2.9–3.1 dB over the prior video encoders on K400, SSv2, and UCF101 at a smaller video representation size. By predicting explicit 2D Gaussians in a sin-gle forward pass, HyperGS combines the fast, flexible rendering of Gaussian Splatting with the speed and generalization of feedforward prediction, advancing Gaussians as a practical direction for fast and generalizable video representation. 
+
+## 1 Introduction 
+
+Recent advances in 3D reconstruction have increasingly been introduced into the video representation field, changing how video data is encoded and reconstructed. Among these, 3D Gaussian Splatting (3DGS) Kerbl et al. (2023) has emerged as a particularly effective representation, modeling a scene as a collection of explicit, differentiable primitives that can be rendered directly through rasterization rather than through an implicit, coordinate-based function. The adaptation of 3DGS to dynamic video in particular has brought improvements in rendering speed and geometric stability. Yet state-of-the-art 3DGS video models Bond et al. (2025); Liu et al. (2025); Sun et al. (2024) remain bound by a fundamental limitation: per-video optimization .Because each video’s Gaussians are fit independently through iterative, gradient-based optimization—often tens of thousands of steps and on the order of hours per video—none of the structure learned while encoding one video transfers to the next. This makes per-video Gaussian methods impractical for real-time processing. A feedforward, optimization-free alternative instead amortizes this encoding by training a shared model to predict a video’s representation in a single forward pass. Prior work along this line predicts the weights of an implicit neural decoder, tying the representation to a specific neural architecture. We show that predicting explicit primitives instead decouples the representation from any implicit decoder, extending the efficient rendering and flexibility of Gaussian Splatting to a feedforward regime. Our choice of Gaussians as the predicted representation follows directly from this decoupling. Gaussian parameters reduce the regression target into geometrically meaningful subproblems—position, scale, orien-tation, color—providing a natural inductive bias for the prediction task. Rendering via a sum of Gaussians 1arXiv:2607.11500v1 [cs.CV] 13 Jul 2026 is also a direct learning objective, since the image is composed linearly from the predicted primitives, while an implicit decoder maps predicted weights to the reconstruction through an additional nonlinear step. To show this, we propose HyperGS, a feedforward, optimization-free approach that predicts explicit Gaussian Splatting representations directly from video in a single forward pass, following the hypernetwork paradigm of predicting a representation rather than optimizing it. HyperGS pairs a factorized spatiotemporal encoder with a query-based decoder that aggregates video features into per-frame Gaussian parameters via learnable weight tokens, producing dynamic, independent primitives for each frame that capture the spatial and tem-poral dynamics of a video. The predicted Gaussians are rendered through differentiablerasterization Zhang et al. (2024), and the entire model is trained end-to-end with a reconstruction loss. Our contributions are as follows: 
+
+• We propose HyperGS, the first feedforward, optimization-free method to predict explicit Gaussian primitives for video in a single forward pass. HyperGS improves PSNR by +2.9–3.1 dB over prior video encoders on K400, SSv2, and UCF101, using a smaller video representation size while encoding at ∼400–2200 FPS and decoding at ∼3900–4400 FPS for 3000–250 Gaussians per frame respectively. 
+
+• HyperGS generalizes zero-shot to unseen, high-resolution video, encoding 10 4–10 5× faster than per-video Gaussian optimization at matched reconstruction quality on 720p UVG and DAVIS. A patch-grid encoding scales this further, tiling a high-resolution frame into a grid of patches—trading a larger Gaussian count and longer encoding for higher fidelity. 
+
+• We identify a training instability in feedforward-predicted Gaussians where unconstrained optimiza-tion drives Gaussians toward needle-like anisotropy, causing a sudden mid-training performance collapse. We introduce an adaptive regularization approach based on effective rank Hyung et al. (2024), where EMA-tracked percentile thresholds dynamically adapt to the distribution of Gaussians in order to stabilize training. 
+
+## 2 Related Works 
+
+2.1 Gaussian Splatting for Video Representation 
+
+3D Gaussian Splatting Kerbl et al. (2023) introduced an efficient alternative to NeRF for 3D scene modeling, replacing volumetric ray marching with differentiable rasterization of explicit Gaussian primitives. It has since been adapted for static 2D image representation Zhang et al. (2024; 2025) and extended to video by adding temporal dynamics. Video approaches differ mainly in how they parameterize motion, falling into two broad categories. The first builds on 2D Gaussian Splatting and uses temporal networks to deform flat splats across frames, as in D2GV Liu et al. (2025) and STGV Lin et al. (2026). The second treats the scene as inherently 3D, modeling motion holistically through explicit trajectories or learned deformation fields. Trajectory-based methods define explicit motion paths for each Gaussian over time. GaussianVideo Bond et al. (2025) attaches cubic B-spline trajectories to 3D Gaussians and uses Neural ODEs for continuous camera dynamics. VGR Sun et al. (2024) combines polynomial and Fourier bases for motion, regularized by distilling 2D priors like optical flow and monocular depth into an editable canonical space. Deformation-based methods instead keep a single canonical set of Gaussians and learn a neural network to deform them at each timestep. 4D-GS Wu et al. (2024) uses 4D neural voxels to encode spatial-temporal features decoded by a lightweight MLP. D-3DGS Yang et al. (2024) relies on a purely implicit MLP with an annealing smoothing strategy to counter noisy camera tracking. 
+
+2.2 Hypernetworks for Implicit Neural Representations 
+
+Implicit Neural Representations represent a video as a neural network mapping coordinates to pixel val-ues Sitzmann et al. (2020); Chen et al. (2021; 2023); Li et al. (2022), achieving competitive performance with fast decoding, but at the cost of expensive per-video encoding. A line of work instead predicts the decoder’s weights directly in a single forward pass via a hypernetwork. TransINR Chen & Wang (2022) jointly processes input patch tokens and learnable weight tokens via Transformer self-attention to produce 2Figure 1: HyperGS maps input videos directly to Gaussian primitives with a single transformer hypernetwork. A factorized ST-Transformer processes video tokens with spatial and temporal self-attention. Learnable Gaussian tokens then attend to these features via the learnable queries of the Q-Transformer and are directly regressed into per-frame Gaussian parameters (position, scale, rotation, color), which are rasterized to reconstruct each frame. the full parameter set, while GINR Kim et al. (2023) improves parameter efficiency by restricting prediction to a single early decoder layer and sharing the remainder across instances. FastNeRV Chen et al. (2024) predicts weights through a ViT-based network with layer-adaptive weight token allocation and a parallelized group-convolution decoder to achieve fast encoding and decoding speeds. TeCoNeRV Padmanabhan et al. (2026) addresses the quadratic memory scaling that limited prior methods to 256 × 256 by decomposing weight prediction into resolution-independent patch tubelets. It further reduces bitstream size by storing only weight residuals between consecutive clips and applying temporal-coherence regularization to shrink those residuals, enabling results at 480p–1080p for the first time in this line of work. 
+
+2.3 Conventional Video Compression 
+
+Standard video compression relies on hybrid codecs that reduce spatial and temporal redundancy through a multi-stage pipeline of block-based prediction, transform coding, quantization, and entropy coding. Stan-dards from H.264/AVC Wiegand et al. (2003) to H.265/HEVC Sullivan et al. (2012) refine this pipeline’s prediction and partitioning schemes to improve rate-distortion performance. While these codecs achieve strong compression ratios, their block-based, sequentially-predicted bitstreams are tied to a fixed resolution, non-differentiable, and require decoding preceding frames in a GOP before accessing a target frame or region — precluding continuous rendering, gradient-based editing, and true random access. 
+
+## 3 Method 
+
+We learn a network fθ that maps an input video V ∈ RB×3×T ×H×W directly to a temporal sequence of explicit 2D Gaussian representations G = {G 1, . . . , GT } in a single forward pass. Each set Gt corresponds to the representation of frame t and consists of N geometric primitives. Specifically, the i-th Gaussian in frame t is defined by a tuple of interpretable parameters: mean position μi ∈ R2, anisotropic scale si ∈ R2,rotation ri ∈ [0 , 2π), and color ci ∈ R3.33.1 Video Tokenization 
+
+We tokenize the video V using a 3D convolutional projection with a kernel size of 1 × p × p (tubelet size of 1) and a learnable spatio-temporal positional embedding. This maps the pixel space to a sequence of patch embeddings Z0 ∈ RB×(T ·P )×d, where P = ( H · W )/p 2 denotes the number of spatial patches per frame. Furthermore, relative position information is dynamically injected via Rotary Position Embeddings (RoPE) during the subsequent encoder attention layers. 
+
+3.2 Spatio-Temporal Hypernetwork 
+
+HyperGS processes video tokens and a set of learnable Gaussian tokens within a single network. The video tokens are first contextualized across space and time by a Factorized Spatio-Temporal Transformer (ST-Transformer). A set of learnable Gaussian tokens is then introduced and processed by a Query Transformer (Q-Transformer), where they attend to the contextualized video features and are directly regressed into Gaussian parameters. 
+
+ST-Transformer. Each ST-Transformer layer ℓ applies spatial self-attention with 2D RoPE to encode grid coordinates (h, w ), temporal self-attention with 1D RoPE based on frame indices t, and a feedforward network sequentially: 
+
+Zℓ 
+
+> spat
+
+= Zℓ−1 + SpatialAttn 2D (LN( Zℓ−1)) (1) 
+
+Zℓ 
+
+> temp
+
+= Zℓ 
+
+> spat
+
++ TemporalAttn 1D (LN( Zℓ
+
+> spat
+
+)) (2) 
+
+Zℓ = Zℓ 
+
+> temp
+
++ FFN(LN( Zℓ
+
+> temp
+
+))  (3) This factorization reduces the computational complexity of the Transformer to O(T · P 2 + P · T 2).After Lenc layers, we apply a skip connection summing the input embeddings with the final ST-Transformer’s output: 
+
+Zout = ZLST + Z0 (4) The skip connection preserves the original patch embeddings, allowing the Q-Transformer to access both temporally-contextualized features and frame-specific local features. We find that this skip connection helps stabilize the training, albeit trading-off stability for performance (see supplement for details). 
+
+Q-Transformer. The Q-Transformer translates the dense feature map produced by the ST-Transformer into a sparse set of Gaussian parameters via learnable queries. The ST-Transformer output is reshaped to the per-frame view and concatenated with N learnable Gaussian tokens W ∈ RN ×d where N denotes the number of Gaussian points representing each frame: 
+
+X0 
+
+> Q
+
+= [ Zframe ; W] (5) The Q-Transformer consists of LQ self-attention layers. Through self-attention, the weight tokens aggre-gate information from the temporally contextualized frame-level patches to localize features relevant for reconstruction: 
+
+Xℓ 
+
+> Q
+
+= Xℓ−1 
+
+> Q
+
++ SelfAttn(LN( Xℓ−1 
+
+> Q
+
+)) (6) 
+
+Xℓ 
+
+> Q
+
+= Xℓ 
+
+> Q
+
++ FFN(LN( Xℓ
+
+> Q
+
+))  (7) 
+
+Gaussian Parameter Prediction The transformed gaussian tokens Ow = XLQ 
+
+> Q
+
+[: , −N :, :] ∈ R(B·T )×N ×d
+
+serve as the latent representations for the Gaussian primitives. These tokens are projected to predict the final Gaussian parameters and are constrained to valid ranges prior to rasterization. We map positions 
+
+μ ∈ RN ×2 with a tanh activation to the normalized range [−1, 1] and colors c ∈ RN ×3 with a sigmoid to 
+
+[0 , 1] . Rotations r ∈ RN ×1 use a sigmoid scaled by 2π to cover the full angular range [0 , 2π]. Scales s ∈ RN ×2
+
+are enforced positive via si = |ˆsi| + ϵ to avoid degenerate Gaussians. We use a fixed opacity α = 1 .0.43.3 Gaussian Rasterization 
+
+We use the 2DGS Zhang et al. (2024) approach, in which the primitives are projected by computing the 2D covariance matrix Σ from the predicted scale and rotation. We use the rotation-scale decomposition which guarantees positive semi-definiteness: 
+
+Σ = R(r)
+
+(s2 
+
+> x
+
+00 s2
+
+> y
+
+)
+
+R(r)⊤ (8) where R(r) is the standard 2D rotation matrix constructed from cos( r) and sin( r). The final video frames are reconstructed via a differentiable 2D Gaussian rasterizer. Given the fixed opacity, each pixel intensity is simply an additive signal accumulation. The intensity at pixel location p is given by: 
+
+I(p) = 
+
+> N
+
+∑
+
+> i=1
+
+ci · exp 
+
+(
+
+− 12 (p − μi)⊤Σ−1 
+
+> i
+
+(p − μi)
+
+)
+
+(9) 
+
+3.4 Training Objective 
+
+Our model is trained end-to-end to reconstruct the target video frames while maintaining well-conditioned geometric primitives. The overall training objective Ltotal is formulated as a combination of a photometric reconstruction loss and two adaptive geometric regularization penalties: 
+
+Ltotal = Lrecon + λerank Lerank + λscale Lscale  (10) where λerank and λscale are scalar weights controlling the influence of the regularization terms. 
+
+Reconstruction Loss. To measure the photometric fidelity of the rendered frames against the ground truth video, we employ a standard Mean Squared Error (MSE) loss. For a video sequence of length T , the loss is computed over all spatial pixel coordinates p = ( x, y ) for each frame t:
+
+Lrecon = 1
+
+T · H · W
+
+> T
+
+∑
+
+> t=1
+
+∑
+
+> p
+
+∥∥∥It(p) − ˆIt(p)
+
+∥∥∥22
+
+(11) where It(p) is the intensity rendered by the additive Gaussian rasterizer for frame t, and ˆIt(p) is the corresponding ground truth pixel intensity. 
+
+Adaptive Covariance Regularization. Unconstrained optimization of 2D Gaussians leads to “needle-like” artifacts—Gaussians that are extremely stretched along one axis (i.e., sx ≫ sy ). We regularize shape quality using the Effective Rank regularization introduced in Hyung et al. (2024), which treats the normalized squared scales as a probability distribution qk = s2
+
+> k
+
+/ ∑ 
+
+> j
+
+s2 
+
+> j
+
+and computes erank = exp( H(q)) , where H(q) = 
+
+− ∑ 
+
+> k
+
+qk log qk is the Shannon entropy. For 2D Gaussians, erank ranges from 1 (a degenerate needle) to 2 (a perfect circle). However, setting the regularization thresholds is sensitive to model capacity, making manual tuning difficult. We address this with adaptive thresholds that track the distribution of predicted Gaussian shapes during training and penalize only the most extreme outliers. We observe that adaptive regularization provides consistent training stability across all settings, but can overconstrain higher-capacity models (e.g., ≥3000 Gaussians, ≥16 frames), limiting their representational flexibility. In these cases, fixed thresholds can achieve higher PSNR by allowing the optimizer greater freedom to exploit useful elliptical Gaussians. The adaptive regularization maintains an exponential moving average (EMA) of the 1st-percentile of the effective rank across the batch: 
+
+τ (t) 
+
+> erank
+
+= max 
+
+(
+
+τfloor , m · τ (t−1)  
+
+> erank
+
++ (1 − m) · P0.01 
+
+[ erank( G)])
+
+(12) 5where m is the EMA momentum (we use m = 0 .99 ) and τfloor is a hard lower bound (e.g., τfloor = 1 .005 )that prevents the threshold from drifting too close to 1 under collective degeneration. Only Gaussians whose effective rank falls below the adaptive threshold are penalized via a hinge loss: 
+
+Lerank = 1
+
+|G| 
+
+∑
+
+> i∈G
+
+max 
+
+(
+
+0, τ (t) 
+
+> erank
+
+− erank i
+
+)
+
+(13) 
+
+Adaptive Scale Magnitude Regularization. We similarly prevent scales from growing unreasonably large by tracking the 99th-percentile of the predicted scale magnitudes with an EMA: 
+
+s(t) 
+
+> max
+
+= min 
+
+(
+
+sceil , m · s(t−1)  
+
+> max
+
++ (1 − m) · P0.99 
+
+[|s(G)|])
+
+(14) where sceil is a hard upper bound (e.g., sceil = 80 ) that prevents the threshold from drifting upward. Scale values exceeding the adaptive threshold are penalized with a squared excess loss: 
+
+Lscale = 1
+
+|G| 
+
+∑
+
+> i∈G
+
+max 
+
+(
+
+0, s i − s(t)
+
+> max
+
+)2
+
+(15) 
+
+## 4 Experiments 
+
+We compare against two types of baselines: (i) per-video optimization GS methods that fit a representation to each video independently and (ii) feedforward methods that predict representations in a single forward pass. For the GS methods, we primarily compare HyperGS with 2DGS Zhang et al. (2024) since HyperGS can be viewed as the amortized counterpart to 2DGS, as both predict the same structure of 2D Gaussians but differ in how the parameters are obtained—feed-forward prediction versus iterative optimization. We also compare with temporally adapted 2DGS methods D2GV Liu et al. (2025) and STGV Lin et al. (2026). Both adapt 2DGS to video by applying frame-wise deformations to a canonical set of 2D Gaussians, though they differ in their underlying mechanisms. 
+
+Training Details. We train on a subset of Kinetics-400 Zisserman et al. (2017) (25 videos per class) following Chen et al. (2024), using the LAMB optimizer You et al. (2020) with a learning rate of 1×10 −3,cosine annealing over 400 epochs, and FP16 mixed precision on 4 ×A100 GPUs. All videos are resized to 
+
+256 ×256 resolution for training. Unless otherwise noted, all encoding/decoding speeds are measured with a per-GPU batch of B=8 at 256 ×256 .
+
+Evaluation Details. Kinetics-400 (K400) Zisserman et al. (2017) serves as the in-distribution test set. To assess zero-shot generalization, we evaluate on four out-of-distribution benchmarks without any fine-tuning: Something-Something V2 (SSv2) Goyal et al. (2017), UCF-101 Soomro et al. (2012), UVG Mercat et al. (2020) and DAVIS 2016 Perazzi et al. (2016). We primarily evaluate at 256 ×256 by resizing videos on the shorter side and center-cropping. For K400, SSv2, and UCF-101, we uniformly sample 8 frames per video. We evaluate a subset of DAVIS 2016 1 and UVG at 720p with 4 × sub-sampling applied to UVG. 
+
+Higher-Resolution Rendering. Because our Gaussian representation is continuous and resolution-independent, it can be rasterized at any target resolution at inference time without re-encoding. The ground truth is prepared at the target resolution (ex. 1280 ×720 ) by resizing on the shorter side and center-cropping. The ST-Transformer always receives a fixed 256 ×256 input, and the predicted Gaussians are rendered di-rectly at the target resolution. For K400, UCF-101, and SSv2, whose native resolutions fall below the target, both ground truth and prediction are upsampled, so the comparison mainly reflects content fidelity at higher display resolutions. 
+
+> 1Dance, Camel, Bmx, Swan, Cow, Boat as in Liu et al. (2025) and Lin et al. (2026)
+
+6Table 1: Comparison of our GS representation on Kinetics-400, SSV2, and UCF-101. Model #Params denotes the feed-forward network size. Encoding time at per-GPU batch B=8 . All models are trained on the K400 subset of 10,000 videos. † models trained and evaluated at 640 × 480 . Ours are trained at 256 ×
+
+256 and evaluated at higher resolutions zero-shot.                                                                                                           
+
+> Method Model Repr. #Params Enc. Dec. K400 SSV2 UCF #Params / Video time (s) ↓VPS ↑PSNR ↑SSIM ↑PSNR ↑SSIM ↑PSNR ↑SSIM ↑
+> Feedforward methods at 256 ×256 ×8TransINR Chen & Wang (2022) 48.0 M 99 K 0.01 —20.3 0.595 22.8 0.703 20.7 0.591 GINR Kim et al. (2023) 47.6 M 139.4 K 0.01 —22.8 0.65 25.3 0.737 22.7 0.651 FastNeRV Chen et al. (2024) 47.6 M 85.6 K 0.01 4.6 ×10 327.4 0.78 30.3 0.835 26.8 0.778
+> HyperGS (N=1000 )47.7 M 64 K 0.007 0.51 ×10 330.3 0.867 33.4 0.898 29.8 0.871
+> Feedforward methods at 640 ×480 ×8FastNeRV †Chen et al. (2024) —436.8K 0.080 0.57 ×10 322.86 0.721 ————TeCoNeRV †Padmanabhan et al. (2026) 41.3 M 65.2 K 0.047 0.58 ×10 325.15 0.721 ————
+> HyperGS (N=1000 )47.7 M 64 K 0.007 0.51 ×10 328.94 0.844 32.01 0.891 28.59 0.847
+
+Patch-Grid Encoding. Because the network is trained to map an encoder view to Gaussians indepen-dently of any particular video or resolution, it can be applied repeatedly across a scene to reach resolutions beyond its native input size. This matters because a single 256 × 256 encoder view of a high-resolution frame requires aggressive downscaling that discards fine detail. For this reason, we optionally tile the target frame into a gc × gr grid of 256 × 256 patches, encode each patch independently with the same netowrk in a single batched forward pass, render every tile, and combine them back into the full frame. This trades representation size—a total of gc gr × N Gaussians per frame—for quality at constant network capacity, and still requires no per-video optimization. 
+
+4.1 Main Results 
+
+Comparison with Per-Video Optimization. Figure 2 compares HyperGS against its non-amortized counterpart, 2DGS, in terms of encoding speed and reconstruction quality, evaluated zero-shot at 720p on DAVIS 2016 and UVG. Each 2DGS curve corresponds to a fixed Gaussian count N optimized independently per frame for a given number of iterations (up to 50k, requiring on the order of hours per video)—more iter-ations yield a tighter per-frame fit and higher PSNR, as expected. HyperGS instead produces its Gaussians in a single forward pass, encoding an entire video in milliseconds. At matched reconstruction quality, this reduces encoding time by 10 4–10 5× relative to 2DGS, despite HyperGS never having trained on these videos and resolutions. We additionally evaluate a patch-grid variant (Sec. 4) that closes the remaining quality gap entirely. At inference time, we tile each frame into in-distribution 256 × 256 patches and encode them independently in a single batched forward pass, trading a larger representation size and longer encoding time for improved reconstruction quality. This surpasses per-video optimization on both datasets: on UVG, a 5 × 5 grid at 
+
+N =3000 reaches 35.93 dB in ∼7.9s per video while on DAVIS, a 5 × 5 grid at N =3000 reaches 33.84 dB in ∼4.9s per video. This flexibility is inherent to feedforward prediction, whereas per-video optimization methods can only infer at the exact resolution they were trained on and lack the ability to operate over a patch grid at inference time. Across both datasets, quality improves monotonically with Gaussian count N
+
+in both modes, and patch encoding offers the best quality–compute trade-off whenever full-frame PSNR falls short. 
+
+Comparison with Feedforward Methods Table 1 compares HyperGS against feedforward INR meth-ods at 256 ×256 resolution. At a representation smaller than every prior feedforward method (64 K vs. 85.6–139 K), HyperGS ( N =1000 ) reaches 30.3 dB on K400, 33.4 dB on SSv2, and 29.8 dB on UCF-101, sur-passing the strongest prior method, FastNeRV Chen et al. (2024), by +2.9 dB , +3.1 dB , and +3.0 dB 
+
+respectively. These gains are consistent across the in-distribution benchmark (K400) and zero-shot evaluation on SSv2 and UCF-101, and hold even though all methods use comparable model sizes ( ∼48 M parameters). HyperGS reaches this quality while encoding an 8-frame batch clip in ∼7 ms ( ∼1,193 FPS) and rasterizing 7(a) Davis 2016 at 720p, ∼82 frames/video.  
+
+> (b) UVG at 720p. ∼139 frames/video.
+
+Figure 2: Each curve shows 2DGS Zhang et al. (2024) trained per-frame with a fixed number of Gaussians (250–3000). The curve plots reconstruction quality against the average per-video encoding time at different training iterations ( 1k − 50 k). We evaluate our models zero-shot across all datasets and resolutions. We also evaluate with patch-grid variants encoding gc × gr views per frame. Encoding time for our methods is the GPU pipeline consisting of a single forward pass plus Gaussian rasterization, batched at B=8 . The encoding time for the compared methods is the training time. Table 2: Comparison with feedforward methods on UVG Mercat et al. (2020) at 640 × 480 , all frames (no temporal subsampling), zero-shot for all methods. #Repr. Params is the total representation for a 600-frame UVG video. Our method stores N ×8 Gaussian parameters per frame ( ×600 ), while other methods store the params for the INR (i.e. base params) per 8-frame clip ( ×75 clips).                    
+
+> Method #Repr. Params PSNR ↑SSIM ↑
+> Feedforward methods at 640 ×480 ×8TeCoNeRV Padmanabhan et al. (2026) 4.9 M 25.52 0.7103 FastNeRV Chen et al. (2024) 32.8 M 23.05 0.6491
+> HyperGS (N=1000 )4.8 M 26.39 0.7157
+
+at ∼4,112 FPS ( 0.51 ×10 3 VPS). Decoding is slower than INR-based feedforward methods such as FastNeRV (4.6×10 3 VPS), which uses a specialized parallel decoder, since here the bottleneck is the differentiable Gaussian rasterizer rather than the network itself (see Appendix for details). Furthermore, since N is an explicit, tunable rate control for HyperGS, this advantage is not limited to a single model, as we show in Sec. 5.1 (Table 4), HyperGS remains ahead of FastNeRV even at roughly a third of the representation size (27.89 dB vs. 27.4 dB on K400 at N =500 , 32 K per video), and scaling up to 
+
+N =3000 (192 K) raises quality further to 33.13 dB / 36.23 dB. 8Table 1 also evaluates rendering at 640 ×480 . Because the predicted 2D Gaussians are continuous primi-tives, the same predicted set is rasterized natively at the target resolution with no re-encoding. Despite training only at 256 ×256 and being evaluated zero-shot, HyperGS ( N =1000 ) reaches 28.94 dB on K400, outperforming FastNeRV (22.86 dB) and TeCoNeRV (25.15 dB)—both trained and evaluated directly at 
+
+640 ×480 —by wide margins. This indicates that the Gaussian representation transfers across resolutions better than implicit decoder outputs. Table 2 extends this comparison to UVG at 640 ×480 , evaluated zero-shot for all methods. HyperGS (N =1000 ) reaches 26.39 dB at 4.8 M total parameters, surpassing FastNeRV (23.05 dB) and TeCoNeRV (25.52 dB) at a smaller representation. Table 3: Comparison with H.265 on K400 / SSV2 ( 256 2, 8-frame clips), grouped into matched-quality pairs. Within each pair we are faster at both encoding and decoding. Our feed-forward encoding is 1.3–2.7× faster and rasterization decoding is ∼1.3× faster, with equal-or-higher fidelity. Speeds at B=8 , ours on a single A100, H.265 on 8 CPUs.                                                   
+
+> Speed (VPS) K400 SSV2 Method Enc ↑Dec ↑PSNR SSIM PSNR SSIM
+> HyperGS (N=2000 )83 512 32.08 0.9054 35.15 0.9278 H.265 (CRF30) 62 385 32.34 0.9000 34.24 0.9170
+> HyperGS (N=750 )179 537 29.25 0.8419 32.25 0.8790 H.265 (CRF35) 69 385 29.37 0.8413 31.40 0.8738
+> HyperGS (N=500 )222 524 27.89 0.8064 30.83 0.8518 H.265 (CRF40) 81 385 26.50 0.7658 28.56 0.8183
+
+Comparison with Traditional Codec. Table 3 compares HyperGS against H.265, a widely-used block-based video codec, on 256 2-resolution, 8-frame clips from K400 and SSV2. To enable a fair comparison across differing rate-distortion operating points, we group results into three matched-quality pairs, varying our Gaussian count N ∈ { 2000 , 750 , 500 } against H.265 CRF settings. Across all three pairs, HyperGS is faster than H.265 at both encoding and decoding while achieving equal or higher reconstruction quality. Our feed-forward encoder is 1.3–2.7× faster than H.265’s encoder, with the gap widening as N decreases (83 VPS at N = 2000 up to 222 VPS at N = 500 , versus H.265’s roughly flat 62–81 VPS). Decoding via rasterization is consistently ∼1.3× faster than H.265 decoding (512–537 vs. 385 VPS). 
+
+## 5 Ablations 
+
+We ablate the key design choices in HyperGS. 
+
+5.1 Quality–Speed Trade-off with Number of Gaussians 
+
+Table 4 varies the number of Gaussians per frame from 250 to 3000. Reconstruction quality improves consistently with more Gaussians, gaining +7.31 dB on K400 (25.82 →33.13 dB) and +7.65 dB on SSv2 (28.58 →36.23 dB), with N =3000 yielding the best overall quality on both datasets. Since representation size scales linearly with N (8 parameters per Gaussian), this trade-off directly trades storage for quality. Encoding cost scales similarly—per-batch encoding time grows from ∼3.5 ms at N =250 to ∼18 .6 ms at 
+
+N =3000 —while rasterization speed remains roughly constant at ∼4000 FPS (3972–4440) (see Appendix), and total training time is largely unaffected (19.36h–20.11h across the full range). 
+
+5.2 Adaptive Geometric Regularization. 
+
+The geometric penalties ( Lerank and Lscale ) address a known instability in Gaussian splatting optimization. Without any geometric constraints, the optimization process learns to generate highly anisotropic, “needle-9Table 4: Effect of the number of Gaussian primitives per frame N on representation size, speed, and re-construction quality, for 8-frame videos. Repr. #Params is the per-frame representation size. Train (h) is wall-clock training time. Speed is measured on a single A100 at B=8 , T =8 , 256 2 (K400-val): Enc is the per-batch network forward-pass time and Dec is the rasterization. VPS / FPS report throughput in videos/second and frames/second. PSNR and SSIM are reported on K400 and SSV2 validation videos.                                                             
+
+> Speed K400 SSV2
+> NRepr. #Params Train (h) Enc (s) Enc (VPS/FPS) Dec. (VPS/FPS) PSNR SSIM PSNR SSIM 250 2 K 19.36 0.0035 286 /2285 555 / 4440 25.82 0.7380 28.58 0.7999 500 4 K 19.51 0.0045 222 / 1779 524 / 4191 27.89 0.8064 30.83 0.8518 750 6 K 19.49 0.0056 179 / 1435 537 / 4293 29.25 0.8419 32.25 0.8790 1000 8 K 19.55 0.0067 149 / 1193 514 / 4112 30.29 0.8667 33.37 0.8983 2000 16 K 20.06 0.0120 83 / 665 512 / 4093 32.08 0.9054 35.15 0.9278 3000 24 K 20.11 0.0186 54 / 431 496 / 3972 33.13 0.9242 36.23 0.9430
+> (a) 1000 Gaussian Points (b) 2000 Gaussian points
+
+Figure 3: Training Stability. We analyze the training PSNR and minimum effective rank over 400 epochs across different regularization configurations. Without regularization, PSNR collapses as Gaussians degen-erate into “needles” ( erank → 1). While fixed thresholds (ex. τerank = 1 .1 and different smax ) can achieve high peak performance, they are sensitive to model capacity and require extensive hyperparameter searching. like” Gaussians to fit sharp edges. While this initially minimizes the reconstruction loss ( Lrecon ), the model eventually over-accumulates these needles. This triggers a sudden, sharp collapse in performance, often occurring unexpectedly mid-way through the training. We find that this instability is highly dependent on task complexity and model capacity and requires excessive hyper parameter searching for different gaussian points and configurations to stabilize and increase the performance. We address this with an EMA-based adaptive approach to calibrate the regularization uniquely for each model. Figure 3 compares fixed-threshold regularization, in which the quality is sensitive to the choice of τerank and 
+
+smax , with our adaptive EMA-based approach (Section 3). Stricter settings (higher τerank and lower smax )are able to recover from collapses, but over-constrain useful elliptical Gaussians, while more relaxed settings risks more instability. The adaptive regularization, initialized with the stricter setting, gradually constrains thresholds when outliers emerge and relaxes them otherwise, consistently stabilizing training. 
+
+5.3 Q-Transformer Type and Model Capacity. 
+
+Table 5 isolates the role of the Q-Transformer and of overall capacity. We observe that replacing the self-attention Q-Transformer with an MLP that directly regresses Gaussian parameters collapses quality to 22.98 dB—9.1 dB below a self-attention Q-Transformer at the same N =2000 (30.29 dB)—with LPIPS and tLP degrading as well. This shows that query-based aggregation, in which Gaussian tokens attend over the contextualized frame features, is what makes Gaussian prediction work effectively, rather than raw network capacity. We also observe that reducing the hidden width ( d=512 ) costs only −0.78 dB at roughly half the parameters, and trimming Q-Transformer depth (ST2/Q3, ST2/Q2) trades quality smoothly for a smaller, 10 faster model. Whereas Table 6 fixes the six-layer budget and studies its allocation, this ablation varies the budget itself and the decoding mechanism. Table 5: Architecture ablation on K400 ( 256 2, T =8 , zero-shot). We vary network depth, hidden width, and Q-Transformer type relative to our full model (ST2/Q4, d=768 , self-attention). Fwd is the per-video forward-pass time at B=8 . Self-attention-based querying is essential: replacing it with an MLP collapses quality, while reducing depth/width degrades all metrics gracefully.                                                         
+
+> HyperN. #P Enc (s) PSNR ↑SSIM ↑LPIPS ↓tLP ↓
+> Full model (reference): ST2/Q4, d=768 , self-attn, N=2000
+> ST2/Q4 48.4 M 0.0120 32.08 0.9054 0.1584 0.1558
+> Network depth (vary ST/Q layers; d=768 ,N=2000 )ST1/Q2 26.1 M 0.0064 29.62 0.8560 0.2282 0.2192 ST2/Q2 35.1 M 0.0070 31.04 0.8855 0.1870 0.1851 ST2/Q3 41.8 M 0.0097 31.85 0.9017 0.1621 0.1599
+> Hidden width (vary d; ST2/Q4, N=2000 )
+> d=512 23.5 M 0.0072 31.30 0.8911 0.1816 0.1790
+> Decoder type (MLP vs. self-attn; d=768 ,N=2000 )MLP 39.6 M 0.0060 22.98 0.6459 0.6226 0.6287
+
+5.4 ST-Transformer–Q-Transformer Depth Allocation. 
+
+Table 6 varies how 6 total transformer layers are split between the ST-Transformer and the Q-Transformer. A Q-Transformer-only configuration (0 ST / 6 Q layers) achieves 28.35 dB. Introducing even a single ST-Transformer layer (1/5 split) improves quality by +1.3 dB, and performance continues to increase up to a 3/3 split (30.39 dB). Thus, separating spatio-temporal contextualization from query-based regression helps build richer spatiotemporal features that the Q-Transformer can more effectively translate into Gaussian parameters. Our default configuration uses a 2/4 split (30.29 dB), which achieves a good balance between quality and parameter efficiency. 
+
+5.5 Number of Frames. 
+
+Table 7 evaluates video at 4, 8, and 16 uniformly sampled frames for 1000 Gaussians. We observe that the model maintains highly stable performance as the sequence length increases. Since each frame is rendered from its own independent set of Gaussians, the temporal length primarily challenges the encoder’s ability to contextualize extended sequences without degrading. While 8 frames yield a slight peak in PSNR, extending the sequence to 16 frames achieves the best results across all perceptual (SSIM, LPIPS) and temporal fidelity (∆-PSNR, tLP) metrics. 
+
+## 6 Quantization Rate–Distortion Curves 
+
+Since each Gaussian stores 8 FP16 scalars, the per-frame bitrate is bpp = ( N × 8 × 16) /(H × W ), so N is a directly interpretable control for rate–distortion. Figure 4 plots this trade-off on K400 and UVG, showing that HyperGS traces a favorable rate–distortion curve: PSNR grows sub-linearly with bitrate, following the expected diminishing-returns behavior as N increases. To further compress the representation, we quantize the Gaussian parameters and entropy-code them with an asymmetric numeral system (ANS), plotting PSNR against the resulting bits-per-pixel. Our codec uses a cross-frame residual approach that exploits the temporal consistency of our prediction: since the decoder’s weight tokens place the i-th Gaussian consistently across frames, we treat frame 0 as an intra-coded anchor and entropy-code only the quantized residuals of subsequent frames relative to it. We report results at 11 Table 6: ST-Transformer–Q-Transformer depth allocation on K400. A total of 6 transformer layers is distributed between the ST-Transformer and the Q-Transformer. All models use 1000 Gaussians, 8 frames, and factorized spatiotemporal attention.                     
+
+> ST depth Q depth HyperN. #P PSNR ↑SSIM ↑
+> 0642.9M 28.35 0.7923 1545.3M 29.67 0.8511 2447.7M 30.29 0.8395 3350.0M 30.39 0.8656
+
+Table 7: Number of Frames . All models use enc2/dec4 with adaptive regularization. ∆-PSNR denotes temporal fidelity and tLP denotes temporal LPIPS. 
+
+K-400 SSv2 
+
+N T PSNR ↑ SSIM ↑ LPIPS ↓ ∆-PSNR ↑ tLP ↓ PSNR ↑ SSIM ↑ LPIPS ↓ ∆-PSNR ↑ tLP ↓
+
+1000 4 30.23 0.8653 0.2097 32.2 0.2094 33.29 0.8963 0.1735 34.8 0.1646 8 30.29 0.8667 0.2085 32.5 0.2040 33.37 0.8983 0.1708 35.2 0.1583 16 30.24 0.8669 0.2071 32.7 0.2014 33.32 0.8988 0.1694 35.8 0.1555 
+
+anchor/residual precisions of 8, 6, and 4 bits, showing that our quantized models improve along the RD curve relative to our unquantized FP16 baseline. 
+
+Figure 4: Rate–Distortion Curves. We evaluate post-training compression while varying the model capacity (N =250 –3000 ). We apply quantization plus entropy (ANS) coding to the predicted Gaussians with cross-frame residual quantization—an intra-coded anchor frame plus quantized P-frame deltas, swept at 8/6/4-bit precision. 
+
+## 7 Conclusion 
+
+In this work, we introduced HyperGS, a fast and generalizable network for representing videos with Gaussian Splatting. By predicting explicit geometric primitives directly from pixels, HyperGS leverages an inductive bias that decomposes video reconstruction into interpretable subproblems: position, scale, rotation, and color are regressed independently for a fixed set of Gaussians per frame. This design enables real-time encoding while retaining the high visual fidelity of Gaussian Splatting representations. 
+
+## References 
+
+Andrew Bond, Jui-Hsien Wang, Long Mai, Erkut Erdem, and Aykut Erdem. Gaussianvideo: Efficient video representation via hierarchical gaussian splatting. arXiv preprint arXiv:2501.04782 , 2025. 12 Hao Chen, Bo He, Hanyu Wang, Yixuan Ren, Ser Nam Lim, and Abhinav Shrivastava. NeRV: Neural representations for videos. Advances in Neural Information Processing Systems , 34:21557–21568, 2021. Hao Chen, Matthew Gwilliam, Ser-Nam Lim, and Abhinav Shrivastava. HNeRV: A hybrid neural rep-resentation for videos. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 10270–10279, 2023. Hao Chen, Saining Xie, Ser-Nam Lim, and Abhinav Shrivastava. Fast encoding and decoding for implicit video representation. In European Conference on Computer Vision , pp. 402–418. Springer, 2024. Yinbo Chen and Xiaolong Wang. Transformers as meta-learners for implicit neural representations. In 
+
+European Conference on Computer Vision , pp. 170–187. Springer, 2022. Raghav Goyal, Samira Ebrahimi Kahou, Vincent Michalski, Joanna Materzynska, Susanne Westphal, He-una Kim, Valentin Haenel, Ingo Fruend, Peter Yianilos, Moritz Mueller-Freitag, et al. The “something something" video database for learning and evaluating visual common sense. In Proceedings of the IEEE International Conference on Computer Vision (ICCV) , 2017. Junha Hyung, Susung Hong, Sungwon Hwang, Jaeseong Lee, Jaegul Choo, and Jin-Hwa Kim. Effective rank analysis and regularization for enhanced 3d gaussian splatting, 2024. URL https://arxiv.org/ abs/2406.11672 .Bernhard Kerbl, Georgios Kopanas, Thomas Leimkühler, and George Drettakis. 3d gaussian splatting for real-time radiance field rendering. ACM Trans. Graph. , 42(4):139–1, 2023. Chiheon Kim, Doyup Lee, Saehoon Kim, Minsu Cho, and Wook-Shin Han. Generalizable implicit neural representations via instance pattern composers, 2023. URL https://arxiv.org/abs/2211.13223 .Zizhang Li, Mengmeng Wang, Huaijin Pi, Kechun Xu, Jianbiao Mei, and Yong Liu. E-NeRV: Expedite neural video representation with disentangled spatial-temporal context. In European Conference on Computer Vision , pp. 267–284. Springer, 2022. Jierun Lin, Jiacong Chen, Qingyu Mao, Shuai Liu, Xiandong Meng, Fanyang Meng, and Yongsheng Liang. Stgv: Spatio-temporal hash encoding for gaussian-based video representation, 2026. URL https://arxiv. org/abs/2604.10910 .Mufan Liu, Qi Yang, Miaoran Zhao, He Huang, Le Yang, Zhu Li, and Yiling Xu. D2GV: Deformable 2d gaussian splatting for video representation in 400fps. arXiv preprint arXiv:2503.05600 , 2025. Alexandre Mercat, Marko Viitanen, and Jarno Vanne. UVG dataset: 50/120fps 4k sequences for video codec analysis and development. In Proceedings of the 11th ACM multimedia systems conference , pp. 297–302, 2020. Namitha Padmanabhan, Matthew Gwilliam, and Abhinav Shrivastava. Teconerv: Leveraging temporal coherence for compressible neural representations for videos, 2026. URL https://arxiv.org/abs/2602. 16711 .F. Perazzi, J. Pont-Tuset, B. McWilliams, L. Van Gool, M. Gross, and A. Sorkine-Hornung. A benchmark dataset and evaluation methodology for video object segmentation. In Computer Vision and Pattern Recognition , 2016. Vincent Sitzmann, Julien Martel, Alexander Bergman, David Lindell, and Gordon Wetzstein. Implicit neural representations with periodic activation functions. Advances in neural information processing systems , 33: 7462–7473, 2020. Khurram Soomro, Amir Roshan Zamir, and Mubarak Shah. UCF101: A dataset of 101 human actions classes from videos in the wild. In CRCV-TR-12-01 , 2012. 13 Gary J. Sullivan, Jens-Rainer Ohm, Woo-Jin Han, and Thomas Wiegand. Overview of the high efficiency video coding (hevc) standard. IEEE Transactions on Circuits and Systems for Video Technology , 22(12): 1649–1668, 2012. doi: 10.1109/TCSVT.2012.2221191. Yang-Tian Sun, Yihua Huang, Lin Ma, Xiaoyang Lyu, Yan-Pei Cao, and Xiaojuan Qi. Splatter a video: Video gaussian representation for versatile processing. Advances in Neural Information Processing Systems , 37: 50401–50425, 2024. Thomas Wiegand, Gary J Sullivan, Gisle Bjontegaard, and Ajay Luthra. Overview of the h. 264/avc video coding standard. IEEE Transactions on circuits and systems for video technology , 13(7):560–576, 2003. Guanjun Wu, Taoran Yi, Jiemin Fang, Lingxi Xie, Xiaopeng Zhang, Wei Wei, Wenyu Liu, Qi Tian, and Xinggang Wang. 4D gaussian splatting for real-time dynamic scene rendering. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 20310–20320, 2024. Ziyi Yang, Xinyu Gao, Wen Zhou, Shaohui Jiao, Yuqing Zhang, and Xiaogang Jin. Deformable 3d gaussians for high-fidelity monocular dynamic scene reconstruction. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 20331–20341, 2024. Yang You, Jing Li, Sashank Reddi, Jonathan Hseu, Sanjiv Kumar, Srinadh Bhojanapalli, Xiaodan Song, James Demmel, Kurt Keutzer, and Cho-Jui Hsieh. Large batch optimization for deep learning: Training bert in 76 minutes, 2020. URL https://arxiv.org/abs/1904.00962 .Xinjie Zhang, Xingtong Ge, Tongda Xu, Dailan He, Yan Wang, Hongwei Qin, Guo Lu, Jing Geng, and Jun Zhang. Gaussianimage: 1000 fps image representation and compression by 2d gaussian splatting. In 
+
+European Conference on Computer Vision , pp. 327–345. Springer, 2024. Yunxiang Zhang, Bingxuan Li, Alexandr Kuznetsov, Akshay Jindal, Stavros Diolatzis, Kenneth Chen, An-ton Sochenov, Anton Kaplanyan, and Qi Sun. Image-gs: Content-adaptive image representation via 2d gaussians. In Proceedings of the Special Interest Group on Computer Graphics and Interactive Techniques Conference Conference Papers , pp. 1–11, 2025. Andrew Zisserman, Joao Carreira, Karen Simonyan, Will Kay, Brian Zhang, Chloe Hillier, Sudheendra Vijayanarasimhan, Fabio Viola, Tim Green, Trevor Back, et al. The Kinetics human action video dataset. 
+
+arXiv preprint arXiv:1705.06950 , 2017. 14 A Qualitative Results 
+
+Figure 5 shows reconstruction examples from HyperGS on Kinetics-400 across three temporal frames per video. The model recovers scene structure, color, and some texture showing consistent PSNR across frames within each clip. Figure 6 compares HyperGS against 2DGS Zhang et al. (2024) on UVG at 1280 ×720 
+
+across Gaussian counts from 250 to 3K. Both methods use the same 2D Gaussian rasterization pipeline, but they differ in how the Gaussian parameters are obtained: 2DGS optimizes them per frame for up to 50,000 iterations, whereas HyperGS predicts them in a single forward pass. To make the comparison fair, we compare both methods at matched reconstruction quality. For each Gaussian count we take the 2DGS encoding whose average PSNR matches HyperGS on the encoding-time–quality curves in Fig. 2— equivalently, the point where 2DGS reaches HyperGS’s PSNR at higher encoding time. Under sequential per-frame optimization, this corresponds to total per-video costs ranging from 38 min to 3.3 h for 2DGS, compared with <1 s for ours. This matched-PSNR protocol isolates differences in reconstruction appearance 
+
+at equal quality. At matched PSNR, the two methods still degrade differently at lower Gaussian counts. 2DGS tends to produce structured artifacts—visible as sharp discontinuities and tiling patterns—whereas HyperGS degrades with more uniform blur. This reflects how the network learns a smoother prediction averaged across its training distribution, while per-frame optimization can overfit local structure at the cost of spatial coherence. As the Gaussian count increases, both methods improve and their outputs become more similar, though their characteristic failure modes remain visible even at comparable PSNR. 22.8 dB 22.8 dB 21.9 dB 25.7 dB 26.4 dB 27.4 dB 
+
+Figure 5: Qualitative reconstruction results on Kinetics-400. The top row shows ground truth frames and the second row shows our reconstructions across three frames. Per-frame PSNR (dB) is reported below each video. 
+
+## B Additional Ablations 
+
+B.1 Q-Transformer Attention Type 
+
+We compare three Q-Transformer variants, all using ST2/Q4 with the factorized spatio-temporal archi-tecture and N = 2000 Gaussians. In the default self-attention variant, per-frame patch tokens from the ST-Transformer are concatenated with the learnable Gaussian tokens and processed jointly through self-attention layers. Each Gaussian token can attend to all patch tokens within its frame as well as to other Gaussian tokens. The cross-attention variant instead separates the two token sets such that the Gaussian tokens serve as queries that cross-attend to the full ST-Transformer output across all frames (not just the current frame), followed by a feedforward block. The cross-attention + self-attention variant adds a self-attention layer among the Gaussian tokens after each cross-attention layer, allowing Gaussian tokens to also exchange information with each other. We observe that the self-attention variant outperforms cross-attention by +0.54 dB. 15 21.18 dB                
+
+> ~3.3 h
+> 22.35 dB
+> ~1.8 h
+> 22.84 dB
+> ~1.3 h
+> 23.26 dB
+> ~43 min
+> 23.30 dB
+> ~38 min
+> 21.58 dB
+> 0.13 s
+> 22.87 dB
+> 0.14 s
+> 24.01 dB
+> 0.16 s
+> 24.58 dB
+> 0.24 s
+> 24.95 dB
+> 0.38 s
+> GT 250 pts 500 pts 1K pts 2K pts 3K pts
+> 2DGS Ours 20.59 dB
+> ~3.3 h
+> 21.25 dB
+> ~1.8 h
+> 22.27 dB
+> ~1.3 h
+> 23.42 dB
+> ~43 min
+> 23.78 dB
+> ~38 min
+> 20.15 dB
+> 0.13 s
+> 20.96 dB
+> 0.14 s
+> 21.98 dB
+> 0.16 s
+> 22.63 dB
+> 0.24 s
+> 22.93 dB
+> 0.38 s
+> GT 250 pts 500 pts 1K pts 2K pts 3K pts
+> 2DGS Ours 17.43 dB
+> ~3.3 h
+> 17.42 dB
+> ~1.8 h
+> 17.32 dB
+> ~1.3 h
+> 30.78 dB
+> ~43 min
+> 17.21 dB
+> ~38 min
+> 17.58 dB
+> 0.13 s
+> 17.52 dB
+> 0.14 s
+> 17.46 dB
+> 0.16 s
+> 30.53 dB
+> 0.24 s
+> 17.43 dB
+> 0.38 s
+> GT 250 pts 500 pts 1K pts 2K pts 3K pts
+> 2DGS Ours
+
+Figure 6: Qualitative comparison on the UVG sequences at different Gaussian points. We compare per-frame reconstructions from 2DGS Zhang et al. (2024), which optimizes Gaussian parameters per frame at (1280 ×720) and our network, which predicts them in a single forward pass, zero-shot at higher resolution. PSNR (dB) is reported for each frame alongside the average per-video encoding time for UVG videos. Table 8: Comparison of Q-Transformer attention mechanisms on K400 at 256 ×256 with N = 2000 , ST2/Q4. 
+
+Decoder type PSNR ↑ SSIM ↑
+
+Cross-attention 31.54 0.8945 Cross-attention + self-attention 31.95 0.9023 Self-attention 32.08 0.9054 
+
+B.2 Temporal Attention Window Size 
+
+Table 9 ablates the temporal window size w in the factorized spatio-temporal architecture. The window size controls the scope of temporal attention. Each ST-Transformer layer performs spatial attention within individual frames, followed by temporal attention restricted to non-overlapping windows of w consecutive frames. Setting w = 8 (the default) enables full temporal attention across all input frames, while w = 2 
+
+16 limits each token to attending only within pairs of adjacent frames. Performance improves incrementally with window size, from 30.04 dB at w = 2 to 30.29 dB at w = 8 , indicating that long-range temporal context benefits per-frame Gaussian prediction, albeit minimally. Table 9: Effect of temporal attention window size on K400 at 256 × 256 with N = 1000 , 8 input frames.                      
+
+> Window wPSNR ↑SSIM ↑LPIPS ↓∆-PSNR ↑tLP ↓
+> 230.04 0.8610 0.216 32.30 0.213 430.26 0.8656 0.211 32.49 0.207 830.29 0.8667 0.208 32.51 0.204
+
+## C Implementation Details 
+
+C.1 Decoding Speeds and Rasterization Bottlenecks 
+
+HyperGS achieves fast encoding and decoding speeds, driven by targeted batching of the 2DGS rasterization pipeline Zhang et al. (2024). The 2DGS rendering pipeline is split into two primary stages: geometric projec-tion and tile-based accumulation. To optimize the decoding speed, we batch the first stage—the geometric transformations that map predicted scales, rotations, and 2D means into inverse covariance matrices ( Σ−1 
+
+> i
+
+)and frame-space coordinates are computed fully batched. This batching is done by flattening the batch and point dimensions, all B × N Gaussians are projected across all frames in the batch, thereby maximiz-ing parallel throughput. The tile-based accumulation stage loops over the batch dimension at the frame level, trading some of the parallelism used in the fully batched projection stage — leaving room for further throughput gains relative to a fully parallelized decoder. 
+
+## D Inference at Higher Resolution 
+
+Figure 7: Rendering at higher resolution stretches predicted Gaussian covariances via Cov ′ = T Cov T .The Gaussians predicted on a Hc ×Wc canvas are rasterized directly at target resolution H ×W by stretching image coordinates with T = diag( sw, s h), where sw = W/W c and sh = H/H c. Each Gaussian is defined on the canvas by scales (σx, σ y ) and rotation θ, giving 
+
+Cov = Rdiag( σ2
+
+> x
+
+, σ 2 
+
+> y
+
+)R⊤ (16) with R =
+
+( cos θ sin θ
+
+− sin θ cos θ
+
+)
+
+. Under anisotropic upscaling (sw̸ = sh), the projected covariance is 
+
+Cov ′ = T Cov T (17) 17 which cannot be obtained by simply scaling σx, σ y and keeping θ unchanged. We therefore compute the Cholesky factor Cov ′ = LL ⊤ with L =
+
+( L00 0
+
+L10 L11 
+
+)
+
+and pass [L00 , L 10 , L 11 ] to the 2D Gaussian projector. Writing c = cos θ, s = sin θ, and σ2
+
+> x
+
+, σ 2 
+
+> y
+
+for the canvas scales, the entries of Cov ′ are 
+
+a = s2
+
+> w
+
+(c2σ2 
+
+> x
+
++ s2σ2 
+
+> y
+
+), (18) 
+
+b = swshsc (σ2 
+
+> y
+
+− σ2
+
+> x
+
+), (19) 
+
+c′ = s2
+
+> h
+
+(s2σ2 
+
+> x
+
++ c2σ2 
+
+> y
+
+), (20) from which the Cholesky elements follow as L00 = √a, L10 = b/L 00 , and L11 = √c′ − L210 . When sw = sh,this reduces to uniform scaling and the standard scale–rotation path is used instead. 
+
+D.1 Adaptive Regularization Details 
+
+Table 10 lists the hyperparameters of our adaptive regularization approach. The EMA momentum m controls how quickly the thresholds respond to distributional shifts, providing stable estimates while still adapting within a few epochs. The initial thresholds (τ (0) 
+
+> erank
+
+, s(0) max ) set conservative starting points that prevent early-training collapse before the EMA has converged. The floor τfloor prevents the erank threshold from drifting toward 1 under collective degeneration. Similarly, the ceiling sceil prevents the scale threshold from growing unbounded if the distribution’s upper percentile drifts upward, which can trigger sudden collapse as Gaussians start spanning the entire image. For N = 3000 , we relax the regularization: loss weights are halved, the erank floor and initial threshold are set near unity, and more extreme percentiles are used. With a larger Gaussian budget, each primitive covers a smaller image region, so tighter shape constraints are unnecessary and overly restrictive regularization can hurt reconstruction quality. Table 10: Adaptive geometric regularization hyperparameters. 
+
+Parameter Symbol N ≤ 2000 N = 3000 
+
+Erank loss weight λerank 0.01 0.005 Scale loss weight λscale 0.01 0.005 Initial erank threshold τ (0)  
+
+> erank
+
+1.05 1.001 Initial scale threshold s(0) max 32.0 32.0 EMA momentum m 0.99 0.98 Erank floor τfloor 1.005 1.001 Scale ceiling sceil 80.0 80.0 Erank percentile perank 0.01 0.0015 Scale percentile pscale 0.99 0.999 
+
+D.2 Training Configuration 
+
+Architecture, optimization, and data hyperparameters—including learning rate schedule, and augmentation strategy—are reported in Table 11. 18 Table 11: Training hyperparameters shared across all main experiments. 
+
+Hyperparameter Value 
+
+Architecture 
+
+Transformer dimension d 768 Attention heads / head dim 12 / 64 Feedforward hidden dim 2800 Total transformer depth 6Patch size 16 × 16 
+
+Tubelet size 1Input resolution 256 × 256 
+
+ST-Transformer Layers 2Q-Transformer Layers 4
+
+Training 
+
+Optimizer LAMB Learning rate 10 −3
+
+LR schedule Cosine Minimum LR ratio 0.1 Warmup epochs 0Epochs 400 Batch size 32 Mixed precision FP16 Gradient clip norm 1.0 
+
+Data 
+
+Training set Kinetics-400 (25%/class) Train augmentation RandomCrop + HFlip Test augmentation None (CenterCrop) 
+
+19
